@@ -12,14 +12,15 @@ import {
 	DidChangeConfigurationNotification,
 	CompletionItem,
 	CompletionItemKind,
+	CodeActionKind,
 	TextDocumentPositionParams,
 	TextDocumentSyncKind,
 	InitializeResult,
 	DocumentDiagnosticReportKind,
 	type DocumentDiagnosticReport,
-} from 'vscode-languageserver/node';
+} from "vscode-languageserver/node";
 
-import { TextDocument } from 'vscode-languageserver-textdocument';
+import { TextDocument } from "vscode-languageserver-textdocument";
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -52,13 +53,18 @@ connection.onInitialize((params: InitializeParams) => {
 	const result: InitializeResult = {
 		capabilities: {
 			textDocumentSync: TextDocumentSyncKind.Incremental,
-			// Tell the client that this server supports code completion.
 			completionProvider: {
 				resolveProvider: true,
 			},
 			diagnosticProvider: {
 				interFileDependencies: false,
 				workspaceDiagnostics: false,
+			},
+			codeActionProvider: {
+				codeActionKinds: [CodeActionKind.QuickFix],
+			},
+			renameProvider: {
+				prepareProvider: true,
 			},
 		},
 	};
@@ -75,11 +81,14 @@ connection.onInitialize((params: InitializeParams) => {
 connection.onInitialized(() => {
 	if (hasConfigurationCapability) {
 		// Register for all configuration changes.
-		connection.client.register(DidChangeConfigurationNotification.type, undefined);
+		connection.client.register(
+			DidChangeConfigurationNotification.type,
+			undefined
+		);
 	}
 	if (hasWorkspaceFolderCapability) {
 		connection.workspace.onDidChangeWorkspaceFolders((_event) => {
-			connection.console.log('Workspace folder change event received.');
+			connection.console.log("Workspace folder change event received.");
 		});
 	}
 });
@@ -104,7 +113,7 @@ connection.onDidChangeConfiguration((change) => {
 		documentSettings.clear();
 	} else {
 		globalSettings = <ExampleSettings>(
-			(change.settings.languageServerExample || defaultSettings)
+			(change.settings.whenInRome || defaultSettings)
 		);
 	}
 	// Refresh the diagnostics since the `maxNumberOfProblems` could have changed.
@@ -121,7 +130,7 @@ function getDocumentSettings(resource: string): Thenable<ExampleSettings> {
 	if (!result) {
 		result = connection.workspace.getConfiguration({
 			scopeUri: resource,
-			section: 'languageServerExample',
+			section: "whenInRome",
 		});
 		documentSettings.set(resource, result);
 	}

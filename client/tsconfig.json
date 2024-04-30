@@ -7,6 +7,6 @@
 		"rootDir": "src",
 		"sourceMap": true
 	},
-	"include": ["src"],
+	"include": ["src", "src/utils.ts"],
 	"exclude": ["node_modules", ".vscode-test"]
 }

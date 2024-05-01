@@ -268,17 +268,27 @@ connection.onExecuteCommand(async (params) => {
 	}
 
 	const textDocument = documents.get(params.arguments[0]);
-	if (textDocument === undefined) return;
+	const newName = params.arguments[1];
+	const range = params.arguments[2];
+	if (
+		textDocument === undefined ||
+		newName === undefined ||
+		range === undefined
+	) {
+		console.error(
+			"Invalid arguments! Expected PARAMS = URI, NAME, Range",
+			textDocument,
+			newName,
+			range
+		);
+		return;
+	}
 
-	console.log("Fixing naming convention violation");
-
-	const newText =
-		typeof params.arguments[1] === "string" ? params.arguments[1] : "Eclipse";
 	connection.workspace.applyEdit({
 		documentChanges: [
 			TextDocumentEdit.create(
 				{ uri: textDocument.uri, version: textDocument.version },
-				[TextEdit.insert(Position.create(0, 0), newText)]
+				[TextEdit.replace(range, newName)]
 			),
 		],
 	});

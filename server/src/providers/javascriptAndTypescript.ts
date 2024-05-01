@@ -108,8 +108,14 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 			}
 		}
 		const title = `Rename to '${suggestedName}'`;
-		// TODO: set range for fix
-		const cmd = Command.create(title, FIX_NAME, document.uri);
+		const range = diagnostic.range;
+		const cmd = Command.create(
+			title,
+			FIX_NAME,
+			document.uri,
+			suggestedName,
+			range
+		);
 		const fix = CodeAction.create(title, cmd, CodeActionKind.QuickFix);
 		fix.isPreferred = true;
 		this.codeActionsMessageCache.set(cacheKey, fix);

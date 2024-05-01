@@ -2,13 +2,11 @@ import {
 	createConnection,
 	TextDocuments,
 	Diagnostic,
-	DiagnosticSeverity,
 	ProposedFeatures,
 	InitializeParams,
 	DidChangeConfigurationNotification,
 	CompletionItem,
 	CompletionItemKind,
-	CodeActionKind,
 	TextDocumentPositionParams,
 	TextDocumentSyncKind,
 	InitializeResult,
@@ -170,10 +168,6 @@ function createLanguageProvider(
 				settings
 			);
 			break;
-		// case "javascriptreact":
-		// case "typescriptreact":
-		// 	provider = new ReactProvider(languageId);
-		// 	break;
 		case "python":
 			provider = new PythonProvider(languageId, connection, settings);
 			break;

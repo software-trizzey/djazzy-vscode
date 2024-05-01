@@ -118,16 +118,18 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		const diagnostics: Diagnostic[] = [];
 		const diagnosticPromises: Promise<void>[] = [];
 		try {
-			const changedLines = await getChangedLinesFromClient(
-				this.connection,
-				document.uri
-			);
-			if (changedLines && changedLines.size === 0 && this.onlyCheckNewCode) {
-				return;
+			let changedLines: Set<number> | undefined = undefined;
+			if (this.onlyCheckNewCode) {
+				changedLines = await getChangedLinesFromClient(
+					this.connection,
+					document.uri
+				);
+				if (changedLines && changedLines.size === 0) {
+					return;
+				}
 			}
 
 			const text = document.getText();
-
 			const pluginOptions: babelParser.ParserPlugin[] = [];
 			if (this.isTypeScript) {
 				pluginOptions.push("typescript");

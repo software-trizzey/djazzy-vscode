@@ -44,7 +44,7 @@ export function activate(context: ExtensionContext) {
 				} else if (command === "extension.getGitDiff") {
 					try {
 						const filePath = args[0];
-						return getChangedLines(filePath);
+						return await getChangedLines(filePath);
 					} catch (error) {
 						console.error("Error getting git diff:", error);
 					}

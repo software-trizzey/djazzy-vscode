@@ -13,10 +13,14 @@ import {
 	ProposedFeatures,
 	InitializeParams,
 	DidChangeConfigurationNotification,
+	CodeActionKind,
 	CompletionItem,
 	CompletionItemKind,
+	Position,
+	TextEdit,
 	TextDocumentPositionParams,
 	TextDocumentSyncKind,
+	TextDocumentEdit,
 	InitializeResult,
 	DocumentDiagnosticReportKind,
 	type DocumentDiagnosticReport,
@@ -30,6 +34,7 @@ import {
 	PythonProvider,
 } from "./providers";
 import { ExtensionSettings, defaultSettings } from "./settings";
+import { FIX_NAME } from "./constants/commands";
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -69,12 +74,15 @@ connection.onInitialize((params: InitializeParams) => {
 				interFileDependencies: false,
 				workspaceDiagnostics: false,
 			},
-			// codeActionProvider: {
-			// 	codeActionKinds: [CodeActionKind.QuickFix],
-			// },
-			// renameProvider: {
-			// 	prepareProvider: true,
-			// },
+			codeActionProvider: {
+				codeActionKinds: [CodeActionKind.QuickFix],
+			},
+			renameProvider: {
+				prepareProvider: true,
+			},
+			executeCommandProvider: {
+				commands: [],
+			},
 		},
 	};
 	if (hasWorkspaceFolderCapability) {
@@ -204,13 +212,22 @@ async function validateTextDocument(
 	const languageId = textDocument.languageId;
 	const provider = getOrCreateProvider(languageId, settings);
 	const diagnostics = await provider.provideDiagnostics(textDocument);
-	console.log("Diagnostic", diagnostics);
 	if (!diagnostics) return [];
 	return diagnostics;
 }
 
 connection.onDidChangeWatchedFiles((_change) => {
 	connection.console.log("We received a file change event");
+});
+
+connection.onCodeAction(async (params) => {
+	const document = documents.get(params.textDocument.uri);
+	if (!document) return;
+	const settings = await getDocumentSettings(document.uri);
+	const languageId = document.languageId;
+	const provider = getOrCreateProvider(languageId, settings);
+	const actions = await provider.provideCodeActions(document);
+	return actions;
 });
 
 connection.onCompletion(
@@ -243,6 +260,28 @@ connection.onCompletionResolve((item: CompletionItem): CompletionItem => {
 		item.documentation = "JavaScript documentation";
 	}
 	return item;
+});
+
+connection.onExecuteCommand(async (params) => {
+	if (params.command !== FIX_NAME || params.arguments === undefined) {
+		return;
+	}
+
+	const textDocument = documents.get(params.arguments[0]);
+	if (textDocument === undefined) return;
+
+	console.log("Fixing naming convention violation");
+
+	const newText =
+		typeof params.arguments[1] === "string" ? params.arguments[1] : "Eclipse";
+	connection.workspace.applyEdit({
+		documentChanges: [
+			TextDocumentEdit.create(
+				{ uri: textDocument.uri, version: textDocument.version },
+				[TextEdit.insert(Position.create(0, 0), newText)]
+			),
+		],
+	});
 });
 
 documents.listen(connection);

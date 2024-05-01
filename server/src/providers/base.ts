@@ -66,6 +66,8 @@ export abstract class LanguageProvider {
 		document: TextDocument
 	): Promise<Diagnostic[] | undefined>;
 
+	abstract provideCodeActions(document: TextDocument): Promise<CodeAction[]>;
+
 	abstract generateFixForNamingConventionViolation(
 		document: TextDocument,
 		diagnostic: Diagnostic

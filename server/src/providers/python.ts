@@ -37,6 +37,23 @@ export class PythonProvider extends LanguageProvider {
 		);
 	}
 
+	async provideCodeActions(document: TextDocument): Promise<CodeAction[]> {
+		console.log("Providing code actions for", document.uri);
+		const diagnostics = document.uri ? this.diagnostics.get(document.uri) : [];
+		console.log("Diagnostics", diagnostics);
+		if (!diagnostics) return [];
+		const namingConventionDiagnostics = diagnostics.filter(
+			(diagnostic) => diagnostic.code === "namingConventionViolation"
+		);
+		console.log("Naming convention diagnostics", namingConventionDiagnostics);
+		// TODO: Implement code actions for Python
+		console.log("PYTHON CODE ACTIONS");
+		// const actionPromises = namingConventionDiagnostics.map((diagnostic) =>
+		// 	this.generateFixForNamingConventionViolation(document, diagnostic)
+		// );
+		return await Promise.all([]);
+	}
+
 	async generateFixForNamingConventionViolation(
 		document: TextDocument,
 		diagnostic: Diagnostic

@@ -2,6 +2,7 @@ import {
 	Connection,
 	CodeAction,
 	CodeActionKind,
+	Command,
 	Diagnostic,
 	DiagnosticSeverity,
 	Range,
@@ -21,6 +22,7 @@ import {
 
 import { getChangedLinesFromClient } from "../utils";
 import { ExtensionSettings } from "../settings";
+import { FIX_NAME } from "../constants/commands";
 
 export class JavascriptAndTypescriptProvider extends LanguageProvider {
 	private isTypeScript: boolean = false;
@@ -50,6 +52,19 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		);
 	}
 
+	async provideCodeActions(document: TextDocument): Promise<CodeAction[]> {
+		const diagnostics = document.uri ? this.diagnostics.get(document.uri) : [];
+		if (!diagnostics) return [];
+		const namingConventionDiagnostics = diagnostics.filter(
+			(diagnostic) => diagnostic.code === "namingConventionViolation"
+		);
+		console.log("Naming convention diagnostics", namingConventionDiagnostics);
+		const actionPromises = namingConventionDiagnostics.map((diagnostic) =>
+			this.generateFixForNamingConventionViolation(document, diagnostic)
+		);
+		return await Promise.all(actionPromises);
+	}
+
 	async generateFixForNamingConventionViolation(
 		document: TextDocument,
 		diagnostic: Diagnostic
@@ -67,7 +82,6 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		}
 
 		console.log("Generating new action");
-
 		if (
 			violationMessage.includes('does not follow "camelCase" naming convention')
 		) {
@@ -93,14 +107,10 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 				// const justification = data.justification;
 			}
 		}
-
-		const fix = CodeAction.create(
-			`Rename to '${suggestedName}'`,
-			CodeActionKind.QuickFix
-		);
-		// TODO: Implement WorkspaceEdit
-		// fix.edit = WorkspaceEdit;
-		// fix.edit.replace(document.uri, diagnostic.range, suggestedName);
+		const title = `Rename to '${suggestedName}'`;
+		// TODO: set range for fix
+		const cmd = Command.create(title, FIX_NAME, document.uri);
+		const fix = CodeAction.create(title, cmd, CodeActionKind.QuickFix);
 		fix.isPreferred = true;
 		this.codeActionsMessageCache.set(cacheKey, fix);
 		return fix;

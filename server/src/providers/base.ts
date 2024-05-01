@@ -62,7 +62,9 @@ export abstract class LanguageProvider {
 		this.defaultConventions = defaultConventions[languageId];
 	}
 
-	abstract provideDiagnostics(document: TextDocument): Promise<void>;
+	abstract provideDiagnostics(
+		document: TextDocument
+	): Promise<Diagnostic[] | undefined>;
 
 	abstract generateFixForNamingConventionViolation(
 		document: TextDocument,

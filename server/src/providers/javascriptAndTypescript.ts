@@ -106,7 +106,9 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		return fix;
 	}
 
-	public async provideDiagnostics(document: TextDocument): Promise<void> {
+	public async provideDiagnostics(
+		document: TextDocument
+	): Promise<Diagnostic[] | undefined> {
 		if (this.languageId === "javascript" && !this.isEnabled) return;
 		if (this.languageId === "typescript" && !this.isEnabled) return;
 
@@ -218,6 +220,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 			if (currentId === this.cancellationId) {
 				this.diagnostics.set(document.uri, diagnostics);
 			}
+			return diagnostics;
 		} catch (error: any) {
 			this.handleError(error);
 		}

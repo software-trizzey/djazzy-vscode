@@ -1,4 +1,14 @@
-import * as vscode from "vscode";
+import {
+	Connection,
+	CodeAction,
+	CodeActionKind,
+	Diagnostic,
+	DiagnosticSeverity,
+	Range,
+	Position,
+} from "vscode-languageserver/node";
+import { TextDocument } from "vscode-languageserver-textdocument";
+
 import { exec } from "child_process";
 import * as path from "path";
 
@@ -8,11 +18,17 @@ import { DJANGO_RESERVED_NAMES } from "../data/reservedNames";
 
 import { debounce, validatePythonFunctionName } from "../utils";
 
-export class PythonProvider extends LanguageProvider {
-	provideDiagnosticsDebounced: (document: vscode.TextDocument) => void;
+import { ExtensionSettings } from "../settings";
 
-	constructor(languageId: keyof typeof defaultConventions) {
-		super(languageId);
+export class PythonProvider extends LanguageProvider {
+	provideDiagnosticsDebounced: (document: TextDocument) => void;
+
+	constructor(
+		languageId: keyof typeof defaultConventions,
+		connection: Connection,
+		settings: ExtensionSettings
+	) {
+		super(languageId, connection, settings);
 
 		const timeoutInMilliseconds = 1000;
 		this.provideDiagnosticsDebounced = debounce(
@@ -21,50 +37,30 @@ export class PythonProvider extends LanguageProvider {
 		);
 	}
 
-	provideCodeActions(
-		document: vscode.TextDocument
-	): Promise<vscode.CodeAction[]> {
-		const diagnostics = vscode.languages.getDiagnostics(document.uri);
-
-		const namingConventionDiagnostics = diagnostics.filter(
-			(diagnostic) => diagnostic.code === "namingConventionViolation"
-		);
-
-		const actionPromise = namingConventionDiagnostics.map((diagnostic) =>
-			this.generateFixForNamingConventionViolation(document, diagnostic)
-		);
-
-		return Promise.all(actionPromise);
-	}
-
 	async generateFixForNamingConventionViolation(
-		document: vscode.TextDocument,
-		diagnostic: vscode.Diagnostic
-	): Promise<vscode.CodeAction> {
+		document: TextDocument,
+		diagnostic: Diagnostic
+	): Promise<CodeAction> {
 		const range = diagnostic.range;
-		const fix = new vscode.CodeAction(
+		const fix = CodeAction.create(
 			`Rename variable to match conventions`,
-			vscode.CodeActionKind.QuickFix
+			CodeActionKind.QuickFix
 		);
-		fix.edit = new vscode.WorkspaceEdit();
-
-		// Here, you would calculate the new name based on your conventions
-		// For demonstration, let's just append 'Corrected' to the existing name
-		const varName = document.getText(range);
-		const correctedName = `${varName}Corrected`;
-
-		fix.edit.replace(document.uri, range, correctedName);
+		// fix.edit = new WorkspaceEdit();
+		// const varName = document.getText(range);
+		// const correctedName = `${varName}Corrected`;
+		// fix.edit.replace(document.uri, range, correctedName);
 
 		return fix;
 	}
 
 	public async provideDiagnostics(
-		document: vscode.TextDocument
-	): Promise<void> {
+		document: TextDocument
+	): Promise<Diagnostic[] | undefined> {
 		if (!this.isEnabled) return;
 
 		this.diagnostics.delete(document.uri);
-		const diagnostics: vscode.Diagnostic[] = [];
+		const diagnostics: Diagnostic[] = [];
 		// TODO: add logic for checking new code only
 		const text = document.getText();
 		const parserFilePath = this.getParserFilePath(text);
@@ -97,8 +93,8 @@ export class PythonProvider extends LanguageProvider {
 
 	private async validateAndCreateDiagnostics(
 		symbols: any[],
-		document: vscode.TextDocument,
-		diagnostics: vscode.Diagnostic[]
+		document: TextDocument,
+		diagnostics: Diagnostic[]
 	): Promise<void> {
 		for (const symbol of symbols) {
 			const { type, name, line, col_offset, end_col_offset, value } = symbol;
@@ -150,16 +146,17 @@ export class PythonProvider extends LanguageProvider {
 			}
 
 			if (result && result.violates) {
-				const start = new vscode.Position(line, col_offset);
-				const end = new vscode.Position(line, end_col_offset);
-				const range = new vscode.Range(start, end);
-				diagnostics.push(
-					new vscode.Diagnostic(
-						range,
-						result.reason,
-						vscode.DiagnosticSeverity.Warning
-					)
+				const start = Position.create(line, col_offset);
+				const end = Position.create(line, end_col_offset);
+				const range = Range.create(start, end);
+				const diagnostic: Diagnostic = Diagnostic.create(
+					range,
+					result.reason,
+					DiagnosticSeverity.Warning,
+					"namingConventionViolation",
+					"whenInRome"
 				);
+				diagnostics.push(diagnostic);
 			}
 		}
 	}

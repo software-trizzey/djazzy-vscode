@@ -17,11 +17,18 @@ import {
 } from "vscode-languageserver/node";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
+
+import {
+	LanguageProvider,
+	JavascriptAndTypescriptProvider,
+	PythonProvider,
+} from "./providers";
 import { ExtensionSettings, defaultSettings } from "./settings";
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection = createConnection(ProposedFeatures.all);
+const providerCache: Record<string, LanguageProvider> = {};
 
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 
@@ -56,12 +63,12 @@ connection.onInitialize((params: InitializeParams) => {
 				interFileDependencies: false,
 				workspaceDiagnostics: false,
 			},
-			codeActionProvider: {
-				codeActionKinds: [CodeActionKind.QuickFix],
-			},
-			renameProvider: {
-				prepareProvider: true,
-			},
+			// codeActionProvider: {
+			// 	codeActionKinds: [CodeActionKind.QuickFix],
+			// },
+			// renameProvider: {
+			// 	prepareProvider: true,
+			// },
 		},
 	};
 	if (hasWorkspaceFolderCapability) {
@@ -148,58 +155,55 @@ documents.onDidChangeContent((change) => {
 	validateTextDocument(change.document);
 });
 
+function createLanguageProvider(
+	languageId: string,
+	settings: ExtensionSettings
+): LanguageProvider {
+	let provider: LanguageProvider | undefined;
+
+	switch (languageId) {
+		case "javascript":
+		case "typescript":
+			provider = new JavascriptAndTypescriptProvider(
+				languageId,
+				connection,
+				settings
+			);
+			break;
+		// case "javascriptreact":
+		// case "typescriptreact":
+		// 	provider = new ReactProvider(languageId);
+		// 	break;
+		case "python":
+			provider = new PythonProvider(languageId, connection, settings);
+			break;
+		default:
+			provider = undefined;
+			break;
+	}
+	if (!provider) throw new Error(`Unsupported language: ${languageId}`);
+	return provider;
+}
+
+function getOrCreateProvider(
+	languageId: string,
+	settings: ExtensionSettings
+): LanguageProvider {
+	if (!providerCache[languageId]) {
+		providerCache[languageId] = createLanguageProvider(languageId, settings);
+	}
+	return providerCache[languageId];
+}
+
 async function validateTextDocument(
 	textDocument: TextDocument
 ): Promise<Diagnostic[]> {
 	const settings = await getDocumentSettings(textDocument.uri);
 	const languageId = textDocument.languageId;
-
-	if (languageId === "javascript") {
-		console.log("Validating JavaScript");
-	} else if (languageId === "typescript") {
-		console.log("Validating TypeScript");
-	} else if (languageId === "python") {
-		console.log("Validating Python");
-	}
-
-	// The validator creates diagnostics for all uppercase words length 2 and more
-	const text = textDocument.getText();
-	const pattern = /\b[A-Z]{2,}\b/g;
-	let m: RegExpExecArray | null;
-
-	let problems = 0;
-	const diagnostics: Diagnostic[] = [];
-	while ((m = pattern.exec(text)) && problems < settings.maxNumberOfProblems) {
-		problems++;
-		const diagnostic: Diagnostic = {
-			severity: DiagnosticSeverity.Warning,
-			range: {
-				start: textDocument.positionAt(m.index),
-				end: textDocument.positionAt(m.index + m[0].length),
-			},
-			message: `${m[0]} is all uppercase.`,
-			source: "ex",
-		};
-		if (hasDiagnosticRelatedInformationCapability) {
-			diagnostic.relatedInformation = [
-				{
-					location: {
-						uri: textDocument.uri,
-						range: Object.assign({}, diagnostic.range),
-					},
-					message: "Spelling matters",
-				},
-				{
-					location: {
-						uri: textDocument.uri,
-						range: Object.assign({}, diagnostic.range),
-					},
-					message: "Particularly for names",
-				},
-			];
-		}
-		diagnostics.push(diagnostic);
-	}
+	const provider = getOrCreateProvider(languageId, settings);
+	const diagnostics = await provider.provideDiagnostics(textDocument);
+	console.log("Diagnostic", diagnostics);
+	if (!diagnostics) return [];
 	return diagnostics;
 }
 

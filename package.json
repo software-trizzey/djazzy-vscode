@@ -44,7 +44,7 @@
 					"default": "on",
 					"description": "Traces the communication between VS Code and the language server."
 				},
-				"whenInRome.isDevMode": {
+				"whenInRome.devMode": {
 					"type": "boolean",
 					"default": false,
 					"description": "Enable/disable development mode."
@@ -54,17 +54,17 @@
 					"default": false,
 					"description": "Enable/disable mock fetch suggested name."
 				},
-				"whenInRome.javascriptEnabled": {
+				"whenInRome.isJavascriptEnabled": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enable/disable JavaScript When in Rome extension."
 				},
-				"whenInRome.typescriptEnabled": {
+				"whenInRome.isTypescriptEnabled": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enable/disable TypeScript When in Rome extension."
 				},
-				"whenInRome.pythonEnabled": {
+				"whenInRome.isPythonEnabled": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enable/disable Python When in Rome extension."

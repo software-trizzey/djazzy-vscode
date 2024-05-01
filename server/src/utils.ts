@@ -1,4 +1,4 @@
-import { commands, Uri } from "vscode";
+import { Connection } from "vscode-languageserver/node";
 
 import { actionWordsDictionary, commonWords } from "./data";
 
@@ -207,13 +207,14 @@ export async function maxMatch(name: string): Promise<string[]> {
 }
 
 export async function getChangedLinesFromClient(
+	connection: Connection,
 	filePath: string
 ): Promise<Set<number>> {
 	try {
-		const uri = Uri.file(filePath);
-		const changedLines: Set<number> = await commands.executeCommand(
+		const uri = filePath;
+		const changedLines: Set<number> = await connection.sendRequest(
 			"extension.getGitDiff",
-			uri.toString()
+			[uri]
 		);
 		return changedLines;
 	} catch (error) {

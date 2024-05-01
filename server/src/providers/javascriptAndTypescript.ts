@@ -118,7 +118,10 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		const diagnostics: Diagnostic[] = [];
 		const diagnosticPromises: Promise<void>[] = [];
 		try {
-			const changedLines = await getChangedLinesFromClient(document.uri);
+			const changedLines = await getChangedLinesFromClient(
+				this.connection,
+				document.uri
+			);
 			if (changedLines && changedLines.size === 0 && this.onlyCheckNewCode) {
 				return;
 			}

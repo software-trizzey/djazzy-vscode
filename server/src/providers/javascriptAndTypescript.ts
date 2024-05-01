@@ -58,7 +58,6 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		const namingConventionDiagnostics = diagnostics.filter(
 			(diagnostic) => diagnostic.code === "namingConventionViolation"
 		);
-		console.log("Naming convention diagnostics", namingConventionDiagnostics);
 		const actionPromises = namingConventionDiagnostics.map((diagnostic) =>
 			this.generateFixForNamingConventionViolation(document, diagnostic)
 		);

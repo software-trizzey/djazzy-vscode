@@ -81,7 +81,7 @@ connection.onInitialize((params: InitializeParams) => {
 				prepareProvider: true,
 			},
 			executeCommandProvider: {
-				commands: [],
+				commands: [FIX_NAME],
 			},
 		},
 	};

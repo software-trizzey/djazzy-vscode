@@ -81,7 +81,8 @@ export async function activate(context: vscode.ExtensionContext) {
 		const currentTime = new Date().getTime();
 		if (currentTime - lastNotified > getNotificationInterval()) {
 			vscode.window.showWarningMessage(
-				`Please ensure you have corresponding tests for changes in ${uri.fsPath}`
+				`Ensure you create tests for changes in ${uri.fsPath}`,
+				"Ok"
 			);
 			updateLastNotifiedTime(uri, currentTime);
 		}

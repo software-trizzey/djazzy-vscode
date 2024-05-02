@@ -34,6 +34,8 @@ import {
 	PythonProvider,
 } from "./providers";
 import { ExtensionSettings, defaultSettings } from "./settings";
+import { debounce } from "./utils";
+
 import { FIX_NAME } from "./constants/commands";
 
 // Create a connection for the server, using Node's IPC as a transport.
@@ -164,7 +166,8 @@ connection.languages.diagnostics.on(async (params) => {
 });
 
 documents.onDidChangeContent((change) => {
-	validateTextDocument(change.document);
+	console.log("onDidChangeContent", change.document.uri);
+	debouncedValidateTextDocument(change.document);
 });
 
 function createLanguageProvider(
@@ -214,6 +217,15 @@ async function validateTextDocument(
 	return diagnostics;
 }
 
+const debouncedValidateTextDocument = debounce(async (document) => {
+	const settings = await getDocumentSettings(document.uri);
+	const provider = getOrCreateProvider(document.languageId, settings);
+	const diagnostics = await provider.provideDiagnostics(document);
+	if (!diagnostics) return;
+	console.log("Debounced diagnostics", diagnostics);
+	connection.sendDiagnostics({ uri: document.uri, diagnostics });
+}, 500);
+
 connection.onDidChangeWatchedFiles((params: DidChangeWatchedFilesParams) => {
 	params.changes.forEach((change) => {
 		console.log(`${change.uri} has changed: ${change.type}`);
@@ -237,7 +249,6 @@ connection.onCodeAction(async (params) => {
 
 connection.onCompletion(
 	(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
-		console.log("onCompletion", _textDocumentPosition);
 		// The pass parameter contains the position of the text document in
 		// which code complete got requested. For the example we ignore this
 		// info and always provide the same completion items.

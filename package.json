@@ -6,6 +6,7 @@
 	"license": "UNLICENSED",
 	"version": "0.0.1",
 	"publisher": "alchemized",
+	"pricing": "Trial",
 	"categories": [
 		"Linters",
 		"Other"

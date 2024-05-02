@@ -101,11 +101,20 @@ export abstract class LanguageProvider {
 				}
 			});
 		} else {
-			this.connection.console.error(`Error: ${error.toString()}`);
-			this.connection.sendNotification(ShowMessageNotification.type, {
-				type: MessageType.Error,
-				message: error.toString(),
-			});
+			console.log("Error: ", error);
+			// if (error.name === "SyntaxError") {
+			// 	// FIXME: ignore babel parsing errors for now
+			// 	if (
+			// 		!error.message.includes("Unexpected token") ||
+			// 		!error.message.includes("Unexpected reserved word")
+			// 	) {
+			// 		this.connection.console.error(`Error: ${error.toString()}`);
+			// 		this.connection.sendNotification(ShowMessageNotification.type, {
+			// 			type: MessageType.Error,
+			// 			message: error.toString(),
+			// 		});
+			// 	}
+			// }
 		}
 	}
 

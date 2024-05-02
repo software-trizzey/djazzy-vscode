@@ -27,6 +27,11 @@
 			"type": "object",
 			"title": "When In Rome Configuration",
 			"properties": {
+				"whenInRome.notificationInterval": {
+					"type": "number",
+					"default": 3600000,
+					"description": "Interval in milliseconds to control the frequency of test reminder notifications for modified files."
+				},
 				"whenInRome.maxNumberOfProblems": {
 					"scope": "resource",
 					"type": "number",

@@ -1,6 +1,6 @@
 import * as path from "path";
 import { exec } from "child_process";
-import { workspace, window, ExtensionContext } from "vscode";
+import * as vscode from "vscode";
 
 import {
 	LanguageClient,
@@ -11,8 +11,7 @@ import {
 
 let client: LanguageClient;
 
-export function activate(context: ExtensionContext) {
-	// The server is implemented in node
+export async function activate(context: vscode.ExtensionContext) {
 	const serverModule = context.asAbsolutePath(
 		path.join("server", "out", "server.js")
 	);
@@ -27,6 +26,20 @@ export function activate(context: ExtensionContext) {
 		},
 	};
 
+	const apiFolders = await vscode.workspace.findFiles(
+		"**/{api,views}/*",
+		"**/node_modules/**"
+	);
+	const apiFolderWatchers = apiFolders.map((uri) => {
+		const watcher = vscode.workspace.createFileSystemWatcher(
+			new vscode.RelativePattern(uri, "**/*")
+		);
+		watcher.onDidChange(checkAndNotify);
+		watcher.onDidCreate(checkAndNotify);
+		context.subscriptions.push(watcher);
+		return watcher;
+	});
+
 	const clientOptions: LanguageClientOptions = {
 		documentSelector: [
 			{ scheme: "file", language: "javascript" },
@@ -34,7 +47,7 @@ export function activate(context: ExtensionContext) {
 			{ scheme: "file", language: "python" },
 		],
 		synchronize: {
-			fileEvents: workspace.createFileSystemWatcher("**/.clientrc"),
+			fileEvents: apiFolderWatchers,
 		},
 		middleware: {
 			executeCommand: async (command, args, next) => {
@@ -61,6 +74,18 @@ export function activate(context: ExtensionContext) {
 		clientOptions
 	);
 	client.start();
+
+	function checkAndNotify(uri: vscode.Uri) {
+		// Throttle notifications
+		const lastNotified = getLastNotifiedTime(uri);
+		const currentTime = new Date().getTime();
+		if (currentTime - lastNotified > getNotificationInterval()) {
+			vscode.window.showWarningMessage(
+				`Please ensure you have corresponding tests for changes in ${uri.fsPath}`
+			);
+			updateLastNotifiedTime(uri, currentTime);
+		}
+	}
 }
 
 export function deactivate(): Thenable<void> | undefined {
@@ -70,11 +95,12 @@ export function deactivate(): Thenable<void> | undefined {
 	return client.stop();
 }
 
+/** Git utils */
 export function getChangedLines(filePath: string): Promise<Set<number>> | null {
 	return new Promise((resolve, reject) => {
 		exec(
 			`git diff HEAD -U0 -- ${filePath}`,
-			{ cwd: workspace.rootPath },
+			{ cwd: vscode.workspace.rootPath },
 			(error: any, stdout: any, stderr: any) => {
 				if (error) {
 					console.error("Error getting git diff:", stderr);
@@ -89,7 +115,7 @@ export function getChangedLines(filePath: string): Promise<Set<number>> | null {
 }
 
 export function createGitRepository() {
-	const terminal = window.createTerminal({
+	const terminal = vscode.window.createTerminal({
 		name: "Initialize Git Repository",
 	});
 	terminal.show();
@@ -121,3 +147,22 @@ function parseDiff(diffOutput: string): Set<number> {
 
 	return changedLines;
 }
+
+/** Notification Management utils */
+const notificationTimes = new Map();
+const ONE_HOUR = 3600000; // 1 hour in milliseconds
+
+function getLastNotifiedTime(uri: vscode.Uri): number {
+	return notificationTimes.get(uri.toString()) || 0;
+}
+
+function updateLastNotifiedTime(uri: vscode.Uri, time: number) {
+	notificationTimes.set(uri.toString(), time);
+}
+
+function getNotificationInterval(): number {
+	return vscode.workspace
+		.getConfiguration("whenInRome")
+		.get("notificationInterval", ONE_HOUR);
+}
+

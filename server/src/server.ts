@@ -13,10 +13,10 @@ import {
 	ProposedFeatures,
 	InitializeParams,
 	DidChangeConfigurationNotification,
+	DidChangeWatchedFilesParams,
 	CodeActionKind,
 	CompletionItem,
 	CompletionItemKind,
-	Position,
 	TextEdit,
 	TextDocumentPositionParams,
 	TextDocumentSyncKind,
@@ -108,9 +108,7 @@ connection.onInitialized(() => {
 		});
 	}
 });
-// The global settings, used when the `workspace/configuration` request is not supported by the client.
-// Please note that this is not the case when using this server with the client provided in this example
-// but could happen with other clients.
+
 let globalSettings: ExtensionSettings = defaultSettings;
 
 const documentSettings: Map<string, Thenable<ExtensionSettings>> = new Map();
@@ -124,8 +122,8 @@ connection.onDidChangeConfiguration((change) => {
 		);
 	}
 	// Refresh the diagnostics since the `maxNumberOfProblems` could have changed.
-	// We could optimize things here and re-fetch the setting first can compare it
-	// to the existing setting, but this is out of scope for this example.
+	// TODO: We could optimize things here and re-fetch the setting first and compare it
+	// to the existing setting
 	connection.languages.diagnostics.refresh();
 });
 
@@ -216,8 +214,15 @@ async function validateTextDocument(
 	return diagnostics;
 }
 
-connection.onDidChangeWatchedFiles((_change) => {
-	connection.console.log("We received a file change event");
+connection.onDidChangeWatchedFiles((params: DidChangeWatchedFilesParams) => {
+	params.changes.forEach((change) => {
+		console.log(`${change.uri} has changed: ${change.type}`);
+
+		if (change.uri.includes("/api/") || change.uri.includes("/views/")) {
+			// TODO: ensure files have corresponding tests
+			console.log("Checking for tests");
+		}
+	});
 });
 
 connection.onCodeAction(async (params) => {

@@ -81,6 +81,7 @@ export class PythonProvider extends LanguageProvider {
 		// TODO: add logic for checking new code only
 		const text = document.getText();
 		const parserFilePath = this.getParserFilePath(text);
+		console.log("Parser file path:", parserFilePath);
 		const process = exec(
 			`python3 ${parserFilePath}`,
 			async (error, stdout, stderr) => {
@@ -185,11 +186,13 @@ export class PythonProvider extends LanguageProvider {
 			parserFilePath = path.join(
 				__dirname,
 				"..",
+				"..",
 				"./bundled/tools/python/django_parser.py"
 			);
 		} else {
 			parserFilePath = path.join(
 				__dirname,
+				"..",
 				"..",
 				"./bundled/tools/python/ast_parser.py"
 			);

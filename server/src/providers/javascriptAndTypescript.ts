@@ -261,7 +261,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		const variableName = declaration.id.name;
 		let variableValue = null;
 
-		if (declaration.init.type === "BooleanLiteral") {
+		if (declaration.init?.type === "BooleanLiteral") {
 			variableValue = declaration.init.value;
 		}
 

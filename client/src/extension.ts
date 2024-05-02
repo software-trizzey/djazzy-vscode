@@ -152,7 +152,7 @@ function parseDiff(diffOutput: string): Set<number> {
 
 /** Notification Management utils */
 const notificationTimes = new Map();
-const ONE_HOUR = 3600000; // 1 hour in milliseconds
+const TWENTY_MINUTES = 1200000; // 20min in milliseconds
 
 function getLastNotifiedTime(uri: vscode.Uri): number {
 	return notificationTimes.get(uri.toString()) || 0;
@@ -165,6 +165,6 @@ function updateLastNotifiedTime(uri: vscode.Uri, time: number) {
 function getNotificationInterval(): number {
 	return vscode.workspace
 		.getConfiguration("whenInRome")
-		.get("notificationInterval", ONE_HOUR);
+		.get("notificationInterval", TWENTY_MINUTES);
 }
 

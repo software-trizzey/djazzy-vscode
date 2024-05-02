@@ -29,7 +29,7 @@
 			"properties": {
 				"whenInRome.notificationInterval": {
 					"type": "number",
-					"default": 3600000,
+					"default": 1200000,
 					"description": "Interval in milliseconds to control the frequency of test reminder notifications for modified files."
 				},
 				"whenInRome.maxNumberOfProblems": {

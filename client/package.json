@@ -1,14 +1,10 @@
 {
-	"name": "lsp-sample-client",
-	"description": "VSCode part of a language server",
-	"author": "Microsoft Corporation",
-	"license": "MIT",
+	"name": "when-in-rome-client",
+	"description": "VS Code Client for WhenInRome Language Server",
+	"author": "Tristan Deane",
+	"license": "UNLICENSED",
 	"version": "0.0.1",
-	"publisher": "vscode",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/Microsoft/vscode-extension-samples"
-	},
+	"publisher": "alchemized-software",
 	"engines": {
 		"vscode": "^1.75.0"
 	},

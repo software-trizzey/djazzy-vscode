@@ -153,6 +153,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 			const ast = babelParser.parse(text, {
 				sourceType: "module",
 				plugins: pluginOptions,
+				errorRecovery: true,
 			});
 			traverse(ast, {
 				VariableDeclaration: ({ node }) => {

@@ -5,3 +5,9 @@ node_modules
 *.vsix
 .env
 .env.local
+
+# ignore common python files
+*.pyc
+*.pyo
+*.pyd
+__pycache__/

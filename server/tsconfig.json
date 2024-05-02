@@ -10,6 +10,5 @@
 		"outDir": "out",
 		"rootDir": "src"
 	},
-	"include": ["src", "../client/src/utils.ts"],
 	"exclude": ["node_modules", ".vscode-test", "webpack.config.js"]
 }

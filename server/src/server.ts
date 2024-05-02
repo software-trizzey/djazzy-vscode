@@ -262,7 +262,7 @@ connection.onCompletionResolve((item: CompletionItem): CompletionItem => {
 	return item;
 });
 
-connection.onExecuteCommand(async (params) => {
+connection.onExecuteCommand((params) => {
 	if (params.command !== FIX_NAME || params.arguments === undefined) {
 		return;
 	}

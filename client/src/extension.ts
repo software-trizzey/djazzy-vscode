@@ -82,7 +82,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		if (currentTime - lastNotified > getNotificationInterval()) {
 			const relativePath = vscode.workspace.asRelativePath(uri);
 			vscode.window.showWarningMessage(
-				`Ensure you create tests for changes in ${relativePath}`,
+				`Ensure you've tested the changes in ${relativePath}`,
 				"Ok"
 			);
 			updateLastNotifiedTime(uri, currentTime);

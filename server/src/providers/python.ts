@@ -185,11 +185,13 @@ export class PythonProvider extends LanguageProvider {
 			parserFilePath = path.join(
 				__dirname,
 				"..",
+				"..",
 				"./bundled/tools/python/django_parser.py"
 			);
 		} else {
 			parserFilePath = path.join(
 				__dirname,
+				"..",
 				"..",
 				"./bundled/tools/python/ast_parser.py"
 			);

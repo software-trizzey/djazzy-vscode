@@ -1,3 +1,32 @@
+# General ignores
+**/.git/**
+**/.svn/**
+**/.hg/**
+**/.DS_Store
+**/Thumbs.db
+
+# Node modules and dependencies
+client/node_modules/**
+server/node_modules/**
+**/node_modules/**
+
+# Development-specific files
+**/*.map
+**/*.ts
+**/tsconfig.json
+**/webpack.config.js
+**/*.test.*
+**/*.spec.*
+**/tests/**
+.env.example
+client/testFixture/**
+
+# Documentation and miscellaneous
+**/*.md
+**/LICENSE
+**/CHANGELOG
+
+
 .vscode/**
 **/*.ts
 **/*.map
@@ -5,11 +34,3 @@
 **/tsconfig.json
 **/tsconfig.base.json
 contributing.md
-.travis.yml
-client/node_modules/**
-!client/node_modules/vscode-jsonrpc/**
-!client/node_modules/vscode-languageclient/**
-!client/node_modules/vscode-languageserver-protocol/**
-!client/node_modules/vscode-languageserver-types/**
-!client/node_modules/{minimatch,brace-expansion,concat-map,balanced-match}/**
-!client/node_modules/{semver,lru-cache,yallist}/**

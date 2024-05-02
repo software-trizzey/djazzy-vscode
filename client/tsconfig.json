@@ -8,5 +8,5 @@
 		"sourceMap": true
 	},
 	"include": ["src", "src/utils.ts"],
-	"exclude": ["node_modules", ".vscode-test"]
+	"exclude": ["node_modules", ".vscode-test", "webpack.config.js"]
 }

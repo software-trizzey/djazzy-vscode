@@ -5,7 +5,7 @@
 	"author": "Tristan Deane",
 	"license": "UNLICENSED",
 	"version": "0.0.1",
-	"publisher": "alchemized-software",
+	"publisher": "alchemized",
 	"categories": [
 		"Linters",
 		"Other"
@@ -85,6 +85,10 @@
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -b",
+		"client:build": "cd client && npm run build && cd ..",
+		"server:build": "cd server && npm run build && cd ..",
+		"build": "npm run client:build && npm run server:build",
+		"publish": "npm run build && vsce publish",
 		"watch": "tsc -b -w",
 		"lint": "eslint ./client/src ./server/src --ext .ts,.tsx",
 		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",

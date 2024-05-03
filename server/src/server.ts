@@ -160,7 +160,6 @@ connection.languages.diagnostics.on(async (params) => {
 		} satisfies DocumentDiagnosticReport;
 	}
 	const diagnostics = await validateTextDocument(document);
-	console.log("Sending full diagnostics to client", diagnostics);
 	return {
 		kind: DocumentDiagnosticReportKind.Full,
 		items: diagnostics,
@@ -212,10 +211,10 @@ async function validateTextDocument(
 ): Promise<Diagnostic[]> {
 	const languageId = textDocument.languageId;
 
+	// TODO: we can optimize this later by using cached settings
 	const settings = await getDocumentSettings(textDocument.uri);
 	const provider = getOrCreateProvider(languageId, settings);
 	let diagnostics = await provider.getDiagnostic(textDocument.uri);
-	console.log("Document version", textDocument.version);
 
 	if (!diagnostics || provider.isDiagnosticsOutdated(textDocument)) {
 		diagnostics = await provider.provideDiagnostics(textDocument);
@@ -225,8 +224,7 @@ async function validateTextDocument(
 }
 
 const debouncedValidateTextDocument = debounce(async (document) => {
-	const diagnostics = await validateTextDocument(document);
-	console.log("Debounced diagnostics", diagnostics);
+	return await validateTextDocument(document);
 }, 1000);
 
 connection.onDidChangeWatchedFiles((params: DidChangeWatchedFilesParams) => {

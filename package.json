@@ -90,6 +90,7 @@
 		"client:build": "cd client && npm run build && cd ..",
 		"server:build": "cd server && npm run build && cd ..",
 		"build": "npm run client:build && npm run server:build",
+		"package": "npm run build && vsce package",
 		"publish": "npm run build && vsce publish",
 		"watch": "tsc -b -w",
 		"lint": "eslint ./client/src ./server/src --ext .ts,.tsx",

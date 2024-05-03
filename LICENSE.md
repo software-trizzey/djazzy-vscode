@@ -1,0 +1,1 @@
+This is a closed-source project and All rights are reserved.

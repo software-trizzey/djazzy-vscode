@@ -6,6 +6,7 @@
 	"license": "UNLICENSED",
 	"version": "0.0.1",
 	"publisher": "alchemized",
+	"repository": "https://github.com/software-trizzey/when-in-rome-lsp",
 	"pricing": "Trial",
 	"categories": [
 		"Linters",

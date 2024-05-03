@@ -23,7 +23,6 @@ client/testFixture/**
 
 # Documentation and miscellaneous
 **/*.md
-**/LICENSE
 **/CHANGELOG
 
 

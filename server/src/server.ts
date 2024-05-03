@@ -215,7 +215,7 @@ async function validateTextDocument(
 	const settings = await getDocumentSettings(textDocument.uri);
 	const provider = getOrCreateProvider(languageId, settings);
 	let diagnostics = await provider.getDiagnostic(textDocument.uri);
-	console.log("version", textDocument.version);
+	console.log("Document version", textDocument.version);
 
 	if (!diagnostics || provider.isDiagnosticsOutdated(textDocument)) {
 		diagnostics = await provider.provideDiagnostics(textDocument);
@@ -227,7 +227,6 @@ async function validateTextDocument(
 const debouncedValidateTextDocument = debounce(async (document) => {
 	const diagnostics = await validateTextDocument(document);
 	console.log("Debounced diagnostics", diagnostics);
-	connection.sendDiagnostics({ uri: document.uri, diagnostics });
 }, 1000);
 
 connection.onDidChangeWatchedFiles((params: DidChangeWatchedFilesParams) => {

@@ -77,6 +77,7 @@ export class PythonProvider extends LanguageProvider {
 		// TODO: add logic for checking new code only
 		const text = document.getText();
 		const parserFilePath = this.getParserFilePath(text);
+		console.log("Parser file path:", parserFilePath);
 
 		return new Promise((resolve, reject) => {
 			const process = spawn("python3", [parserFilePath]);

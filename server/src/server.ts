@@ -28,6 +28,7 @@ import {
 
 import { TextDocument } from "vscode-languageserver-textdocument";
 
+import { rollbar } from "./common/logs";
 import {
 	LanguageProvider,
 	JavascriptAndTypescriptProvider,
@@ -49,8 +50,13 @@ let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
 let hasDiagnosticRelatedInformationCapability = false;
 
+// FIXME: hide access token
+
 connection.onInitialize((params: InitializeParams) => {
 	const capabilities = params.capabilities;
+
+	// record a generic message and send it to Rollbar
+	rollbar.log("Hello world!");
 
 	// Does the client support the `workspace/configuration` request?
 	// If not, we fall back using global settings.

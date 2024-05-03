@@ -8,6 +8,8 @@ import {
 
 import { TextDocument } from "vscode-languageserver-textdocument";
 
+import { rollbar } from "../common/logs";
+
 import { groqModel } from "../llm/groq";
 import { openAIModel } from "../llm/openai";
 
@@ -135,20 +137,10 @@ export abstract class LanguageProvider {
 				}
 			});
 		} else {
-			console.log("Error: ", error);
-			// if (error.name === "SyntaxError") {
-			// 	// FIXME: ignore babel parsing errors for now
-			// 	if (
-			// 		!error.message.includes("Unexpected token") ||
-			// 		!error.message.includes("Unexpected reserved word")
-			// 	) {
-			// 		this.connection.console.error(`Error: ${error.toString()}`);
-			// 		this.connection.sendNotification(ShowMessageNotification.type, {
-			// 			type: MessageType.Error,
-			// 			message: error.toString(),
-			// 		});
-			// 	}
-			// }
+			if (!this.isDevMode) {
+				rollbar.error(error);
+			}
+			console.error(error);
 		}
 	}
 

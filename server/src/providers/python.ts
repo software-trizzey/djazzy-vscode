@@ -9,7 +9,7 @@ import {
 } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
-import { exec } from "child_process";
+import { spawn } from "child_process";
 import * as path from "path";
 
 import { LanguageProvider } from "./base";
@@ -38,7 +38,6 @@ export class PythonProvider extends LanguageProvider {
 	}
 
 	async provideCodeActions(document: TextDocument): Promise<CodeAction[]> {
-		console.log("Providing code actions for", document.uri);
 		const diagnostics = document.uri ? this.getDiagnostic(document.uri) : [];
 		if (!diagnostics) return [];
 		const namingConventionDiagnostics = diagnostics.filter(
@@ -73,38 +72,51 @@ export class PythonProvider extends LanguageProvider {
 	): Promise<Diagnostic[]> {
 		if (!this.isEnabled) return [];
 
-		this.diagnostics.delete(document.uri);
+		this.deleteDiagnostic(document.uri);
 		const diagnostics: Diagnostic[] = [];
 		// TODO: add logic for checking new code only
 		const text = document.getText();
 		const parserFilePath = this.getParserFilePath(text);
-		console.log("Parser file path:", parserFilePath);
-		const process = exec(
-			`python3 ${parserFilePath}`,
-			async (error, stdout, stderr) => {
-				if (error) {
-					console.error(`exec error: ${error}`);
-					return diagnostics;
+
+		return new Promise((resolve, reject) => {
+			const process = spawn("python3", [parserFilePath]);
+			let output = "";
+			let error = "";
+
+			process.stdout.on("data", (data) => {
+				output += data.toString();
+			});
+			process.stderr.on("data", (data) => {
+				error += data.toString();
+			});
+
+			process.on("close", async (code) => {
+				if (code !== 0) {
+					console.error(`Process exited with code ${code}, stderr: ${error}`);
+					return;
 				}
-				if (stderr) {
-					console.error(`stderr: ${stderr}`);
-					return diagnostics;
+
+				try {
+					const symbols = JSON.parse(output);
+					console.log("Symbols:", symbols);
+					await this.validateAndCreateDiagnostics(
+						symbols,
+						document,
+						diagnostics
+					);
+
+					resolve(diagnostics);
+				} catch (err) {
+					console.error("Failed to parse JSON output:", err);
+					reject(err);
 				}
-				const symbols = JSON.parse(stdout);
-				console.log("Symbols:", symbols);
-				await this.validateAndCreateDiagnostics(symbols, document, diagnostics);
-				return diagnostics;
+			});
+
+			if (process.stdin) {
+				process.stdin.write(text);
+				process.stdin.end();
 			}
-		);
-
-		if (!process.stdin) {
-			console.error("Failed to open stdin");
-			return diagnostics;
-		}
-
-		process.stdin.write(text);
-		process.stdin.end();
-		return diagnostics;
+		});
 	}
 
 	private async validateAndCreateDiagnostics(
@@ -139,7 +151,7 @@ export class PythonProvider extends LanguageProvider {
 						result = await this.validateFunctionName(name);
 					}
 					break;
-				case "django_field":
+				case "django_model_field":
 					result = this.validateVariableName({
 						variableName: name,
 						variableValue: this.extractDjangoFieldValue(value),

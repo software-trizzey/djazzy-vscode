@@ -264,7 +264,6 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		const conventionCheckResult = this.validateVariableName({
 			variableName,
 			variableValue,
-			languageId: this.languageId,
 		});
 
 		if (conventionCheckResult.violates) {

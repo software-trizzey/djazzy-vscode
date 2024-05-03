@@ -4,7 +4,6 @@ import {
 	CodeAction,
 	CodeActionKind,
 	MessageType,
-	ShowMessageNotification,
 } from "vscode-languageserver/node";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
@@ -15,7 +14,6 @@ import { openAIModel } from "../llm/openai";
 import defaultConventions from "../defaultConventions";
 import { systemMessageWithJsonResponse } from "../constants/chat";
 import {
-	validateVariableNameCase,
 	isLikelyBoolean,
 	hasBooleanPrefix,
 	hasNegativePattern,
@@ -157,11 +155,9 @@ export abstract class LanguageProvider {
 	protected validateVariableName({
 		variableName,
 		variableValue,
-		languageId,
 	}: {
 		variableName: string;
 		variableValue: any;
-		languageId: string;
 	}): { violates: boolean; reason: string } {
 		if (!variableName) {
 			console.warn("No variable name found.");
@@ -186,13 +182,14 @@ export abstract class LanguageProvider {
 			}
 		}
 
-		if (!validateVariableNameCase(variableName, languageId)) {
-			const namingStyle = languageId === "python" ? "snake_case" : "camelCase";
-			return {
-				violates: true,
-				reason: `"${variableName}" does not follow "${namingStyle}" naming convention.`,
-			};
-		}
+		// FIXME: disabled for now as we can use linting tools for this later if needed
+		// if (!validateVariableNameCase(variableName, languageId)) {
+		// 	const namingStyle = languageId === "python" ? "snake_case" : "camelCase";
+		// 	return {
+		// 		violates: true,
+		// 		reason: `"${variableName}" does not follow "${namingStyle}" naming convention.`,
+		// 	};
+		// }
 		const isExplicitBoolean = /True|False/i.test(variableValue);
 		if (
 			booleanConventions &&

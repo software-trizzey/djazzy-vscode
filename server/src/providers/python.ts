@@ -124,7 +124,6 @@ export class PythonProvider extends LanguageProvider {
 					result = this.validateVariableName({
 						variableName: name,
 						variableValue: value,
-						languageId: this.languageId,
 					});
 					break;
 				case "class":
@@ -144,7 +143,6 @@ export class PythonProvider extends LanguageProvider {
 					result = this.validateVariableName({
 						variableName: name,
 						variableValue: this.extractDjangoFieldValue(value),
-						languageId: this.languageId,
 					});
 					break;
 				case "django_serializer_field":

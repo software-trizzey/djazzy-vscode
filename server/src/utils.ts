@@ -131,7 +131,11 @@ export async function validateJavaScriptAndTypeScriptFunctionNameCase(
 			violates: true,
 			reason: `Function "${functionName}" must contain at least two words, e.g., 'getWeather'.`,
 		};
-	} else if (words.length >= 1) {
+	}
+
+	/**
+	 * FIXME: deactivate camelCase validation for now. We can use eslint for this
+	 * else if (words.length >= 1) {
 		for (let i = 0; i < words.length; i++) {
 			if (!/^[A-Z]/.test(words[i])) {
 				return {
@@ -141,6 +145,9 @@ export async function validateJavaScriptAndTypeScriptFunctionNameCase(
 			}
 		}
 	}
+	 * 
+	 */
+
 	return { violates: false, reason: "" };
 }
 
@@ -176,7 +183,11 @@ export async function validatePythonFunctionName(
 			violates: true,
 			reason: `Function "${functionName}" must contain at least two words, e.g., 'get_snacks'.`,
 		};
-	} else if (words.length >= 1) {
+	}
+
+	/**
+	 * FIXME: deactivate snake_case validation for now. We can use pylint or ruff for this
+	 * else if (words.length >= 1) {
 		for (let i = 0; i < words.length; i++) {
 			if (!/^[a-z_][a-z0-9_]*$/.test(words[i])) {
 				return {
@@ -186,6 +197,9 @@ export async function validatePythonFunctionName(
 			}
 		}
 	}
+	 * 
+	 */
+
 	return { violates: false, reason: "" };
 }
 

@@ -39,15 +39,12 @@ export class PythonProvider extends LanguageProvider {
 
 	async provideCodeActions(document: TextDocument): Promise<CodeAction[]> {
 		console.log("Providing code actions for", document.uri);
-		const diagnostics = document.uri ? this.diagnostics.get(document.uri) : [];
-		console.log("Diagnostics", diagnostics);
+		const diagnostics = document.uri ? this.getDiagnostic(document.uri) : [];
 		if (!diagnostics) return [];
 		const namingConventionDiagnostics = diagnostics.filter(
 			(diagnostic) => diagnostic.code === "namingConventionViolation"
 		);
-		console.log("Naming convention diagnostics", namingConventionDiagnostics);
 		// TODO: Implement code actions for Python
-		console.log("PYTHON CODE ACTIONS");
 		// const actionPromises = namingConventionDiagnostics.map((diagnostic) =>
 		// 	this.generateFixForNamingConventionViolation(document, diagnostic)
 		// );
@@ -73,8 +70,8 @@ export class PythonProvider extends LanguageProvider {
 
 	public async provideDiagnostics(
 		document: TextDocument
-	): Promise<Diagnostic[] | undefined> {
-		if (!this.isEnabled) return;
+	): Promise<Diagnostic[]> {
+		if (!this.isEnabled) return [];
 
 		this.diagnostics.delete(document.uri);
 		const diagnostics: Diagnostic[] = [];
@@ -87,26 +84,27 @@ export class PythonProvider extends LanguageProvider {
 			async (error, stdout, stderr) => {
 				if (error) {
 					console.error(`exec error: ${error}`);
-					return;
+					return diagnostics;
 				}
 				if (stderr) {
 					console.error(`stderr: ${stderr}`);
-					return;
+					return diagnostics;
 				}
 				const symbols = JSON.parse(stdout);
 				console.log("Symbols:", symbols);
 				await this.validateAndCreateDiagnostics(symbols, document, diagnostics);
-				this.diagnostics.set(document.uri, diagnostics);
+				return diagnostics;
 			}
 		);
 
 		if (!process.stdin) {
 			console.error("Failed to open stdin");
-			return;
+			return diagnostics;
 		}
 
 		process.stdin.write(text);
 		process.stdin.end();
+		return diagnostics;
 	}
 
 	private async validateAndCreateDiagnostics(

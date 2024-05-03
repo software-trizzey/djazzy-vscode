@@ -53,7 +53,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 	}
 
 	async provideCodeActions(document: TextDocument): Promise<CodeAction[]> {
-		const diagnostics = document.uri ? this.diagnostics.get(document.uri) : [];
+		const diagnostics = document.uri ? this.getDiagnostic(document.uri) : [];
 		if (!diagnostics) return [];
 		const namingConventionDiagnostics = diagnostics.filter(
 			(diagnostic) => diagnostic.code === "namingConventionViolation"
@@ -123,13 +123,12 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 
 	public async provideDiagnostics(
 		document: TextDocument
-	): Promise<Diagnostic[] | undefined> {
-		if (this.languageId === "javascript" && !this.isEnabled) return;
-		if (this.languageId === "typescript" && !this.isEnabled) return;
+	): Promise<Diagnostic[]> {
+		if (this.languageId === "javascript" && !this.isEnabled) return [];
+		if (this.languageId === "typescript" && !this.isEnabled) return [];
 
-		this.diagnostics.delete(document.uri);
+		this.deleteDiagnostic(document.uri);
 
-		const currentId = ++this.cancellationId;
 		const diagnostics: Diagnostic[] = [];
 		const diagnosticPromises: Promise<void>[] = [];
 		try {
@@ -140,7 +139,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 					document.uri
 				);
 				if (changedLines && changedLines.size === 0) {
-					return;
+					return diagnostics;
 				}
 			}
 
@@ -237,14 +236,10 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 				},
 			});
 			await Promise.all(diagnosticPromises);
-			// If there is a newer request, ignore this one
-			if (currentId === this.cancellationId) {
-				this.diagnostics.set(document.uri, diagnostics);
-			}
-			return diagnostics;
 		} catch (error: any) {
 			this.handleError(error);
 		}
+		return diagnostics;
 	}
 
 	private applyVariableDeclarationDiagnostics(

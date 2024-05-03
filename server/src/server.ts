@@ -145,28 +145,29 @@ function getDocumentSettings(resource: string): Thenable<ExtensionSettings> {
 }
 
 documents.onDidClose((e) => {
-	documentSettings.delete(e.document.uri);
+	const documentUri = e.document.uri;
+	const provider = providerCache[e.document.languageId];
+	documentSettings.delete(documentUri);
+	provider?.deleteDiagnostic(documentUri);
 });
 
 connection.languages.diagnostics.on(async (params) => {
 	const document = documents.get(params.textDocument.uri);
-	if (document !== undefined) {
-		return {
-			kind: DocumentDiagnosticReportKind.Full,
-			items: await validateTextDocument(document),
-		} satisfies DocumentDiagnosticReport;
-	} else {
-		// We don't know the document. We can either try to read it from disk
-		// or we don't report problems for it.
+	if (!document) {
 		return {
 			kind: DocumentDiagnosticReportKind.Full,
 			items: [],
 		} satisfies DocumentDiagnosticReport;
 	}
+	const diagnostics = await validateTextDocument(document);
+	console.log("Sending full diagnostics to client", diagnostics);
+	return {
+		kind: DocumentDiagnosticReportKind.Full,
+		items: diagnostics,
+	} satisfies DocumentDiagnosticReport;
 });
 
-documents.onDidChangeContent((change) => {
-	console.log("onDidChangeContent", change.document.uri);
+documents.onDidChangeContent(async (change) => {
 	debouncedValidateTextDocument(change.document);
 });
 
@@ -209,22 +210,25 @@ function getOrCreateProvider(
 async function validateTextDocument(
 	textDocument: TextDocument
 ): Promise<Diagnostic[]> {
-	const settings = await getDocumentSettings(textDocument.uri);
 	const languageId = textDocument.languageId;
+
+	const settings = await getDocumentSettings(textDocument.uri);
 	const provider = getOrCreateProvider(languageId, settings);
-	const diagnostics = await provider.provideDiagnostics(textDocument);
-	if (!diagnostics) return [];
+	let diagnostics = await provider.getDiagnostic(textDocument.uri);
+	console.log("version", textDocument.version);
+
+	if (!diagnostics || provider.isDiagnosticsOutdated(textDocument)) {
+		diagnostics = await provider.provideDiagnostics(textDocument);
+		provider.setDiagnostic(textDocument.uri, textDocument.version, diagnostics);
+	}
 	return diagnostics;
 }
 
 const debouncedValidateTextDocument = debounce(async (document) => {
-	const settings = await getDocumentSettings(document.uri);
-	const provider = getOrCreateProvider(document.languageId, settings);
-	const diagnostics = await provider.provideDiagnostics(document);
-	if (!diagnostics) return;
+	const diagnostics = await validateTextDocument(document);
 	console.log("Debounced diagnostics", diagnostics);
 	connection.sendDiagnostics({ uri: document.uri, diagnostics });
-}, 500);
+}, 1000);
 
 connection.onDidChangeWatchedFiles((params: DidChangeWatchedFilesParams) => {
 	params.changes.forEach((change) => {

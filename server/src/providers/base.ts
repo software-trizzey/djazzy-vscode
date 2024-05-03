@@ -27,7 +27,13 @@ export abstract class LanguageProvider {
 	protected cancellationId: number = 0;
 	protected defaultConventions: any;
 
-	protected diagnostics: Map<string, Diagnostic[]> = new Map();
+	protected diagnostics: Map<
+		string,
+		{
+			diagnostics: Diagnostic[];
+			version: number;
+		}
+	> = new Map();
 
 	protected connection: Connection;
 	protected isEnabled: boolean;
@@ -62,9 +68,7 @@ export abstract class LanguageProvider {
 		this.defaultConventions = defaultConventions[languageId];
 	}
 
-	abstract provideDiagnostics(
-		document: TextDocument
-	): Promise<Diagnostic[] | undefined>;
+	abstract provideDiagnostics(document: TextDocument): Promise<Diagnostic[]>;
 
 	abstract provideCodeActions(document: TextDocument): Promise<CodeAction[]>;
 
@@ -77,6 +81,38 @@ export abstract class LanguageProvider {
 		CodeActionKind.QuickFix,
 		CodeActionKind.Refactor,
 	];
+
+	public getDiagnostic(documentUri: string): Diagnostic[] | undefined {
+		const entry = this.diagnostics.get(documentUri);
+		if (entry) {
+			return entry.diagnostics;
+		}
+		return undefined;
+	}
+
+	public setDiagnostic(
+		documentUri: string,
+		documentVersion: number,
+		diagnostics: Diagnostic[]
+	): void {
+		this.diagnostics.set(documentUri, {
+			diagnostics,
+			version: documentVersion,
+		});
+	}
+
+	public isDiagnosticCached(documentUri: string): boolean {
+		return this.diagnostics.has(documentUri);
+	}
+
+	public deleteDiagnostic(documentUri: string): void {
+		this.diagnostics.delete(documentUri);
+	}
+
+	isDiagnosticsOutdated(document: TextDocument): boolean {
+		const cacheEntry = this.diagnostics.get(document.uri);
+		return !cacheEntry || document.version > cacheEntry.version;
+	}
 
 	public handleError(error: Error) {
 		if (error.toString().includes("Could not access 'HEAD'")) {

@@ -5,31 +5,37 @@
 **/.DS_Store
 **/Thumbs.db
 
-# Node modules and dependencies
-client/node_modules/**
-server/node_modules/**
+# Ignore node modules everywhere
 **/node_modules/**
 
+# Ignore build output except the bundled files
+**/out/**
+!server/out/**
+!client/out/**
+
 # Development-specific files
-**/*.map
 **/*.ts
+**/*.map
 **/tsconfig.json
 **/webpack.config.js
 **/*.test.*
 **/*.spec.*
 **/tests/**
-.env.example
+**.env.example**
 client/testFixture/**
+examples/**
+
+# Source and configuration files
+**/src/**
+!server/src/server.ts # Include only entry point if necessary
+**/*.ts
+**/tsconfig.base.json
+# this is added via webpack
+server/bundled/**
 
 # Documentation and miscellaneous
 **/*.md
 **/CHANGELOG
-
-
+**/contributing.md
 .vscode/**
-**/*.ts
-**/*.map
 .gitignore
-**/tsconfig.json
-**/tsconfig.base.json
-contributing.md

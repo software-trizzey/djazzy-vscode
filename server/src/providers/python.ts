@@ -19,6 +19,7 @@ import { DJANGO_RESERVED_NAMES } from "../data/reservedNames";
 import { debounce, validatePythonFunctionName } from "../utils";
 
 import { ExtensionSettings } from "../settings";
+import { PYTHON_DIRECTORY } from "../constants/filepaths";
 
 export class PythonProvider extends LanguageProvider {
 	provideDiagnosticsDebounced: (document: TextDocument) => void;
@@ -190,20 +191,19 @@ export class PythonProvider extends LanguageProvider {
 
 	private getParserFilePath(text: string): string {
 		let parserFilePath = "";
+		console.log("current dir:", __dirname);
 		if (text.includes("from django")) {
 			console.log("Django code detected.");
 			parserFilePath = path.join(
 				__dirname,
 				"..",
-				"..",
-				"./bundled/tools/python/django_parser.py"
+				`./${PYTHON_DIRECTORY}/django_parser.py`
 			);
 		} else {
 			parserFilePath = path.join(
 				__dirname,
 				"..",
-				"..",
-				"./bundled/tools/python/ast_parser.py"
+				`./${PYTHON_DIRECTORY}/ast_parser.py`
 			);
 		}
 		return parserFilePath;

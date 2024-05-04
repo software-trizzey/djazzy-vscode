@@ -3,6 +3,7 @@
 "use strict";
 
 const path = require("path");
+const CopyPlugin = require("copy-webpack-plugin");
 
 //@ts-check
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
@@ -31,7 +32,7 @@ const extensionConfig = {
 		rules: [
 			{
 				test: /\.ts$/,
-				exclude: [/node_modules/, /\.py$/],
+				exclude: [/node_modules/],
 				use: [
 					{
 						loader: "ts-loader",
@@ -44,5 +45,15 @@ const extensionConfig = {
 	infrastructureLogging: {
 		level: "log", // enables logging required for problem matchers
 	},
+	plugins: [
+		new CopyPlugin({
+			patterns: [
+				{
+					from: path.resolve(__dirname, "./bundled/tools/python"),
+					to: path.resolve(__dirname, "out/bundled/tools/python"),
+				},
+			],
+		}),
+	],
 };
 module.exports = [extensionConfig];

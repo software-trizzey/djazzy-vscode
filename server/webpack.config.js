@@ -17,8 +17,9 @@ const extensionConfig = {
 		path: path.resolve(__dirname, "out"),
 		filename: "server.js",
 		libraryTarget: "commonjs2",
+		devtoolModuleFilenameTemplate: "../[resource-path]",
 	},
-	externals: [nodeExternals()], // Exclude 'node_modules' from the bundle
+	externals: [nodeExternals(), "vscode", "commonjs"], // Exclude 'node_modules' from the bundle
 	resolve: {
 		extensions: [".ts", ".js"],
 	},
@@ -41,12 +42,19 @@ const extensionConfig = {
 							],
 						},
 					},
-					"ts-loader", // Continues to handle TypeScript-specific features
+					{
+						loader: "ts-loader",
+						options: {
+							compilerOptions: {
+								module: "es6", // override `tsconfig.json` so that TypeScript emits native JavaScript modules.
+							},
+						},
+					},
 				],
 			},
 		],
 	},
-	devtool: "nosources-source-map", // Includes source maps without source content
+	devtool: "source-map",
 	infrastructureLogging: {
 		level: "log",
 	},
@@ -62,4 +70,4 @@ const extensionConfig = {
 	],
 };
 
-module.exports = [extensionConfig];
+module.exports = extensionConfig;

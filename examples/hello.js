@@ -1,1 +1,1 @@
-const invalid_variable = "Hello, World!";
+const isNotProd = false;

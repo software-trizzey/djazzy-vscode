@@ -19,6 +19,7 @@ import {
 	hasNegativePattern,
 } from "../utils";
 import { ExtensionSettings } from "../settings";
+import { rollbar } from "../common/logs";
 
 export abstract class LanguageProvider {
 	protected cache: Map<string, any>;
@@ -135,6 +136,10 @@ export abstract class LanguageProvider {
 				}
 			});
 		} else {
+			if (!this.isDevMode) {
+				rollbar.error(error);
+				return;
+			}
 			console.error(error);
 		}
 	}

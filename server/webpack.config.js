@@ -36,7 +36,7 @@ const extensionConfig = {
 								"@babel/preset-typescript", // Handle TypeScript
 							],
 							plugins: [
-								"@babel/plugin-proposal-class-properties",
+								"@babel/plugin-transform-class-properties",
 								"@babel/plugin-transform-runtime", // Optimizes handling of helper code
 							],
 						},

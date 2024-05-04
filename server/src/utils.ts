@@ -6,11 +6,9 @@ import { actionWordsDictionary, commonWords } from "./data";
 
 const cache = new Map<string, boolean>();
 
-const CheckUncommittedChangesRequest = new RequestType<
-	string,
-	Set<number>,
-	any
->(GET_CHANGED_LINES);
+const CheckUncommittedChangesRequest = new RequestType<string, string, any>(
+	GET_CHANGED_LINES
+);
 
 export function debounce<T extends (...args: any[]) => void>(
 	func: T,
@@ -234,11 +232,13 @@ export async function getChangedLinesFromClient(
 ): Promise<Set<number>> {
 	try {
 		const uri = filePath;
-		const changedLines: Set<number> = await connection.sendRequest(
+		const changedLines = await connection.sendRequest(
 			CheckUncommittedChangesRequest,
 			uri
 		);
-		return changedLines;
+		const parsedReseponse = JSON.parse(changedLines);
+		const changedLinesSet = new Set<number>(parsedReseponse);
+		return changedLinesSet;
 	} catch (error) {
 		console.error(error);
 		throw error;

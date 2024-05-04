@@ -95,7 +95,7 @@ export function deactivate(): Thenable<void> | undefined {
 }
 
 /** Git utils */
-export function getChangedLines(filePath: string): Promise<Set<number>> | null {
+function getChangedLines(filePath: string): Promise<string> | null {
 	console.log("Getting git diff", filePath);
 	return new Promise((resolve, reject) => {
 		exec(
@@ -108,7 +108,8 @@ export function getChangedLines(filePath: string): Promise<Set<number>> | null {
 					return;
 				}
 				const changedLines = parseDiff(stdout);
-				resolve(changedLines);
+				const stringified = JSON.stringify([...changedLines]);
+				resolve(stringified);
 			}
 		);
 	});
@@ -144,7 +145,6 @@ function parseDiff(diffOutput: string): Set<number> {
 			changedLines.add(startLine + lineIndex);
 		}
 	}
-
 	return changedLines;
 }
 

@@ -16,7 +16,8 @@
 		"code-stylist copilot rome conventions code-quality"
 	],
 	"engines": {
-		"vscode": "^1.75.0"
+		"vscode": "^1.75.0",
+		"node": ">=18"
 	},
 	"activationEvents": [
 		"onLanguage:python",

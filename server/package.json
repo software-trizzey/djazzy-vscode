@@ -5,7 +5,7 @@
 	"publisher": "alchemized",
 	"license": "UNLICENSED",
 	"engines": {
-		"node": "^v21.5.0"
+		"node": ">=18"
 	},
 	"dependencies": {
 		"@babel/parser": "^7.24.5",

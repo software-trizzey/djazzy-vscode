@@ -7,7 +7,7 @@
 	"publisher": "alchemized",
 	"engines": {
 		"vscode": "^1.75.0",
-		"node": "^v21.5.0"
+		"node": ">=18"
 	},
 	"scripts": {
 		"clean": "rimraf out/",

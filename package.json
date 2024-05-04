@@ -85,11 +85,8 @@
 		}
 	},
 	"scripts": {
-		"vscode:prepublish": "npm run build",
+		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -b",
-		"client:build": "cd client && npm run build && cd ..",
-		"server:build": "cd server && npm run build && cd ..",
-		"build": "npm run client:build && npm run server:build",
 		"package": "vsce package",
 		"publish": "vsce publish",
 		"dev-publish": "npm run package && code --install-extension when-in-rome-0.0.1.vsix",

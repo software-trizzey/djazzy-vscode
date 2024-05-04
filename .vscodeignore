@@ -7,22 +7,13 @@
 
 
 # Development-specific files
-**/*.ts
-**/*.map
 **/tsconfig.json
 **/webpack.config.js
 **/*.test.*
-**/*.spec.*
 **/tests/**
 **.env.example**
 client/testFixture/**
 examples/**
-
-# Source and configuration files
-**/src/**
-!server/src/server.ts # Include only entry point if necessary
-**/*.ts
-**/tsconfig.base.json
 
 # Documentation and miscellaneous
 **/*.md

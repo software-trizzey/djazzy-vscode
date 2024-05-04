@@ -48,9 +48,9 @@ let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
 let hasDiagnosticRelatedInformationCapability = false;
 
-// FIXME: hide access token
-
 connection.onInitialize((params: InitializeParams) => {
+	console.log(`Running Node.js version: ${process.version}`);
+
 	const capabilities = params.capabilities;
 
 	// Does the client support the `workspace/configuration` request?

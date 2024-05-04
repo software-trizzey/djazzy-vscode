@@ -27,8 +27,6 @@ import {
 } from "vscode-languageserver/node";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
-
-import { rollbar } from "./common/logs";
 import {
 	LanguageProvider,
 	JavascriptAndTypescriptProvider,

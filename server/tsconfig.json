@@ -2,8 +2,8 @@
 	"compilerOptions": {
 		"target": "es2020",
 		"lib": ["es2020", "dom"],
-		"module": "commonjs",
-		"moduleResolution": "node",
+		"module": "ES2020",
+		"moduleResolution": "Bundler",
 		"sourceMap": true,
 		"strict": true,
 		"resolveJsonModule": true,

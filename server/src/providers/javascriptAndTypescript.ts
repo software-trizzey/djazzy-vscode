@@ -144,7 +144,13 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 			}
 
 			const text = document.getText();
-			const pluginOptions: babelParser.ParserPlugin[] = [];
+			const pluginOptions: babelParser.ParserPlugin[] = [
+				"logicalAssignment",
+				"classProperties",
+				"optionalChaining",
+				"nullishCoalescingOperator",
+				"objectRestSpread",
+			];
 			if (this.isTypeScript) {
 				pluginOptions.push("typescript");
 			}

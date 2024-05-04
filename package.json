@@ -85,13 +85,13 @@
 		}
 	},
 	"scripts": {
-		"vscode:prepublish": "npm run compile",
+		"vscode:prepublish": "npm run build",
 		"compile": "tsc -b",
 		"client:build": "cd client && npm run build && cd ..",
 		"server:build": "cd server && npm run build && cd ..",
 		"build": "npm run client:build && npm run server:build",
-		"package": "npm run build && vsce package",
-		"publish": "npm run build && vsce publish",
+		"package": "vsce package",
+		"publish": "vsce publish",
 		"dev-publish": "npm run package && code --install-extension when-in-rome-0.0.1.vsix",
 		"watch": "tsc -b -w",
 		"lint": "eslint ./client/src ./server/src --ext .ts,.tsx",

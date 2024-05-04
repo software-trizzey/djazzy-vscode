@@ -2,11 +2,10 @@
 	"compilerOptions": {
 		"target": "es2020",
 		"lib": ["es2020", "dom"],
-		"module": "ES2020",
-		"moduleResolution": "Bundler",
+		"module": "CommonJS",
+		"moduleResolution": "node",
 		"sourceMap": true,
 		"strict": true,
-		"resolveJsonModule": true,
 		"outDir": "out",
 		"rootDir": "src"
 	},

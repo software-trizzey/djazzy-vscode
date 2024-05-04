@@ -197,11 +197,13 @@ export class PythonProvider extends LanguageProvider {
 			parserFilePath = path.join(
 				__dirname,
 				"..",
+				"..",
 				`./${PYTHON_DIRECTORY}/django_parser.py`
 			);
 		} else {
 			parserFilePath = path.join(
 				__dirname,
+				"..",
 				"..",
 				`./${PYTHON_DIRECTORY}/ast_parser.py`
 			);

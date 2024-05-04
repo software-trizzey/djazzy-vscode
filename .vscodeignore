@@ -27,6 +27,21 @@ client/node_modules/**
 !client/node_modules/{minimatch,brace-expansion,concat-map,balanced-match}/**
 !client/node_modules/{semver,lru-cache,yallist}/**
 
+# Server runtime dependencies (INCOMPLETE)
+!server/node_modules/@babel/parser
+!server/node_modules/@babel/traverse
+!server/node_modules/decamelize
+!server/node_modules/@langchain/**
+!server/node_modules/dotenv
+!server/node_modules/rollbar
+!server/node_modules/vscode-jsonrpc/**
+!server/node_modules/vscode-languageserver
+!server/node_modules/vscode-languageserver-textdocument
+!server/node_modules/vscode-languageserver-protocol/**
+!server/node_modules/vscode-languageserver-types/**
+!server/node_modules/zod/**
+!server/node_modules/zod-to-json-schema/**
+
 
 # Documentation and miscellaneous
 **/*.md

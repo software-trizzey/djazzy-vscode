@@ -10,7 +10,7 @@
 		"node": "^v21.5.0"
 	},
 	"scripts": {
-		"clean": "rm -rf out",
+		"clean": "rimraf out/",
 		"build": "npm run clean && webpack --mode production"
 	},
 	"dependencies": {

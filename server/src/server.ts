@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as dotenv from "dotenv";
-const result = dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+const result = dotenv.config({ path: path.resolve(__dirname, "../.env") });
 if (result.error) {
 	console.log("Failed to load .env file");
 	throw result.error;

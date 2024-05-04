@@ -142,6 +142,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 					return diagnostics;
 				}
 			}
+			console.log("changedLines", changedLines, typeof changedLines);
 
 			const text = document.getText();
 			const pluginOptions: babelParser.ParserPlugin[] = [

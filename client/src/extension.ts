@@ -51,16 +51,10 @@ export async function activate(context: vscode.ExtensionContext) {
 		},
 		middleware: {
 			executeCommand: async (command, args, next) => {
-				if (command === "extension.createRepository") {
+				// FIXME: probably won't work. Convert to listener like one for changedLines
+				if (command === "whenInRome.createRepository") {
 					createGitRepository();
 					return;
-				} else if (command === "extension.getGitDiff") {
-					try {
-						const filePath = args[0];
-						return await getChangedLines(filePath);
-					} catch (error) {
-						console.error("Error getting git diff:", error);
-					}
 				}
 				return next(command, args);
 			},
@@ -73,7 +67,10 @@ export async function activate(context: vscode.ExtensionContext) {
 		serverOptions,
 		clientOptions
 	);
-	client.start();
+
+	client.start().then(() => {
+		client.onRequest("whenInRome.getGitDiff", getChangedLines);
+	});
 
 	function checkAndNotify(uri: vscode.Uri) {
 		// Throttle notifications
@@ -99,6 +96,7 @@ export function deactivate(): Thenable<void> | undefined {
 
 /** Git utils */
 export function getChangedLines(filePath: string): Promise<Set<number>> | null {
+	console.log("Getting git diff", filePath);
 	return new Promise((resolve, reject) => {
 		exec(
 			`git diff HEAD -U0 -- ${filePath}`,

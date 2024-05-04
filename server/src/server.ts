@@ -35,7 +35,7 @@ import {
 import { ExtensionSettings, defaultSettings } from "./settings";
 import { debounce } from "./utils";
 
-import { FIX_NAME } from "./constants/commands";
+import COMMANDS from "./constants/commands";
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -84,7 +84,7 @@ connection.onInitialize((params: InitializeParams) => {
 				prepareProvider: true,
 			},
 			executeCommandProvider: {
-				commands: [FIX_NAME],
+				commands: Object.values(COMMANDS),
 			},
 		},
 	};
@@ -281,7 +281,7 @@ connection.onCompletionResolve((item: CompletionItem): CompletionItem => {
 });
 
 connection.onExecuteCommand((params) => {
-	if (params.command !== FIX_NAME || params.arguments === undefined) {
+	if (params.command !== COMMANDS.FIX_NAME || params.arguments === undefined) {
 		return;
 	}
 

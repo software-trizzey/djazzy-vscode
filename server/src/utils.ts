@@ -1,8 +1,16 @@
+import { RequestType } from "vscode-languageserver";
 import { Connection } from "vscode-languageserver/node";
 
+import { GET_CHANGED_LINES } from "./constants/commands";
 import { actionWordsDictionary, commonWords } from "./data";
 
 const cache = new Map<string, boolean>();
+
+const CheckUncommittedChangesRequest = new RequestType<
+	string,
+	Set<number>,
+	any
+>(GET_CHANGED_LINES);
 
 export function debounce<T extends (...args: any[]) => void>(
 	func: T,
@@ -227,12 +235,12 @@ export async function getChangedLinesFromClient(
 	try {
 		const uri = filePath;
 		const changedLines: Set<number> = await connection.sendRequest(
-			"extension.getGitDiff",
-			[uri]
+			CheckUncommittedChangesRequest,
+			uri
 		);
 		return changedLines;
 	} catch (error) {
-		console.error("Failed to get changed lines from client:", error);
+		console.error(error);
 		throw error;
 	}
 }

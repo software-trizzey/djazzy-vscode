@@ -79,7 +79,7 @@
 				},
 				"whenInRome.onlyCheckNewCode": {
 					"type": "boolean",
-					"default": false,
+					"default": true,
 					"description": "Check only new or modified code."
 				}
 			}
@@ -87,6 +87,7 @@
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
+		"clean": "rimraf ./client/out ./server/out",
 		"compile": "tsc -b",
 		"package": "vsce package",
 		"publish": "vsce publish",

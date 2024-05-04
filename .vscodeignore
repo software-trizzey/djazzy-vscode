@@ -5,7 +5,6 @@
 **/.DS_Store
 **/Thumbs.db
 
-
 # Development-specific files
 **/tsconfig.json
 **/webpack.config.js
@@ -14,6 +13,15 @@
 **.env.example**
 client/testFixture/**
 examples/**
+
+client/node_modules/**
+
+!client/node_modules/vscode-jsonrpc/**
+!client/node_modules/vscode-languageclient/**
+!client/node_modules/vscode-languageserver-protocol/**
+!client/node_modules/vscode-languageserver-types/**
+!client/node_modules/{minimatch,brace-expansion,concat-map,balanced-match}/**
+!client/node_modules/{semver,lru-cache,yallist}/**
 
 # Documentation and miscellaneous
 **/*.md

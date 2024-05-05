@@ -1,4 +1,5 @@
 import * as path from "path";
+import * as fs from "fs";
 import { exec } from "child_process";
 import * as vscode from "vscode";
 
@@ -95,24 +96,79 @@ export function deactivate(): Thenable<void> | undefined {
 }
 
 /** Git utils */
-function getChangedLines(filePath: string): Promise<string> | null {
-	console.log("Getting git diff", filePath);
+async function getChangedLines(originalFilePath: string): Promise<string> {
 	return new Promise((resolve, reject) => {
+		const uri = vscode.Uri.parse(originalFilePath);
+		const filePath = uri.fsPath;
+		const relativeFilePath = path.relative(vscode.workspace.rootPath, filePath);
 		exec(
-			`git diff HEAD -U0 -- ${filePath}`,
+			`git ls-files --others --exclude-standard ${relativeFilePath}`,
 			{ cwd: vscode.workspace.rootPath },
-			(error: any, stdout: any, stderr: any) => {
+			(error, stdout, stderr) => {
 				if (error) {
-					console.error("Error getting git diff:", stderr);
-					reject(`Error fetching changes: ${stderr}`);
+					console.error("Error checking file status:", stderr);
+					reject(`Error checking file status: ${stderr}`);
 					return;
 				}
-				const changedLines = parseDiff(stdout);
-				const stringified = JSON.stringify([...changedLines]);
-				resolve(stringified);
+
+				if (stdout.trim()) {
+					console.log("File is untracked:", relativeFilePath);
+					// File is untracked, so consider all lines as changed
+					const allLinesChanged = new Set<number>();
+					const data = fs.readFileSync(
+						path.join(vscode.workspace.rootPath, relativeFilePath),
+						"utf8"
+					);
+					const lines = data.split("\n");
+					for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+						allLinesChanged.add(lineIndex + 1); // Line numbers are 1-based
+					}
+					const serializedLineData = JSON.stringify(
+						Array.from(allLinesChanged)
+					);
+					resolve(serializedLineData);
+				} else {
+					// File is tracked, use git diff to find changed lines
+					console.log("File is tracked:", relativeFilePath);
+					exec(
+						`git diff HEAD -U0 -- ${relativeFilePath}`,
+						{ cwd: vscode.workspace.rootPath },
+						(diffError, diffStdout, diffStderr) => {
+							if (diffError) {
+								console.error("Error getting git diff:", diffStderr);
+								reject(`Error fetching changes: ${diffStderr}`);
+								return;
+							}
+							const serializedLineData = JSON.stringify(
+								Array.from(parseDiff(diffStdout))
+							);
+							resolve(serializedLineData);
+						}
+					);
+				}
 			}
 		);
 	});
+}
+
+/**
+ * Parse the diff output to get the changed lines in the file.
+ */
+function parseDiff(diffOutput: string): Set<number> {
+	const changedLines = new Set<number>();
+	const regex = /^\+\+\+ b\/.*\n@@ -\d+,\d+ \+(\d+),(\d+) @@/gm;
+	let match;
+
+	while ((match = regex.exec(diffOutput)) !== null) {
+		const startLine = parseInt(match[1], 10);
+		const lineCount = parseInt(match[2], 10);
+
+		for (let lineIndex = 0; lineIndex < lineCount; lineIndex++) {
+			changedLines.add(startLine + lineIndex);
+		}
+	}
+
+	return changedLines;
 }
 
 export function createGitRepository() {
@@ -126,26 +182,6 @@ export function createGitRepository() {
 	terminal.sendText("git commit -m 'Initial commit'");
 	terminal.sendText("echo .gitignore");
 	terminal.sendText("echo node_modules > .gitignore");
-}
-
-/**
- * Parse the diff output to get the changed lines in the file.
- */
-function parseDiff(diffOutput: string): Set<number> {
-	const changedLines = new Set<number>();
-	const regex = /^@@ -\d+,\d+ \+(\d+),(\d+) @@/gm;
-	let match;
-
-	while ((match = regex.exec(diffOutput)) !== null) {
-		const startLine = parseInt(match[1], 10);
-		const lineCount = parseInt(match[2], 10);
-
-		// Add all lines in this chunk to the set of changed lines
-		for (let lineIndex = 0; lineIndex < lineCount; lineIndex++) {
-			changedLines.add(startLine + lineIndex);
-		}
-	}
-	return changedLines;
 }
 
 /** Notification Management utils */

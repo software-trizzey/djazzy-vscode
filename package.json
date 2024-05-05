@@ -35,12 +35,6 @@
 					"default": 1200000,
 					"description": "Interval in milliseconds to control the frequency of test reminder notifications for modified files."
 				},
-				"whenInRome.maxNumberOfProblems": {
-					"scope": "resource",
-					"type": "number",
-					"default": 100,
-					"description": "Controls the maximum number of problems produced and displayed by the server."
-				},
 				"whenInRome.trace.server": {
 					"scope": "window",
 					"type": "string",
@@ -56,11 +50,6 @@
 					"type": "boolean",
 					"default": false,
 					"description": "Enable/disable development mode."
-				},
-				"whenInRome.mockFetchSuggestedName": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enable/disable mock fetch suggested name."
 				},
 				"whenInRome.isJavascriptEnabled": {
 					"type": "boolean",

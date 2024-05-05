@@ -93,7 +93,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		} else if (
 			violationMessage.includes("does not start with a recognized action word")
 		) {
-			if (this.isDevMode && this.mockFetchSuggestedName) {
+			if (this.isDevMode) {
 				suggestedName = `get${flaggedName}`;
 			} else {
 				const response = await this.fetchSuggestedNameFromLLM({

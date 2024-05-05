@@ -124,7 +124,6 @@ connection.onDidChangeConfiguration((change) => {
 			(change.settings.whenInRome || defaultSettings)
 		);
 	}
-	// Refresh the diagnostics since the `maxNumberOfProblems` could have changed.
 	// TODO: We could optimize things here and re-fetch the setting first and compare it
 	// to the existing setting
 	connection.languages.diagnostics.refresh();

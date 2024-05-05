@@ -38,7 +38,6 @@ export abstract class LanguageProvider {
 	protected isEnabled: boolean;
 	protected onlyCheckNewCode: boolean;
 	protected isDevMode: boolean = false;
-	protected mockFetchSuggestedName: boolean = false;
 
 	constructor(
 		protected languageId: keyof typeof defaultConventions,
@@ -50,7 +49,6 @@ export abstract class LanguageProvider {
 
 		this.onlyCheckNewCode = settings.onlyCheckNewCode;
 		this.isDevMode = settings.isDevMode;
-		this.mockFetchSuggestedName = settings.mockFetchSuggestedName;
 
 		if (languageId === "javascript") {
 			this.isEnabled = settings.isJavascriptEnabled;

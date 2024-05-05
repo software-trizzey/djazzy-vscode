@@ -117,6 +117,7 @@ let globalSettings: ExtensionSettings = defaultSettings;
 const documentSettings: Map<string, Thenable<ExtensionSettings>> = new Map();
 
 connection.onDidChangeConfiguration((change) => {
+	console.log("User settings changed", change.settings);
 	if (hasConfigurationCapability) {
 		documentSettings.clear();
 	} else {

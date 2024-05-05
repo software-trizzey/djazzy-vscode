@@ -121,28 +121,14 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		return fix;
 	}
 
-	public async provideDiagnostics(
-		document: TextDocument
+	public async runDiagnostics(
+		document: TextDocument,
+		diagnostics: Diagnostic[],
+		changedLines: Set<number> | undefined
 	): Promise<Diagnostic[]> {
-		if (this.languageId === "javascript" && !this.isEnabled) return [];
-		if (this.languageId === "typescript" && !this.isEnabled) return [];
-
-		this.deleteDiagnostic(document.uri);
-
-		const diagnostics: Diagnostic[] = [];
 		const diagnosticPromises: Promise<void>[] = [];
-		try {
-			let changedLines: Set<number> | undefined = undefined;
-			if (this.onlyCheckNewCode) {
-				changedLines = await getChangedLinesFromClient(
-					this.connection,
-					document.uri
-				);
-				if (changedLines && changedLines.size === 0) {
-					return diagnostics;
-				}
-			}
 
+		try {
 			const text = document.getText();
 			const pluginOptions: babelParser.ParserPlugin[] = [
 				"logicalAssignment",

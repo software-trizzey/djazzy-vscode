@@ -68,68 +68,74 @@ export class PythonProvider extends LanguageProvider {
 		return fix;
 	}
 
-	public async provideDiagnostics(
-		document: TextDocument
+	public async runDiagnostics(
+		document: TextDocument,
+		diagnostics: Diagnostic[],
+		changedLines: Set<number> | undefined
 	): Promise<Diagnostic[]> {
-		if (!this.isEnabled) return [];
+		try {
+			const text = document.getText();
+			const parserFilePath = this.getParserFilePath(text);
 
-		this.deleteDiagnostic(document.uri);
-		const diagnostics: Diagnostic[] = [];
-		// TODO: add logic for checking new code only
-		const text = document.getText();
-		const parserFilePath = this.getParserFilePath(text);
-		console.log("Parser file path:", parserFilePath);
+			return new Promise((resolve, reject) => {
+				const process = spawn("python3", [parserFilePath]);
+				let output = "";
+				let error = "";
 
-		return new Promise((resolve, reject) => {
-			const process = spawn("python3", [parserFilePath]);
-			let output = "";
-			let error = "";
+				process.stdout.on("data", (data) => {
+					output += data.toString();
+				});
+				process.stderr.on("data", (data) => {
+					error += data.toString();
+				});
 
-			process.stdout.on("data", (data) => {
-				output += data.toString();
-			});
-			process.stderr.on("data", (data) => {
-				error += data.toString();
-			});
+				process.on("close", async (code) => {
+					if (code !== 0) {
+						console.error(`Process exited with code ${code}, stderr: ${error}`);
+						return;
+					}
 
-			process.on("close", async (code) => {
-				if (code !== 0) {
-					console.error(`Process exited with code ${code}, stderr: ${error}`);
-					return;
+					try {
+						const symbols = JSON.parse(output);
+						console.log("Symbols:", symbols);
+						await this.validateAndCreateDiagnostics(
+							symbols,
+							diagnostics,
+							changedLines
+						);
+
+						resolve(diagnostics);
+					} catch (err) {
+						console.error("Failed to parse JSON output:", err);
+						reject(err);
+					}
+				});
+
+				if (process.stdin) {
+					process.stdin.write(text);
+					process.stdin.end();
 				}
-
-				try {
-					const symbols = JSON.parse(output);
-					console.log("Symbols:", symbols);
-					await this.validateAndCreateDiagnostics(
-						symbols,
-						document,
-						diagnostics
-					);
-
-					resolve(diagnostics);
-				} catch (err) {
-					console.error("Failed to parse JSON output:", err);
-					reject(err);
-				}
 			});
-
-			if (process.stdin) {
-				process.stdin.write(text);
-				process.stdin.end();
-			}
-		});
+		} catch (error: any) {
+			this.handleError(error);
+			return [];
+		}
 	}
 
 	private async validateAndCreateDiagnostics(
 		symbols: any[],
-		document: TextDocument,
-		diagnostics: Diagnostic[]
+		diagnostics: Diagnostic[],
+		changedLines: Set<number> | undefined
 	): Promise<void> {
 		for (const symbol of symbols) {
 			const { type, name, line, col_offset, end_col_offset, value } = symbol;
-			let result = null;
 
+			if (changedLines && !changedLines.has(line)) {
+				console.log("Skipping validation for line:", line);
+				continue; // Skip validation if line not in changedLines
+			}
+
+			let result = null;
 			switch (type) {
 				case "function":
 					result = await this.validateFunctionName(name);

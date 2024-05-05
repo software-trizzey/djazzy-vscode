@@ -17,6 +17,7 @@ import {
 	isLikelyBoolean,
 	hasBooleanPrefix,
 	hasNegativePattern,
+	getChangedLinesFromClient,
 } from "../utils";
 import { ExtensionSettings } from "../settings";
 import { rollbar } from "../common/logs";
@@ -65,9 +66,35 @@ export abstract class LanguageProvider {
 		this.defaultConventions = defaultConventions[languageId];
 	}
 
-	abstract provideDiagnostics(document: TextDocument): Promise<Diagnostic[]>;
-
 	abstract provideCodeActions(document: TextDocument): Promise<CodeAction[]>;
+
+	public async provideDiagnostics(
+		document: TextDocument
+	): Promise<Diagnostic[]> {
+		if (!this.isEnabled) return [];
+
+		this.deleteDiagnostic(document.uri);
+		const diagnostics: Diagnostic[] = [];
+
+		let changedLines: Set<number> | undefined = undefined;
+		if (this.onlyCheckNewCode) {
+			changedLines = await getChangedLinesFromClient(
+				this.connection,
+				document.uri
+			);
+			if (changedLines && changedLines.size === 0) {
+				return diagnostics; // No changes, no need to process diagnostics
+			}
+		}
+
+		return this.runDiagnostics(document, diagnostics, changedLines);
+	}
+
+	protected abstract runDiagnostics(
+		document: TextDocument,
+		diagnostics: Diagnostic[],
+		changedLines: Set<number> | undefined
+	): Promise<Diagnostic[]>;
 
 	abstract generateFixForNamingConventionViolation(
 		document: TextDocument,

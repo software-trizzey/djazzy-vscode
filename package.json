@@ -68,7 +68,7 @@
 				},
 				"whenInRome.onlyCheckNewCode": {
 					"type": "boolean",
-					"default": true,
+					"default": false,
 					"description": "Check only new or modified code."
 				}
 			}

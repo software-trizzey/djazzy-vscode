@@ -73,13 +73,10 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		const cachedAction = this.codeActionsMessageCache.get(cacheKey);
 		let suggestedName = "";
 
-		console.log("Checking cache for action", cacheKey, cachedAction);
 		if (cachedAction) {
-			console.log("Returning cached action", cachedAction);
 			return cachedAction;
 		}
 
-		console.log("Generating new action");
 		if (
 			violationMessage.includes('does not follow "camelCase" naming convention')
 		) {

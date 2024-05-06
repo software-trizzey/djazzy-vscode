@@ -248,8 +248,6 @@ const debouncedValidateTextDocument = debounce(async (document) => {
 
 connection.onDidChangeWatchedFiles((params: DidChangeWatchedFilesParams) => {
 	params.changes.forEach((change) => {
-		console.log(`${change.uri} has changed: ${change.type}`);
-
 		if (change.uri.includes("/api/") || change.uri.includes("/views/")) {
 			// TODO: ensure files have corresponding tests
 			console.log("Checking for tests");

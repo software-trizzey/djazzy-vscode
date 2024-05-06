@@ -112,7 +112,6 @@ async function getChangedLines(originalFilePath: string): Promise<string> {
 				}
 
 				if (stdout.trim()) {
-					console.log("File is untracked:", relativeFilePath);
 					// File is untracked, so consider all lines as changed
 					const allLinesChanged = new Set<number>();
 					const data = fs.readFileSync(
@@ -129,7 +128,6 @@ async function getChangedLines(originalFilePath: string): Promise<string> {
 					resolve(serializedLineData);
 				} else {
 					// File is tracked, use git diff to find changed lines
-					console.log("File is tracked:", relativeFilePath);
 					exec(
 						`git diff HEAD -U0 -- ${relativeFilePath}`,
 						{ cwd: vscode.workspace.rootPath },

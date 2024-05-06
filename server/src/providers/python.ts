@@ -22,6 +22,7 @@ import { debounce, validatePythonFunctionName } from "../utils";
 import { ExtensionSettings } from "../settings";
 import { PYTHON_DIRECTORY } from "../constants/filepaths";
 import { FIX_NAME } from "../constants/commands";
+import { rollbar } from "../common/logs";
 
 export class PythonProvider extends LanguageProvider {
 	provideDiagnosticsDebounced: (document: TextDocument) => void;
@@ -64,13 +65,10 @@ export class PythonProvider extends LanguageProvider {
 		const cachedAction = this.codeActionsMessageCache.get(cacheKey);
 		let suggestedName = "";
 
-		console.log("Checking cache for action", cacheKey, cachedAction);
 		if (cachedAction) {
-			console.log("Returning cached action", cachedAction);
 			return cachedAction;
 		}
 
-		console.log("Generating new action");
 		if (
 			violationMessage.includes(
 				'does not follow "snake_case" naming convention'
@@ -154,7 +152,11 @@ export class PythonProvider extends LanguageProvider {
 
 					try {
 						const symbols = JSON.parse(output);
-						console.log("Symbols:", symbols);
+						if (!this.isDevMode) {
+							rollbar.info("Python symbols parsed", { symbols });
+						} else {
+							console.log("Symbols:", symbols);
+						}
 						await this.validateAndCreateDiagnostics(
 							symbols,
 							diagnostics,
@@ -188,7 +190,6 @@ export class PythonProvider extends LanguageProvider {
 			const { type, name, line, col_offset, end_col_offset, value } = symbol;
 
 			if (changedLines && !changedLines.has(line)) {
-				console.log("Skipping validation for line:", line);
 				continue; // Skip validation if line not in changedLines
 			}
 

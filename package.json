@@ -46,9 +46,9 @@
 					"default": "on",
 					"description": "Traces the communication between VS Code and the language server."
 				},
-				"whenInRome.devMode": {
+				"whenInRome.isDevMode": {
 					"type": "boolean",
-					"default": true,
+					"default": false,
 					"description": "Enable/disable development mode."
 				},
 				"whenInRome.isJavascriptEnabled": {

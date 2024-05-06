@@ -20,7 +20,6 @@ import {
 	validateJavaScriptAndTypeScriptFunctionNameCase,
 } from "../utils";
 
-import { getChangedLinesFromClient } from "../utils";
 import { ExtensionSettings } from "../settings";
 import { FIX_NAME } from "../constants/commands";
 

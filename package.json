@@ -75,7 +75,7 @@
 		}
 	},
 	"scripts": {
-		"vscode:prepublish": "npm run compile",
+		"vscode:prepublish": "NODE_ENV=production npm run compile",
 		"clean": "rimraf ./client/out ./server/out",
 		"compile": "tsc -b",
 		"package": "vsce package",

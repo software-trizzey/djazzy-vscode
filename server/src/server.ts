@@ -36,6 +36,7 @@ import { ExtensionSettings, defaultSettings } from "./settings";
 import { debounce } from "./utils";
 
 import COMMANDS from "./constants/commands";
+import { rollbar } from "./common/logs";
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -98,7 +99,25 @@ connection.onInitialize((params: InitializeParams) => {
 	return result;
 });
 
-connection.onInitialized(() => {
+connection.onInitialized(async () => {
+	const settings = await getDocumentSettings("");
+	const routeId = "server#index";
+
+	if (!settings.isDevMode || process.env.NODE_ENV === "production") {
+		rollbar.configure({
+			logLevel: "warning",
+			payload: {
+				environment: "production",
+				context: routeId,
+			},
+		});
+	} else {
+		rollbar.configure({
+			logLevel: "debug",
+			payload: { environment: "development", context: routeId },
+		});
+	}
+
 	if (hasConfigurationCapability) {
 		connection.client.register(
 			DidChangeConfigurationNotification.type,
@@ -117,7 +136,6 @@ let globalSettings: ExtensionSettings = defaultSettings;
 const documentSettings: Map<string, Thenable<ExtensionSettings>> = new Map();
 
 connection.onDidChangeConfiguration((change) => {
-	console.log("User settings changed", change.settings);
 	if (hasConfigurationCapability) {
 		documentSettings.clear();
 	} else {

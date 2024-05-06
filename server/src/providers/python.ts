@@ -82,7 +82,18 @@ export class PythonProvider extends LanguageProvider {
 				.replace(/[- ]+/g, "_");
 			suggestedName = snakeCasedName;
 		} else if (violationMessage.includes("has a negative naming pattern")) {
-			suggestedName = flaggedName.replace(/not/i, "");
+			// detect _not_ and not_ patterns
+			suggestedName = flaggedName
+				.replace(/_not_([^_]+)/i, (_match, p1) => `_${p1}`)
+				.replace(/not_([^_]+)/i, (_match, p1) => `${p1}`);
+			// provide suggestions
+			suggestedName = suggestedName
+				.replace(/is_not_/i, "is_")
+				.replace(/did_not_/i, "did_")
+				.replace(/cannot_/i, "can_")
+				.replace(/does_not_/i, "does_")
+				.replace(/has_not_/i, "has_")
+				.toLowerCase();
 		} else if (
 			violationMessage.includes("does not start with a recognized action word")
 		) {

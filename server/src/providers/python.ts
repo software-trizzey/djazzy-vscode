@@ -2,6 +2,7 @@ import {
 	Connection,
 	CodeAction,
 	CodeActionKind,
+	Command,
 	Diagnostic,
 	DiagnosticSeverity,
 	Range,
@@ -20,9 +21,12 @@ import { debounce, validatePythonFunctionName } from "../utils";
 
 import { ExtensionSettings } from "../settings";
 import { PYTHON_DIRECTORY } from "../constants/filepaths";
+import { FIX_NAME } from "../constants/commands";
 
 export class PythonProvider extends LanguageProvider {
 	provideDiagnosticsDebounced: (document: TextDocument) => void;
+
+	private codeActionsMessageCache: Map<string, CodeAction> = new Map();
 
 	constructor(
 		languageId: keyof typeof defaultConventions,
@@ -44,27 +48,69 @@ export class PythonProvider extends LanguageProvider {
 		const namingConventionDiagnostics = diagnostics.filter(
 			(diagnostic) => diagnostic.code === "namingConventionViolation"
 		);
-		// TODO: Implement code actions for Python
-		// const actionPromises = namingConventionDiagnostics.map((diagnostic) =>
-		// 	this.generateFixForNamingConventionViolation(document, diagnostic)
-		// );
-		return await Promise.all([]);
+		const actionPromises = namingConventionDiagnostics.map((diagnostic) =>
+			this.generateFixForNamingConventionViolation(document, diagnostic)
+		);
+		return await Promise.all(actionPromises);
 	}
 
 	async generateFixForNamingConventionViolation(
 		document: TextDocument,
 		diagnostic: Diagnostic
 	): Promise<CodeAction> {
-		const range = diagnostic.range;
-		const fix = CodeAction.create(
-			`Rename variable to match conventions`,
-			CodeActionKind.QuickFix
-		);
-		// fix.edit = new WorkspaceEdit();
-		// const varName = document.getText(range);
-		// const correctedName = `${varName}Corrected`;
-		// fix.edit.replace(document.uri, range, correctedName);
+		const flaggedName = document.getText(diagnostic.range);
+		const violationMessage = diagnostic.message;
+		const cacheKey = `${violationMessage}-${diagnostic.range.start.line}-${diagnostic.range.start.character}`;
+		const cachedAction = this.codeActionsMessageCache.get(cacheKey);
+		let suggestedName = "";
 
+		console.log("Checking cache for action", cacheKey, cachedAction);
+		if (cachedAction) {
+			console.log("Returning cached action", cachedAction);
+			return cachedAction;
+		}
+
+		console.log("Generating new action");
+		if (
+			violationMessage.includes(
+				'does not follow "snake_case" naming convention'
+			)
+		) {
+			const snakeCasedName = flaggedName
+				.replace(/([A-Z])/g, "_$1")
+				.toLowerCase()
+				.replace(/[- ]+/g, "_");
+			suggestedName = snakeCasedName;
+		} else if (violationMessage.includes("has a negative naming pattern")) {
+			suggestedName = flaggedName.replace(/not/i, "");
+		} else if (
+			violationMessage.includes("does not start with a recognized action word")
+		) {
+			if (this.isDevMode) {
+				suggestedName = `get${flaggedName}`;
+			} else {
+				const response = await this.fetchSuggestedNameFromLLM({
+					message: violationMessage,
+					modelType: "groq",
+				});
+				const data = JSON.parse(response);
+				suggestedName = data.suggestedName;
+				// TODO: Provide justification for action words?
+				// const justification = data.justification;
+			}
+		}
+		const title = `Rename to '${suggestedName}'`;
+		const range = diagnostic.range;
+		const cmd = Command.create(
+			title,
+			FIX_NAME,
+			document.uri,
+			suggestedName,
+			range
+		);
+		const fix = CodeAction.create(title, cmd, CodeActionKind.QuickFix);
+		fix.isPreferred = true;
+		this.codeActionsMessageCache.set(cacheKey, fix);
 		return fix;
 	}
 

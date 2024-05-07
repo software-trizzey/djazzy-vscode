@@ -56,8 +56,8 @@ let hasWorkspaceFolderCapability = false;
 let hasDiagnosticRelatedInformationCapability = false;
 
 connection.onInitialize((params: InitializeParams) => {
-	const extensionNameMessage = `Extension Name: ${projectPackageJson.name}.`;
-	const extensionVersionMessage = `Extension Version: ${projectPackageJson.version}.`;
+	const extensionNameMessage = `Extension Name: ${projectPackageJson.name}`;
+	const extensionVersionMessage = `Extension Version: ${projectPackageJson.version}`;
 
 	if (process.env.NODE_ENV !== "production") {
 		console.log(extensionNameMessage);

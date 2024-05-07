@@ -180,37 +180,35 @@ export abstract class LanguageProvider {
 		const conventions = this.getConventions();
 		const { variable, boolean: booleanConventions } = conventions;
 
-		if (variable.expressive && variable.avoidAbbreviation) {
-			if (variableName.length < 3) {
+		if (variable.expressive) {
+			const minLength = variable.avoidAbbreviation ? 3 : 2;
+			if (variableName.length < minLength) {
 				return {
 					violates: true,
-					reason: `Name "${variableName}" is too short or an abbreviation which violates rule "Expressive names".`,
-				};
-			}
-		} else if (variable.expressive && !variable.avoidAbbreviation) {
-			if (variableName.length < 2) {
-				return {
-					violates: true,
-					reason: `Name "${variableName}" is too short which violates rule "Expressive names".`,
+					reason: `Name "${variableName}" is too short, violating expressiveness rules.`,
 				};
 			}
 		}
-		const isExplicitBoolean = /True|False/i.test(variableValue);
+
+		const isExplicitBoolean =
+			typeof variableValue === "boolean" ||
+			/^(true|false)$/i.test(variableValue);
 		if (
 			booleanConventions &&
-			booleanConventions.prefix &&
 			(isLikelyBoolean(variableName) || isExplicitBoolean)
 		) {
-			if (!hasBooleanPrefix(variableName, booleanConventions.prefix)) {
+			const { positiveNaming, prefix } = booleanConventions;
+			if (prefix && !prefix.some((prefix) => variableName.startsWith(prefix))) {
+				const prefixes = prefix.join(", ");
 				return {
 					violates: true,
-					reason: `Boolean variable "${variableName}" does not start with a conventional prefix (e.g. is, has, can).`,
+					reason: `Boolean variable "${variableName}" does not start with a conventional prefix (e.g., ${prefixes}).`,
 				};
 			}
-			if (hasNegativePattern(variableName)) {
+			if (positiveNaming && hasNegativePattern(variableName)) {
 				return {
 					violates: true,
-					reason: `Boolean variable "${variableName}" has a negative naming pattern.`,
+					reason: `Boolean variable "${variableName}" has a negative naming pattern, which contradicts the positive naming convention.`,
 				};
 			}
 		}

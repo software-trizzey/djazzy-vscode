@@ -1,10 +1,12 @@
 export const actionWordsDictionary: { [key: string]: string } = {
 	add: "add",
+	activate: "activate",
 	remove: "remove",
 	create: "create",
 	delete: "delete",
 	debounce: "debounce",
 	debounced: "debounced",
+	deactivate: "deactivate",
 	get: "get",
 	set: "set",
 	update: "update",

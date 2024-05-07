@@ -27,7 +27,7 @@ export abstract class LanguageProvider {
 	protected connection: Connection;
 	protected cache: Map<string, any>;
 	protected cancellationId: number = 0;
-	protected defaultConventions: any;
+	protected conventions: any;
 	protected settings: ExtensionSettings;
 
 	protected diagnostics: Map<
@@ -53,14 +53,14 @@ export abstract class LanguageProvider {
 	abstract provideCodeActions(document: TextDocument): Promise<CodeAction[]>;
 
 	private loadConventions(conventions?: LanguageConventions): void {
-		this.defaultConventions =
+		this.conventions =
 			conventions || defaultConventions.conventions[this.languageId];
 	}
 
 	public async provideDiagnostics(
 		document: TextDocument
 	): Promise<Diagnostic[]> {
-		if (!this.defaultConventions.conventions[document.languageId].isEnabled) {
+		if (!this.conventions.conventions[document.languageId].isEnabled) {
 			return [];
 		}
 
@@ -152,7 +152,7 @@ export abstract class LanguageProvider {
 				}
 			});
 		} else {
-			if (!this.defaultConventions.isDevMode) {
+			if (!this.conventions.isDevMode) {
 				rollbar.error(error);
 				return;
 			}
@@ -172,7 +172,7 @@ export abstract class LanguageProvider {
 			return { violates: false, reason: "" };
 		}
 
-		const { variable, boolean: booleanConventions } = this.defaultConventions;
+		const { variable, boolean: booleanConventions } = this.conventions;
 
 		if (variable.expressive && variable.avoidAbbreviation) {
 			if (variableName.length < 3) {

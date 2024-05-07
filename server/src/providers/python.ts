@@ -94,7 +94,7 @@ export class PythonProvider extends LanguageProvider {
 		} else if (
 			violationMessage.includes("does not start with a recognized action word")
 		) {
-			if (this.defaultConventions.isDevMode) {
+			if (this.conventions.isDevMode) {
 				suggestedName = `get${flaggedName}`;
 			} else {
 				const response = await this.fetchSuggestedNameFromLLM({
@@ -151,7 +151,7 @@ export class PythonProvider extends LanguageProvider {
 
 					try {
 						const symbols = JSON.parse(output);
-						if (!this.defaultConventions.isDevMode) {
+						if (!this.conventions.isDevMode) {
 							rollbar.info("Python symbols parsed", { symbols });
 						} else {
 							console.log("Symbols:", symbols);

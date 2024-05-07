@@ -261,7 +261,7 @@ async function validateTextDocument(
 	const provider = getOrCreateProvider(languageId, settings);
 	let diagnostics = await provider.getDiagnostic(textDocument.uri);
 
-	rollbar.info(`Validating file: ${textDocument.uri}`, {
+	console.info(`Validating file: ${textDocument.uri}`, {
 		context: "server#validateTextDocument",
 	});
 

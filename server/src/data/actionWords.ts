@@ -164,6 +164,7 @@ export const actionWordsDictionary: { [key: string]: string } = {
 	interrupt: "interrupt",
 	invalidate: "invalidate",
 	invite: "invite",
+	is: "is",
 	jump: "jump",
 	keep: "keep",
 	learn: "learn",

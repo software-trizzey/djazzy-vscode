@@ -12,11 +12,12 @@ export interface ExtensionSettings {
 
 export const defaultPrefixes: string[] = ["is", "has", "should", "can", "did"];
 
-export const defaultSettings: ExtensionSettings = {
+export const defaultConventions: ExtensionSettings = {
 	onlyCheckNewCode: false,
 	isDevMode: false,
 	conventions: {
 		javascript: {
+			isEnabled: true,
 			variable: {
 				expressive: true,
 				avoidAbbreviation: true,
@@ -37,6 +38,7 @@ export const defaultSettings: ExtensionSettings = {
 			},
 		},
 		typescript: {
+			isEnabled: true,
 			variable: {
 				expressive: true,
 				avoidAbbreviation: true,
@@ -57,6 +59,7 @@ export const defaultSettings: ExtensionSettings = {
 			},
 		},
 		python: {
+			isEnabled: true,
 			variable: {
 				expressive: true,
 				avoidAbbreviation: true,

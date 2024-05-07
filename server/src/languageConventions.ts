@@ -15,6 +15,7 @@ interface FileRuleSettings {
 }
 
 export interface LanguageConventions {
+	isEnabled: boolean;
 	variable: RuleSettings;
 	function: RuleSettings;
 	class: RuleSettings;

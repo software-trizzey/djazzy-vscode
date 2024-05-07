@@ -1,11 +1,6 @@
-interface RuleSettings {
-	expressive: boolean;
-	avoidAbbreviation: boolean;
-	prefix?: string[];
-}
-
-interface BooleanRuleSettings extends RuleSettings {
+interface BooleanRuleSettings {
 	positiveNaming: boolean;
+	usePrefix: boolean;
 }
 
 interface FileRuleSettings {
@@ -16,9 +11,8 @@ interface FileRuleSettings {
 
 export interface LanguageConventions {
 	isEnabled: boolean;
-	variable: RuleSettings;
-	function: RuleSettings;
-	class: RuleSettings;
+	expressive: boolean;
+	avoidAbbreviation: boolean;
 	boolean: BooleanRuleSettings;
 	file?: FileRuleSettings; // TODO: add support for file conventions
 }

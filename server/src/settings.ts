@@ -4,6 +4,7 @@ export interface ExtensionSettings {
 	onlyCheckNewCode: boolean;
 	isDevMode: boolean;
 	notificationInterval: number;
+	prefixes: string[];
 	languages: {
 		javascript?: LanguageConventions;
 		typescript?: LanguageConventions;
@@ -17,68 +18,33 @@ export const defaultConventions: ExtensionSettings = {
 	onlyCheckNewCode: false,
 	isDevMode: false,
 	notificationInterval: 20, // minutes
+	prefixes: defaultPrefixes,
 	languages: {
 		javascript: {
 			isEnabled: true,
-			variable: {
-				expressive: true,
-				avoidAbbreviation: true,
-			},
-			function: {
-				expressive: true,
-				avoidAbbreviation: true,
-			},
-			class: {
-				expressive: true,
-				avoidAbbreviation: true,
-			},
+			expressive: true,
+			avoidAbbreviation: true,
 			boolean: {
 				positiveNaming: true,
-				expressive: true,
-				avoidAbbreviation: true,
-				prefix: defaultPrefixes,
+				usePrefix: true,
 			},
 		},
 		typescript: {
 			isEnabled: true,
-			variable: {
-				expressive: true,
-				avoidAbbreviation: true,
-			},
-			function: {
-				expressive: true,
-				avoidAbbreviation: true,
-			},
-			class: {
-				expressive: true,
-				avoidAbbreviation: true,
-			},
+			expressive: true,
+			avoidAbbreviation: true,
 			boolean: {
 				positiveNaming: true,
-				expressive: true,
-				avoidAbbreviation: true,
-				prefix: defaultPrefixes,
+				usePrefix: true,
 			},
 		},
 		python: {
 			isEnabled: true,
-			variable: {
-				expressive: true,
-				avoidAbbreviation: true,
-			},
-			function: {
-				expressive: true,
-				avoidAbbreviation: true,
-			},
-			class: {
-				expressive: true,
-				avoidAbbreviation: true,
-			},
+			expressive: true,
+			avoidAbbreviation: true,
 			boolean: {
 				positiveNaming: true,
-				expressive: true,
-				avoidAbbreviation: true,
-				prefix: defaultPrefixes,
+				usePrefix: true,
 			},
 		},
 	},

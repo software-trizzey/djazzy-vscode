@@ -179,10 +179,9 @@ export abstract class LanguageProvider {
 			return { violates: false, reason: "" };
 		}
 		const conventions = this.getConventions();
-		const { variable, boolean: booleanConventions } = conventions;
 
-		if (variable.expressive) {
-			const minLength = variable.avoidAbbreviation ? 3 : 2;
+		if (conventions.expressive) {
+			const minLength = conventions.avoidAbbreviation ? 3 : 2;
 			if (variableName.length < minLength) {
 				return {
 					violates: true,
@@ -191,7 +190,7 @@ export abstract class LanguageProvider {
 			}
 		}
 
-		if (variable.avoidAbbreviation && containsAbbreviation(variableName)) {
+		if (conventions.avoidAbbreviation && containsAbbreviation(variableName)) {
 			return {
 				violates: true,
 				reason: `Name "${variableName}" contains abbreviations, which are to be avoided.`,
@@ -202,15 +201,19 @@ export abstract class LanguageProvider {
 			typeof variableValue === "boolean" ||
 			/^(true|false)$/i.test(variableValue);
 		if (
-			booleanConventions &&
+			conventions.boolean &&
 			(isLikelyBoolean(variableName) || isExplicitBoolean)
 		) {
-			const { positiveNaming, prefix } = booleanConventions;
-			if (prefix && !prefix.some((prefix) => variableName.startsWith(prefix))) {
-				const prefixes = prefix.join(", ");
+			const prefixes = this.settings.prefixes;
+			const { positiveNaming, usePrefix } = conventions.boolean;
+			if (
+				usePrefix &&
+				!prefixes.some((prefix) => variableName.startsWith(prefix))
+			) {
+				const prefixExamples = prefixes.join(", ");
 				return {
 					violates: true,
-					reason: `Boolean variable "${variableName}" does not start with a conventional prefix (e.g., ${prefixes}).`,
+					reason: `Boolean variable "${variableName}" does not start with a conventional prefix (e.g., ${prefixExamples}).`,
 				};
 			}
 			if (positiveNaming && hasNegativePattern(variableName)) {

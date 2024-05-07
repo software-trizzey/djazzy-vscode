@@ -11,18 +11,23 @@ When In Rome is an AI-driven code stylist that helps teams enforce their coding 
 
 ## Features (MVP)
 
-- **Convention Enforcement**: Automatically check code against your team’s coding conventions, ensuring consistency and readability.
-- **Custom Rule Creation**: Define your team's custom rules or use our AI-enhanced templates.
-- **Quick Fix Suggestions**: Receive immediate suggestions to fix violations and improve code quality.
-- **Supports Multiple Languages**: Initial support includes Python, JavaScript, and TypeScript.
-- **Flexible Configuration**: Tailor the extension to your team's unique coding conventions.
+- **AI-Driven Name Recommendations**: Automatically check variable and function names against your team’s coding conventions, ensuring consistency and readability.
+- **Quick Fix Suggestions**: Receive suggestions to fix naming and style violations directly in your IDE, with options to apply changes immediately or review them first.
+- **Test Suite Conventions**: Notify developers to add or update test files when changes are detected in API views. *MVP: Triggers for files within "api" or "views" folders.*
+- **Supports Multiple Languages**: Initial support for Python, JavaScript, and TypeScript, with plans to expand to more languages.
+
+## Planned Features
+
+- **Custom Rule Creation**: Define your team's custom rules or modify AI-enhanced templates to fit your project’s needs.
+- **Flexible Configuration**: Customize the extension settings to align with your team's specific coding conventions, such as adjusting rule severity or excluding files.
 
 ## How It Works
 
-1. **Setup and Configuration**: Install the extension and configure your team's coding conventions using a simple UI or configuration file.
-2. **Code Analysis**: The extension analyzes your code in real time as you type, highlighting violations.
-3. **Quick Fixes**: Violations are displayed with recommendations for quick fixes or changes.
-4. **Automatic Suggestions**: Our AI provides suggestions aligned with your team's coding conventions.
+1. **Setup and Configuration**: Install the extension and set up your team's coding conventions via a GUI or a configuration file.
+2. **Code Analysis**: Real-time code analysis highlights any deviations from established conventions as you type.
+3. **Quick Fixes**: Offers actionable recommendations for quick corrections, streamlining your coding process.
+4. **Automatic Suggestions**: AI-driven suggestions help maintain consistency across your team's codebase.
+5. **Test Suite Enforcement**: Alerts you to update or create tests following changes in designated "api" or "views" directories, ensuring code changes are adequately tested.
 
 ## Getting Started
 

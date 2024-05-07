@@ -32,7 +32,11 @@ import {
 	JavascriptAndTypescriptProvider,
 	PythonProvider,
 } from "./providers";
-import { ExtensionSettings, defaultConventions } from "./settings";
+import {
+	ExtensionSettings,
+	defaultConventions,
+	normalizeClientSettings,
+} from "./settings";
 import { debounce } from "./utils";
 
 import COMMANDS from "./constants/commands";
@@ -152,16 +156,17 @@ function getDocumentSettings(resource: string): Thenable<ExtensionSettings> {
 	if (!hasConfigurationCapability || resource === "N/A") {
 		return Promise.resolve(globalSettings);
 	}
-	let result = documentSettings.get(resource);
-	if (!result) {
-		result = connection.workspace.getConfiguration({
-			scopeUri: resource,
-			section: "whenInRome",
-		});
-
-		documentSettings.set(resource, result);
+	let settingsResult = documentSettings.get(resource);
+	if (!settingsResult) {
+		settingsResult = connection.workspace
+			.getConfiguration({
+				scopeUri: resource,
+				section: "whenInRome",
+			})
+			.then((settings) => normalizeClientSettings(settings));
+		documentSettings.set(resource, settingsResult);
 	}
-	return result;
+	return settingsResult;
 }
 
 documents.onDidClose((e) => {
@@ -331,3 +336,4 @@ connection.onExecuteCommand((params) => {
 
 documents.listen(connection);
 connection.listen();
+

@@ -1,4 +1,8 @@
-import type { LanguageConventions } from "./languageConventions";
+import type {
+	ClientExtensionSettings,
+	ClientExtensionLanguageSettings,
+	LanguageConventions,
+} from "./languageConventions";
 
 export interface ExtensionSettings {
 	onlyCheckNewCode: boolean;
@@ -48,4 +52,34 @@ export const defaultConventions: ExtensionSettings = {
 			},
 		},
 	},
+};
+
+export const normalizeClientSettings = (
+	settings: ClientExtensionSettings
+): ExtensionSettings => {
+	return {
+		onlyCheckNewCode: settings.onlyCheckNewCode,
+		isDevMode: settings.devMode,
+		notificationInterval: settings.notificationInterval,
+		prefixes: settings.prefixes,
+		languages: {
+			javascript: normalizeLanguageSettings(settings.languages.javascript),
+			typescript: normalizeLanguageSettings(settings.languages.typescript),
+			python: normalizeLanguageSettings(settings.languages.python),
+		},
+	};
+};
+
+export const normalizeLanguageSettings = (
+	langSettings: ClientExtensionLanguageSettings
+): LanguageConventions => {
+	return {
+		isEnabled: langSettings.enabled,
+		expressive: langSettings.expressiveNames,
+		avoidAbbreviation: langSettings.avoidAbbreviations,
+		boolean: {
+			positiveNaming: langSettings.boolean.positiveNaming,
+			usePrefix: langSettings.boolean.usePrefix,
+		},
+	};
 };

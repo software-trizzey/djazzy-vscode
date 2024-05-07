@@ -223,23 +223,6 @@ export async function validatePythonFunctionName(
 	return { violates: false, reason: "" };
 }
 
-export async function maxMatch(name: string): Promise<string[]> {
-	if (name === "") return [];
-
-	for (let i = name.length; i > 0; i--) {
-		const candidateWord = name.substring(0, i);
-		if (
-			commonWords[candidateWord.toLowerCase()] ||
-			(await checkDictionaryAPI(candidateWord.toLowerCase()))
-		) {
-			return [candidateWord].concat(await maxMatch(name.substring(i)));
-		}
-	}
-	// When no matching initial segment is found, we consider the first character as a word
-	// This is a fallback and might not be ideal for all use cases
-	return [name[0]].concat(await maxMatch(name.substring(1)));
-}
-
 export async function getChangedLinesFromClient(
 	connection: Connection,
 	filePath: string
@@ -283,4 +266,34 @@ async function fetchWithRetry(
 		console.error("Failed to fetch: ", error.message);
 		throw error;
 	}
+}
+
+/**
+ * Split a name into words based on camelCase and common separators
+ * @returns
+ */
+function splitNameIntoWords(name: string): string[] {
+	const tokens = name.split(/(?<=[a-z])(?=[A-Z])|[_-]/);
+	return tokens;
+}
+
+async function validateWords(tokens: string[]) {
+	const validWords = [];
+	for (const token of tokens) {
+		if (commonWords[token.toLowerCase()]) {
+			validWords.push(token);
+		} else if (await checkDictionaryAPI(token.toLowerCase())) {
+			validWords.push(token);
+		} else {
+			console.log("Invalid word: ", token);
+			break;
+		}
+	}
+	console.log("valid words: ", validWords);
+	return validWords;
+}
+
+async function maxMatch(name: string): Promise<string[]> {
+	const tokens = splitNameIntoWords(name);
+	return await validateWords(tokens);
 }

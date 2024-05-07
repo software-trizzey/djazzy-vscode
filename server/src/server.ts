@@ -100,7 +100,7 @@ connection.onInitialize((params: InitializeParams) => {
 });
 
 connection.onInitialized(async () => {
-	const settings = await getDocumentSettings("");
+	const settings = await getDocumentSettings("N/A");
 	const routeId = "server#index";
 
 	if (!settings.isDevMode || process.env.NODE_ENV === "production") {
@@ -149,7 +149,7 @@ connection.onDidChangeConfiguration((change) => {
 });
 
 function getDocumentSettings(resource: string): Thenable<ExtensionSettings> {
-	if (!hasConfigurationCapability) {
+	if (!hasConfigurationCapability || resource === "N/A") {
 		return Promise.resolve(globalSettings);
 	}
 	let result = documentSettings.get(resource);
@@ -158,6 +158,7 @@ function getDocumentSettings(resource: string): Thenable<ExtensionSettings> {
 			scopeUri: resource,
 			section: "whenInRome",
 		});
+
 		documentSettings.set(resource, result);
 	}
 	return result;

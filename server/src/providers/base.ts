@@ -4,6 +4,7 @@ import {
 	CodeAction,
 	CodeActionKind,
 	MessageType,
+	ShowMessageRequestParams,
 } from "vscode-languageserver/node";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
@@ -27,7 +28,7 @@ export abstract class LanguageProvider {
 	protected connection: Connection;
 	protected cache: Map<string, any>;
 	protected cancellationId: number = 0;
-	protected conventions: any;
+	protected conventions?: LanguageConventions;
 	protected settings: ExtensionSettings;
 
 	protected diagnostics: Map<
@@ -47,22 +48,27 @@ export abstract class LanguageProvider {
 		this.cache = new Map<string, any>();
 
 		this.settings = settings;
-		this.loadConventions(settings.languages[languageId]);
+
+		const languageSettings = settings.languages[languageId];
+		if (!languageSettings) {
+			this.sendNotSupportedMessage(languageId);
+			return;
+		}
+		this.conventions = languageSettings;
 	}
 
 	abstract provideCodeActions(document: TextDocument): Promise<CodeAction[]>;
 
-	private loadConventions(conventions?: LanguageConventions): void {
-		this.conventions =
-			conventions || defaultConventions.languages[this.languageId];
+	protected getConventions(): LanguageConventions {
+		if (!this.conventions) throw new Error("Language conventions are not set.");
+		return this.conventions;
 	}
 
 	public async provideDiagnostics(
 		document: TextDocument
 	): Promise<Diagnostic[]> {
-		if (!this.conventions.conventions[document.languageId].isEnabled) {
-			return [];
-		}
+		const conventions = this.getConventions();
+		if (!conventions.isEnabled) return [];
 
 		this.deleteDiagnostic(document.uri);
 		const diagnostics: Diagnostic[] = [];
@@ -152,7 +158,7 @@ export abstract class LanguageProvider {
 				}
 			});
 		} else {
-			if (!this.conventions.isDevMode) {
+			if (!this.settings.isDevMode) {
 				rollbar.error(error);
 				return;
 			}
@@ -171,8 +177,8 @@ export abstract class LanguageProvider {
 			console.warn("No variable name found.");
 			return { violates: false, reason: "" };
 		}
-
-		const { variable, boolean: booleanConventions } = this.conventions;
+		const conventions = this.getConventions();
+		const { variable, boolean: booleanConventions } = conventions;
 
 		if (variable.expressive && variable.avoidAbbreviation) {
 			if (variableName.length < 3) {
@@ -189,15 +195,6 @@ export abstract class LanguageProvider {
 				};
 			}
 		}
-
-		// FIXME: disabled for now as we can use linting tools for this later if needed
-		// if (!validateVariableNameCase(variableName, languageId)) {
-		// 	const namingStyle = languageId === "python" ? "snake_case" : "camelCase";
-		// 	return {
-		// 		violates: true,
-		// 		reason: `"${variableName}" does not follow "${namingStyle}" naming convention.`,
-		// 	};
-		// }
 		const isExplicitBoolean = /True|False/i.test(variableValue);
 		if (
 			booleanConventions &&
@@ -263,5 +260,20 @@ export abstract class LanguageProvider {
 		} else if (modelType === "groq") {
 			return await this.chatWithGroq(message);
 		}
+	}
+
+	private sendNotSupportedMessage(languageId: string): void {
+		const messageParams: ShowMessageRequestParams = {
+			type: MessageType.Warning,
+			message: `The language ${languageId} is not currently supported by When In Rome extension.`,
+			actions: [{ title: "Dismiss" }],
+		};
+		this.connection
+			.sendRequest("window/showMessageRequest", messageParams)
+			.then((response) => {
+				if (response) {
+					console.log(`User dismissed the message for ${languageId} support.`);
+				}
+			});
 	}
 }

@@ -56,12 +56,8 @@ let hasWorkspaceFolderCapability = false;
 let hasDiagnosticRelatedInformationCapability = false;
 
 connection.onInitialize((params: InitializeParams) => {
-	const extensionNameMessage = `["INFO" - ${new Date().toLocaleTimeString()}] Extension Name: ${
-		projectPackageJson.name
-	}.`;
-	const extensionVersionMessage = `["INFO" - ${new Date().toLocaleTimeString()}] Extension Version: ${
-		projectPackageJson.version
-	}.`;
+	const extensionNameMessage = `Extension Name: ${projectPackageJson.name}.`;
+	const extensionVersionMessage = `Extension Version: ${projectPackageJson.version}.`;
 
 	if (process.env.NODE_ENV !== "production") {
 		console.log(extensionNameMessage);
@@ -70,11 +66,7 @@ connection.onInitialize((params: InitializeParams) => {
 		rollbar.info(extensionNameMessage);
 		rollbar.info(extensionVersionMessage);
 	}
-	console.log(
-		`["INFO" - ${new Date().toLocaleTimeString()}] Running Node.js version: ${
-			process.version
-		}`
-	);
+	console.log(`Running Node.js version: ${process.version}`);
 
 	const capabilities = params.capabilities;
 
@@ -153,6 +145,10 @@ connection.onInitialized(async () => {
 			connection.console.log("Workspace folder change event received.");
 		});
 	}
+
+	console.log(
+		`Finished Initializing server at: ${new Date().toLocaleTimeString()}`
+	);
 });
 
 let globalSettings: ExtensionSettings = defaultConventions;

@@ -61,7 +61,7 @@ export const normalizeClientSettings = (
 		onlyCheckNewCode: settings.onlyCheckNewCode,
 		isDevMode: settings.devMode,
 		notificationInterval: settings.notificationInterval,
-		prefixes: settings.prefixes,
+		prefixes: settings.languages.prefixes,
 		languages: {
 			javascript: normalizeLanguageSettings(settings.languages.javascript),
 			typescript: normalizeLanguageSettings(settings.languages.typescript),

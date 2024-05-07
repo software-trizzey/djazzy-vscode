@@ -32,8 +32,8 @@ export interface ClientExtensionSettings {
 	onlyCheckNewCode: boolean;
 	devMode: boolean;
 	notificationInterval: number;
-	prefixes: string[];
 	languages: {
+		prefixes: string[];
 		javascript: ClientExtensionLanguageSettings;
 		typescript: ClientExtensionLanguageSettings;
 		python: ClientExtensionLanguageSettings;

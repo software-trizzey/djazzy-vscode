@@ -41,6 +41,7 @@ The When In Rome extension allows you to customize how it analyzes and corrects 
 - **Development Mode**: Enable additional logging for debugging.
 - **Notification Interval**: Set how frequently you receive reminders to review suggestions.
 - **Language-Specific Settings**: Adjust settings for JavaScript, TypeScript, and Python, including:
+  - Toggle the extension on or off for the selected language.
   - Enforcing expressive variable names.
   - Avoiding abbreviations.
   - Using boolean variable prefixes.

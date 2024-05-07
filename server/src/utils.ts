@@ -280,6 +280,8 @@ function splitNameIntoWords(name: string): string[] {
 async function validateWords(tokens: string[]) {
 	const validWords = [];
 	for (const token of tokens) {
+		if (!token) continue;
+
 		if (commonWords[token.toLowerCase()]) {
 			validWords.push(token);
 		} else if (await checkDictionaryAPI(token.toLowerCase())) {

@@ -13,14 +13,13 @@ import * as babelParser from "@babel/parser";
 import traverse from "@babel/traverse";
 
 import { LanguageProvider } from "./base";
-import defaultConventions from "../defaultConventions";
 
 import {
 	debounce,
 	validateJavaScriptAndTypeScriptFunctionNameCase,
 } from "../utils";
 
-import { ExtensionSettings } from "../settings";
+import { ExtensionSettings, defaultConventions } from "../settings";
 import { FIX_NAME } from "../constants/commands";
 
 export class JavascriptAndTypescriptProvider extends LanguageProvider {
@@ -34,7 +33,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 	}
 
 	constructor(
-		languageId: keyof typeof defaultConventions,
+		languageId: keyof typeof defaultConventions.conventions,
 		connection: Connection,
 		settings: ExtensionSettings
 	) {

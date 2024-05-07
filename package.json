@@ -28,98 +28,105 @@
 	"main": "./client/out/extension",
 	"contributes": {
 		"configuration": {
-			"type": "object",
-			"title": "When In Rome",
+			"title": "When in Rome",
 			"properties": {
-				"whenInRome.languages": {
-					"type": "object",
-					"properties": {
-						"javascript": {
-							"$ref": "#/definitions/LanguageConventions"
-						},
-						"typescript": {
-							"$ref": "#/definitions/LanguageConventions"
-						},
-						"python": {
-							"$ref": "#/definitions/LanguageConventions"
-						}
-					}
+				"whenInRome.enabled": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enable or disable the When in Rome extension globally."
 				},
 				"whenInRome.onlyCheckNewCode": {
 					"type": "boolean",
 					"default": false,
 					"description": "Check only new or modified code."
 				},
-				"whenInRome.isDevMode": {
+				"whenInRome.devMode": {
 					"type": "boolean",
-					"default": true,
-					"description": "Enable/disable development mode."
+					"default": false,
+					"description": "Toggle development mode for additional logging and diagnostics."
 				},
 				"whenInRome.notificationInterval": {
 					"type": "number",
-					"default": 20,
-					"description": "Interval in minutes between notifications."
-				}
-			}
-		}
-	},
-	"definitions": {
-		"LanguageConventions": {
-			"type": "object",
-			"properties": {
-				"isEnabled": {
+					"default": 1200000,
+					"minimum": 60000,
+					"description": "Interval in milliseconds to control the frequency of notifications."
+				},
+				"whenInRome.languages.javascript.enabled": {
 					"type": "boolean",
 					"default": true,
-					"description": "Enable/disable language-specific features."
+					"description": "Enable/disable features specifically."
 				},
-				"variable": {
-					"$ref": "#/definitions/RuleSettings"
-				},
-				"function": {
-					"$ref": "#/definitions/RuleSettings"
-				},
-				"class": {
-					"$ref": "#/definitions/RuleSettings"
-				},
-				"boolean": {
-					"$ref": "#/definitions/BooleanRuleSettings"
-				}
-			}
-		},
-		"RuleSettings": {
-			"type": "object",
-			"properties": {
-				"expressive": {
+				"whenInRome.languages.javascript.expressiveNames": {
 					"type": "boolean",
 					"default": true,
-					"description": "Enforce expressiveness in naming."
+					"description": "Enforce expressive variable names."
 				},
-				"avoidAbbreviation": {
+				"whenInRome.languages.javascript.avoidAbbreviations": {
 					"type": "boolean",
 					"default": true,
-					"description": "Avoid abbreviations to enhance clarity."
-				}
-			}
-		},
-		"BooleanRuleSettings": {
-			"type": "object",
-			"properties": {
-				"positiveNaming": {
+					"description": "Avoid using abbreviations in variable names."
+				},
+				"whenInRome.languages.javascript.boolean.positiveNaming": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enforce positive naming conventions."
 				},
-				"expressive": {
+				"whenInRome.languages.javascript.boolean.usePrefix": {
 					"type": "boolean",
 					"default": true,
-					"description": "Enforce expressiveness in boolean naming."
+					"description": "Enforce boolean variable prefixes."
 				},
-				"avoidAbbreviation": {
+				"whenInRome.languages.typescript.enabled": {
 					"type": "boolean",
 					"default": true,
-					"description": "Avoid abbreviations in boolean variables."
+					"description": "Enable/disable features specifically."
 				},
-				"prefix": {
+				"whenInRome.languages.typescript.expressiveNames": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enforce expressive variable names."
+				},
+				"whenInRome.languages.typescript.avoidAbbreviations": {
+					"type": "boolean",
+					"default": true,
+					"description": "Avoid using abbreviations in variable names."
+				},
+				"whenInRome.languages.typescript.boolean.positiveNaming": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enforce positive naming conventions."
+				},
+				"whenInRome.languages.typescript.boolean.usePrefix": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enforce boolean variable prefixes."
+				},
+				"whenInRome.languages.python.enabled": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enable/disable features specifically."
+				},
+				"whenInRome.languages.python.expressiveNames": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enforce expressive variable names."
+				},
+				"whenInRome.languages.python.avoidAbbreviations": {
+					"type": "boolean",
+					"default": true,
+					"description": "Avoid using abbreviations in variable names."
+				},
+				"whenInRome.languages.python.boolean.positiveNaming": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enforce positive naming conventions."
+				},
+				"whenInRome.languages.python.boolean.usePrefix": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enforce boolean variable prefixes."
+				},
+				"whenInRome.languages.prefixes": {
 					"type": "array",
 					"default": [
 						"is",

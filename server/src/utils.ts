@@ -92,7 +92,12 @@ export function containsAbbreviation(name: string): boolean {
 		"cfg",
 		"msg",
 	];
-	return commonAbbreviations.some((abbr) => name.toLowerCase().includes(abbr));
+	const wordBoundaryRegex = new RegExp(
+		`\\b(${commonAbbreviations.join("|")})\\b`,
+		"i"
+	);
+	return wordBoundaryRegex.test(name);
+
 }
 
 /**

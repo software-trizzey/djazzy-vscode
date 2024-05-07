@@ -18,6 +18,7 @@ import {
 	hasBooleanPrefix,
 	hasNegativePattern,
 	getChangedLinesFromClient,
+	containsAbbreviation,
 } from "../utils";
 import { ExtensionSettings, defaultConventions } from "../settings";
 import { rollbar } from "../common/logs";
@@ -188,6 +189,13 @@ export abstract class LanguageProvider {
 					reason: `Name "${variableName}" is too short, violating expressiveness rules.`,
 				};
 			}
+		}
+
+		if (variable.avoidAbbreviation && containsAbbreviation(variableName)) {
+			return {
+				violates: true,
+				reason: `Name "${variableName}" contains abbreviations, which are to be avoided.`,
+			};
 		}
 
 		const isExplicitBoolean =

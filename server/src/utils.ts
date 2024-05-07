@@ -81,6 +81,20 @@ export function hasNegativePattern(variableName: string): boolean {
 	return negativePatterns.some((pattern) => pattern.test(variableName));
 }
 
+export function containsAbbreviation(name: string): boolean {
+	const commonAbbreviations = [
+		"id",
+		"info",
+		"num",
+		"qty",
+		"calc",
+		"tmp",
+		"cfg",
+		"msg",
+	];
+	return commonAbbreviations.some((abbr) => name.toLowerCase().includes(abbr));
+}
+
 /**
  * Check naming style (camelCase for JS/TS, snake_case for Python)
  */

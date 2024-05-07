@@ -11,6 +11,7 @@ export const actionWordsDictionary: { [key: string]: string } = {
 	parse: "parse",
 	format: "format",
 	calculate: "calculate",
+	contains: "contains",
 	compute: "compute",
 	validate: "validate",
 	serialize: "serialize",

@@ -48,7 +48,7 @@
 				},
 				"whenInRome.isDevMode": {
 					"type": "boolean",
-					"default": false,
+					"default": true,
 					"description": "Enable/disable development mode."
 				},
 				"whenInRome.isJavascriptEnabled": {

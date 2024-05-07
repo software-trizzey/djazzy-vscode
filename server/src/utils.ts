@@ -27,26 +27,21 @@ export async function checkDictionaryAPI(word: string): Promise<boolean> {
 	if (cache.has(word)) {
 		return !!cache.get(word);
 	}
-	const response = await fetch(
-		`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`
-	);
-	if (!response.ok) {
-		if (response.status === 404) {
-			console.warn(`"${word}" not found in dictionary API`);
-			cache.set(word, false);
-			return false;
+	try {
+		const data = await fetchWithRetry(
+			`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`,
+			word
+		);
+		if (data && data.length > 0) {
+			cache.set(word, true);
+			return true;
 		}
-		// TODO: handle this better
-		console.error("Failed to fetch dictionary API", response);
-	}
-	const data = (await response.json()) as any;
-	if (data.length === 0) {
+		cache.set(word, false);
+		return false;
+	} catch (error) {
 		cache.set(word, false);
 		return false;
 	}
-	// TODO: if we find a valid word, we should add it to our DB
-	cache.set(word, true);
-	return true;
 }
 
 export function isLikelyBoolean(variableName: string): boolean {
@@ -241,6 +236,32 @@ export async function getChangedLinesFromClient(
 		return changedLinesSet;
 	} catch (error) {
 		console.error(error);
+		throw error;
+	}
+}
+
+async function fetchWithRetry(
+	url: string,
+	word: string,
+	retries = 3,
+	backoff = 300
+) {
+	try {
+		const response = await fetch(url);
+		if (!response.ok) {
+			if (response.status === 404) {
+				console.warn(`"${word}" not found in dictionary API`);
+				return [];
+			} else if (response.status === 429 && retries > 0) {
+				console.warn("Rate limit exceeded, retrying...");
+				await new Promise((resolve) => setTimeout(resolve, backoff));
+				return await fetchWithRetry(url, word, retries - 1, backoff * 2);
+			}
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+		return await response.json();
+	} catch (error: any) {
+		console.error("Failed to fetch: ", error.message);
 		throw error;
 	}
 }

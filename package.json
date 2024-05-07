@@ -29,48 +29,104 @@
 	"contributes": {
 		"configuration": {
 			"type": "object",
-			"title": "When In Rome Configuration",
+			"title": "When In Rome",
 			"properties": {
-				"whenInRome.notificationInterval": {
-					"type": "number",
-					"default": 1200000,
-					"description": "Interval in milliseconds to control the frequency of test reminder notifications for modified files."
-				},
-				"whenInRome.trace.server": {
-					"scope": "window",
-					"type": "string",
-					"enum": [
-						"off",
-						"messages",
-						"verbose"
-					],
-					"default": "on",
-					"description": "Traces the communication between VS Code and the language server."
-				},
-				"whenInRome.isDevMode": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enable/disable development mode."
-				},
-				"whenInRome.isJavascriptEnabled": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enable/disable JavaScript When in Rome extension."
-				},
-				"whenInRome.isTypescriptEnabled": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enable/disable TypeScript When in Rome extension."
-				},
-				"whenInRome.isPythonEnabled": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enable/disable Python When in Rome extension."
+				"whenInRome.languages": {
+					"type": "object",
+					"properties": {
+						"javascript": {
+							"$ref": "#/definitions/LanguageConventions"
+						},
+						"typescript": {
+							"$ref": "#/definitions/LanguageConventions"
+						},
+						"python": {
+							"$ref": "#/definitions/LanguageConventions"
+						}
+					}
 				},
 				"whenInRome.onlyCheckNewCode": {
 					"type": "boolean",
 					"default": false,
 					"description": "Check only new or modified code."
+				},
+				"whenInRome.isDevMode": {
+					"type": "boolean",
+					"default": false,
+					"description": "Enable/disable development mode."
+				}
+			}
+		}
+	},
+	"definitions": {
+		"LanguageConventions": {
+			"type": "object",
+			"properties": {
+				"isEnabled": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enable/disable language-specific features."
+				},
+				"variable": {
+					"$ref": "#/definitions/RuleSettings"
+				},
+				"function": {
+					"$ref": "#/definitions/RuleSettings"
+				},
+				"class": {
+					"$ref": "#/definitions/RuleSettings"
+				},
+				"boolean": {
+					"$ref": "#/definitions/BooleanRuleSettings"
+				}
+			}
+		},
+		"RuleSettings": {
+			"type": "object",
+			"properties": {
+				"expressive": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enforce expressiveness in naming."
+				},
+				"avoidAbbreviation": {
+					"type": "boolean",
+					"default": true,
+					"description": "Avoid abbreviations to enhance clarity."
+				}
+			}
+		},
+		"BooleanRuleSettings": {
+			"type": "object",
+			"properties": {
+				"positiveNaming": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enforce positive naming conventions."
+				},
+				"expressive": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enforce expressiveness in boolean naming."
+				},
+				"avoidAbbreviation": {
+					"type": "boolean",
+					"default": true,
+					"description": "Avoid abbreviations in boolean variables."
+				},
+				"prefix": {
+					"type": "array",
+					"default": [
+						"is",
+						"has",
+						"should",
+						"can",
+						"did"
+					],
+					"items": {
+						"type": "string"
+					},
+					"description": "Prefixes to use for boolean variables."
 				}
 			}
 		}

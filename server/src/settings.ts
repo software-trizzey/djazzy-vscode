@@ -71,15 +71,15 @@ export const normalizeClientSettings = (
 };
 
 export const normalizeLanguageSettings = (
-	langSettings: ClientExtensionLanguageSettings
+	languageSettings: ClientExtensionLanguageSettings
 ): LanguageConventions => {
 	return {
-		isEnabled: langSettings.enabled,
-		expressive: langSettings.expressiveNames,
-		avoidAbbreviation: langSettings.avoidAbbreviations,
+		isEnabled: languageSettings.enabled,
+		expressive: languageSettings.expressiveNames,
+		avoidAbbreviation: languageSettings.avoidAbbreviations,
 		boolean: {
-			positiveNaming: langSettings.boolean.positiveNaming,
-			usePrefix: langSettings.boolean.usePrefix,
+			positiveNaming: languageSettings.boolean.positiveNaming,
+			usePrefix: languageSettings.boolean.usePrefix,
 		},
 	};
 };

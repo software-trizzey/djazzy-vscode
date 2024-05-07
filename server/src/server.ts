@@ -32,7 +32,7 @@ import {
 	JavascriptAndTypescriptProvider,
 	PythonProvider,
 } from "./providers";
-import { ExtensionSettings, defaultSettings } from "./settings";
+import { ExtensionSettings, defaultConventions } from "./settings";
 import { debounce } from "./utils";
 
 import COMMANDS from "./constants/commands";
@@ -131,7 +131,7 @@ connection.onInitialized(async () => {
 	}
 });
 
-let globalSettings: ExtensionSettings = defaultSettings;
+let globalSettings: ExtensionSettings = defaultConventions;
 
 const documentSettings: Map<string, Thenable<ExtensionSettings>> = new Map();
 
@@ -140,7 +140,7 @@ connection.onDidChangeConfiguration((change) => {
 		documentSettings.clear();
 	} else {
 		globalSettings = <ExtensionSettings>(
-			(change.settings.whenInRome || defaultSettings)
+			(change.settings.whenInRome || defaultConventions)
 		);
 	}
 	// TODO: We could optimize things here and re-fetch the setting first and compare it

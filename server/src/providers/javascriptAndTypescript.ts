@@ -33,7 +33,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 	}
 
 	constructor(
-		languageId: keyof typeof defaultConventions.conventions,
+		languageId: keyof typeof defaultConventions.languages,
 		connection: Connection,
 		settings: ExtensionSettings
 	) {

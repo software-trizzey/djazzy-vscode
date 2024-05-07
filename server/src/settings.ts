@@ -3,7 +3,7 @@ import type { LanguageConventions } from "./languageConventions";
 export interface ExtensionSettings {
 	onlyCheckNewCode: boolean;
 	isDevMode: boolean;
-	conventions: {
+	languages: {
 		javascript?: LanguageConventions;
 		typescript?: LanguageConventions;
 		python?: LanguageConventions;
@@ -15,7 +15,7 @@ export const defaultPrefixes: string[] = ["is", "has", "should", "can", "did"];
 export const defaultConventions: ExtensionSettings = {
 	onlyCheckNewCode: false,
 	isDevMode: false,
-	conventions: {
+	languages: {
 		javascript: {
 			isEnabled: true,
 			variable: {

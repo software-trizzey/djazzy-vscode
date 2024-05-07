@@ -39,7 +39,7 @@ export abstract class LanguageProvider {
 	> = new Map();
 
 	constructor(
-		protected languageId: keyof typeof defaultConventions.conventions,
+		protected languageId: keyof typeof defaultConventions.languages,
 		connection: Connection,
 		settings: ExtensionSettings
 	) {
@@ -47,14 +47,14 @@ export abstract class LanguageProvider {
 		this.cache = new Map<string, any>();
 
 		this.settings = settings;
-		this.loadConventions(settings.conventions[languageId]);
+		this.loadConventions(settings.languages[languageId]);
 	}
 
 	abstract provideCodeActions(document: TextDocument): Promise<CodeAction[]>;
 
 	private loadConventions(conventions?: LanguageConventions): void {
 		this.conventions =
-			conventions || defaultConventions.conventions[this.languageId];
+			conventions || defaultConventions.languages[this.languageId];
 	}
 
 	public async provideDiagnostics(

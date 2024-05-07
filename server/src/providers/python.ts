@@ -29,7 +29,7 @@ export class PythonProvider extends LanguageProvider {
 	private codeActionsMessageCache: Map<string, CodeAction> = new Map();
 
 	constructor(
-		languageId: keyof typeof defaultConventions.conventions,
+		languageId: keyof typeof defaultConventions.languages,
 		connection: Connection,
 		settings: ExtensionSettings
 	) {

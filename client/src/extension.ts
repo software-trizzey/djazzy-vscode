@@ -29,7 +29,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	const apiFolders = await vscode.workspace.findFiles(
 		"**/{api,views}/*",
-		"**/node_modules/**"
+		"{**/node_modules/**,**/test/**}"
 	);
 	const apiFolderWatchers = apiFolders.map((uri) => {
 		const watcher = vscode.workspace.createFileSystemWatcher(

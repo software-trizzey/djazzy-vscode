@@ -11,7 +11,6 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import { groqModel } from "../llm/groq";
 import { openAIModel } from "../llm/openai";
 
-import defaultConventions from "../defaultConventions";
 import { systemMessageWithJsonResponse } from "../constants/chat";
 import {
 	isLikelyBoolean,
@@ -19,13 +18,17 @@ import {
 	hasNegativePattern,
 	getChangedLinesFromClient,
 } from "../utils";
-import { ExtensionSettings } from "../settings";
+import { ExtensionSettings, defaultConventions } from "../settings";
 import { rollbar } from "../common/logs";
 
+import type { LanguageConventions } from "../languageConventions";
+
 export abstract class LanguageProvider {
+	protected connection: Connection;
 	protected cache: Map<string, any>;
 	protected cancellationId: number = 0;
 	protected defaultConventions: any;
+	protected settings: ExtensionSettings;
 
 	protected diagnostics: Map<
 		string,
@@ -35,49 +38,37 @@ export abstract class LanguageProvider {
 		}
 	> = new Map();
 
-	protected connection: Connection;
-	protected isEnabled: boolean;
-	protected onlyCheckNewCode: boolean;
-	protected isDevMode: boolean = false;
-
 	constructor(
-		protected languageId: keyof typeof defaultConventions,
+		protected languageId: keyof typeof defaultConventions.conventions,
 		connection: Connection,
 		settings: ExtensionSettings
 	) {
 		this.connection = connection;
 		this.cache = new Map<string, any>();
 
-		this.onlyCheckNewCode = settings.onlyCheckNewCode;
-		this.isDevMode = settings.isDevMode;
-
-		if (languageId === "javascript") {
-			this.isEnabled = settings.isJavascriptEnabled;
-		} else if (languageId === "typescript") {
-			this.isEnabled = settings.isTypescriptEnabled;
-		} else if (languageId === "python") {
-			this.isEnabled = settings.isPythonEnabled;
-		} else {
-			// FIXME: disabled React for now
-			this.isEnabled = false;
-		}
-
-		this.languageId = languageId;
-		this.defaultConventions = defaultConventions[languageId];
+		this.settings = settings;
+		this.loadConventions(settings.conventions[languageId]);
 	}
 
 	abstract provideCodeActions(document: TextDocument): Promise<CodeAction[]>;
 
+	private loadConventions(conventions?: LanguageConventions): void {
+		this.defaultConventions =
+			conventions || defaultConventions.conventions[this.languageId];
+	}
+
 	public async provideDiagnostics(
 		document: TextDocument
 	): Promise<Diagnostic[]> {
-		if (!this.isEnabled) return [];
+		if (!this.defaultConventions.conventions[document.languageId].isEnabled) {
+			return [];
+		}
 
 		this.deleteDiagnostic(document.uri);
 		const diagnostics: Diagnostic[] = [];
 
 		let changedLines: Set<number> | undefined = undefined;
-		if (this.onlyCheckNewCode) {
+		if (this.settings.onlyCheckNewCode) {
 			changedLines = await getChangedLinesFromClient(
 				this.connection,
 				document.uri
@@ -161,7 +152,7 @@ export abstract class LanguageProvider {
 				}
 			});
 		} else {
-			if (!this.isDevMode) {
+			if (!this.defaultConventions.isDevMode) {
 				rollbar.error(error);
 				return;
 			}

@@ -44,8 +44,5 @@ client/node_modules/**
 
 
 # Documentation and miscellaneous
-**/*.md
-**/CHANGELOG
-**/contributing.md
 .vscode/**
 .gitignore

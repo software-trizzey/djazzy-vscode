@@ -3,12 +3,13 @@
 	"displayName": "When in Rome",
 	"description": "AI-Driven Code Stylist that enforces team conventions. After all, when in rome you should do as the Romans do.",
 	"author": "Tristan Deane",
-	"license": "UNLICENSED",
 	"version": "0.0.1",
 	"publisher": "alchemized",
+	"license": "SEE LICENSE IN LICENSE.md",
 	"repository": "https://github.com/software-trizzey/when-in-rome-lsp",
 	"pricing": "Trial",
 	"categories": [
+		"Programming Languages",
 		"Linters",
 		"Other"
 	],

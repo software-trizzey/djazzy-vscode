@@ -14,12 +14,11 @@ import { spawn } from "child_process";
 import * as path from "path";
 
 import { LanguageProvider } from "./base";
-import defaultConventions from "../defaultConventions";
 import { DJANGO_RESERVED_NAMES } from "../data/reservedNames";
 
 import { debounce, validatePythonFunctionName } from "../utils";
 
-import { ExtensionSettings } from "../settings";
+import { ExtensionSettings, defaultConventions } from "../settings";
 import { PYTHON_DIRECTORY } from "../constants/filepaths";
 import { FIX_NAME } from "../constants/commands";
 import { rollbar } from "../common/logs";
@@ -30,7 +29,7 @@ export class PythonProvider extends LanguageProvider {
 	private codeActionsMessageCache: Map<string, CodeAction> = new Map();
 
 	constructor(
-		languageId: keyof typeof defaultConventions,
+		languageId: keyof typeof defaultConventions.conventions,
 		connection: Connection,
 		settings: ExtensionSettings
 	) {
@@ -95,7 +94,7 @@ export class PythonProvider extends LanguageProvider {
 		} else if (
 			violationMessage.includes("does not start with a recognized action word")
 		) {
-			if (this.isDevMode) {
+			if (this.defaultConventions.isDevMode) {
 				suggestedName = `get${flaggedName}`;
 			} else {
 				const response = await this.fetchSuggestedNameFromLLM({
@@ -152,7 +151,7 @@ export class PythonProvider extends LanguageProvider {
 
 					try {
 						const symbols = JSON.parse(output);
-						if (!this.isDevMode) {
+						if (!this.defaultConventions.isDevMode) {
 							rollbar.info("Python symbols parsed", { symbols });
 						} else {
 							console.log("Symbols:", symbols);

@@ -52,8 +52,13 @@
 				},
 				"whenInRome.isDevMode": {
 					"type": "boolean",
-					"default": false,
+					"default": true,
 					"description": "Enable/disable development mode."
+				},
+				"whenInRome.notificationInterval": {
+					"type": "number",
+					"default": 20,
+					"description": "Interval in minutes between notifications."
 				}
 			}
 		}

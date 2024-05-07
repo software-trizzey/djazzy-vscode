@@ -184,7 +184,7 @@ export function createGitRepository() {
 
 /** Notification Management utils */
 const notificationTimes = new Map();
-const TWENTY_MINUTES = 1200000; // 20min in milliseconds
+const TWENTY_MINUTES = 20; // 20min
 
 function getLastNotifiedTime(uri: vscode.Uri): number {
 	return notificationTimes.get(uri.toString()) || 0;
@@ -195,8 +195,9 @@ function updateLastNotifiedTime(uri: vscode.Uri, time: number) {
 }
 
 function getNotificationInterval(): number {
+	const minutesToMilliseconds = TWENTY_MINUTES * 60_000;
 	return vscode.workspace
 		.getConfiguration("whenInRome")
-		.get("notificationInterval", TWENTY_MINUTES);
+		.get("notificationInterval", minutesToMilliseconds);
 }
 

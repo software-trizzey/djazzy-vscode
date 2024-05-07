@@ -3,6 +3,7 @@ import type { LanguageConventions } from "./languageConventions";
 export interface ExtensionSettings {
 	onlyCheckNewCode: boolean;
 	isDevMode: boolean;
+	notificationInterval: number;
 	languages: {
 		javascript?: LanguageConventions;
 		typescript?: LanguageConventions;
@@ -15,6 +16,7 @@ export const defaultPrefixes: string[] = ["is", "has", "should", "can", "did"];
 export const defaultConventions: ExtensionSettings = {
 	onlyCheckNewCode: false,
 	isDevMode: false,
+	notificationInterval: 20 * 60_000, // 20 minutes in milliseconds
 	languages: {
 		javascript: {
 			isEnabled: true,

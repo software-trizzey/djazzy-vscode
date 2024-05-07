@@ -89,7 +89,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		} else if (
 			violationMessage.includes("does not start with a recognized action word")
 		) {
-			if (this.isDevMode) {
+			if (this.defaultConventions.isDevMode) {
 				suggestedName = `get${flaggedName}`;
 			} else {
 				const response = await this.fetchSuggestedNameFromLLM({
@@ -147,7 +147,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 					node.declarations.forEach((declaration) => {
 						if (
 							declaration.loc &&
-							(!this.onlyCheckNewCode ||
+							(!this.defaultConventions.onlyCheckNewCode ||
 								changedLines?.has(declaration.loc.start.line))
 						) {
 							this.applyVariableDeclarationDiagnostics(
@@ -167,7 +167,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 					}
 
 					if (
-						!this.onlyCheckNewCode ||
+						!this.defaultConventions.onlyCheckNewCode ||
 						changedLines?.has(node.loc.start.line)
 					) {
 						diagnosticPromises.push(
@@ -189,7 +189,8 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 					if (
 						parent.type === "VariableDeclarator" &&
 						parent.id.type === "Identifier" &&
-						(!this.onlyCheckNewCode || changedLines?.has(parent.loc.start.line))
+						(!this.defaultConventions.onlyCheckNewCode ||
+							changedLines?.has(parent.loc.start.line))
 					) {
 						diagnosticPromises.push(
 							this.checkFunctionAndAddDiagnostic(
@@ -210,7 +211,8 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 					if (
 						parent.type === "VariableDeclarator" &&
 						parent.id.type === "Identifier" &&
-						(!this.onlyCheckNewCode || changedLines?.has(parent.loc.start.line))
+						(!this.defaultConventions.onlyCheckNewCode ||
+							changedLines?.has(parent.loc.start.line))
 					) {
 						diagnosticPromises.push(
 							this.checkFunctionAndAddDiagnostic(

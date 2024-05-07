@@ -6,6 +6,8 @@ if (result.error) {
 	throw result.error;
 }
 
+import projectPackageJson from "../../package.json";
+
 import {
 	createConnection,
 	TextDocuments,
@@ -54,7 +56,25 @@ let hasWorkspaceFolderCapability = false;
 let hasDiagnosticRelatedInformationCapability = false;
 
 connection.onInitialize((params: InitializeParams) => {
-	console.log(`Running Node.js version: ${process.version}`);
+	const extensionNameMessage = `["INFO" - ${new Date().toLocaleTimeString()}] Extension Name: ${
+		projectPackageJson.name
+	}.`;
+	const extensionVersionMessage = `["INFO" - ${new Date().toLocaleTimeString()}] Extension Version: ${
+		projectPackageJson.version
+	}.`;
+
+	if (process.env.NODE_ENV !== "production") {
+		console.log(extensionNameMessage);
+		console.log(extensionVersionMessage);
+	} else {
+		rollbar.info(extensionNameMessage);
+		rollbar.info(extensionVersionMessage);
+	}
+	console.log(
+		`["INFO" - ${new Date().toLocaleTimeString()}] Running Node.js version: ${
+			process.version
+		}`
+	);
 
 	const capabilities = params.capabilities;
 
@@ -240,6 +260,10 @@ async function validateTextDocument(
 	const settings = await getDocumentSettings(textDocument.uri);
 	const provider = getOrCreateProvider(languageId, settings);
 	let diagnostics = await provider.getDiagnostic(textDocument.uri);
+
+	rollbar.info(`Validating file: ${textDocument.uri}`, {
+		context: "server#validateTextDocument",
+	});
 
 	if (!diagnostics || provider.isDiagnosticsOutdated(textDocument)) {
 		diagnostics = await provider.provideDiagnostics(textDocument);

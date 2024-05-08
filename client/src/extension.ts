@@ -77,8 +77,10 @@ export async function activate(context: vscode.ExtensionContext) {
 		// Throttle notifications
 		const lastNotified = getLastNotifiedTime(uri);
 		const currentTime = new Date().getTime();
-		if (currentTime - lastNotified > getNotificationInterval()) {
+		const notificationInterval = getNotificationInterval();
+		if (currentTime - lastNotified > notificationInterval) {
 			const relativePath = vscode.workspace.asRelativePath(uri);
+			// TODO: add action where user can update interval time
 			vscode.window.showWarningMessage(
 				`Ensure you've tested the changes in ${relativePath}`,
 				"Ok"
@@ -195,9 +197,10 @@ function updateLastNotifiedTime(uri: vscode.Uri, time: number) {
 }
 
 function getNotificationInterval(): number {
-	const minutesToMilliseconds = TWENTY_MINUTES * 60_000;
-	return vscode.workspace
+	const intervalInMinutes = vscode.workspace
 		.getConfiguration("whenInRome")
-		.get("notificationInterval", minutesToMilliseconds);
+		.get("notificationInterval", TWENTY_MINUTES);
+	const intervalInMilliseconds = intervalInMinutes * 60 * 1000;
+	return intervalInMilliseconds;
 }
 

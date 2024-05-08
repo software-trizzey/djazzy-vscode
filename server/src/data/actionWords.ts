@@ -117,6 +117,7 @@ export const actionWordsDictionary: { [key: string]: string } = {
 	verify: "verify",
 	acknowledge: "acknowledge",
 	notify: "notify",
+	normalize: "normalize",
 	listen: "listen",
 	wait: "wait",
 	timeout: "timeout",

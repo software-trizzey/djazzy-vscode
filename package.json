@@ -47,9 +47,8 @@
 				},
 				"whenInRome.notificationInterval": {
 					"type": "number",
-					"default": 1200000,
-					"minimum": 60000,
-					"description": "Interval in milliseconds to control the frequency of notifications."
+					"default": 45,
+					"description": "Interval in minutes to control the frequency of notifications."
 				},
 				"whenInRome.languages.javascript.enabled": {
 					"type": "boolean",

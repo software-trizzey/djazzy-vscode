@@ -21,7 +21,7 @@ export const defaultPrefixes: string[] = ["is", "has", "should", "can", "did"];
 export const defaultConventions: ExtensionSettings = {
 	onlyCheckNewCode: false,
 	isDevMode: false,
-	notificationInterval: 20, // minutes
+	notificationInterval: 45, // minutes
 	prefixes: defaultPrefixes,
 	languages: {
 		javascript: {

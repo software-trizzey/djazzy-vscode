@@ -4,8 +4,11 @@ import sys
 from ast_parser import Analyzer
 
 class DjangoAnalyzer(Analyzer):
+    current_class_type = None
+    
     def visit_ClassDef(self, node):
         class_type = None
+        
         if any(self._is_django_model(base) for base in node.bases):
             class_type = 'django_model'
         elif any(self._is_django_serializer(base) for base in node.bases):

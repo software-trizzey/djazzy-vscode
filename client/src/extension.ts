@@ -19,24 +19,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	await credentials.initialize(context);
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand(
-			"whenInRome.auth.signInGithub",
-			async () => {
-				/**
-				 * Octokit (https://github.com/octokit/rest.js#readme) is a library for making REST API
-				 * calls to GitHub. It provides convenient typings that can be helpful for using the API.
-				 *
-				 * Documentation on GitHub's REST API can be found here: https://docs.github.com/en/rest
-				 */
-				const octokit = await credentials.getOctokit();
-				const userInfo = await octokit.users.getAuthenticated();
-				// TODO:Send user info to LSP server
-				console.log("userInfo", userInfo.data);
-
-				vscode.window.showInformationMessage(
-					`Logged into GitHub as ${userInfo.data.login}`
-				);
-			}
+		vscode.commands.registerCommand("whenInRome.auth.signInGithub", () =>
+			signInWithGitHub(credentials)
 		)
 	);
 
@@ -209,6 +193,26 @@ export function createGitRepository() {
 	terminal.sendText("git commit -m 'Initial commit'");
 	terminal.sendText("echo .gitignore");
 	terminal.sendText("echo node_modules > .gitignore");
+}
+
+/** Authentication */
+async function signInWithGitHub(credentials: Credentials) {
+	const action = "Sign in with GitHub";
+	const response = await vscode.window.showInformationMessage(
+		"Please sign in with GitHub to continue.",
+		action
+	);
+	if (response !== action) {
+		console.log("User cancelled sign in.");
+		return;
+	}
+	const octokit = await credentials.getOctokit();
+	const userInfo = await octokit.users.getAuthenticated();
+	// TODO:Send user info to LSP server
+	console.log("User signed in", userInfo.data.login, userInfo.data.email);
+	vscode.window.showInformationMessage(
+		`Logged into GitHub as ${userInfo.data.login}`
+	);
 }
 
 /** Notification Management utils */

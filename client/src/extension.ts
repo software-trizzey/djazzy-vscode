@@ -210,9 +210,19 @@ async function signInWithGitHub(credentials: Credentials) {
 	const userInfo = await octokit.users.getAuthenticated();
 	// TODO:Send user info to LSP server
 	console.log("User signed in", userInfo.data.login, userInfo.data.email);
-	vscode.window.showInformationMessage(
-		`Logged into GitHub as ${userInfo.data.login}`
+	const consent = "Yes, keep me informed";
+	const selection = await vscode.window.showInformationMessage(
+		"Thank you for trying out When In Rome. We plan to introduce a premium subscription model soon. Can we notify you about subscription details and promotions?",
+		consent,
+		"No thanks"
 	);
+	if (selection === consent) {
+		console.log("User consented to notifications");
+		// TODO: Save user consent status in DB
+		// saveUserConsent(userInfo.data.email);
+	} else {
+		console.log("User declined notifications");
+	}
 }
 
 /** Notification Management utils */

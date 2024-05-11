@@ -1,14 +1,15 @@
 import type {
-	ClientExtensionSettings,
 	ClientExtensionLanguageSettings,
 	LanguageConventions,
 } from "./languageConventions";
+import type { CommentConventions } from "./commentConventions";
 
 export interface ExtensionSettings {
 	onlyCheckNewCode: boolean;
 	isDevMode: boolean;
 	notificationInterval: number;
 	prefixes: string[];
+	comments: CommentConventions;
 	languages: {
 		javascript?: LanguageConventions;
 		typescript?: LanguageConventions;
@@ -23,6 +24,9 @@ export const defaultConventions: ExtensionSettings = {
 	isDevMode: false,
 	notificationInterval: 45, // minutes
 	prefixes: defaultPrefixes,
+	comments: {
+		flagRedundant: true,
+	},
 	languages: {
 		javascript: {
 			isEnabled: true,
@@ -54,6 +58,19 @@ export const defaultConventions: ExtensionSettings = {
 	},
 };
 
+export interface ClientExtensionSettings {
+	onlyCheckNewCode: boolean;
+	devMode: boolean;
+	notificationInterval: number;
+	comments: CommentConventions;
+	languages: {
+		prefixes: string[];
+		javascript: ClientExtensionLanguageSettings;
+		typescript: ClientExtensionLanguageSettings;
+		python: ClientExtensionLanguageSettings;
+	};
+}
+
 export const normalizeClientSettings = (
 	settings: ClientExtensionSettings
 ): ExtensionSettings => {
@@ -62,6 +79,7 @@ export const normalizeClientSettings = (
 		isDevMode: settings.devMode,
 		notificationInterval: settings.notificationInterval,
 		prefixes: settings.languages.prefixes,
+		comments: settings.comments,
 		languages: {
 			javascript: normalizeLanguageSettings(settings.languages.javascript),
 			typescript: normalizeLanguageSettings(settings.languages.typescript),

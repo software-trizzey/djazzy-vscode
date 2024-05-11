@@ -28,14 +28,3 @@ export interface ClientExtensionLanguageSettings {
 	};
 }
 
-export interface ClientExtensionSettings {
-	onlyCheckNewCode: boolean;
-	devMode: boolean;
-	notificationInterval: number;
-	languages: {
-		prefixes: string[];
-		javascript: ClientExtensionLanguageSettings;
-		typescript: ClientExtensionLanguageSettings;
-		python: ClientExtensionLanguageSettings;
-	};
-}

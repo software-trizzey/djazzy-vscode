@@ -41,7 +41,7 @@ class Analyzer(ast.NodeVisitor):
         self.symbols.append({
             'type': 'class',
             'name': node.name,
-            'leading_comments': [comment['value'] for comment in comments],
+            'leading_comments': comments,
             'line': node.lineno - 1,
             'col_offset': node.col_offset,
             'end_col_offset': node.col_offset + len(node.name)
@@ -53,7 +53,7 @@ class Analyzer(ast.NodeVisitor):
         self.symbols.append({
             'type': 'function',
             'name': node.name,
-            'leading_comments': [comment['value'] for comment in comments],
+            'leading_comments': comments,
             'line': node.lineno - 1,
             'col_offset': node.col_offset,
             'end_col_offset': node.col_offset + len(node.name)
@@ -68,7 +68,7 @@ class Analyzer(ast.NodeVisitor):
                 self.symbols.append({
                     'type': 'variable',
                     'name': target.id,
-                    'leading_comments': [comment['value'] for comment in comments],
+                    'leading_comments': comments,
                     'value': value_source,
                     'line': node.lineno - 1,
                     'col_offset': target.col_offset,
@@ -80,9 +80,7 @@ class Analyzer(ast.NodeVisitor):
         self.get_comments()
         tree = ast.parse(self.source_code)
         self.visit(tree)
-        return json.dumps({
-            'symbols': self.symbols
-        })
+        return json.dumps(self.symbols)
 
 def main():
     input_code = sys.stdin.read()

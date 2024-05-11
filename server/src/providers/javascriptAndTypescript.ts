@@ -10,7 +10,7 @@ import {
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 import * as babelParser from "@babel/parser";
-import traverse from "@babel/traverse";
+import traverse, { NodePath } from "@babel/traverse";
 
 import { LanguageProvider } from "./base";
 
@@ -314,9 +314,9 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 
 	private handleComment(
 		comment: any,
-		path: any,
-		document: any,
-		diagnostics: any
+		path: NodePath,
+		document: TextDocument,
+		diagnostics: Diagnostic[]
 	) {
 		const commentText = comment.value;
 		const currentNode = path.node;

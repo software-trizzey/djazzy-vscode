@@ -226,6 +226,16 @@ export abstract class LanguageProvider {
 		return { violates: false, reason: "" };
 	}
 
+	public isTodoOrFixme(comment: string): boolean {
+		return /^(TODO|FIXME)/i.test(comment.trim());
+	}
+
+	public isCommentRedundant(comment: string, followingNode: any): boolean {
+		// TODO: This function needs to be intelligent about context; placeholder for now
+		console.log("followingNode", followingNode);
+		return true;
+	}
+
 	async chatWithOpenAI(developerInput: string) {
 		const response = await openAIModel.invoke([
 			["system", systemMessageWithJsonResponse],

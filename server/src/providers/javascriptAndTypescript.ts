@@ -139,9 +139,19 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 			const ast = babelParser.parse(text, {
 				sourceType: "module",
 				plugins: pluginOptions,
+				attachComment: true,
 				errorRecovery: true,
 			});
 			traverse(ast, {
+				enter: (path) => {
+					if (path.node.leadingComments) {
+						path.node.leadingComments.forEach((comment) => {
+							if (!this.isTodoOrFixme(comment.value)) {
+								this.handleComment(comment, path, document, diagnostics);
+							}
+						});
+					}
+				},
 				VariableDeclaration: ({ node }) => {
 					node.declarations.forEach((declaration) => {
 						if (
@@ -300,5 +310,29 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		reason: string;
 	}> {
 		return await validateJavaScriptAndTypeScriptFunctionNameCase(functionName);
+	}
+
+	private handleComment(
+		comment: any,
+		path: any,
+		document: any,
+		diagnostics: any
+	) {
+		console.log("Handle comment", comment, path.node.type);
+		const commentText = comment.value;
+		const nextNode = path.getSibling(path.key + 1);
+		if (nextNode && this.isCommentRedundant(commentText, nextNode)) {
+			const start = document.positionAt(comment.start);
+			const end = document.positionAt(comment.end);
+			diagnostics.push(
+				Diagnostic.create(
+					Range.create(start, end),
+					"This comment may be redundant based on the clarity of the code that follows.",
+					DiagnosticSeverity.Warning,
+					undefined,
+					"When in Rome"
+				)
+			);
+		}
 	}
 }

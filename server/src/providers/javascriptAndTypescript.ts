@@ -318,16 +318,19 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		document: any,
 		diagnostics: any
 	) {
-		console.log("Handle comment", comment, path.node.type);
 		const commentText = comment.value;
-		const nextNode = path.getSibling(path.key + 1);
-		if (nextNode && this.isCommentRedundant(commentText, nextNode)) {
+		const currentNode = path.node;
+
+		if (!commentText || !currentNode || !currentNode.leadingComments) return;
+
+		const result = this.isCommentRedundant(commentText, currentNode);
+		if (result.violates) {
 			const start = document.positionAt(comment.start);
 			const end = document.positionAt(comment.end);
 			diagnostics.push(
 				Diagnostic.create(
 					Range.create(start, end),
-					"This comment may be redundant based on the clarity of the code that follows.",
+					result.reason,
 					DiagnosticSeverity.Warning,
 					undefined,
 					"When in Rome"

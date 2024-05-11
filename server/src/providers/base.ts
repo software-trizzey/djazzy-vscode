@@ -230,10 +230,40 @@ export abstract class LanguageProvider {
 		return /^(TODO|FIXME)/i.test(comment.trim());
 	}
 
-	public isCommentRedundant(comment: string, followingNode: any): boolean {
-		// TODO: This function needs to be intelligent about context; placeholder for now
-		console.log("followingNode", followingNode);
-		return true;
+	public isIgnoreComment(comment: string): boolean {
+		return /^@ROME-IGNORE/i.test(comment.trim());
+	}
+
+	public isCommentRedundant(
+		comment: string,
+		currentNode: any
+	): { violates: boolean; reason: string } {
+		if (this.isTodoOrFixme(comment)) {
+			return {
+				violates: false,
+				reason: "Comments prefixed with TODO or FIXME are ignored.",
+			};
+		} else if (this.isIgnoreComment(comment)) {
+			return {
+				violates: false,
+				reason: "@rome-ignore detected for this comment.",
+			};
+		} else if (
+			[
+				"VariableDeclaration",
+				"ReturnStatement",
+				"ExpressionStatement",
+			].includes(currentNode.type)
+		) {
+			// TODO: What do we consider a simple expression?
+			return {
+				violates: true,
+				reason:
+					"Simple expressions, return statements, and one-liners are self-explanatory.",
+			};
+		} else {
+			return { violates: false, reason: "" };
+		}
 	}
 
 	async chatWithOpenAI(developerInput: string) {

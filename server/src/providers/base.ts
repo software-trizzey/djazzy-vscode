@@ -237,6 +237,16 @@ export abstract class LanguageProvider {
 		comment: string,
 		currentNode: any
 	): { violates: boolean; reason: string } {
+		if (currentNode.type === "return") {
+			console.log("Current node type:", currentNode.type);
+			console.log("Comment:", comment);
+		}
+		const generalIdentifiers = [
+			"Block",
+			"IfStatement",
+			"ForStatement",
+			"return",
+		];
 		const javascriptIdentifiers = [
 			"VariableDeclaration",
 			"ReturnStatement",
@@ -251,7 +261,8 @@ export abstract class LanguageProvider {
 			"django_view_method",
 			"django_test_method",
 		];
-		const languageIdentifiers = javascriptIdentifiers.concat(
+		const languageIdentifiers = generalIdentifiers.concat(
+			javascriptIdentifiers,
 			pythonIdentifiers,
 			djangoIdentifiers
 		);

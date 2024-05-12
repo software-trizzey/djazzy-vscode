@@ -83,6 +83,19 @@ class Analyzer(ast.NodeVisitor):
                 })
         self.generic_visit(node)
 
+    def visit_Return(self, node):
+        comments = self.get_related_comments(node)
+        if comments:
+            self.symbols.append({
+                'type': 'return',
+                'value': ast.get_source_segment(self.source_code, node.value) if node.value else None,
+                'line': node.lineno - 1,
+                'col_offset': node.col_offset if node.value else None,
+                'end_col_offset': node.col_offset + len(ast.get_source_segment(self.source_code, node.value)) if node.value else None,
+                'leading_comments': comments
+            })
+        self.generic_visit(node)
+
     def parse_code(self):
         self.get_comments()
         tree = ast.parse(self.source_code)

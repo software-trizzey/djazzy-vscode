@@ -254,6 +254,7 @@ export class PythonProvider extends LanguageProvider {
 			}
 
 			if (this.settings.comments.flagRedundant && leading_comments) {
+				console.log("Leading comments:", leading_comments);
 				for (const comment of leading_comments) {
 					this.handleComment(comment, symbol, diagnostics);
 				}

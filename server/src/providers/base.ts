@@ -238,6 +238,15 @@ export abstract class LanguageProvider {
 		comment: string,
 		currentNode: any
 	): { violates: boolean; reason: string } {
+		const javascriptIdentifiers = [
+			"VariableDeclaration",
+			"ReturnStatement",
+			"ExpressionStatement",
+		];
+		// TODO: add djangoIdentifiers
+		const pythonIdentifiers = ["name", "classdef", "functiondef"];
+		const languageIdentifiers = javascriptIdentifiers.concat(pythonIdentifiers);
+
 		if (this.isTodoOrFixme(comment)) {
 			return {
 				violates: false,
@@ -248,13 +257,7 @@ export abstract class LanguageProvider {
 				violates: false,
 				reason: "@rome-ignore detected for this comment.",
 			};
-		} else if (
-			[
-				"VariableDeclaration",
-				"ReturnStatement",
-				"ExpressionStatement",
-			].includes(currentNode.type)
-		) {
+		} else if (languageIdentifiers.includes(currentNode.type)) {
 			// TODO: What do we consider a simple expression?
 			return {
 				violates: true,

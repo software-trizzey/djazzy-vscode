@@ -151,11 +151,6 @@ export class PythonProvider extends LanguageProvider {
 
 					try {
 						const symbols = JSON.parse(output);
-						if (!this.settings.isDevMode) {
-							rollbar.info("Python symbols parsed", { symbols });
-						} else {
-							console.log("Symbols:", symbols);
-						}
 						await this.validateAndCreateDiagnostics(
 							symbols,
 							diagnostics,
@@ -186,7 +181,15 @@ export class PythonProvider extends LanguageProvider {
 		changedLines: Set<number> | undefined
 	): Promise<void> {
 		for (const symbol of symbols) {
-			const { type, name, line, col_offset, end_col_offset, value } = symbol;
+			const {
+				type,
+				name,
+				line,
+				col_offset,
+				end_col_offset,
+				value,
+				leading_comments,
+			} = symbol;
 
 			if (changedLines && !changedLines.has(line)) {
 				continue; // Skip validation if line not in changedLines
@@ -194,16 +197,16 @@ export class PythonProvider extends LanguageProvider {
 
 			let result = null;
 			switch (type) {
-				case "function":
+				case "functiondef":
 					result = await this.validateFunctionName(name);
 					break;
-				case "variable":
+				case "name":
 					result = this.validateVariableName({
 						variableName: name,
 						variableValue: value,
 					});
 					break;
-				case "class":
+				case "classdef":
 					// #TODO: Implement class name validation
 					console.log("Class:", name);
 					break;
@@ -248,6 +251,12 @@ export class PythonProvider extends LanguageProvider {
 					"whenInRome"
 				);
 				diagnostics.push(diagnostic);
+			}
+
+			if (leading_comments) {
+				for (const comment of leading_comments) {
+					this.handleComment(comment, symbol, diagnostics);
+				}
 			}
 		}
 	}
@@ -302,5 +311,26 @@ export class PythonProvider extends LanguageProvider {
 		reason: string;
 	}> {
 		return await validatePythonFunctionName(functionName);
+	}
+
+	private handleComment(
+		comment: any,
+		currentSymbol: any,
+		diagnostics: Diagnostic[]
+	) {
+		const result = this.isCommentRedundant(comment.value, currentSymbol);
+		if (result.violates) {
+			const start = Position.create(comment.line, comment.col_offset);
+			const end = Position.create(comment.line, comment.end_col_offset);
+			diagnostics.push(
+				Diagnostic.create(
+					Range.create(start, end),
+					result.reason,
+					DiagnosticSeverity.Warning,
+					undefined,
+					"When in Rome"
+				)
+			);
+		}
 	}
 }

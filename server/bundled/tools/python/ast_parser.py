@@ -9,56 +9,63 @@ class Analyzer(ast.NodeVisitor):
         self.source_code = source_code
         self.symbols = []
         self.comments = []
-        self.last_non_comment_line = 0
+        self.pending_comments = []
 
     def get_comments(self):
         tokens = tokenize.generate_tokens(StringIO(self.source_code).readline)
-        for toke_number, token_value, start, end, _ in tokens:
-            if toke_number == tokenize.COMMENT:
-                self.comments.append({
-                    'type': 'comment',
-                    'value': token_value.strip('#').strip(),
-                    'line': start[0] - 1,
-                    'col_offset': start[1],
-                    'end_col_offset': end[1]
-                })
+        previous_line = 0
+        for token_number, token_value, start, end, _ in tokens:
+            if token_number == tokenize.COMMENT:
+                if start[0] - 1 == previous_line:  # Directly following the previous line
+                    self.pending_comments.append({
+                        'type': 'comment',
+                        'value': token_value.strip('#').strip(),
+                        'line': start[0] - 1,
+                        'col_offset': start[1],
+                        'end_col_offset': end[1]
+                    })
+                else:
+                    # Flush pending comments if they are not followed by another comment directly
+                    self.comments.extend(self.pending_comments)
+                    self.pending_comments = [{
+                        'type': 'comment',
+                        'value': token_value.strip('#').strip(),
+                        'line': start[0] - 1,
+                        'col_offset': start[1],
+                        'end_col_offset': end[1]
+                    }]
+                previous_line = start[0]
             else:
-                self.last_non_comment_line = end[0] - 1
+                previous_line = end[0]
+
+        self.comments.extend(self.pending_comments)
 
     def get_related_comments(self, node):
-        # @rome-ignore Find and associate comments that are directly above the node without any blank lines
+        # Find comments that are just above the node without any code in between
         related_comments = []
-        for comment in reversed(self.comments):
-            if comment['line'] == node.lineno - 2:  # The comment is directly above the node
+        for comment in self.comments:
+            if comment['line'] == node.lineno - 2:  # Directly above the node
                 related_comments.append(comment)
-                node.lineno -= 1  # Update lineno to match the next upper line
-            elif comment['line'] < node.lineno - 2:
-                break  # Stop if there's a line break between comments and the node
-        return related_comments[::-1]  # Reverse to maintain original order
+        return related_comments
+    
+    def generic_node_visit(self, node):
+        comments = self.get_related_comments(node)
+        self.symbols.append({
+            'type': type(node).__name__.lower(),
+            'name': getattr(node, 'name', None),
+            'leading_comments': comments,
+            'line': node.lineno - 1,
+            'col_offset': node.col_offset,
+            'end_col_offset': node.col_offset + (len(getattr(node, 'name', '')) if hasattr(node, 'name') else 0)
+        })
+        self.generic_visit(node)
+
 
     def visit_ClassDef(self, node):
-        comments = self.get_related_comments(node)
-        self.symbols.append({
-            'type': 'class',
-            'name': node.name,
-            'leading_comments': comments,
-            'line': node.lineno - 1,
-            'col_offset': node.col_offset,
-            'end_col_offset': node.col_offset + len(node.name)
-        })
-        self.generic_visit(node)
+        self.generic_node_visit(node)
 
     def visit_FunctionDef(self, node):
-        comments = self.get_related_comments(node)
-        self.symbols.append({
-            'type': 'function',
-            'name': node.name,
-            'leading_comments': comments,
-            'line': node.lineno - 1,
-            'col_offset': node.col_offset,
-            'end_col_offset': node.col_offset + len(node.name)
-        })
-        self.generic_visit(node)
+        self.generic_node_visit(node)
 
     def visit_Assign(self, node):
         for target in node.targets:
@@ -66,7 +73,7 @@ class Analyzer(ast.NodeVisitor):
                 value_source = ast.get_source_segment(self.source_code, node.value)
                 comments = self.get_related_comments(node)
                 self.symbols.append({
-                    'type': 'variable',
+                    'type': type(target).__name__.lower(),
                     'name': target.id,
                     'leading_comments': comments,
                     'value': value_source,

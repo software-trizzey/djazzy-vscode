@@ -60,7 +60,7 @@
 				"whenInRome.comments.flagRedundant": {
 					"type": "boolean",
 					"default": true,
-					"description": "Flag comments above code that is self-explanatory. Tip: you can ignore this for a given comment by adding '@rome-ignore', 'TODO' or 'FIXME'."
+					"description": "Enable to identify and flag comments that are unnecessary because the code is self-explanatory. To bypass this check for specific comments, include '@rome-ignore', 'TODO', or 'FIXME' in the comment text."
 				},
 				"whenInRome.languages.javascript.enabled": {
 					"type": "boolean",

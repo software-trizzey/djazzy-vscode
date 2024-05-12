@@ -237,8 +237,6 @@ export abstract class LanguageProvider {
 		comment: string,
 		currentNode: any
 	): { violates: boolean; reason: string } {
-		console.log("comment");
-		console.log("Current node type", currentNode.type);
 		const javascriptIdentifiers = [
 			"VariableDeclaration",
 			"ReturnStatement",

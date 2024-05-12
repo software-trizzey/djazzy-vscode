@@ -207,11 +207,11 @@ export class PythonProvider extends LanguageProvider {
 					});
 					break;
 				case "classdef":
-					// #TODO: Implement class name validation
+					// TODO: Implement class name validation
 					console.log("Class:", name);
 					break;
 				case "django_model":
-					// #TODO: Implement model name validation (probably similar to class)
+					// TODO: Implement model name validation (probably similar to class)
 					console.log("Django model:", name);
 					break;
 				case "django_method":

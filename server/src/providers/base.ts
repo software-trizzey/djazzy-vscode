@@ -15,7 +15,6 @@ import { openAIModel } from "../llm/openai";
 import { systemMessageWithJsonResponse } from "../constants/chat";
 import {
 	isLikelyBoolean,
-	hasBooleanPrefix,
 	hasNegativePattern,
 	getChangedLinesFromClient,
 	containsAbbreviation,

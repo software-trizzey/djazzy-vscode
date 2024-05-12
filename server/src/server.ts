@@ -117,7 +117,6 @@ connection.onInitialize((params: InitializeParams) => {
 
 connection.onInitialized(async () => {
 	const settings = await getDocumentSettings("N/A");
-	console.log("Settings", settings);
 	const routeId = "server#index";
 
 	if (!settings.isDevMode || process.env.NODE_ENV === "production") {

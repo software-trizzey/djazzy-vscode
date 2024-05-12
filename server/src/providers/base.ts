@@ -237,14 +237,26 @@ export abstract class LanguageProvider {
 		comment: string,
 		currentNode: any
 	): { violates: boolean; reason: string } {
+		console.log("comment");
+		console.log("Current node type", currentNode.type);
 		const javascriptIdentifiers = [
 			"VariableDeclaration",
 			"ReturnStatement",
 			"ExpressionStatement",
 		];
-		// TODO: add djangoIdentifiers
 		const pythonIdentifiers = ["name", "classdef", "functiondef"];
-		const languageIdentifiers = javascriptIdentifiers.concat(pythonIdentifiers);
+		const djangoIdentifiers = [
+			"django_method",
+			"django_model",
+			"django_model_field",
+			"django_serializer_field",
+			"django_view_method",
+			"django_test_method",
+		];
+		const languageIdentifiers = javascriptIdentifiers.concat(
+			pythonIdentifiers,
+			djangoIdentifiers
+		);
 
 		if (this.isTodoOrFixme(comment)) {
 			return {

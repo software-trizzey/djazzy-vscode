@@ -57,6 +57,7 @@ class Analyzer(ast.NodeVisitor):
             'col_offset': node.col_offset,
             'end_col_offset': node.col_offset + (len(getattr(node, 'name', '')) if hasattr(node, 'name') else 0)
         })
+        self.handle_nested_structures(node)
         self.generic_visit(node)
 
 

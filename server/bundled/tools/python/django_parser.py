@@ -19,9 +19,11 @@ class DjangoAnalyzer(Analyzer):
             class_type = 'django_testcase'
 
         if class_type:
+            comments = self.get_related_comments(node)
             self.symbols.append({
                 'type': class_type,
                 'name': node.name,
+                'leading_comments': comments,
                 'line': node.lineno - 1,
                 'col_offset': node.col_offset,
                 'end_col_offset': node.col_offset + len(node.name)
@@ -33,9 +35,12 @@ class DjangoAnalyzer(Analyzer):
 
     def visit_FunctionDef(self, node):
         if self.current_class_type in ['django_model', 'django_serializer', 'django_view', 'django_testcase']:
+            # TODO: this won't work for nested function fields and comments
+            comments = self.get_related_comments(node)
             self.symbols.append({
                 'type': f'{self.current_class_type}_method',
                 'name': node.name,
+                'leading_comments': comments,
                 'line': node.lineno - 1,
                 'col_offset': node.col_offset,
                 'end_col_offset': node.col_offset + len(node.name)
@@ -48,9 +53,11 @@ class DjangoAnalyzer(Analyzer):
             for target in node.targets:
                 if isinstance(target, ast.Name):
                     value_source = ast.get_source_segment(self.source_code, node.value)
+                    comments = self.get_related_comments(node)
                     self.symbols.append({
                         'type': 'django_model_field',
                         'name': target.id,
+                        'leading_comments': comments,
                         'value': value_source,
                         'line': node.lineno - 1,
                         'col_offset': target.col_offset,
@@ -60,9 +67,11 @@ class DjangoAnalyzer(Analyzer):
             for target in node.targets:
                 if isinstance(target, ast.Name):
                     value_source = ast.get_source_segment(self.source_code, node.value)
+                    comments = self.get_related_comments(node)
                     self.symbols.append({
                         'type': 'django_serializer_field',
                         'name': target.id,
+                        'leading_comments': comments,
                         'value': value_source,
                         'line': node.lineno - 1,
                         'col_offset': target.col_offset,

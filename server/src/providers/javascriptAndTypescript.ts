@@ -144,7 +144,10 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 			});
 			traverse(ast, {
 				enter: (path) => {
-					if (path.node.leadingComments) {
+					if (
+						this.settings.comments.flagRedundant &&
+						path.node.leadingComments
+					) {
 						path.node.leadingComments.forEach((comment) => {
 							if (!this.isTodoOrFixme(comment.value)) {
 								this.handleComment(comment, path, document, diagnostics);

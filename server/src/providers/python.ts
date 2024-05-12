@@ -253,7 +253,7 @@ export class PythonProvider extends LanguageProvider {
 				diagnostics.push(diagnostic);
 			}
 
-			if (leading_comments) {
+			if (this.settings.comments.flagRedundant && leading_comments) {
 				for (const comment of leading_comments) {
 					this.handleComment(comment, symbol, diagnostics);
 				}

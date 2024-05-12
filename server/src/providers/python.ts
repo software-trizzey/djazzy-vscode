@@ -263,9 +263,7 @@ export class PythonProvider extends LanguageProvider {
 
 	private getParserFilePath(text: string): string {
 		let parserFilePath = "";
-		console.log("current dir:", __dirname);
 		if (text.includes("from django")) {
-			console.log("Django code detected.");
 			parserFilePath = path.join(
 				__dirname,
 				"..",

@@ -17,7 +17,6 @@ client/src/**
 server/src/**
 
 node_modules/**
-client/node_modules/**
 
 # Client runtime dependencies
 !client/node_modules/vscode-jsonrpc/**

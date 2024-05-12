@@ -163,6 +163,7 @@ connection.onDidChangeConfiguration((change) => {
 			(change.settings.whenInRome || defaultConventions)
 		);
 	}
+	console.log("Settings have changed. Refreshing diagnostics...");
 	// TODO: We could optimize things here and re-fetch the setting first and compare it
 	// to the existing setting
 	connection.languages.diagnostics.refresh();

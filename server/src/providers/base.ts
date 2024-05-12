@@ -237,15 +237,12 @@ export abstract class LanguageProvider {
 		comment: string,
 		currentNode: any
 	): { violates: boolean; reason: string } {
-		if (currentNode.type === "return") {
-			console.log("Current node type:", currentNode.type);
-			console.log("Comment:", comment);
-		}
 		const generalIdentifiers = [
 			"Block",
 			"IfStatement",
 			"ForStatement",
 			"return",
+			"assignment",
 		];
 		const javascriptIdentifiers = [
 			"VariableDeclaration",
@@ -258,6 +255,8 @@ export abstract class LanguageProvider {
 			"django_model",
 			"django_model_field",
 			"django_serializer_field",
+			"django_model_method",
+			"django_serializer_method",
 			"django_view_method",
 			"django_test_method",
 		];
@@ -282,7 +281,7 @@ export abstract class LanguageProvider {
 			return {
 				violates: true,
 				reason:
-					"Simple expressions, return statements, and one-liners are self-explanatory.",
+					"This comment may not be necessary as the code below it is self-explanatory.",
 			};
 		} else {
 			return { violates: false, reason: "" };

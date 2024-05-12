@@ -41,7 +41,6 @@ class Analyzer(ast.NodeVisitor):
         self.comments.extend(self.pending_comments)
 
     def get_related_comments(self, node):
-        # Find comments that are just above the node without any code in between
         related_comments = []
         for comment in self.comments:
             if comment['line'] == node.lineno - 2:  # Directly above the node
@@ -95,6 +94,28 @@ class Analyzer(ast.NodeVisitor):
                 'leading_comments': comments
             })
         self.generic_visit(node)
+
+    def handle_nested_structures(self, node):
+        for inner_node in ast.iter_child_nodes(node):
+            if isinstance(inner_node, ast.Assign):
+                self.handle_assignment(inner_node, node)
+            elif isinstance(inner_node, (ast.If, ast.For, ast.While, ast.Try)):
+                self.generic_visit(inner_node)  # Further drill down to catch any deeper nested comments
+
+    def handle_assignment(self, node, parent_node):
+        comments = self.get_related_comments(node)
+        for target in node.targets:
+            if isinstance(target, ast.Name):
+                value_source = ast.get_source_segment(self.source_code, node.value)
+                self.symbols.append({
+                    'type': 'assignment',
+                    'name': target.id,
+                    'leading_comments': comments,
+                    'value': value_source,
+                    'line': node.lineno - 1,
+                    'col_offset': target.col_offset,
+                    'end_col_offset': target.col_offset + len(target.id)
+                })
 
     def parse_code(self):
         self.get_comments()

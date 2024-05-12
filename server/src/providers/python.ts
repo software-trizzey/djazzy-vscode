@@ -237,6 +237,9 @@ export class PythonProvider extends LanguageProvider {
 					// TODO: Handle validation for test methods
 					console.log("Test method:", name);
 					break;
+				case "assignment":
+					console.log("Assignment:", name);
+					break;
 			}
 
 			if (result && result.violates) {
@@ -252,9 +255,9 @@ export class PythonProvider extends LanguageProvider {
 				);
 				diagnostics.push(diagnostic);
 			}
+			console.log("symbol:", symbol);
 
 			if (this.settings.comments.flagRedundant && leading_comments) {
-				console.log("Leading comments:", leading_comments);
 				for (const comment of leading_comments) {
 					this.handleComment(comment, symbol, diagnostics);
 				}

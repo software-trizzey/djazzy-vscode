@@ -31,11 +31,15 @@ class DjangoAnalyzer(Analyzer):
             self.current_class_type = class_type
         else:
             self.current_class_type = None
-        self.generic_visit(node)
+
+        for body_item in node.body:
+            if isinstance(body_item, ast.FunctionDef):
+                self.visit_FunctionDef(body_item)
+            else:
+                self.generic_visit(body_item)
 
     def visit_FunctionDef(self, node):
         if self.current_class_type in ['django_model', 'django_serializer', 'django_view', 'django_testcase']:
-            # TODO: this won't work for nested function fields and comments
             comments = self.get_related_comments(node)
             self.symbols.append({
                 'type': f'{self.current_class_type}_method',
@@ -45,6 +49,7 @@ class DjangoAnalyzer(Analyzer):
                 'col_offset': node.col_offset,
                 'end_col_offset': node.col_offset + len(node.name)
             })
+            self.handle_nested_structures(node)
         else:
             super().visit_FunctionDef(node)
 
@@ -78,15 +83,13 @@ class DjangoAnalyzer(Analyzer):
                         'end_col_offset': target.col_offset + len(target.id)
                     })
         elif self.current_class_type == 'django_view':
-            # Views typically don't have field assignments that need to be captured
+            # TODO: Handle specific assignments within views if needed
             pass
         elif self.current_class_type == 'django_testcase':
             # TODO: Handle specific assignments within test cases if needed
             pass
         else:
             super().visit_Assign(node)
-
-        # Always call generic_visit to ensure we visit all nodes
         self.generic_visit(node)
 
 

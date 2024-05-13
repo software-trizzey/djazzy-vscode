@@ -80,8 +80,10 @@ export async function activate(context: vscode.ExtensionContext) {
 		clientOptions
 	);
 
-	client.start().then(() => {
+	client.start().then(async () => {
 		client.onRequest("whenInRome.getGitDiff", getChangedLines);
+
+		await signInWithGitHub(credentials);
 	});
 
 	function checkAndNotify(uri: vscode.Uri) {
@@ -199,11 +201,16 @@ export function createGitRepository() {
 async function signInWithGitHub(credentials: Credentials) {
 	const action = "Sign in with GitHub";
 	const response = await vscode.window.showInformationMessage(
-		"Please sign in with GitHub to continue.",
+		"Sign in to continue. By creating an account, you agree to our Terms of Service and Privacy Policy.",
+		{ modal: true },
 		action
 	);
 	if (response !== action) {
 		console.log("User cancelled sign in.");
+		deactivate();
+		vscode.window.showInformationMessage(
+			"When In Rome extension has been disabled. Vale! 👋"
+		);
 		return;
 	}
 	const octokit = await credentials.getOctokit();

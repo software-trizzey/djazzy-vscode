@@ -208,6 +208,9 @@ async function signInWithGitHub(credentials: Credentials) {
 	if (response !== action) {
 		console.log("User cancelled sign in.");
 		deactivate();
+		vscode.window.showInformationMessage(
+			"When In Rome extension has been disabled. Vale! 👋"
+		);
 		return;
 	}
 	const octokit = await credentials.getOctokit();

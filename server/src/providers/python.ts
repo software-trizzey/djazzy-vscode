@@ -129,7 +129,6 @@ export class PythonProvider extends LanguageProvider {
 		try {
 			const text = document.getText();
 			const parserFilePath = this.getParserFilePath(text);
-			console.log("Parser file path:", parserFilePath);
 
 			return new Promise((resolve, reject) => {
 				const process = spawn("python3", [parserFilePath]);
@@ -180,7 +179,6 @@ export class PythonProvider extends LanguageProvider {
 		diagnostics: Diagnostic[],
 		changedLines: Set<number> | undefined
 	): Promise<void> {
-		console.log("Symbols:", symbols);
 		for (const symbol of symbols) {
 			const {
 				type,

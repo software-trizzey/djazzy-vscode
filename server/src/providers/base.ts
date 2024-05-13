@@ -237,6 +237,7 @@ export abstract class LanguageProvider {
 		comment: string,
 		currentNode: any
 	): { violates: boolean; reason: string } {
+		console.log("COMMENT", comment, currentNode.type);
 		const generalIdentifiers = [
 			"Block",
 			"IfStatement",

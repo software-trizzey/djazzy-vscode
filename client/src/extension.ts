@@ -83,6 +83,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	client.start().then(async () => {
 		client.onRequest("whenInRome.getGitDiff", getChangedLines);
 
+		// TODO: block the user from using the extension until they sign in
 		await signInWithGitHub(credentials);
 	});
 
@@ -201,11 +202,11 @@ export function createGitRepository() {
 async function signInWithGitHub(credentials: Credentials) {
 	const action = "Sign in with GitHub";
 	const response = await vscode.window.showInformationMessage(
-		"Sign in to continue. By creating an account, you agree to our Terms of Service and Privacy Policy.",
-		{ modal: true },
-		action
+		"Sign in to continue using When In Rome. By using this extension you agree to our Terms of Service and Privacy Policy.",
+		action,
+		"Cancel"
 	);
-	if (response !== action) {
+	if (!response || response !== action) {
 		console.log("User cancelled sign in.");
 		deactivate();
 		vscode.window.showInformationMessage(

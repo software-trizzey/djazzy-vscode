@@ -249,6 +249,7 @@ export abstract class LanguageProvider {
 			"VariableDeclaration",
 			"ReturnStatement",
 			"ExpressionStatement",
+			"CallExpression",
 		];
 		const pythonIdentifiers = ["name", "classdef", "functiondef"];
 		const djangoIdentifiers = [

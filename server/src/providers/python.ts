@@ -21,7 +21,6 @@ import { debounce, validatePythonFunctionName } from "../utils";
 import { ExtensionSettings, defaultConventions } from "../settings";
 import { PYTHON_DIRECTORY } from "../constants/filepaths";
 import { FIX_NAME } from "../constants/commands";
-import { rollbar } from "../common/logs";
 
 export class PythonProvider extends LanguageProvider {
 	provideDiagnosticsDebounced: (document: TextDocument) => void;
@@ -130,6 +129,7 @@ export class PythonProvider extends LanguageProvider {
 		try {
 			const text = document.getText();
 			const parserFilePath = this.getParserFilePath(text);
+			console.log("Parser file path:", parserFilePath);
 
 			return new Promise((resolve, reject) => {
 				const process = spawn("python3", [parserFilePath]);
@@ -180,6 +180,7 @@ export class PythonProvider extends LanguageProvider {
 		diagnostics: Diagnostic[],
 		changedLines: Set<number> | undefined
 	): Promise<void> {
+		console.log("Symbols:", symbols);
 		for (const symbol of symbols) {
 			const {
 				type,

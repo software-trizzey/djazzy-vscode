@@ -95,7 +95,7 @@ class DjangoAnalyzer(Analyzer):
 
     def _is_django_model(self, node):
         if isinstance(node, ast.Name):
-            if node.id == 'Model' or node.id.endswith('Model'):  # Simple heuristic
+            if node.id == 'Model' or node.id.endswith('Model'):
                 return True
         elif isinstance(node, ast.Attribute):  # For namespaced models like `models.Model`
             if node.attr == 'Model' or node.attr.endswith('Model'):

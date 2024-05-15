@@ -1,2 +1,2 @@
-export { User } from "./user";
-export { Profile } from "./profile";
+export * from "./user";
+export * from "./profile";

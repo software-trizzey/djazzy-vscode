@@ -8,3 +8,10 @@ export interface User {
 	is_active: boolean | null;
 	last_login: string | null; // TIMESTAMP WITH TIME ZONE
 }
+
+export interface CreateUser {
+	github_login: string;
+	email: string;
+	has_agreed_to_terms: boolean;
+	is_active: boolean;
+}

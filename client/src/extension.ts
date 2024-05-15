@@ -14,6 +14,16 @@ import {
 
 let client: LanguageClient;
 
+interface UserSession {
+	id: string;
+	email: string;
+	github_login: string;
+	profile: {
+		name: string;
+		location: string;
+	};
+}
+
 export async function activate(context: vscode.ExtensionContext) {
 	const credentials = new Credentials();
 	await credentials.initialize(context);
@@ -77,8 +87,15 @@ export async function activate(context: vscode.ExtensionContext) {
 	client.start().then(async () => {
 		client.onRequest("whenInRome.getGitDiff", getChangedLines);
 
-		// TODO: block the user from using the extension until they sign in
-		await signInWithGitHub(credentials, client);
+		// TODO: actually block the user from using the extension until they sign in
+		const storedUser: UserSession = context.globalState.get("whenInRomeUser");
+		if (storedUser) {
+			vscode.window.showInformationMessage(
+				`Welcome back to Rome, ${storedUser.github_login}! 🏛️🫡`
+			);
+		} else {
+			await signInWithGitHub(credentials, client, context);
+		}
 	});
 
 	function checkAndNotify(uri: vscode.Uri) {
@@ -195,7 +212,8 @@ export function createGitRepository() {
 /** Authentication */
 async function signInWithGitHub(
 	credentials: Credentials,
-	client: LanguageClient
+	client: LanguageClient,
+	context: vscode.ExtensionContext
 ) {
 	const action = "Sign in with GitHub";
 	const response = await vscode.window.showInformationMessage(
@@ -223,6 +241,9 @@ async function signInWithGitHub(
 		});
 
 	if (serverResponse && serverResponse.success) {
+		// TODO: add expiration time for user session
+		await context.globalState.update("whenInRomeUser", serverResponse.user);
+		console.log("User signed in:", serverResponse);
 		vscode.window.showInformationMessage(
 			`Welcome to Rome, ${serverResponse.user.github_login}! 🏛️🫡`
 		);

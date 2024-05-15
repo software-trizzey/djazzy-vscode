@@ -2,6 +2,10 @@ import { pool } from "./db";
 
 import { User, Profile, CreateUser, CreateProfile } from "./types";
 
+interface UserWithProfile extends User {
+	profile: Omit<Profile, "id">;
+}
+
 export async function getUserById(id: string): Promise<User | undefined> {
 	const client = await pool.connect();
 	try {
@@ -21,18 +25,28 @@ export async function getUserById(id: string): Promise<User | undefined> {
 	}
 }
 
-export async function getUserByEmail(email: string): Promise<User | undefined> {
+export async function getUserByEmail(
+	email: string
+): Promise<UserWithProfile | undefined> {
 	const client = await pool.connect();
 	try {
-		const result = await client.query<User>(
+		const result = await client.query<User & Profile>(
 			`
-			SELECT id, github_login, email, has_agreed_to_terms, created_at, updated_at, is_active, last_login
+			SELECT users.id, github_login, email, has_agreed_to_terms, created_at, updated_at, is_active, last_login, profiles.name, profiles.location
 			FROM users
+			INNER JOIN profiles ON users.id = profiles.id
 			WHERE email = $1;
 			`,
 			[email]
 		);
-		return result.rows[0];
+		const userWithProfile = {
+			...result.rows[0],
+			profile: {
+				name: result.rows[0].name,
+				location: result.rows[0].location,
+			},
+		};
+		return userWithProfile;
 	} catch (err) {
 		console.error("Error getting user by email:", err);
 	} finally {
@@ -42,7 +56,7 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
 
 export async function createUserAndProfile(
 	userInfo: CreateUser & CreateProfile
-): Promise<User & Profile> {
+): Promise<UserWithProfile> {
 	const client = await pool.connect();
 	try {
 		await client.query("BEGIN");
@@ -71,14 +85,17 @@ export async function createUserAndProfile(
 			ON CONFLICT (id) DO UPDATE
 			SET name = EXCLUDED.name, 
 				location = EXCLUDED.location
-			RETURNING id, name, location;
+			RETURNING name, location;
 			`,
 			[userId, userInfo.name, userInfo.location]
 		);
 
 		await client.query("COMMIT");
 
-		const newAccount = { ...userResult.rows[0], ...profileResult.rows[0] };
+		const newAccount = {
+			...userResult.rows[0],
+			profile: { ...profileResult.rows[0] },
+		};
 		return newAccount;
 	} catch (err) {
 		await client.query("ROLLBACK");

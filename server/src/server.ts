@@ -380,7 +380,18 @@ connection.onRequest("whenInRome.auth.signInWithGitHub", async (params) => {
 			});
 		}
 
-		return { success: true, user };
+		// TODO: add expiration time for user session
+		const userSession = {
+			id: user.id,
+			email: user.email,
+			github_login: user.github_login,
+			profile: {
+				name: user.profile.name,
+				location: user.profile.location,
+			},
+		};
+
+		return { success: true, user: userSession };
 	} catch (error: any) {
 		console.error("Error during authentication:", error);
 		return { success: false, error: error.message };

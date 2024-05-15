@@ -84,24 +84,16 @@ export async function activate(context: vscode.ExtensionContext) {
 		clientOptions
 	);
 
-	client.start().then(async () => {
-		client.onRequest("whenInRome.getGitDiff", getChangedLines);
-
-		// TODO: actually block the user from using the extension until they sign in
-		const storedUser: UserSession = context.globalState.get("whenInRomeUser");
-		if (storedUser) {
-			const sessionValid = await verifySession(storedUser);
-			if (!sessionValid) {
-				await signInWithGitHub(credentials, client, context);
-			} else {
-				vscode.window.showInformationMessage(
-					`Welcome back to Rome, ${storedUser.github_login}! 🏛️🫡`
-				);
-			}
-		} else {
-			await signInWithGitHub(credentials, client, context);
-		}
-	});
+	const authenticated = await initializeAuthentication(
+		credentials,
+		client,
+		context
+	);
+	if (authenticated) {
+		client.start().then(() => {
+			client.onRequest("whenInRome.getGitDiff", getChangedLines);
+		});
+	}
 
 	function checkAndNotify(uri: vscode.Uri) {
 		// Throttle notifications
@@ -215,6 +207,29 @@ export function createGitRepository() {
 }
 
 /** Authentication */
+async function initializeAuthentication(
+	credentials: Credentials,
+	client: LanguageClient,
+	context: vscode.ExtensionContext
+): Promise<boolean> {
+	const storedUser: UserSession = context.globalState.get("whenInRomeUser");
+	if (storedUser) {
+		const sessionValid = await verifySession(storedUser);
+		if (!sessionValid) {
+			await signInWithGitHub(credentials, client, context);
+		} else {
+			vscode.window.showInformationMessage(
+				`Welcome back to Rome, ${storedUser.github_login}! 🏛️🫡`
+			);
+			return true;
+		}
+	} else {
+		await signInWithGitHub(credentials, client, context);
+		return true;
+	}
+	return false;
+}
+
 async function signInWithGitHub(
 	credentials: Credentials,
 	client: LanguageClient,
@@ -246,9 +261,7 @@ async function signInWithGitHub(
 		});
 
 	if (serverResponse && serverResponse.success) {
-		// TODO: add expiration time for user session
 		await context.globalState.update("whenInRomeUser", serverResponse.user);
-		console.log("User signed in:", serverResponse);
 		vscode.window.showInformationMessage(
 			`Welcome to Rome, ${serverResponse.user.github_login}! 🏛️🫡`
 		);

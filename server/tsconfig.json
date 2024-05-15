@@ -11,5 +11,10 @@
 		"resolveJsonModule": true,
 		"esModuleInterop": true
 	},
-	"exclude": ["node_modules", ".vscode-test", "webpack.config.js"]
+	"exclude": [
+		"node_modules",
+		".vscode-test",
+		"webpack.config.js",
+		"migrate.config.ts"
+	]
 }

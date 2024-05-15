@@ -13,12 +13,15 @@
 		"@langchain/groq": "^0.0.9",
 		"@langchain/openai": "^0.0.28",
 		"dotenv": "^16.4.5",
+		"node-pg-migrate": "^7.3.2",
+		"pg": "^8.11.5",
 		"rollbar": "^2.26.4",
 		"vscode-languageserver": "^9.0.1",
 		"vscode-languageserver-textdocument": "^1.0.11"
 	},
 	"scripts": {
-		"clean": "rimraf out/"
+		"clean": "rimraf out/",
+		"migrate": "cd src/common/db node-pg-migrate && cd ../../"
 	},
 	"devDependencies": {
 		"@babel/cli": "^7.24.5",
@@ -28,6 +31,7 @@
 		"@babel/preset-env": "^7.24.5",
 		"@babel/preset-typescript": "^7.24.1",
 		"@types/babel__traverse": "^7.20.5",
+		"@types/pg": "^8.11.6",
 		"babel-loader": "^9.1.3",
 		"ts-loader": "^9.5.1"
 	}

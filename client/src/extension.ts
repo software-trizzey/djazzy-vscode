@@ -93,6 +93,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			vscode.window.showInformationMessage(
 				`Welcome back to Rome, ${storedUser.github_login}! 🏛️🫡`
 			);
+			await client.sendRequest("whenInRome.auth.verifySession", storedUser);
 		} else {
 			await signInWithGitHub(credentials, client, context);
 		}

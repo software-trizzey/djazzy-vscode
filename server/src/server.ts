@@ -50,6 +50,9 @@ import {
 } from "./common/db/users";
 import { testDatabaseConnection } from "./common/db/db";
 
+const sessionStore: Record<string, any> = {};
+const SESSION_EXPIRY_TIME = 1000 * 60 * 60 * 24 * 7; // 1 week
+
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection = createConnection(ProposedFeatures.all);
@@ -397,9 +400,39 @@ connection.onRequest("whenInRome.auth.signInWithGitHub", async (params) => {
 			},
 		};
 
+		sessionStore[user.id] = {
+			user,
+			timestamp: Date.now(),
+		};
+
 		return { success: true, user: userSession };
 	} catch (error: any) {
 		console.error("Error during authentication:", error);
+		return { success: false, error: error.message };
+	}
+});
+
+connection.onRequest("whenInRome.auth.verifySession", async (sessionData) => {
+	try {
+		const { id } = sessionData;
+		const storedSession = sessionStore[id];
+
+		if (!storedSession) {
+			return { success: false, error: "Invalid session" };
+		}
+
+		const currentTime = Date.now();
+		if (currentTime > storedSession.timestamp + SESSION_EXPIRY_TIME) {
+			delete sessionStore[id];
+			return { success: false, error: "Session expired" };
+		}
+
+		// @rome-ignore Refresh the session timestamp
+		storedSession.timestamp = currentTime;
+
+		return { success: true, user: storedSession.user };
+	} catch (error: any) {
+		console.error("Error verifying session:", error);
 		return { success: false, error: error.message };
 	}
 });

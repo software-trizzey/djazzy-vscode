@@ -18,12 +18,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	const credentials = new Credentials();
 	await credentials.initialize(context);
 
-	context.subscriptions.push(
-		vscode.commands.registerCommand("whenInRome.auth.signInGithub", () =>
-			signInWithGitHub(credentials)
-		)
-	);
-
 	const serverModule = context.asAbsolutePath(
 		path.join("server", "out", "server.js")
 	);
@@ -84,7 +78,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		client.onRequest("whenInRome.getGitDiff", getChangedLines);
 
 		// TODO: block the user from using the extension until they sign in
-		await signInWithGitHub(credentials);
+		await signInWithGitHub(credentials, client);
 	});
 
 	function checkAndNotify(uri: vscode.Uri) {
@@ -199,7 +193,10 @@ export function createGitRepository() {
 }
 
 /** Authentication */
-async function signInWithGitHub(credentials: Credentials) {
+async function signInWithGitHub(
+	credentials: Credentials,
+	client: LanguageClient
+) {
 	const action = "Sign in with GitHub";
 	const response = await vscode.window.showInformationMessage(
 		"Sign in to continue using When In Rome. By using this extension you agree to our Terms of Service and Privacy Policy.",
@@ -216,23 +213,18 @@ async function signInWithGitHub(credentials: Credentials) {
 	}
 	const octokit = await credentials.getOctokit();
 	const userInfo = await octokit.users.getAuthenticated();
-	// TODO:Send user info to LSP server
-	console.log("User signed in", userInfo.data.login, userInfo.data.email);
-	console.log("User", userInfo);
 
 	const serverResponse: { success: boolean; user: any; error: any } =
-		await vscode.commands.executeCommand("whenInRome.auth.signInWithGitHub", {
+		await client.sendRequest("whenInRome.auth.signInWithGitHub", {
 			email: userInfo.data.email,
 			githubLogin: userInfo.data.login,
 			name: userInfo.data.name,
 			location: userInfo.data.location,
 		});
 
-	console.log("Server response:", serverResponse);
-
 	if (serverResponse && serverResponse.success) {
 		vscode.window.showInformationMessage(
-			`Welcome, ${serverResponse.user.github_login}!`
+			`Welcome to Rome, ${serverResponse.user.github_login}! 🏛️🫡`
 		);
 	} else {
 		vscode.window.showErrorMessage(

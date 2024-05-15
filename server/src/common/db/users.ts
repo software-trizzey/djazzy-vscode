@@ -105,3 +105,21 @@ export async function createUserAndProfile(
 		client.release();
 	}
 }
+
+export async function updateLastLogin(id: string): Promise<void> {
+	const client = await pool.connect();
+	try {
+		await client.query(
+			`
+			UPDATE users
+			SET last_login = CURRENT_TIMESTAMP
+			WHERE id = $1;
+			`,
+			[id]
+		);
+	} catch (err) {
+		console.error("Error updating last login:", err);
+	} finally {
+		client.release();
+	}
+}

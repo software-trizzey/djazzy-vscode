@@ -43,7 +43,11 @@ import { debounce } from "./utils";
 
 import COMMANDS from "./constants/commands";
 import { rollbar } from "./common/logs";
-import { getUserByEmail, createUserAndProfile } from "./common/db/users";
+import {
+	getUserByEmail,
+	createUserAndProfile,
+	updateLastLogin,
+} from "./common/db/users";
 import { testDatabaseConnection } from "./common/db/db";
 
 // Create a connection for the server, using Node's IPC as a transport.
@@ -378,6 +382,8 @@ connection.onRequest("whenInRome.auth.signInWithGitHub", async (params) => {
 				location: location,
 				is_active: true,
 			});
+		} else {
+			updateLastLogin(user.id);
 		}
 
 		// TODO: add expiration time for user session

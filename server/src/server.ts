@@ -44,6 +44,7 @@ import { debounce } from "./utils";
 import COMMANDS from "./constants/commands";
 import { rollbar } from "./common/logs";
 import { getUserByEmail, createUserAndProfile } from "./common/db/users";
+import { testDatabaseConnection } from "./common/db/db";
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -117,6 +118,13 @@ connection.onInitialize((params: InitializeParams) => {
 });
 
 connection.onInitialized(async () => {
+	const connectionResult = await testDatabaseConnection();
+	if (!connectionResult) {
+		console.error("Failed to connect to the database!");
+	} else {
+		console.log("Database is up and running...");
+	}
+
 	const settings = await getDocumentSettings("N/A");
 	const routeId = "server#index";
 
@@ -378,3 +386,6 @@ connection.onRequest("whenInRome.auth.signInWithGitHub", async (params) => {
 		return { success: false, error: error.message };
 	}
 });
+
+documents.listen(connection);
+connection.listen();

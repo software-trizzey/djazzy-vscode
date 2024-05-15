@@ -1,15 +1,4 @@
-import path from "path";
-
 import { Pool } from "pg";
-import dotenv from "dotenv";
-
-const result = dotenv.config({
-	path: path.resolve(__dirname, "../../../.env"),
-});
-if (result.error) {
-	console.log("Failed to load .env file");
-	throw result.error;
-}
 
 export const pool = new Pool({
 	user: process.env.PG_USER,
@@ -20,9 +9,8 @@ export const pool = new Pool({
 	ssl: process.env.PG_SSL === "true", // Use SSL if needed
 });
 
-export async function testConnection() {
+export async function testDatabaseConnection() {
 	const client = await pool.connect();
-
 	try {
 		await client.query("BEGIN");
 		const result = await client.query(`SELECT NOW()`);

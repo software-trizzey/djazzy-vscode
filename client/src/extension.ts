@@ -90,10 +90,14 @@ export async function activate(context: vscode.ExtensionContext) {
 		// TODO: actually block the user from using the extension until they sign in
 		const storedUser: UserSession = context.globalState.get("whenInRomeUser");
 		if (storedUser) {
-			vscode.window.showInformationMessage(
-				`Welcome back to Rome, ${storedUser.github_login}! 🏛️🫡`
-			);
-			await client.sendRequest("whenInRome.auth.verifySession", storedUser);
+			const sessionValid = await verifySession(storedUser);
+			if (!sessionValid) {
+				await signInWithGitHub(credentials, client, context);
+			} else {
+				vscode.window.showInformationMessage(
+					`Welcome back to Rome, ${storedUser.github_login}! 🏛️🫡`
+				);
+			}
 		} else {
 			await signInWithGitHub(credentials, client, context);
 		}
@@ -252,6 +256,20 @@ async function signInWithGitHub(
 		vscode.window.showErrorMessage(
 			`Authentication failed: ${serverResponse.error}`
 		);
+	}
+}
+
+async function verifySession(sessionData: any): Promise<boolean> {
+	const response: { success: boolean; error?: string } =
+		await client.sendRequest("whenInRome.auth.verifySession", sessionData);
+
+	if (response && response.success) {
+		return true;
+	} else {
+		if (response.error) {
+			console.error("Session verification failed:", response.error);
+		}
+		return false;
 	}
 }
 

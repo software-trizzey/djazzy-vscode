@@ -1,4 +1,3 @@
-// migrations/1634567890123_init_schema.ts
 import { MigrationBuilder } from "node-pg-migrate";
 
 export const shorthands = undefined;
@@ -40,16 +39,6 @@ export const up = (pgm: MigrationBuilder) => {
 		location: { type: "varchar" },
 	});
 
-	pgm.createTrigger("users", "refresh_updated_at", {
-		when: "BEFORE",
-		operation: "UPDATE",
-		level: "ROW",
-		function: {
-			name: "refresh_updated_at_column",
-		},
-		functionParams: [],
-	});
-
 	pgm.createFunction(
 		"refresh_updated_at_column",
 		[],
@@ -64,6 +53,16 @@ export const up = (pgm: MigrationBuilder) => {
     END;
     `
 	);
+
+	pgm.createTrigger("users", "refresh_updated_at", {
+		when: "BEFORE",
+		operation: "UPDATE",
+		level: "ROW",
+		function: {
+			name: "refresh_updated_at_column",
+		},
+		functionParams: [],
+	});
 };
 
 export const down = (pgm: MigrationBuilder) => {

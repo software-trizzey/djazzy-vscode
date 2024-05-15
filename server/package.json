@@ -21,7 +21,8 @@
 	},
 	"scripts": {
 		"clean": "rimraf out/",
-		"migrate": "cd src/common/db node-pg-migrate && cd ../../"
+		"make:migrations": "esbuild src/migrations/**/*.ts --outdir=out/migrations --platform=node --format=cjs",
+		"migrations": "node-pg-migrate up -m out/migrations --config-file migrate.config.json"
 	},
 	"devDependencies": {
 		"@babel/cli": "^7.24.5",
@@ -33,6 +34,8 @@
 		"@types/babel__traverse": "^7.20.5",
 		"@types/pg": "^8.11.6",
 		"babel-loader": "^9.1.3",
-		"ts-loader": "^9.5.1"
+		"esbuild": "^0.21.2",
+		"ts-loader": "^9.5.1",
+		"ts-node": "^10.9.2"
 	}
 }

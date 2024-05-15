@@ -1,10 +1,5 @@
 import { ChatGroq } from "@langchain/groq";
 
-const apiKey = process.env.GROQ_API_KEY;
-if (!apiKey) {
-	console.log("API Key is not set in .env file");
-	throw new Error("API Key is not set in .env file");
-}
 
 //  pricing : https://wow.groq.com/ (as of April 28, 2024)
 const models = {
@@ -13,7 +8,7 @@ const models = {
 };
 
 export const groqModel = new ChatGroq({
-	apiKey: apiKey,
+	apiKey: process.env.GROQ_API_KEY,
 	model: models.gemma7,
 	temperature: 1,
 	maxTokens: 256,

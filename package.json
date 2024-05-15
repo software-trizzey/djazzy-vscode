@@ -158,7 +158,7 @@
 		"vscode:prepublish": "NODE_ENV=production tsc -b",
 		"clean": "rimraf ./client/out ./server/out",
 		"compile": "tsc -b",
-		"package": "scripts/loadEnv.sh vsce package",
+		"package": "vsce package",
 		"dev:package": "npm run package --pre-release",
 		"publish": "vsce publish",
 		"dev-publish": "npm run dev:package && code --install-extension when-in-rome-0.0.3.vsix",

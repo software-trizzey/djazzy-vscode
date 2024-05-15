@@ -10,7 +10,12 @@
 **/webpack.config.js
 **/*.test.*
 **/tests/**
-**.env.example**
+.env
+.env.example**
+server/.env
+server/.env.example
+client/.env
+client/.env.example
 client/testFixture/**
 examples/**
 client/src/**

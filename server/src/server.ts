@@ -43,6 +43,7 @@ import { debounce } from "./utils";
 
 import COMMANDS from "./constants/commands";
 import { rollbar } from "./common/logs";
+import { getUserByEmail, createUserAndProfile } from "./common/db/users";
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -355,6 +356,25 @@ connection.onExecuteCommand((params) => {
 	});
 });
 
-documents.listen(connection);
-connection.listen();
+connection.onRequest("whenInRome.auth.signInWithGitHub", async (params) => {
+	try {
+		const { email, githubLogin, name, location } = params;
+		let user = await getUserByEmail(email);
 
+		if (!user) {
+			user = await createUserAndProfile({
+				github_login: githubLogin,
+				email: email,
+				has_agreed_to_terms: true,
+				name: name,
+				location: location,
+				is_active: true,
+			});
+		}
+
+		return { success: true, user };
+	} catch (error: any) {
+		console.error("Error during authentication:", error);
+		return { success: false, error: error.message };
+	}
+});

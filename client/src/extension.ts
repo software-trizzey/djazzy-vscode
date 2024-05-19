@@ -1,5 +1,4 @@
 import * as path from "path";
-
 import * as vscode from "vscode";
 
 import {
@@ -132,4 +131,3 @@ export function deactivate(): Thenable<void> | undefined {
 	}
 	return client.stop();
 }
-

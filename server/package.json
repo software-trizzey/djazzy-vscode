@@ -13,16 +13,12 @@
 		"@langchain/groq": "^0.0.9",
 		"@langchain/openai": "^0.0.28",
 		"dotenv": "^16.4.5",
-		"node-pg-migrate": "^7.3.2",
-		"pg": "^8.11.5",
 		"rollbar": "^2.26.4",
 		"vscode-languageserver": "^9.0.1",
 		"vscode-languageserver-textdocument": "^1.0.11"
 	},
 	"scripts": {
-		"clean": "rimraf out/",
-		"make:migrations": "esbuild src/migrations/**/*.ts --outdir=out/migrations --platform=node --format=cjs",
-		"migrations": "node-pg-migrate up -m out/migrations --config-file migrate.config.json"
+		"clean": "rimraf out/"
 	},
 	"devDependencies": {
 		"@babel/cli": "^7.24.5",

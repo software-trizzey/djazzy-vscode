@@ -27,13 +27,6 @@
 	],
 	"main": "./client/out/extension",
 	"contributes": {
-		"commands": [
-			{
-				"command": "whenInRome.auth.signInGithub",
-				"title": "Sign In with Github",
-				"category": "When In Rome"
-			}
-		],
 		"configuration": {
 			"title": "When in Rome",
 			"properties": {

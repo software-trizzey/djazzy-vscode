@@ -35,15 +35,6 @@ import { debounce } from "./utils";
 
 import COMMANDS from "./constants/commands";
 import { rollbar } from "./common/logs";
-import {
-	getUserByEmail,
-	createUserAndProfile,
-	updateLastLogin,
-} from "./common/db/users";
-import { testDatabaseConnection } from "./common/db/db";
-
-const sessionStore: Record<string, any> = {};
-const SESSION_EXPIRY_TIME = 1000 * 60 * 60 * 24 * 7; // 1 week
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -117,13 +108,6 @@ connection.onInitialize((params: InitializeParams) => {
 });
 
 connection.onInitialized(async () => {
-	const connectionResult = await testDatabaseConnection();
-	if (!connectionResult) {
-		console.error("Failed to connect to the database!");
-	} else {
-		console.log("Database is up and running...");
-	}
-
 	const settings = await getDocumentSettings("N/A");
 	const routeId = "server#index";
 
@@ -361,72 +345,6 @@ connection.onExecuteCommand((params) => {
 			),
 		],
 	});
-});
-
-connection.onRequest("whenInRome.auth.signInWithGitHub", async (params) => {
-	try {
-		const { email, githubLogin, name, location } = params;
-		let user = await getUserByEmail(email);
-
-		if (!user) {
-			user = await createUserAndProfile({
-				github_login: githubLogin,
-				email: email,
-				has_agreed_to_terms: true,
-				name: name,
-				location: location,
-				is_active: true,
-			});
-		} else {
-			updateLastLogin(user.id);
-		}
-
-		// TODO: add expiration time for user session
-		const userSession = {
-			id: user.id,
-			email: user.email,
-			github_login: user.github_login,
-			profile: {
-				name: user.profile.name,
-				location: user.profile.location,
-			},
-		};
-
-		sessionStore[user.id] = {
-			user,
-			timestamp: Date.now(),
-		};
-
-		return { success: true, user: userSession };
-	} catch (error: any) {
-		console.error("Error during authentication:", error);
-		return { success: false, error: error.message };
-	}
-});
-
-connection.onRequest("whenInRome.auth.verifySession", async (sessionData) => {
-	try {
-		const { id } = sessionData;
-		const storedSession = sessionStore[id];
-
-		if (!storedSession) {
-			return { success: false, error: "Invalid session" };
-		}
-
-		const currentTime = Date.now();
-		if (currentTime > storedSession.timestamp + SESSION_EXPIRY_TIME) {
-			delete sessionStore[id];
-			return { success: false, error: "Session expired" };
-		}
-
-		// @rome-ignore Refresh the session timestamp
-		storedSession.timestamp = currentTime;
-
-		return { success: true, user: storedSession.user };
-	} catch (error: any) {
-		console.error("Error verifying session:", error);
-		return { success: false, error: error.message };
-	}
 });
 
 documents.listen(connection);

@@ -12,17 +12,9 @@ import {
 	TransportKind,
 } from "vscode-languageclient/node";
 
-let client: LanguageClient;
+import { signInWithGitHub, signInWithGitHubV1 } from "./common/auth/github";
 
-interface UserSession {
-	id: string;
-	email: string;
-	github_login: string;
-	profile: {
-		name: string;
-		location: string;
-	};
-}
+let client: LanguageClient;
 
 export async function activate(context: vscode.ExtensionContext) {
 	const credentials = new Credentials();
@@ -35,7 +27,10 @@ export async function activate(context: vscode.ExtensionContext) {
 	// If the extension is launched in debug mode then the debug server options are used
 	// Otherwise the run options are used
 	const serverOptions: ServerOptions = {
-		run: { module: serverModule, transport: TransportKind.ipc },
+		run: {
+			module: serverModule,
+			transport: TransportKind.ipc,
+		},
 		debug: {
 			module: serverModule,
 			transport: TransportKind.ipc,
@@ -212,64 +207,25 @@ async function initializeAuthentication(
 	client: LanguageClient,
 	context: vscode.ExtensionContext
 ): Promise<boolean> {
-	const storedUser: UserSession = context.globalState.get("whenInRomeUser");
-	if (storedUser) {
-		const sessionValid = await verifySession(storedUser);
-		if (!sessionValid) {
-			await signInWithGitHub(credentials, client, context);
-		} else {
-			vscode.window.showInformationMessage(
-				`Welcome back to Rome, ${storedUser.github_login}! 🏛️🫡`
-			);
-			return true;
-		}
-	} else {
-		await signInWithGitHub(credentials, client, context);
-		return true;
-	}
-	return false;
-}
-
-async function signInWithGitHub(
-	credentials: Credentials,
-	client: LanguageClient,
-	context: vscode.ExtensionContext
-) {
-	const action = "Sign in with GitHub";
-	const response = await vscode.window.showInformationMessage(
-		"Sign in to continue using When In Rome. By using this extension you agree to our Terms of Service and Privacy Policy.",
-		action,
-		"Cancel"
-	);
-	if (!response || response !== action) {
-		console.log("User cancelled sign in.");
-		deactivate();
-		vscode.window.showInformationMessage(
-			"When In Rome extension has been disabled. Vale! 👋"
-		);
-		return;
-	}
-	const octokit = await credentials.getOctokit();
-	const userInfo = await octokit.users.getAuthenticated();
-
-	const serverResponse: { success: boolean; user: any; error: any } =
-		await client.sendRequest("whenInRome.auth.signInWithGitHub", {
-			email: userInfo.data.email,
-			githubLogin: userInfo.data.login,
-			name: userInfo.data.name,
-			location: userInfo.data.location,
-		});
-
-	if (serverResponse && serverResponse.success) {
-		await context.globalState.update("whenInRomeUser", serverResponse.user);
-		vscode.window.showInformationMessage(
-			`Welcome to Rome, ${serverResponse.user.github_login}! 🏛️🫡`
-		);
-	} else {
-		vscode.window.showErrorMessage(
-			`Authentication failed: ${serverResponse.error}`
-		);
-	}
+	console.log("Initializing authentication...");
+	await signInWithGitHubV1(credentials, context, deactivate);
+	return true;
+	// const storedUser: UserSession = context.globalState.get("whenInRomeUser");
+	// if (storedUser) {
+	// 	const sessionValid = await verifySession(storedUser);
+	// 	if (!sessionValid) {
+	// 		await signInWithGitHub(credentials, client, context, deactivate);
+	// 	} else {
+	// 		vscode.window.showInformationMessage(
+	// 			`Welcome back to Rome, ${storedUser.github_login}! 🏛️🫡`
+	// 		);
+	// 		return true;
+	// 	}
+	// } else {
+	// 	await signInWithGitHub(credentials, client, context, deactivate);
+	// 	return true;
+	// }
+	// return false;
 }
 
 async function verifySession(sessionData: any): Promise<boolean> {

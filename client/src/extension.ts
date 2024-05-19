@@ -12,7 +12,8 @@ import {
 	TransportKind,
 } from "vscode-languageclient/node";
 
-import { signInWithGitHub, signInWithGitHubV1 } from "./common/auth/github";
+import { signInWithGitHub } from "./common/auth/github";
+import type { UserSession } from "./common/auth/github";
 
 let client: LanguageClient;
 
@@ -79,11 +80,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		clientOptions
 	);
 
-	const authenticated = await initializeAuthentication(
-		credentials,
-		client,
-		context
-	);
+	const authenticated = await initializeAuthentication(credentials, context);
 	if (authenticated) {
 		client.start().then(() => {
 			client.onRequest("whenInRome.getGitDiff", getChangedLines);
@@ -204,41 +201,20 @@ export function createGitRepository() {
 /** Authentication */
 async function initializeAuthentication(
 	credentials: Credentials,
-	client: LanguageClient,
 	context: vscode.ExtensionContext
 ): Promise<boolean> {
 	console.log("Initializing authentication...");
-	await signInWithGitHubV1(credentials, context, deactivate);
-	return true;
-	// const storedUser: UserSession = context.globalState.get("whenInRomeUser");
-	// if (storedUser) {
-	// 	const sessionValid = await verifySession(storedUser);
-	// 	if (!sessionValid) {
-	// 		await signInWithGitHub(credentials, client, context, deactivate);
-	// 	} else {
-	// 		vscode.window.showInformationMessage(
-	// 			`Welcome back to Rome, ${storedUser.github_login}! 🏛️🫡`
-	// 		);
-	// 		return true;
-	// 	}
-	// } else {
-	// 	await signInWithGitHub(credentials, client, context, deactivate);
-	// 	return true;
-	// }
-	// return false;
-}
-
-async function verifySession(sessionData: any): Promise<boolean> {
-	const response: { success: boolean; error?: string } =
-		await client.sendRequest("whenInRome.auth.verifySession", sessionData);
-
-	if (response && response.success) {
+	const storedUser: UserSession = context.globalState.get("whenInRomeUser");
+	const token = context.globalState.get("whenInRomeUserToken");
+	if (token && storedUser) {
+		const { github_login, email } = storedUser;
+		vscode.window.showInformationMessage(
+			`Welcome back to Rome, ${github_login || email}! 🏛️🫡`
+		);
 		return true;
 	} else {
-		if (response.error) {
-			console.error("Session verification failed:", response.error);
-		}
-		return false;
+		await signInWithGitHub(credentials, context, deactivate);
+		return true;
 	}
 }
 

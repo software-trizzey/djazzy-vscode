@@ -5,6 +5,11 @@
 	"author": "Tristan Deane",
 	"version": "0.0.4",
 	"publisher": "alchemized",
+	"preview": true,
+	"galleryBanner": {
+		"color": "#20232D",
+		"theme": "dark"
+	},
 	"license": "SEE LICENSE IN LICENSE.md",
 	"repository": "https://github.com/software-trizzey/when-in-rome-lsp",
 	"pricing": "Trial",

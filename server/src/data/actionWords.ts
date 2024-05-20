@@ -67,6 +67,7 @@ export const actionWordsDictionary: { [key: string]: string } = {
 	bind: "bind",
 	unbind: "unbind",
 	grow: "grow",
+	greet: "greet",
 	shrink: "shrink",
 	zoom: "zoom",
 	scale: "scale",
@@ -209,6 +210,7 @@ export const actionWordsDictionary: { [key: string]: string } = {
 	upgrade: "upgrade",
 	visit: "visit",
 	watch: "watch",
+	welcome: "welcome",
 	wipe: "wipe",
 	zip: "zip",
 };

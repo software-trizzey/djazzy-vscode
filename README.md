@@ -6,7 +6,7 @@ When In Rome is an AI-driven code stylist that helps teams enforce their coding 
 
 ## See It In Action
 
-![Quick Fix Suggestions](path/to/your/quick-fix-suggestions.gif)
+![Quick Fix Suggestions](assets/gifs/quick-fix-demo.gif)
 
 *Watch as When In Rome highlights coding convention violations and offers immediate, actionable recommendations for fixing them, streamlining your coding process.*
 

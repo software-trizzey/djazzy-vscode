@@ -6,6 +6,8 @@ import {
 	Diagnostic,
 	DiagnosticSeverity,
 	Range,
+	TextEdit,
+	WorkspaceEdit,
 } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
@@ -20,7 +22,6 @@ import {
 } from "../utils";
 
 import { ExtensionSettings, defaultConventions } from "../settings";
-import { FIX_NAME } from "../constants/commands";
 
 export class JavascriptAndTypescriptProvider extends LanguageProvider {
 	private isTypeScript: boolean = false;
@@ -103,14 +104,18 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		}
 		const title = `Rename to '${suggestedName}'`;
 		const range = diagnostic.range;
-		const cmd = Command.create(
+		const textEdit = TextEdit.replace(range, suggestedName);
+		const workspaceEdit: WorkspaceEdit = {
+			changes: {
+				[document.uri]: [textEdit],
+			},
+		};
+		const fix = CodeAction.create(
 			title,
-			FIX_NAME,
-			document.uri,
-			suggestedName,
-			range
+			workspaceEdit,
+			CodeActionKind.QuickFix
 		);
-		const fix = CodeAction.create(title, cmd, CodeActionKind.QuickFix);
+		fix.diagnostics = [diagnostic];
 		fix.isPreferred = true;
 		this.codeActionsMessageCache.set(cacheKey, fix);
 		return fix;

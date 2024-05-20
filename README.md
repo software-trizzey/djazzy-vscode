@@ -64,15 +64,15 @@ When In Rome is a paid product with a monthly subscription plan. All new users g
 ## Known Issues & Limitations
 
 - **Initial Language Support**: Currently, only Python, Django, JavaScript, and TypeScript are supported.
-- **False Positives**: When In Rome is an MVP undergoing rapid development. As an early adopter, you get a front-row seat to watch the fun. This means that the tool may generate inaccurate diagnostics and recommendations. If you encounter any issues, pleae report them to [support@alchemizedsoftware.com](mailto:support@alchemizedsoftware.com)
+- **False Positives**: When In Rome is an MVP undergoing rapid development. As an early adopter, you get a front-row seat to watch the fun. This means that the tool may generate inaccurate diagnostics and recommendations. If you encounter any issues, pleae report them to [support@rome.dev](mailto:support@rome.dev)
 
 ## Support & Feedback
 
-- **Support**: Reach out to [support@alchemizedsoftware.com](mailto:support@alchemizedsoftware.com) for help.
+- **Support**: Reach out to [support@rome.dev](mailto:support@rome.dev) for help.
 
 ## Contribution Guidelines
 
-Interested in contributing to When In Rome? Please reach out to [hello@alchemizedsoftware.com](mailto:hello@alchemizedsoftware.com)
+Interested in contributing to When In Rome? Please reach out to [hello@rome.dev](mailto:hello@rome.dev)
 
 ## License
 

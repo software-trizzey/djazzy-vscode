@@ -9,10 +9,9 @@ import {
 
 import { TextDocument } from "vscode-languageserver-textdocument";
 
-import { groqModel } from "../llm/groq";
-import { openAIModel } from "../llm/openai";
+import { chatWithGroq } from "../llm/groq";
+import { chatWithOpenAI } from "../llm/openai";
 
-import { systemMessageWithJsonResponse } from "../constants/chat";
 import {
 	isLikelyBoolean,
 	hasNegativePattern,
@@ -290,37 +289,6 @@ export abstract class LanguageProvider {
 		}
 	}
 
-	async chatWithOpenAI(developerInput: string) {
-		const response = await openAIModel.invoke([
-			["system", systemMessageWithJsonResponse],
-			["human", developerInput],
-		]);
-		if (!response || !response.content) {
-			console.log("Error while fetching response from OpenAI", response);
-			throw new Error("Error while fetching response from OpenAI");
-		}
-		return response.content;
-	}
-
-	async chatWithGroq(developerInput: string) {
-		const response = await groqModel.invoke(
-			[
-				["system", systemMessageWithJsonResponse],
-				["human", developerInput],
-			],
-			{
-				response_format: { type: "json_object" },
-			}
-		);
-		console.log("Grok response", response);
-
-		if (!response || !response.content) {
-			console.log("Error while fetching response from LLM", response);
-			throw new Error("Error while fetching response from LLM");
-		}
-		return response.content;
-	}
-
 	protected async fetchSuggestedNameFromLLM({
 		message,
 		modelType,
@@ -329,9 +297,9 @@ export abstract class LanguageProvider {
 		modelType: "groq" | "openai";
 	}): Promise<any> {
 		if (modelType === "openai") {
-			return await this.chatWithOpenAI(message);
+			return await chatWithOpenAI(message);
 		} else if (modelType === "groq") {
-			return await this.chatWithGroq(message);
+			return await chatWithGroq(message);
 		}
 	}
 

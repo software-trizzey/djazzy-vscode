@@ -1,5 +1,5 @@
 import { ChatGroq } from "@langchain/groq";
-
+import { systemMessageWithJsonResponse } from "../constants/chat";
 
 //  pricing : https://wow.groq.com/ (as of April 28, 2024)
 const models = {
@@ -7,9 +7,29 @@ const models = {
 	llama3: "llama3-8b-8192", // $0.05/$0.10 per 1M tokens (input/output)
 };
 
+// FIXME: create a new api key after beta
 export const groqModel = new ChatGroq({
-	apiKey: process.env.GROQ_API_KEY,
+	apiKey: "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",
 	model: models.gemma7,
 	temperature: 1,
 	maxTokens: 256,
 });
+
+export async function chatWithGroq(developerInput: string) {
+	const response = await groqModel.invoke(
+		[
+			["system", systemMessageWithJsonResponse],
+			["human", developerInput],
+		],
+		{
+			response_format: { type: "json_object" },
+		}
+	);
+	console.log("Grok response", response);
+
+	if (!response || !response.content) {
+		console.log("Error while fetching response from LLM", response);
+		throw new Error("Error while fetching response from LLM");
+	}
+	return response.content;
+}

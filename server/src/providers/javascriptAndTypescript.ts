@@ -22,6 +22,7 @@ import {
 } from "../utils";
 
 import { ExtensionSettings, defaultConventions } from "../settings";
+import { SOURCE_NAME } from "../constants/names";
 
 export class JavascriptAndTypescriptProvider extends LanguageProvider {
 	private isTypeScript: boolean = false;
@@ -282,7 +283,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 				conventionCheckResult.reason,
 				DiagnosticSeverity.Warning,
 				"namingConventionViolation",
-				"whenInRome"
+				SOURCE_NAME
 			);
 			diagnostics.push(diagnostic);
 		}
@@ -307,7 +308,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 				result.reason,
 				DiagnosticSeverity.Warning,
 				"namingConventionViolation",
-				"whenInRome"
+				SOURCE_NAME
 			);
 			diagnostics.push(diagnostic);
 		}
@@ -341,7 +342,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 					result.reason,
 					DiagnosticSeverity.Warning,
 					undefined,
-					"When in Rome"
+					SOURCE_NAME
 				)
 			);
 		}

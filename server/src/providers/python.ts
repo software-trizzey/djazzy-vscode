@@ -21,6 +21,7 @@ import { debounce, validatePythonFunctionName } from "../utils";
 import { ExtensionSettings, defaultConventions } from "../settings";
 import { PYTHON_DIRECTORY } from "../constants/filepaths";
 import { FIX_NAME } from "../constants/commands";
+import { SOURCE_NAME } from "../constants/names";
 
 export class PythonProvider extends LanguageProvider {
 	provideDiagnosticsDebounced: (document: TextDocument) => void;
@@ -330,7 +331,7 @@ export class PythonProvider extends LanguageProvider {
 					result.reason,
 					DiagnosticSeverity.Warning,
 					undefined,
-					"When in Rome"
+					SOURCE_NAME
 				)
 			);
 		}

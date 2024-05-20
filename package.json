@@ -42,7 +42,7 @@
 				},
 				"whenInRome.devMode": {
 					"type": "boolean",
-					"default": true,
+					"default": false,
 					"description": "Toggle development mode for additional logging and diagnostics."
 				},
 				"whenInRome.notificationInterval": {

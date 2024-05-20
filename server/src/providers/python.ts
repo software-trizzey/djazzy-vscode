@@ -43,7 +43,9 @@ export class PythonProvider extends LanguageProvider {
 	}
 
 	async provideCodeActions(document: TextDocument): Promise<CodeAction[]> {
-		const diagnostics = document.uri ? this.getDiagnostic(document.uri) : [];
+		const diagnostics = document.uri
+			? this.getDiagnostic(document.uri, document.version)
+			: [];
 		if (!diagnostics) return [];
 		const namingConventionDiagnostics = diagnostics.filter(
 			(diagnostic) => diagnostic.code === "namingConventionViolation"

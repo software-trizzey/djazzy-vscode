@@ -4,6 +4,12 @@ import type {
 } from "./languageConventions";
 import type { CommentConventions } from "./commentConventions";
 
+export let settingsVersion: number = 0;
+
+export function incrementSettingsVersion() {
+	settingsVersion++;
+}
+
 export interface ExtensionSettings {
 	onlyCheckNewCode: boolean;
 	isDevMode: boolean;

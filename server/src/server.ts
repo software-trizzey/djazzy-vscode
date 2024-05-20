@@ -30,6 +30,7 @@ import {
 	ExtensionSettings,
 	defaultConventions,
 	normalizeClientSettings,
+	incrementSettingsVersion,
 } from "./settings";
 import { debounce } from "./utils";
 
@@ -144,21 +145,38 @@ connection.onInitialized(async () => {
 });
 
 let globalSettings: ExtensionSettings = defaultConventions;
-
 const documentSettings: Map<string, Thenable<ExtensionSettings>> = new Map();
 
-connection.onDidChangeConfiguration((change) => {
+connection.onDidChangeConfiguration(async (change) => {
+	incrementSettingsVersion();
+
+	const collectedDocuments = documents.all();
 	if (hasConfigurationCapability) {
 		documentSettings.clear();
+		await Promise.all(
+			collectedDocuments.map(async (document) => {
+				const settings = await getDocumentSettings(document.uri.toString());
+				documentSettings.set(
+					document.uri.toString(),
+					Promise.resolve(settings)
+				);
+			})
+		);
 	} else {
 		globalSettings = <ExtensionSettings>(
 			(change.settings.whenInRome || defaultConventions)
 		);
 	}
 	console.log("Settings have changed. Refreshing diagnostics...");
-	// TODO: We could optimize things here and re-fetch the setting first and compare it
-	// to the existing setting
-	connection.languages.diagnostics.refresh();
+	await Promise.all(
+		collectedDocuments.map(async (document) => {
+			const diagnostics = await validateTextDocument(document);
+			connection.sendDiagnostics({
+				uri: document.uri,
+				diagnostics,
+			});
+		})
+	);
 });
 
 function getDocumentSettings(resource: string): Thenable<ExtensionSettings> {
@@ -248,7 +266,11 @@ async function validateTextDocument(
 	// TODO: we can optimize this later by using cached settings
 	const settings = await getDocumentSettings(textDocument.uri);
 	const provider = getOrCreateProvider(languageId, settings);
-	let diagnostics = await provider.getDiagnostic(textDocument.uri);
+	provider.updateSettings(settings);
+	let diagnostics = await provider.getDiagnostic(
+		textDocument.uri,
+		textDocument.version
+	);
 
 	console.info(`Validating file: ${textDocument.uri}`, {
 		context: "server#validateTextDocument",
@@ -256,7 +278,6 @@ async function validateTextDocument(
 
 	if (!diagnostics || provider.isDiagnosticsOutdated(textDocument)) {
 		diagnostics = await provider.provideDiagnostics(textDocument);
-		provider.setDiagnostic(textDocument.uri, textDocument.version, diagnostics);
 	}
 	return diagnostics;
 }

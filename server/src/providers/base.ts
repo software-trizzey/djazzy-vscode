@@ -18,7 +18,11 @@ import {
 	getChangedLinesFromClient,
 	containsAbbreviation,
 } from "../utils";
-import { ExtensionSettings, defaultConventions } from "../settings";
+import {
+	ExtensionSettings,
+	defaultConventions,
+	settingsVersion,
+} from "../settings";
 import { rollbar } from "../common/logs";
 
 import type { LanguageConventions } from "../languageConventions";
@@ -34,7 +38,8 @@ export abstract class LanguageProvider {
 		string,
 		{
 			diagnostics: Diagnostic[];
-			version: number;
+			documentVersion: number;
+			settingsVersion: number;
 		}
 	> = new Map();
 
@@ -63,26 +68,56 @@ export abstract class LanguageProvider {
 		return this.conventions;
 	}
 
+	protected setConventions(conventions: LanguageConventions): void {
+		this.conventions = conventions;
+	}
+
+	protected getStoredSettings(): ExtensionSettings {
+		return this.settings;
+	}
+
+	public updateSettings(settings: ExtensionSettings): void {
+		this.settings = settings;
+		this.updateConventions(settings);
+	}
+
+	private updateConventions(settings: ExtensionSettings): void {
+		const languageSettings = settings.languages[this.languageId];
+		if (!languageSettings) {
+			this.sendNotSupportedMessage(this.languageId);
+			return;
+		}
+		this.conventions = languageSettings;
+	}
+
 	public async provideDiagnostics(
 		document: TextDocument
 	): Promise<Diagnostic[]> {
 		const conventions = this.getConventions();
-		if (!conventions.isEnabled) return [];
 		this.deleteDiagnostic(document.uri);
-		const diagnostics: Diagnostic[] = [];
+		if (!conventions.isEnabled) return [];
 
+		let diagnostics: Diagnostic[] = [];
 		let changedLines: Set<number> | undefined = undefined;
+
 		if (this.settings.onlyCheckNewCode) {
 			changedLines = await getChangedLinesFromClient(
 				this.connection,
 				document.uri
 			);
 			if (changedLines && changedLines.size === 0) {
-				return diagnostics; // No changes, no need to process diagnostics
+				// No changes, no need to process diagnostics
+				return this.getDiagnostic(document.uri, document.version) || [];
 			}
 		}
 
-		return this.runDiagnostics(document, diagnostics, changedLines);
+		diagnostics = await this.runDiagnostics(
+			document,
+			diagnostics,
+			changedLines
+		);
+		this.setDiagnostic(document.uri, document.version, diagnostics);
+		return diagnostics;
 	}
 
 	protected abstract runDiagnostics(
@@ -101,9 +136,16 @@ export abstract class LanguageProvider {
 		CodeActionKind.Refactor,
 	];
 
-	public getDiagnostic(documentUri: string): Diagnostic[] | undefined {
+	public getDiagnostic(
+		documentUri: string,
+		documentVersion: number
+	): Diagnostic[] | undefined {
 		const entry = this.diagnostics.get(documentUri);
-		if (entry) {
+		if (
+			entry &&
+			entry.settingsVersion === settingsVersion &&
+			entry.documentVersion === documentVersion
+		) {
 			return entry.diagnostics;
 		}
 		return undefined;
@@ -116,7 +158,8 @@ export abstract class LanguageProvider {
 	): void {
 		this.diagnostics.set(documentUri, {
 			diagnostics,
-			version: documentVersion,
+			documentVersion,
+			settingsVersion,
 		});
 	}
 
@@ -130,7 +173,11 @@ export abstract class LanguageProvider {
 
 	isDiagnosticsOutdated(document: TextDocument): boolean {
 		const cacheEntry = this.diagnostics.get(document.uri);
-		return !cacheEntry || document.version > cacheEntry.version;
+		return (
+			!cacheEntry ||
+			cacheEntry.settingsVersion !== settingsVersion ||
+			cacheEntry.documentVersion !== document.version
+		);
 	}
 
 	public handleError(error: Error) {

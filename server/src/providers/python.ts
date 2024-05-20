@@ -21,7 +21,7 @@ import { debounce, validatePythonFunctionName } from "../utils";
 import { ExtensionSettings, defaultConventions } from "../settings";
 import { PYTHON_DIRECTORY } from "../constants/filepaths";
 import { FIX_NAME } from "../constants/commands";
-import { SOURCE_NAME } from "../constants/names";
+import { SOURCE_NAME, SOURCE_TYPE } from "../constants/diagnostics";
 
 export class PythonProvider extends LanguageProvider {
 	provideDiagnosticsDebounced: (document: TextDocument) => void;
@@ -80,7 +80,9 @@ export class PythonProvider extends LanguageProvider {
 				.toLowerCase()
 				.replace(/[- ]+/g, "_");
 			suggestedName = snakeCasedName;
-		} else if (violationMessage.includes("does not start with a conventional prefix")) {
+		} else if (
+			violationMessage.includes("does not start with a conventional prefix")
+		) {
 			suggestedName = `is_${flaggedName}`;
 		} else if (violationMessage.includes("has a negative naming pattern")) {
 			// detect _not_ and not_ patterns
@@ -186,15 +188,7 @@ export class PythonProvider extends LanguageProvider {
 		changedLines: Set<number> | undefined
 	): Promise<void> {
 		for (const symbol of symbols) {
-			const {
-				type,
-				name,
-				line,
-				col_offset,
-				end_col_offset,
-				value,
-				leading_comments,
-			} = symbol;
+			const { type, name, line, col_offset, value, leading_comments } = symbol;
 
 			if (changedLines && !changedLines.has(line)) {
 				continue; // Skip validation if line not in changedLines
@@ -265,8 +259,8 @@ export class PythonProvider extends LanguageProvider {
 					range,
 					result.reason,
 					DiagnosticSeverity.Warning,
-					"namingConventionViolation",
-					"whenInRome"
+					SOURCE_TYPE,
+					SOURCE_NAME
 				);
 				diagnostics.push(diagnostic);
 			}

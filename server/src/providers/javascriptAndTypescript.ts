@@ -2,7 +2,6 @@ import {
 	Connection,
 	CodeAction,
 	CodeActionKind,
-	Command,
 	Diagnostic,
 	DiagnosticSeverity,
 	Range,
@@ -22,7 +21,7 @@ import {
 } from "../utils";
 
 import { ExtensionSettings, defaultConventions } from "../settings";
-import { SOURCE_NAME } from "../constants/names";
+import { SOURCE_NAME, SOURCE_TYPE } from "../constants/diagnostics";
 
 export class JavascriptAndTypescriptProvider extends LanguageProvider {
 	private isTypeScript: boolean = false;
@@ -291,7 +290,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 				range,
 				conventionCheckResult.reason,
 				DiagnosticSeverity.Warning,
-				"namingConventionViolation",
+				SOURCE_TYPE,
 				SOURCE_NAME
 			);
 			diagnostics.push(diagnostic);
@@ -316,7 +315,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 				range,
 				result.reason,
 				DiagnosticSeverity.Warning,
-				"namingConventionViolation",
+				SOURCE_TYPE,
 				SOURCE_NAME
 			);
 			diagnostics.push(diagnostic);

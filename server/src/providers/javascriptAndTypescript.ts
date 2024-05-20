@@ -56,9 +56,16 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 			? this.getDiagnostic(document.uri, document.version)
 			: [];
 		if (!diagnostics) return [];
-		const namingConventionDiagnostics = diagnostics.filter(
-			(diagnostic) => diagnostic.code === "namingConventionViolation"
-		);
+		const namingConventionDiagnostics = diagnostics.filter((diagnostic) => {
+			// TODO: for now we ignore the short names and abbreviation violations
+			if (
+				diagnostic.code === "namingConventionViolation" &&
+				!diagnostic.message.includes("is too short, violating expressiveness")
+			) {
+				return true;
+			}
+			return false;
+		});
 		const actionPromises = namingConventionDiagnostics.map((diagnostic) =>
 			this.generateFixForNamingConventionViolation(document, diagnostic)
 		);

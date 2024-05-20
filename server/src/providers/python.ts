@@ -117,6 +117,7 @@ export class PythonProvider extends LanguageProvider {
 		);
 		const fix = CodeAction.create(title, cmd, CodeActionKind.QuickFix);
 		fix.isPreferred = true;
+		fix.diagnostics = [diagnostic];
 		this.codeActionsMessageCache.set(cacheKey, fix);
 		return fix;
 	}

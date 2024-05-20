@@ -88,6 +88,13 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		} else if (violationMessage.includes("has a negative naming pattern")) {
 			suggestedName = flaggedName.replace(/not/i, "");
 		} else if (
+			violationMessage.includes("does not start with a conventional prefix")
+		) {
+			// TODO: can improve suggestions by providing more context
+			const capitalizedName =
+				flaggedName.charAt(0).toUpperCase() + flaggedName.slice(1);
+			suggestedName = `is${capitalizedName}`;
+		} else if (
 			violationMessage.includes("does not start with a recognized action word")
 		) {
 			if (this.settings.isDevMode) {

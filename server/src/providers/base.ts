@@ -68,7 +68,6 @@ export abstract class LanguageProvider {
 	): Promise<Diagnostic[]> {
 		const conventions = this.getConventions();
 		if (!conventions.isEnabled) return [];
-
 		this.deleteDiagnostic(document.uri);
 		const diagnostics: Diagnostic[] = [];
 
@@ -295,7 +294,10 @@ export abstract class LanguageProvider {
 	}: {
 		message: string;
 		modelType: "groq" | "openai";
+		languageId?: string;
 	}): Promise<any> {
+		message = `${message} Note: align suggestion with ${this.languageId} naming conventions (i.e. snakecase, camelcase, etc.).`;
+
 		if (modelType === "openai") {
 			return await chatWithOpenAI(message);
 		} else if (modelType === "groq") {

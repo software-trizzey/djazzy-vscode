@@ -78,6 +78,20 @@ export class PythonProvider extends LanguageProvider {
 				.toLowerCase()
 				.replace(/[- ]+/g, "_");
 			suggestedName = snakeCasedName;
+		} else if (violationMessage.includes("does not start with a conventional prefix")) {
+			suggestedName = `is_${flaggedName}`;
+			// if (this.settings.isDevMode) {
+			// 	suggestedName = `is_${flaggedName}`;
+			// } else {
+			// 	// FIXME: groq can't understand that the name should be snakecased
+			// 	const response = await this.fetchSuggestedNameFromLLM({
+			// 		message: violationMessage,
+			// 		modelType: "groq",
+					
+			// 	});
+			// 	const data = JSON.parse(response);
+			// 	suggestedName = data.suggestedName;
+			// 	}
 		} else if (violationMessage.includes("has a negative naming pattern")) {
 			// detect _not_ and not_ patterns
 			suggestedName = flaggedName
@@ -95,7 +109,7 @@ export class PythonProvider extends LanguageProvider {
 			violationMessage.includes("does not start with a recognized action word")
 		) {
 			if (this.settings.isDevMode) {
-				suggestedName = `get${flaggedName}`;
+				suggestedName = `get_${flaggedName}`;
 			} else {
 				const response = await this.fetchSuggestedNameFromLLM({
 					message: violationMessage,
@@ -244,7 +258,6 @@ export class PythonProvider extends LanguageProvider {
 			}
 
 			if (result && result.violates) {
-				console.log("symbol:", symbol);
 				// TODO: this is basic MVP implementation, need to improve
 				let colOffsetAdjustment = 0;
 				if (symbol.type === "function" && symbol.name) {

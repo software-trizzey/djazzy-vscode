@@ -42,11 +42,6 @@
 		"configuration": {
 			"title": "When in Rome",
 			"properties": {
-				"whenInRome.enabled": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enable or disable the When in Rome extension globally."
-				},
 				"whenInRome.onlyCheckNewCode": {
 					"type": "boolean",
 					"default": false,

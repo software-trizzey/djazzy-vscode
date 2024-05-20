@@ -24,7 +24,7 @@ When In Rome is an AI-driven code stylist that helps teams enforce their coding 
 
 ## Quick Start 🏃‍♂️💨
 
-1. **Install the Extension**: [VS Code Marketplace](#) (Add your marketplace link here)
+1. **Install the Extension**: [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Alchemized.when-in-rome) (Add your marketplace link here)
 2. **Configure Conventions**: Set up your team's coding conventions via a GUI or a configuration file.
 3. **Start Coding**: Begin coding as usual while the extension monitors and helps improve your work.
 4. **Review Violations**: Check and resolve any flagged violations in the Problems panel.

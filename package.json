@@ -1,6 +1,6 @@
 {
 	"name": "when-in-rome",
-	"displayName": "When in Rome",
+	"displayName": "When In Rome",
 	"description": "AI-driven code stylist that helps teams enforce their coding conventions, reducing review cycles and improving code quality. After all, when in rome you should do as the Romans do.",
 	"author": "Tristan Deane",
 	"version": "0.0.5",

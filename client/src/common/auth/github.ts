@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 import uuid from "uuid";
 import * as Octokit from "@octokit/rest";
 
-const SERVER_URL = "http://127.0.0.1:8000";
+const AUTH_SERVER_URL = "http://127.0.0.1:8000";
 const GITHUB_AUTH_PROVIDER_ID = "github";
 // The GitHub Authentication Provider accepts the scopes described here:
 // https://developer.github.com/apps/building-oauth-apps/understanding-scopes-for-oauth-apps/
@@ -118,7 +118,7 @@ export async function signInWithGitHub(
 		},
 	};
 
-	const serverResponse: any = await fetch(`${SERVER_URL}/auth/users/`, {
+	const serverResponse: any = await fetch(`${AUTH_SERVER_URL}/auth/users/`, {
 		headers: {
 			"Content-Type": "application/json",
 		},

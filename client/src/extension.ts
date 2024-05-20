@@ -26,9 +26,7 @@ async function initializeAuthentication(
 	const token = context.globalState.get("whenInRomeUserToken");
 	if (token && storedUser) {
 		const { github_login, email } = storedUser;
-		vscode.window.showInformationMessage(
-			`Welcome back to Rome, ${github_login || email}! 🏛️🫡`
-		);
+		console.log("User is already signed in.", github_login || email);
 		return true;
 	} else {
 		await signInWithGitHub(credentials, context, deactivate);

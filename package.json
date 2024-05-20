@@ -1,7 +1,7 @@
 {
 	"name": "when-in-rome",
 	"displayName": "When in Rome",
-	"description": "AI-Driven Code Stylist that enforces team conventions. After all, when in rome you should do as the Romans do.",
+	"description": "AI-Driven Code Stylist that improves code quality by enforcing team conventions. After all, when in rome you should do as the Romans do.",
 	"author": "Tristan Deane",
 	"version": "0.0.4",
 	"publisher": "alchemized",
@@ -16,10 +16,17 @@
 	"categories": [
 		"Programming Languages",
 		"Linters",
-		"Other"
+		"Other",
+		"Data Science",
+		"Machine Learning",
+		"Education"
 	],
 	"keywords": [
-		"code-stylist copilot rome conventions code-quality"
+		"AI",
+		"code quality",
+		"coding conventions",
+		"quick fix",
+		"static analysis"
 	],
 	"engines": {
 		"vscode": "^1.75.0",

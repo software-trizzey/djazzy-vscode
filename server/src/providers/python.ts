@@ -80,18 +80,6 @@ export class PythonProvider extends LanguageProvider {
 			suggestedName = snakeCasedName;
 		} else if (violationMessage.includes("does not start with a conventional prefix")) {
 			suggestedName = `is_${flaggedName}`;
-			// if (this.settings.isDevMode) {
-			// 	suggestedName = `is_${flaggedName}`;
-			// } else {
-			// 	// FIXME: groq can't understand that the name should be snakecased
-			// 	const response = await this.fetchSuggestedNameFromLLM({
-			// 		message: violationMessage,
-			// 		modelType: "groq",
-					
-			// 	});
-			// 	const data = JSON.parse(response);
-			// 	suggestedName = data.suggestedName;
-			// 	}
 		} else if (violationMessage.includes("has a negative naming pattern")) {
 			// detect _not_ and not_ patterns
 			suggestedName = flaggedName

@@ -244,8 +244,19 @@ export class PythonProvider extends LanguageProvider {
 			}
 
 			if (result && result.violates) {
-				const start = Position.create(line, col_offset);
-				const end = Position.create(line, end_col_offset);
+				console.log("symbol:", symbol);
+				// TODO: this is basic MVP implementation, need to improve
+				let colOffsetAdjustment = 0;
+				if (symbol.type === "function" && symbol.name) {
+					colOffsetAdjustment = "def ".length;
+				} else if (symbol.type === "class" && symbol.name) {
+					colOffsetAdjustment = "class ".length;
+				}
+				const start = Position.create(line, col_offset + colOffsetAdjustment);
+				const end = Position.create(
+					line,
+					col_offset + colOffsetAdjustment + symbol.name.length
+				);
 				const range = Range.create(start, end);
 				const diagnostic: Diagnostic = Diagnostic.create(
 					range,
@@ -256,7 +267,6 @@ export class PythonProvider extends LanguageProvider {
 				);
 				diagnostics.push(diagnostic);
 			}
-			console.log("symbol:", symbol);
 
 			if (this.settings.comments.flagRedundant && leading_comments) {
 				for (const comment of leading_comments) {

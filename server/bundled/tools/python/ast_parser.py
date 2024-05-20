@@ -49,17 +49,22 @@ class Analyzer(ast.NodeVisitor):
     
     def generic_node_visit(self, node):
         comments = self.get_related_comments(node)
+        name = getattr(node, 'name', None)
+        col_offset = node.col_offset
+        if isinstance(node, ast.FunctionDef):
+            col_offset += len('def ')
+        elif isinstance(node, ast.ClassDef):
+            col_offset += len('class ')
         self.symbols.append({
             'type': type(node).__name__.lower(),
-            'name': getattr(node, 'name', None),
+            'name': name,
             'leading_comments': comments,
             'line': node.lineno - 1,
-            'col_offset': node.col_offset,
-            'end_col_offset': node.col_offset + (len(getattr(node, 'name', '')) if hasattr(node, 'name') else 0)
+            'col_offset': col_offset,
+            'end_col_offset': col_offset + (len(name) if name else 0)
         })
         self.handle_nested_structures(node)
         self.generic_visit(node)
-
 
     def visit_ClassDef(self, node):
         self.generic_node_visit(node)

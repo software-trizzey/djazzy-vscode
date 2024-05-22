@@ -11,7 +11,6 @@
 		"theme": "dark"
 	},
 	"license": "SEE LICENSE IN LICENSE.md",
-	"repository": "https://github.com/software-trizzey/when-in-rome-lsp",
 	"pricing": "Trial",
 	"categories": [
 		"Programming Languages",
@@ -167,7 +166,7 @@
 		"compile": "tsc -b",
 		"package": "vsce package",
 		"dev:package": "npm run package --pre-release",
-		"publish": "vsce publish",
+		"publish": "vsce publish --allow-missing-repository",
 		"dev-publish": "npm run dev:package && code --install-extension when-in-rome-0.0.9.vsix",
 		"watch": "tsc -b -w",
 		"lint": "eslint ./client/src ./server/src --ext .ts,.tsx",

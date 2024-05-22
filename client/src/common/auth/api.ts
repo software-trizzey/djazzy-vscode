@@ -77,7 +77,7 @@ export async function signOutUser(context: vscode.ExtensionContext) {
 
 			if (response.ok) {
 				vscode.window.showInformationMessage(
-					"Signed out from When In Rome and the server."
+					"Signed out of When In Rome. Vale! 👋"
 				);
 			} else {
 				throw new Error("Error signing out from the server.");

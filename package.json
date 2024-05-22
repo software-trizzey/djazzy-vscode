@@ -39,6 +39,16 @@
 	],
 	"main": "./client/out/extension",
 	"contributes": {
+		"commands": [
+			{
+				"command": "whenInRome.signIn",
+				"title": "When In Rome: Sign In"
+			},
+			{
+				"command": "whenInRome.signOut",
+				"title": "When In Rome: Sign Out"
+			}
+		],
 		"configuration": {
 			"title": "When in Rome",
 			"properties": {

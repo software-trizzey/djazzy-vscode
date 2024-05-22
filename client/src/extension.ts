@@ -8,7 +8,8 @@ import {
 	TransportKind,
 } from "vscode-languageclient/node";
 
-import { signInWithGitHub, Credentials } from "./common/auth/github";
+import { Credentials } from "./common/auth/github";
+import { signInWithGitHub, signOutUser } from "./common/auth/api";
 import type { UserSession } from "./common/auth/github";
 
 import {
@@ -37,6 +38,17 @@ async function initializeAuthentication(
 let client: LanguageClient;
 
 export async function activate(context: vscode.ExtensionContext) {
+	const signInWithGitHubCommand = vscode.commands.registerCommand(
+		"whenInRome.signIn",
+		() => signInWithGitHub(credentials, context, deactivate)
+	);
+	context.subscriptions.push(signInWithGitHubCommand);
+	const signOutCommand = vscode.commands.registerCommand(
+		"whenInRome.signOut",
+		() => signOutUser(context)
+	);
+	context.subscriptions.push(signOutCommand);
+
 	const credentials = new Credentials();
 	await credentials.initialize(context);
 

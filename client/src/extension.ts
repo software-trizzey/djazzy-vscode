@@ -10,12 +10,12 @@ import {
 
 import { signInWithGitHub, Credentials } from "./common/auth/github";
 import type { UserSession } from "./common/auth/github";
+
 import {
-	getLastNotifiedTime,
-	getNotificationInterval,
-	updateLastNotifiedTime,
-} from "./common/utils/notifications";
-import { createGitRepository, getChangedLines } from "./common/utils/git";
+	createGitRepository,
+	getChangedLines,
+	checkAndNotify,
+} from "./common/utils/git";
 
 async function initializeAuthentication(
 	credentials: Credentials,
@@ -104,22 +104,6 @@ export async function activate(context: vscode.ExtensionContext) {
 		client.start().then(() => {
 			client.onRequest("whenInRome.getGitDiff", getChangedLines);
 		});
-	}
-
-	function checkAndNotify(uri: vscode.Uri) {
-		// Throttle notifications
-		const lastNotified = getLastNotifiedTime(uri);
-		const currentTime = new Date().getTime();
-		const notificationInterval = getNotificationInterval();
-		if (currentTime - lastNotified > notificationInterval) {
-			const relativePath = vscode.workspace.asRelativePath(uri);
-			// TODO: add action where user can update interval time
-			vscode.window.showWarningMessage(
-				`Ensure you've tested the changes in ${relativePath}`,
-				"Ok"
-			);
-			updateLastNotifiedTime(uri, currentTime);
-		}
 	}
 }
 

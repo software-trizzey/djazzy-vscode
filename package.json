@@ -3,14 +3,15 @@
 	"displayName": "When In Rome",
 	"description": "AI-driven code stylist that helps teams enforce their coding conventions, reducing review cycles and improving code quality. After all, when in rome you should do as the Romans do.",
 	"author": "Tristan Deane",
-	"version": "0.0.9",
+	"version": "0.0.10",
 	"publisher": "alchemized",
+	"homepage": "https://www.rome.dev",
 	"preview": true,
 	"galleryBanner": {
 		"color": "#20232D",
 		"theme": "dark"
 	},
-	"license": "SEE LICENSE IN LICENSE.md",
+	"license": "SEE LICENSE IN README.md",
 	"pricing": "Trial",
 	"categories": [
 		"Programming Languages",
@@ -167,7 +168,7 @@
 		"package": "vsce package",
 		"dev:package": "npm run package --pre-release",
 		"publish": "vsce publish --allow-missing-repository",
-		"dev-publish": "npm run dev:package && code --install-extension when-in-rome-0.0.9.vsix",
+		"dev-publish": "npm run dev:package && code --install-extension when-in-rome-0.0.10.vsix",
 		"watch": "tsc -b -w",
 		"lint": "eslint ./client/src ./server/src --ext .ts,.tsx",
 		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",

@@ -135,7 +135,7 @@
 				},
 				"whenInRome.languages.javascript.expressiveNames.functions.functionLengthLimit": {
 					"type": "number",
-					"default": 30,
+					"default": 60,
 					"description": "Set the maximum length for functions.",
 					"order": 13
 				},
@@ -201,7 +201,7 @@
 				},
 				"whenInRome.languages.typescript.expressiveNames.functions.functionLengthLimit": {
 					"type": "number",
-					"default": 30,
+					"default": 60,
 					"description": "Set the maximum length for functions.",
 					"order": 24
 				},
@@ -267,7 +267,7 @@
 				},
 				"whenInRome.languages.python.expressiveNames.functions.functionLengthLimit": {
 					"type": "number",
-					"default": 30,
+					"default": 60,
 					"description": "Set the maximum length for functions.",
 					"order": 35
 				},

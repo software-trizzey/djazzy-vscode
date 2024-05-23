@@ -23,7 +23,7 @@ export interface ExtensionSettings {
 }
 
 export const defaultPrefixes: string[] = ["is", "has", "should", "can", "did"];
-export const defaultFunctionLengthLimit: number = 30;
+export const defaultFunctionLengthLimit: number = 60;
 export const maxCyclomaticComplexity: number = 10;
 
 export const defaultConventions: ExtensionSettings = {

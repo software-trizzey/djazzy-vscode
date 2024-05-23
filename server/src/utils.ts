@@ -210,7 +210,6 @@ export async function validatePythonFunctionName(
 		expressiveNames: { functions },
 	} = languageConventions;
 	// TODO: handle this rule const cyclomaticComplexity = calculateCyclomaticComplexity(functionBody);
-
 	if (functionBody.bodyLength > functions.functionLengthLimit) {
 		return {
 			violates: true,

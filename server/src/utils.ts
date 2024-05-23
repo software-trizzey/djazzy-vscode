@@ -11,6 +11,8 @@ import { GET_CHANGED_LINES } from "./constants/commands";
 import { actionWordsDictionary, commonWords } from "./data";
 import { LanguageConventions } from "./languageConventions";
 
+import { defaultFunctionLengthLimit } from "./settings";
+
 const cache = new Map<string, boolean>();
 
 const CheckUncommittedChangesRequest = new RequestType<string, string, any>(
@@ -164,12 +166,15 @@ export async function validateJavaScriptAndTypeScriptFunctionName(
 	const {
 		expressiveNames: { functions },
 	} = languageConventions;
-	const limitedFunctionBody = limitFunctionBodySize(functionBody);
-	const functionBodyLength = limitedFunctionBody.split("\n").length;
 	// TODO: handle this rule const cyclomaticComplexity = calculateCyclomaticComplexity(functionBody);
-	console.log("Function body length: ", functionBodyLength);
+	console.log(
+		"Function body length: ",
+		functionBody.length,
+		"max limit",
+		functions.functionLengthLimit
+	);
 
-	if (functionBodyLength > functions.functionLengthLimit) {
+	if (functionBody.length > functions.functionLengthLimit) {
 		return {
 			violates: true,
 			reason: `Function "${functionName}" exceeds the maximum length of ${functions.functionLengthLimit} lines.`,
@@ -304,7 +309,7 @@ export function extractFunctionBody(
 
 export function limitFunctionBodySize(
 	functionBody: string,
-	maxLength: number = 1000
+	maxLength: number = defaultFunctionLengthLimit
 ): string {
 	console.log("Limit function body size", functionBody.length, maxLength);
 	if (functionBody.length <= maxLength) {

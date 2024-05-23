@@ -58,10 +58,14 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 			: [];
 		if (!diagnostics) return [];
 		const namingConventionDiagnostics = diagnostics.filter((diagnostic) => {
-			// TODO: for now we ignore the short names and abbreviation violations
+			if (diagnostic.code !== "namingConventionViolation") return false;
+
+			// TODO: for MVP we don't generate fixes for the following violations
 			if (
-				diagnostic.code === "namingConventionViolation" &&
-				!diagnostic.message.includes("is too short, violating expressiveness")
+				!diagnostic.message.includes(
+					"is too short, violating expressiveness"
+				) ||
+				!diagnostic.message.includes("exceeds the maximum length")
 			) {
 				return true;
 			}
@@ -344,11 +348,11 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		);
 
 		if (result.violates) {
-			if (!node.start || !node.end) return;
+			if (!node.id.start || !node.id.end) return;
 
 			const diagnosticRange = Range.create(
-				document.positionAt(node.start),
-				document.positionAt(node.start + name.length)
+				document.positionAt(node.id.start),
+				document.positionAt(node.id.start + name.length)
 			);
 			const diagnostic: Diagnostic = Diagnostic.create(
 				diagnosticRange,

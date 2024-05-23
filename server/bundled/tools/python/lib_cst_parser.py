@@ -2,6 +2,10 @@ import sys
 import subprocess
 import os
 import venv
+import libcst as cst
+from libcst.metadata import MetadataWrapper, PositionProvider
+
+
 
 def add_to_gitignore(project_root):
     gitignore_path = os.path.join(project_root, '.gitignore')
@@ -32,6 +36,72 @@ def create_venv(venv_path):
 def install_libcst(venv_path):
     subprocess.check_call([os.path.join(venv_path, 'bin', 'pip'), 'install', 'libcst'])
     print(f'Installed libcst in virtual environment at {venv_path}')
+
+class SymbolVisitor(cst.CSTVisitor):
+    METADATA_DEPENDENCIES = (PositionProvider,)
+
+    def __init__(self):
+        self.symbols = []
+
+    def visit_FunctionDef(self, node: cst.FunctionDef):
+        position = self.get_metadata(PositionProvider, node)
+        self.symbols.append({
+            'type': 'functiondef',
+            'name': node.name.value,
+            'line': position.start.line - 1,
+            'col_offset': position.start.column,
+            'end_col_offset': position.end.column,
+        })
+
+    def visit_ClassDef(self, node: cst.ClassDef):
+        position = self.get_metadata(PositionProvider, node)
+        self.symbols.append({
+            'type': 'classdef',
+            'name': node.name.value,
+            'line': position.start.line - 1,
+            'col_offset': position.start.column,
+            'end_col_offset': position.end.column,
+        })
+
+    def visit_Assign(self, node: cst.Assign):
+        for target in node.targets:
+            if isinstance(target.target, cst.Name):
+                position = self.get_metadata(PositionProvider, target)
+                self.symbols.append({
+                    'type': 'variable',
+                    'name': target.target.value,
+                    'line': position.start.line - 1,
+                    'col_offset': position.start.column,
+                    'end_col_offset': position.end.column,
+                    'value': cst.Module([]).code_for_node(node.value),
+                })
+
+    def visit_Dict(self, node: cst.Dict):
+        position = self.get_metadata(PositionProvider, node)
+        self.symbols.append({
+            'type': 'dictionary',
+            'line': position.start.line - 1,
+            'col_offset': position.start.column,
+            'end_col_offset': position.end.column,
+            'value': cst.Module([]).code_for_node(node),
+        })
+
+    def visit_List(self, node: cst.List):
+        position = self.get_metadata(PositionProvider, node)
+        self.symbols.append({
+            'type': 'list',
+            'line': position.start.line - 1,
+            'col_offset': position.start.column,
+            'end_col_offset': position.end.column,
+            'value': cst.Module([]).code_for_node(node),
+        })
+
+def parse_python_code(source_code):
+    module = cst.parse_module(source_code)
+    wrapper = MetadataWrapper(module)
+    visitor = SymbolVisitor()
+    wrapper.visit(visitor)
+    return visitor.symbols
 
 def run_parser(source_code, venv_path):
     python_executable = os.path.join(venv_path, 'bin', 'python')
@@ -65,6 +135,39 @@ class SymbolVisitor(cst.CSTVisitor):
             'line': position.start.line - 1,
             'col_offset': position.start.column,
             'end_col_offset': position.end.column,
+        })
+
+    def visit_Assign(self, node: cst.Assign):
+        for target in node.targets:
+            if isinstance(target.target, cst.Name):
+                position = self.get_metadata(PositionProvider, target)
+                self.symbols.append({
+                    'type': 'variable',
+                    'name': target.target.value,
+                    'line': position.start.line - 1,
+                    'col_offset': position.start.column,
+                    'end_col_offset': position.end.column,
+                    'value': cst.Module([]).code_for_node(node.value),
+                })
+
+    def visit_Dict(self, node: cst.Dict):
+        position = self.get_metadata(PositionProvider, node)
+        self.symbols.append({
+            'type': 'dictionary',
+            'line': position.start.line - 1,
+            'col_offset': position.start.column,
+            'end_col_offset': position.end.column,
+            'value': cst.Module([]).code_for_node(node),
+        })
+
+    def visit_List(self, node: cst.List):
+        position = self.get_metadata(PositionProvider, node)
+        self.symbols.append({
+            'type': 'list',
+            'line': position.start.line - 1,
+            'col_offset': position.start.column,
+            'end_col_offset': position.end.column,
+            'value': cst.Module([]).code_for_node(node),
         })
 
 def parse_python_code(source_code):

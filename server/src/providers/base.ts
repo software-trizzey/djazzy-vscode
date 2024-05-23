@@ -147,12 +147,7 @@ export abstract class LanguageProvider {
 			if (diagnostic.code !== "namingConventionViolation") return false;
 
 			// TODO: for MVP we don't generate fixes for the following violations
-			if (
-				!diagnostic.message.includes(
-					"is too short, violating expressiveness"
-				) ||
-				!diagnostic.message.includes("exceeds the maximum length")
-			) {
+			if (!diagnostic.message.includes("exceeds the maximum length")) {
 				return true;
 			}
 			return false;

@@ -84,7 +84,13 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 				flaggedName.charAt(0).toUpperCase() + flaggedName.slice(1);
 			suggestedName = `is${capitalizedName}`;
 		} else if (
-			violationMessage.includes("does not start with a recognized action word")
+			violationMessage.includes(
+				"does not start with a recognized action word"
+			) ||
+			violationMessage.includes("is too short and must be more descriptive") ||
+			violationMessage.includes(
+				"contains abbreviations, which should be avoided"
+			)
 		) {
 			if (this.settings.general.isDevMode) {
 				suggestedName = `get${flaggedName}`;
@@ -316,14 +322,8 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		const bodyEndLine = node.body.loc.end.line;
 		const functionBodyLines = bodyEndLine - bodyStartLine + 1;
 
-		const bodyRange = Range.create(
-			Position.create(bodyStartLine - 1, 0),
-			Position.create(bodyEndLine, 0)
-		);
-		const functionBody = this.extractFunctionBody(document, bodyRange);
 		const result = await this.validateFunctionName(
 			name,
-			functionBody,
 			functionBodyLines,
 			conventions
 		);
@@ -348,7 +348,6 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 
 	private async validateFunctionName(
 		functionName: string,
-		functionBody: string,
 		functionBodyLines: number,
 		languageConventions: LanguageConventions
 	): Promise<{
@@ -357,7 +356,6 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 	}> {
 		return await validateJavaScriptAndTypeScriptFunctionName(
 			functionName,
-			functionBody,
 			functionBodyLines,
 			languageConventions
 		);

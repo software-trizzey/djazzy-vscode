@@ -128,10 +128,26 @@ export function validateVariableNameCase(
 
 export async function validateJavaScriptAndTypeScriptFunctionName(
 	functionName: string,
-	functionBody: string,
 	functionBodyLines: number,
 	languageConventions: LanguageConventions
 ): Promise<{ violates: boolean; reason: string }> {
+	if (functionName.length <= 3) {
+		return {
+			violates: true,
+			reason: `Function name "${functionName}" is too short and must be more descriptive.`,
+		};
+	}
+
+	const containsAbbreviation = functionName
+		.split(/(?=[A-Z])/)
+		.some((part) => part.length <= 2);
+	if (containsAbbreviation) {
+		return {
+			violates: true,
+			reason: `Function name "${functionName}" contains abbreviations, which should be avoided.`,
+		};
+	}
+
 	const actionWord = Object.keys(actionWordsDictionary).find((word) => {
 		const functionNameWithoutUnderscorePrefix = functionName.startsWith("_")
 			? functionName.substring(1)
@@ -139,6 +155,7 @@ export async function validateJavaScriptAndTypeScriptFunctionName(
 		const result = functionNameWithoutUnderscorePrefix.startsWith(word);
 		return result;
 	});
+
 	if (!actionWord) {
 		return {
 			violates: true,

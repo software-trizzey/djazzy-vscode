@@ -3,12 +3,35 @@ import subprocess
 import os
 import venv
 
+def add_to_gitignore(project_root):
+    gitignore_path = os.path.join(project_root, '.gitignore')
+    venv_entry = '.rome_venv'
+    
+    if os.path.exists(gitignore_path):
+        with open(gitignore_path, 'r') as f:
+            gitignore_content = f.read()
+        
+        if venv_entry not in gitignore_content:
+            with open(gitignore_path, 'a') as f:
+                f.write(f'\n{venv_entry}\n')
+            print(f'Added {venv_entry} to .gitignore')
+        else:
+            print(f'{venv_entry} already exists in .gitignore')
+    else:
+        with open(gitignore_path, 'w') as f:
+            f.write(f'{venv_entry}\n')
+        print(f'Created .gitignore and added {venv_entry}')
+
 def create_venv(venv_path):
     if not os.path.exists(venv_path):
         venv.create(venv_path, with_pip=True)
+        print(f'Created virtual environment at {venv_path}')
+    else:
+        print(f'Virtual environment already exists at {venv_path}')
 
 def install_libcst(venv_path):
     subprocess.check_call([os.path.join(venv_path, 'bin', 'pip'), 'install', 'libcst'])
+    print(f'Installed libcst in virtual environment at {venv_path}')
 
 def run_parser(source_code, venv_path):
     python_executable = os.path.join(venv_path, 'bin', 'python')
@@ -65,9 +88,13 @@ if __name__ == "__main__":
     return output, error
 
 def main():
-    venv_path = './.rome_venv'
+    project_root = os.getcwd()
+    venv_path = os.path.join(project_root, '.rome_venv')
+    
+    add_to_gitignore(project_root)
     create_venv(venv_path)
     install_libcst(venv_path)
+    
     source_code = sys.stdin.read()
     output, error = run_parser(source_code, venv_path)
     if error:

@@ -22,6 +22,7 @@ import { ExtensionSettings, defaultConventions } from "../settings";
 import { PYTHON_DIRECTORY } from "../constants/filepaths";
 import { FIX_NAME } from "../constants/commands";
 import { SOURCE_NAME, SOURCE_TYPE } from "../constants/diagnostics";
+import { LanguageConventions } from "../languageConventions";
 
 export class PythonProvider extends LanguageProvider {
 	provideDiagnosticsDebounced: (document: TextDocument) => void;
@@ -192,8 +193,19 @@ export class PythonProvider extends LanguageProvider {
 		diagnostics: Diagnostic[],
 		changedLines: Set<number> | undefined
 	): Promise<void> {
+		const conventions = this.getConventions();
+
 		for (const symbol of symbols) {
-			const { type, name, line, col_offset, value, leading_comments } = symbol;
+			const {
+				type,
+				name,
+				line,
+				col_offset,
+				value,
+				leading_comments,
+				body,
+				body_length,
+			} = symbol;
 
 			if (changedLines && !changedLines.has(line)) {
 				continue; // Skip validation if line not in changedLines
@@ -202,9 +214,16 @@ export class PythonProvider extends LanguageProvider {
 			let result = null;
 			switch (type) {
 				case "functiondef":
-					result = await this.validateFunctionName(name);
+					result = await this.validateFunctionName(
+						name,
+						{
+							content: body,
+							bodyLength: body_length,
+						},
+						conventions
+					);
 					break;
-				case "name":
+				case "variable":
 					result = this.validateVariableName({
 						variableName: name,
 						variableValue: value,
@@ -221,11 +240,10 @@ export class PythonProvider extends LanguageProvider {
 					break;
 				case "django_model":
 					// TODO: Implement model name validation (probably similar to class)
-					console.log("Django model:", name);
 					break;
 				case "django_method":
 					if (this.shouldValidateFunctionName(name, "model")) {
-						result = await this.validateFunctionName(name);
+						result = await this.validateFunctionName(name, body, conventions);
 					}
 					break;
 				case "django_model_field":
@@ -236,18 +254,14 @@ export class PythonProvider extends LanguageProvider {
 					break;
 				case "django_serializer_field":
 					// TODO: Handle serializer field validation if different from standard fields
-					console.log("Serializer field:", name);
 					break;
 				case "django_view_method":
 					// TODO: Handle method validation in views
-					console.log("View method:", name);
 					break;
 				case "django_test_method":
 					// TODO: Handle validation for test methods
-					console.log("Test method:", name);
 					break;
 				case "assignment":
-					console.log("Assignment:", name);
 					break;
 			}
 
@@ -326,11 +340,19 @@ export class PythonProvider extends LanguageProvider {
 		return undefined;
 	}
 
-	private async validateFunctionName(functionName: string): Promise<{
+	private async validateFunctionName(
+		functionName: string,
+		functionBody: { content: string; bodyLength: number },
+		languageConventions: LanguageConventions
+	): Promise<{
 		violates: boolean;
 		reason: string;
 	}> {
-		return await validatePythonFunctionName(functionName);
+		return await validatePythonFunctionName(
+			functionName,
+			functionBody,
+			languageConventions
+		);
 	}
 
 	private handleComment(
@@ -358,14 +380,12 @@ export class PythonProvider extends LanguageProvider {
 		violates: boolean;
 		reason: string;
 	} {
-		// Implement your validation logic for dictionaries
-		console.log("Dictionary:", value);
+		// TODO: Implement your validation logic for dictionaries
 		return { violates: false, reason: "" };
 	}
 
 	private validateList(value: string): { violates: boolean; reason: string } {
-		// Implement your validation logic for lists
-		console.log("List:", value);
+		// TODO: Implement your validation logic for lists
 		return { violates: false, reason: "" };
 	}
 
@@ -373,8 +393,7 @@ export class PythonProvider extends LanguageProvider {
 		violates: boolean;
 		reason: string;
 	} {
-		// Implement your validation logic for class names
-		console.log("Class:", name);
+		// TODO: Implement your validation logic for class names
 		return { violates: false, reason: "" };
 	}
 }

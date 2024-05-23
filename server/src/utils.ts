@@ -179,11 +179,14 @@ export async function validateJavaScriptAndTypeScriptFunctionName(
 }
 
 export async function validatePythonFunctionName(
-	functionName: string
+	functionName: string,
+	functionBody: { content: string; bodyLength: number },
+	languageConventions: LanguageConventions
 ): Promise<{
 	violates: boolean;
 	reason: string;
 }> {
+	console.log("Function:", functionName, functionBody);
 	if (functionName === "__init__" || functionName === "__main__") {
 		return { violates: false, reason: "" };
 	}
@@ -209,6 +212,18 @@ export async function validatePythonFunctionName(
 		return {
 			violates: true,
 			reason: `Function "${functionName}" must contain at least two words, e.g., 'get_snacks'.`,
+		};
+	}
+
+	const {
+		expressiveNames: { functions },
+	} = languageConventions;
+	// TODO: handle this rule const cyclomaticComplexity = calculateCyclomaticComplexity(functionBody);
+
+	if (functionBody.bodyLength > functions.functionLengthLimit) {
+		return {
+			violates: true,
+			reason: `Function "${functionName}" exceeds the maximum length of ${functions.functionLengthLimit} lines.`,
 		};
 	}
 

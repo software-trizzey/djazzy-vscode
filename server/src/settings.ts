@@ -106,6 +106,7 @@ export const defaultConventions: ExtensionSettings = {
 export const normalizeClientSettings = (
 	settings: ExtensionSettings
 ): ExtensionSettings => {
+	// TODO: throw error if any of the settings are missing or misconfigured
 	return {
 		general: {
 			onlyCheckNewCode: settings.general.onlyCheckNewCode,
@@ -125,6 +126,7 @@ export const normalizeClientSettings = (
 export const normalizeLanguageSettings = (
 	languageSettings: LanguageConventions
 ): LanguageConventions => {
+	// TODO: throw error if any of the settings are missing or misconfigured
 	return {
 		isEnabled: languageSettings.isEnabled,
 		expressiveNames: {

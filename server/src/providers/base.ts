@@ -100,7 +100,7 @@ export abstract class LanguageProvider {
 		let diagnostics: Diagnostic[] = [];
 		let changedLines: Set<number> | undefined = undefined;
 
-		if (this.settings.onlyCheckNewCode) {
+		if (this.settings.general.onlyCheckNewCode) {
 			changedLines = await getChangedLinesFromClient(
 				this.connection,
 				document.uri
@@ -203,7 +203,7 @@ export abstract class LanguageProvider {
 				}
 			});
 		} else {
-			if (!this.settings.isDevMode) {
+			if (!this.settings.general.isDevMode) {
 				rollbar.error(error);
 				return;
 			}

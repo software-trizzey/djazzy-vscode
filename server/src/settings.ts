@@ -11,9 +11,11 @@ export function incrementSettingsVersion() {
 }
 
 export interface ExtensionSettings {
-	onlyCheckNewCode: boolean;
-	isDevMode: boolean;
-	notificationInterval: number;
+	general: {
+		onlyCheckNewCode: boolean;
+		isDevMode: boolean;
+		notificationInterval: number;
+	};
 	prefixes: string[];
 	comments: CommentConventions;
 	languages: {
@@ -26,9 +28,11 @@ export interface ExtensionSettings {
 export const defaultPrefixes: string[] = ["is", "has", "should", "can", "did"];
 
 export const defaultConventions: ExtensionSettings = {
-	onlyCheckNewCode: false,
-	isDevMode: false,
-	notificationInterval: 45, // minutes
+	general: {
+		onlyCheckNewCode: false,
+		isDevMode: false,
+		notificationInterval: 45, // minutes
+	},
 	prefixes: defaultPrefixes,
 	comments: {
 		flagRedundant: true,
@@ -65,9 +69,11 @@ export const defaultConventions: ExtensionSettings = {
 };
 
 export interface ClientExtensionSettings {
-	onlyCheckNewCode: boolean;
-	devMode: boolean;
-	notificationInterval: number;
+	general: {
+		onlyCheckNewCode: boolean;
+		devMode: boolean;
+		notificationInterval: number;
+	};
 	comments: CommentConventions;
 	languages: {
 		prefixes: string[];
@@ -81,9 +87,11 @@ export const normalizeClientSettings = (
 	settings: ClientExtensionSettings
 ): ExtensionSettings => {
 	return {
-		onlyCheckNewCode: settings.onlyCheckNewCode,
-		isDevMode: settings.devMode,
-		notificationInterval: settings.notificationInterval,
+		general: {
+			onlyCheckNewCode: settings.general.onlyCheckNewCode,
+			isDevMode: settings.general.devMode,
+			notificationInterval: settings.general.notificationInterval,
+		},
 		prefixes: settings.languages.prefixes,
 		comments: settings.comments,
 		languages: {

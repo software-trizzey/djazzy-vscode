@@ -107,7 +107,7 @@ export class PythonProvider extends LanguageProvider {
 		} else if (
 			violationMessage.includes("does not start with a recognized action word")
 		) {
-			if (this.settings.isDevMode) {
+			if (this.settings.general.isDevMode) {
 				suggestedName = `get_${flaggedName}`;
 			} else {
 				const response = await this.fetchSuggestedNameFromLLM({
@@ -222,8 +222,13 @@ export class PythonProvider extends LanguageProvider {
 					});
 					break;
 				case "classdef":
-					// TODO: Implement class name validation
-					console.log("Class:", name);
+					result = this.validateClassName(name);
+					break;
+				case "dictionary":
+					result = this.validateDictionary(value);
+					break;
+				case "list":
+					result = this.validateList(value);
 					break;
 				case "django_model":
 					// TODO: Implement model name validation (probably similar to class)
@@ -303,7 +308,7 @@ export class PythonProvider extends LanguageProvider {
 				__dirname,
 				"..",
 				"..",
-				`./${PYTHON_DIRECTORY}/lib_cst_parser.py`
+				`./${PYTHON_DIRECTORY}/ast_parser.py`
 			);
 		}
 		return parserFilePath;
@@ -358,5 +363,29 @@ export class PythonProvider extends LanguageProvider {
 				)
 			);
 		}
+	}
+
+	private validateDictionary(value: string): {
+		violates: boolean;
+		reason: string;
+	} {
+		// Implement your validation logic for dictionaries
+		console.log("Dictionary:", value);
+		return { violates: false, reason: "" };
+	}
+
+	private validateList(value: string): { violates: boolean; reason: string } {
+		// Implement your validation logic for lists
+		console.log("List:", value);
+		return { violates: false, reason: "" };
+	}
+
+	private validateClassName(name: string): {
+		violates: boolean;
+		reason: string;
+	} {
+		// Implement your validation logic for class names
+		console.log("Class:", name);
+		return { violates: false, reason: "" };
 	}
 }

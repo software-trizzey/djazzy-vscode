@@ -112,7 +112,7 @@ connection.onInitialized(async () => {
 	const settings = await getDocumentSettings("N/A");
 	const routeId = "server#index";
 
-	if (!settings.isDevMode || process.env.NODE_ENV === "production") {
+	if (!settings.general.isDevMode || process.env.NODE_ENV === "production") {
 		rollbar.configure({
 			logLevel: "warning",
 			payload: {

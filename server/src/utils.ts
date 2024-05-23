@@ -153,21 +153,6 @@ export async function validateJavaScriptAndTypeScriptFunctionNameCase(
 		};
 	}
 
-	/**
-	 * FIXME: deactivate camelCase validation for now. We can use eslint for this
-	 * else if (words.length >= 1) {
-		for (let i = 0; i < words.length; i++) {
-			if (!/^[A-Z]/.test(words[i])) {
-				return {
-					violates: true,
-					reason: `Function "${functionName}" violates "camelCase" convention. Each word after the action prefix, must start with an uppercase letter (e.g. "getWeatherData").`,
-				};
-			}
-		}
-	}
-	 * 
-	 */
-
 	return { violates: false, reason: "" };
 }
 
@@ -204,21 +189,6 @@ export async function validatePythonFunctionName(
 			reason: `Function "${functionName}" must contain at least two words, e.g., 'get_snacks'.`,
 		};
 	}
-
-	/**
-	 * FIXME: deactivate snake_case validation for now. We can use pylint or ruff for this
-	 * else if (words.length >= 1) {
-		for (let i = 0; i < words.length; i++) {
-			if (!/^[a-z_][a-z0-9_]*$/.test(words[i])) {
-				return {
-					violates: true,
-					reason: `Function "${functionName}" violates "snake_case" convention. Each segment must start with a lowercase letter or underscore, followed by any combination of lowercase letters, numbers, or underscores (e.g., "get_weather_data", "parse_xml2json").`,
-				};
-			}
-		}
-	}
-	 * 
-	 */
 
 	return { violates: false, reason: "" };
 }

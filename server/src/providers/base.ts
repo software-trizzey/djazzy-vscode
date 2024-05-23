@@ -338,7 +338,6 @@ export abstract class LanguageProvider {
 	}
 
 	protected extractFunctionBody(document: TextDocument, range: Range): string {
-		console.log("Extract function body");
 		const functionBody = document.getText(range);
 		return functionBody;
 	}

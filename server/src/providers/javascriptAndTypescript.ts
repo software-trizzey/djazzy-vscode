@@ -22,6 +22,7 @@ import {
 
 import { ExtensionSettings, defaultConventions } from "../settings";
 import { SOURCE_NAME, SOURCE_TYPE } from "../constants/diagnostics";
+import { LanguageConventions } from "../languageConventions";
 
 export class JavascriptAndTypescriptProvider extends LanguageProvider {
 	private isTypeScript: boolean = false;
@@ -216,7 +217,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 						diagnosticPromises.push(
 							this.checkFunctionAndAddDiagnostic(
 								node.id.name,
-								node.id,
+								node,
 								document,
 								diagnostics
 							)
@@ -320,16 +321,37 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		document: TextDocument,
 		diagnostics: Diagnostic[]
 	) {
-		const result = await this.validateFunctionName(name);
+		if (
+			!node.body ||
+			!node.body.loc ||
+			!node.body.loc.start ||
+			!node.body.loc.end
+		) {
+			console.log("node has no body property");
+			return;
+		}
+
+		const conventions = this.getConventions();
+		const bodyRange = Range.create(
+			document.positionAt(node.body.start),
+			document.positionAt(node.body.end)
+		);
+		const functionBody = this.extractFunctionBody(document, bodyRange);
+		const result = await this.validateFunctionName(
+			name,
+			functionBody,
+			conventions
+		);
+
 		if (result.violates) {
 			if (!node.start || !node.end) return;
 
-			const range = Range.create(
+			const diagnosticRange = Range.create(
 				document.positionAt(node.start),
 				document.positionAt(node.start + name.length)
 			);
 			const diagnostic: Diagnostic = Diagnostic.create(
-				range,
+				diagnosticRange,
 				result.reason,
 				DiagnosticSeverity.Warning,
 				SOURCE_TYPE,
@@ -339,11 +361,19 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		}
 	}
 
-	private async validateFunctionName(functionName: string): Promise<{
+	private async validateFunctionName(
+		functionName: string,
+		functionBody: string,
+		languageConventions: LanguageConventions
+	): Promise<{
 		violates: boolean;
 		reason: string;
 	}> {
-		return await validateJavaScriptAndTypeScriptFunctionName(functionName);
+		return await validateJavaScriptAndTypeScriptFunctionName(
+			functionName,
+			functionBody,
+			languageConventions
+		);
 	}
 
 	private handleComment(

@@ -1,8 +1,15 @@
 import { RequestType } from "vscode-languageserver";
-import { Connection } from "vscode-languageserver/node";
+import {
+	Connection,
+	Position,
+	Range as LspRange,
+} from "vscode-languageserver/node";
+
+import { TextDocument, Range } from "vscode-languageserver-textdocument";
 
 import { GET_CHANGED_LINES } from "./constants/commands";
 import { actionWordsDictionary, commonWords } from "./data";
+import { LanguageConventions } from "./languageConventions";
 
 const cache = new Map<string, boolean>();
 
@@ -97,7 +104,6 @@ export function containsAbbreviation(name: string): boolean {
 		"i"
 	);
 	return wordBoundaryRegex.test(name);
-
 }
 
 /**
@@ -127,7 +133,9 @@ export function validateVariableNameCase(
 }
 
 export async function validateJavaScriptAndTypeScriptFunctionName(
-	functionName: string
+	functionName: string,
+	functionBody: string,
+	languageConventions: LanguageConventions
 ): Promise<{ violates: boolean; reason: string }> {
 	const actionWord = Object.keys(actionWordsDictionary).find((word) => {
 		const functionNameWithoutUnderscorePrefix = functionName.startsWith("_")
@@ -150,6 +158,21 @@ export async function validateJavaScriptAndTypeScriptFunctionName(
 		return {
 			violates: true,
 			reason: `Function "${functionName}" must contain at least two words, e.g., 'getWeather'.`,
+		};
+	}
+
+	const {
+		expressiveNames: { functions },
+	} = languageConventions;
+	const limitedFunctionBody = limitFunctionBodySize(functionBody);
+	const functionBodyLength = limitedFunctionBody.split("\n").length;
+	// TODO: handle this rule const cyclomaticComplexity = calculateCyclomaticComplexity(functionBody);
+	console.log("Function body length: ", functionBodyLength);
+
+	if (functionBodyLength > functions.functionLengthLimit) {
+		return {
+			violates: true,
+			reason: `Function "${functionName}" exceeds the maximum length of ${functions.functionLengthLimit} lines.`,
 		};
 	}
 
@@ -268,4 +291,51 @@ async function validateWords(tokens: string[]) {
 async function maxMatch(name: string): Promise<string[]> {
 	const tokens = splitNameIntoWords(name);
 	return await validateWords(tokens);
+}
+
+export function extractFunctionBody(
+	document: TextDocument,
+	range: Range
+): string {
+	console.log("Extract function body");
+	const functionBody = document.getText(range);
+	return functionBody;
+}
+
+export function limitFunctionBodySize(
+	functionBody: string,
+	maxLength: number = 1000
+): string {
+	console.log("Limit function body size", functionBody.length, maxLength);
+	if (functionBody.length <= maxLength) {
+		return functionBody;
+	}
+	return functionBody.substring(0, maxLength);
+}
+
+export function getFunctionBodyRange(
+	document: TextDocument,
+	functionRange: Range
+): Range {
+	console.log("Get function body range", functionRange);
+	const startLine = functionRange.start.line;
+	let endLine = startLine + 1;
+
+	while (endLine < document.lineCount) {
+		const line = document.getText({
+			start: { line: endLine, character: 0 },
+			end: { line: endLine, character: Number.MAX_SAFE_INTEGER },
+		});
+
+		if (line.trim() === "") {
+			break;
+		}
+
+		endLine++;
+	}
+
+	return LspRange.create(
+		Position.create(startLine, functionRange.start.character),
+		Position.create(endLine, 0)
+	);
 }

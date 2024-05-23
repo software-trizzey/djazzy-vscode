@@ -17,7 +17,7 @@ import { LanguageProvider } from "./base";
 
 import {
 	debounce,
-	validateJavaScriptAndTypeScriptFunctionNameCase,
+	validateJavaScriptAndTypeScriptFunctionName,
 } from "../utils";
 
 import { ExtensionSettings, defaultConventions } from "../settings";
@@ -333,7 +333,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		violates: boolean;
 		reason: string;
 	}> {
-		return await validateJavaScriptAndTypeScriptFunctionNameCase(functionName);
+		return await validateJavaScriptAndTypeScriptFunctionName(functionName);
 	}
 
 	private handleComment(

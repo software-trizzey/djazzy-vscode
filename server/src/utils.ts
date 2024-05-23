@@ -126,7 +126,7 @@ export function validateVariableNameCase(
 	return expectedPattern.test(name);
 }
 
-export async function validateJavaScriptAndTypeScriptFunctionNameCase(
+export async function validateJavaScriptAndTypeScriptFunctionName(
 	functionName: string
 ): Promise<{ violates: boolean; reason: string }> {
 	const actionWord = Object.keys(actionWordsDictionary).find((word) => {

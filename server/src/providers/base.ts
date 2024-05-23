@@ -304,7 +304,6 @@ export abstract class LanguageProvider {
 		comment: string,
 		currentNode: any
 	): { violates: boolean; reason: string } {
-		console.log("COMMENT", comment, currentNode.type);
 		const generalIdentifiers = [
 			"Block",
 			"IfStatement",
@@ -366,7 +365,6 @@ export abstract class LanguageProvider {
 		functionBody: string,
 		maxLength: number = 1000
 	): string {
-		console.log("Limit function body size", functionBody.length, maxLength);
 		if (functionBody.length <= maxLength) {
 			return functionBody;
 		}
@@ -377,7 +375,6 @@ export abstract class LanguageProvider {
 		document: TextDocument,
 		functionRange: Range
 	): Range {
-		console.log("Get function body range", functionRange);
 		const startLine = functionRange.start.line;
 		let endLine = startLine + 1;
 

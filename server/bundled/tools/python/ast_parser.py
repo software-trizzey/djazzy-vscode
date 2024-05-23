@@ -51,10 +51,12 @@ class Analyzer(ast.NodeVisitor):
         comments = self.get_related_comments(node)
         name = getattr(node, 'name', None)
         col_offset = node.col_offset
-        body_length = 0
+        function_start_line = node.lineno
+        function_end_line = node.lineno
         if isinstance(node, ast.FunctionDef):
             col_offset += len('def ')
-            body_length = len(node.body)
+            function_start_line = node.body[0].lineno
+            function_end_line = node.body[-1].end_lineno if hasattr(node.body[-1], 'end_lineno') else node.body[-1].lineno
         elif isinstance(node, ast.ClassDef):
             col_offset += len('class ')
         self.symbols.append({
@@ -65,7 +67,8 @@ class Analyzer(ast.NodeVisitor):
             'col_offset': col_offset,
             'end_col_offset': col_offset + (len(name) if name else 0),
             'body': ast.get_source_segment(self.source_code, node) if isinstance(node, ast.FunctionDef) else None,
-            'body_length': body_length
+            'function_start_line': function_start_line,
+            'function_end_line': function_end_line,
         })
         self.handle_nested_structures(node)
         self.generic_visit(node)

@@ -204,7 +204,8 @@ export class PythonProvider extends LanguageProvider {
 				value,
 				leading_comments,
 				body,
-				body_length,
+				function_start_line,
+				function_end_line,
 			} = symbol;
 
 			if (changedLines && !changedLines.has(line)) {
@@ -218,7 +219,7 @@ export class PythonProvider extends LanguageProvider {
 						name,
 						{
 							content: body,
-							bodyLength: body_length,
+							bodyLength: function_end_line - function_start_line + 1,
 						},
 						conventions
 					);

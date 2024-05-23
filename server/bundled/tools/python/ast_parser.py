@@ -46,7 +46,7 @@ class Analyzer(ast.NodeVisitor):
             if comment['line'] == node.lineno - 2:  # Directly above the node
                 related_comments.append(comment)
         return related_comments
-    
+
     def generic_node_visit(self, node):
         comments = self.get_related_comments(node)
         name = getattr(node, 'name', None)
@@ -78,7 +78,7 @@ class Analyzer(ast.NodeVisitor):
                 value_source = ast.get_source_segment(self.source_code, node.value)
                 comments = self.get_related_comments(node)
                 self.symbols.append({
-                    'type': type(target).__name__.lower(),
+                    'type': 'variable',
                     'name': target.id,
                     'leading_comments': comments,
                     'value': value_source,
@@ -86,6 +86,30 @@ class Analyzer(ast.NodeVisitor):
                     'col_offset': target.col_offset,
                     'end_col_offset': target.col_offset + len(target.id)
                 })
+        self.generic_visit(node)
+
+    def visit_Dict(self, node):
+        comments = self.get_related_comments(node)
+        self.symbols.append({
+            'type': 'dictionary',
+            'value': ast.get_source_segment(self.source_code, node),
+            'line': node.lineno - 1,
+            'col_offset': node.col_offset,
+            'end_col_offset': node.end_col_offset if hasattr(node, 'end_col_offset') else None,
+            'leading_comments': comments
+        })
+        self.generic_visit(node)
+
+    def visit_List(self, node):
+        comments = self.get_related_comments(node)
+        self.symbols.append({
+            'type': 'list',
+            'value': ast.get_source_segment(self.source_code, node),
+            'line': node.lineno - 1,
+            'col_offset': node.col_offset,
+            'end_col_offset': node.end_col_offset if hasattr(node, 'end_col_offset') else None,
+            'leading_comments': comments
+        })
         self.generic_visit(node)
 
     def visit_Return(self, node):

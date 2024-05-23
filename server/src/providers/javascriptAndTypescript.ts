@@ -52,31 +52,6 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		);
 	}
 
-	async provideCodeActions(document: TextDocument): Promise<CodeAction[]> {
-		const diagnostics = document.uri
-			? this.getDiagnostic(document.uri, document.version)
-			: [];
-		if (!diagnostics) return [];
-		const namingConventionDiagnostics = diagnostics.filter((diagnostic) => {
-			if (diagnostic.code !== "namingConventionViolation") return false;
-
-			// TODO: for MVP we don't generate fixes for the following violations
-			if (
-				!diagnostic.message.includes(
-					"is too short, violating expressiveness"
-				) ||
-				!diagnostic.message.includes("exceeds the maximum length")
-			) {
-				return true;
-			}
-			return false;
-		});
-		const actionPromises = namingConventionDiagnostics.map((diagnostic) =>
-			this.generateFixForNamingConventionViolation(document, diagnostic)
-		);
-		return await Promise.all(actionPromises);
-	}
-
 	async generateFixForNamingConventionViolation(
 		document: TextDocument,
 		diagnostic: Diagnostic

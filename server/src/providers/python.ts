@@ -85,10 +85,13 @@ export class PythonProvider extends LanguageProvider {
 				.replace(/has_not_/i, "has_")
 				.toLowerCase();
 		} else if (
-			violationMessage.includes("does not start with a recognized action word")
+			violationMessage.includes(
+				"does not start with a recognized action word"
+			) ||
+			violationMessage.includes("is too short and must be more descriptive")
 		) {
 			if (this.settings.general.isDevMode) {
-				suggestedName = `get_${flaggedName}`;
+				suggestedName = `get${flaggedName}`;
 			} else {
 				const functionBodyRange = this.getFunctionBodyRange(
 					document,

@@ -131,20 +131,14 @@ export async function validateJavaScriptAndTypeScriptFunctionName(
 	functionBodyLines: number,
 	languageConventions: LanguageConventions
 ): Promise<{ violates: boolean; reason: string }> {
-	if (functionName.length <= 3) {
+	const {
+		expressiveNames: { functions },
+	} = languageConventions;
+
+	if (functions.avoidAbbreviation && functionName.length <= 3) {
 		return {
 			violates: true,
 			reason: `Function name "${functionName}" is too short and must be more descriptive.`,
-		};
-	}
-
-	const containsAbbreviation = functionName
-		.split(/(?=[A-Z])/)
-		.some((part) => part.length <= 2);
-	if (containsAbbreviation) {
-		return {
-			violates: true,
-			reason: `Function name "${functionName}" contains abbreviations, which should be avoided.`,
 		};
 	}
 
@@ -173,9 +167,6 @@ export async function validateJavaScriptAndTypeScriptFunctionName(
 		};
 	}
 
-	const {
-		expressiveNames: { functions },
-	} = languageConventions;
 	// TODO: handle this rule const cyclomaticComplexity = calculateCyclomaticComplexity(functionBody);
 
 	if (functionBodyLines > functions.functionLengthLimit) {
@@ -196,8 +187,19 @@ export async function validatePythonFunctionName(
 	violates: boolean;
 	reason: string;
 }> {
+	const {
+		expressiveNames: { functions },
+	} = languageConventions;
+
 	if (functionName === "__init__" || functionName === "__main__") {
 		return { violates: false, reason: "" };
+	}
+
+	if (functions.avoidAbbreviation && functionName.length < 3) {
+		return {
+			violates: true,
+			reason: `Function name "${functionName}" is too short and must be more descriptive.`,
+		};
 	}
 
 	const actionWord = Object.keys(actionWordsDictionary).find((word) => {
@@ -224,9 +226,6 @@ export async function validatePythonFunctionName(
 		};
 	}
 
-	const {
-		expressiveNames: { functions },
-	} = languageConventions;
 	// TODO: handle this rule const cyclomaticComplexity = calculateCyclomaticComplexity(functionBody);
 	if (functionBody.bodyLength > functions.functionLengthLimit) {
 		return {

@@ -87,10 +87,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 			violationMessage.includes(
 				"does not start with a recognized action word"
 			) ||
-			violationMessage.includes("is too short and must be more descriptive") ||
-			violationMessage.includes(
-				"contains abbreviations, which should be avoided"
-			)
+			violationMessage.includes("is too short and must be more descriptive")
 		) {
 			if (this.settings.general.isDevMode) {
 				suggestedName = `get${flaggedName}`;

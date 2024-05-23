@@ -103,21 +103,6 @@ export const defaultConventions: ExtensionSettings = {
 	},
 };
 
-export interface ClientExtensionSettings {
-	general: {
-		onlyCheckNewCode: boolean;
-		devMode: boolean;
-		notificationInterval: number;
-	};
-	comments: CommentConventions;
-	languages: {
-		prefixes: string[];
-		javascript: LanguageConventions;
-		typescript: LanguageConventions;
-		python: LanguageConventions;
-	};
-}
-
 export const normalizeClientSettings = (
 	settings: ExtensionSettings
 ): ExtensionSettings => {

@@ -167,12 +167,6 @@ export async function validateJavaScriptAndTypeScriptFunctionName(
 		expressiveNames: { functions },
 	} = languageConventions;
 	// TODO: handle this rule const cyclomaticComplexity = calculateCyclomaticComplexity(functionBody);
-	console.log(
-		"Function body length: ",
-		functionBody.length,
-		"max limit",
-		functions.functionLengthLimit
-	);
 
 	if (functionBody.length > functions.functionLengthLimit) {
 		return {

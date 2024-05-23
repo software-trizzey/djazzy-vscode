@@ -1,17 +1,9 @@
 import { RequestType } from "vscode-languageserver";
-import {
-	Connection,
-	Position,
-	Range as LspRange,
-} from "vscode-languageserver/node";
-
-import { TextDocument, Range } from "vscode-languageserver-textdocument";
+import { Connection } from "vscode-languageserver/node";
 
 import { GET_CHANGED_LINES } from "./constants/commands";
 import { actionWordsDictionary, commonWords } from "./data";
 import { LanguageConventions } from "./languageConventions";
-
-import { defaultFunctionLengthLimit } from "./settings";
 
 const cache = new Map<string, boolean>();
 
@@ -186,7 +178,6 @@ export async function validatePythonFunctionName(
 	violates: boolean;
 	reason: string;
 }> {
-	console.log("Function:", functionName, functionBody);
 	if (functionName === "__init__" || functionName === "__main__") {
 		return { violates: false, reason: "" };
 	}
@@ -294,11 +285,10 @@ async function validateWords(tokens: string[]) {
 		} else if (await checkDictionaryAPI(token.toLowerCase())) {
 			validWords.push(token);
 		} else {
-			console.log("Invalid word: ", token);
+			console.warn("Invalid word: ", token);
 			break;
 		}
 	}
-	console.log("valid words: ", validWords);
 	return validWords;
 }
 

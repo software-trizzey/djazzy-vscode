@@ -25,7 +25,6 @@ export async function chatWithGroq(developerInput: string) {
 			response_format: { type: "json_object" },
 		}
 	);
-	console.log("Grok response", response);
 
 	if (!response || !response.content) {
 		console.log("Error while fetching response from LLM", response);

@@ -11,3 +11,4 @@ node_modules
 *.pyo
 *.pyd
 __pycache__/
+**.venv/

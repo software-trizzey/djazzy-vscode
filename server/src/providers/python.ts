@@ -159,12 +159,21 @@ export class PythonProvider extends LanguageProvider {
 
 				process.on("close", async (code) => {
 					if (code !== 0) {
-						console.error(`Process exited with code ${code}, stderr: ${error}`);
-						return;
+						const errorMessage = `Process exited with code ${code}, stderr: ${error}`;
+						console.error(errorMessage);
+						return reject(new Error(errorMessage));
 					}
 
 					try {
-						const symbols = JSON.parse(output);
+						// FIXME: hack to remove non-JSON output (e.g. "install instructions")
+						const jsonLines = output
+							.split("\n")
+							.filter(
+								(line) =>
+									line.trim().startsWith("[") || line.trim().startsWith("{")
+							);
+						const jsonString = jsonLines.join("\n");
+						const symbols = JSON.parse(jsonString);
 						await this.validateAndCreateDiagnostics(
 							symbols,
 							diagnostics,
@@ -172,9 +181,9 @@ export class PythonProvider extends LanguageProvider {
 						);
 
 						resolve(diagnostics);
-					} catch (err) {
-						console.error("Failed to parse JSON output:", err);
-						reject(err);
+					} catch (err: any) {
+						console.error("Failed to parse JSON output:", err, output);
+						reject(new Error(`Failed to parse JSON output: ${err.message}`));
 					}
 				});
 
@@ -294,7 +303,7 @@ export class PythonProvider extends LanguageProvider {
 				__dirname,
 				"..",
 				"..",
-				`./${PYTHON_DIRECTORY}/ast_parser.py`
+				`./${PYTHON_DIRECTORY}/lib_cst_parser.py`
 			);
 		}
 		return parserFilePath;

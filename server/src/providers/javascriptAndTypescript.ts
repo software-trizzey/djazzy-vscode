@@ -108,8 +108,18 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 			if (this.settings.general.isDevMode) {
 				suggestedName = `get${flaggedName}`;
 			} else {
+				const functionBodyRange = this.getFunctionBodyRange(
+					document,
+					diagnostic.range
+				);
+				const functionBody = this.extractFunctionBody(
+					document,
+					functionBodyRange
+				);
+				const limitedFunctionBody = this.limitFunctionBodySize(functionBody);
 				const response = await this.fetchSuggestedNameFromLLM({
 					message: violationMessage,
+					functionBody: limitedFunctionBody,
 					modelType: "groq",
 				});
 				const data = JSON.parse(response);

@@ -3,11 +3,13 @@ import {
 	Diagnostic,
 	CodeAction,
 	CodeActionKind,
+	Position,
 	MessageType,
 	ShowMessageRequestParams,
+	Range as LspRange,
 } from "vscode-languageserver/node";
 
-import { TextDocument } from "vscode-languageserver-textdocument";
+import { TextDocument, Range } from "vscode-languageserver-textdocument";
 
 import { chatWithGroq } from "../llm/groq";
 import { chatWithOpenAI } from "../llm/openai";
@@ -335,15 +337,64 @@ export abstract class LanguageProvider {
 		}
 	}
 
+	protected extractFunctionBody(document: TextDocument, range: Range): string {
+		console.log("Extract function body");
+		const functionBody = document.getText(range);
+		return functionBody;
+	}
+
+	protected limitFunctionBodySize(
+		functionBody: string,
+		maxLength: number = 1000
+	): string {
+		console.log("Limit function body size", functionBody.length, maxLength);
+		if (functionBody.length <= maxLength) {
+			return functionBody;
+		}
+		return functionBody.substring(0, maxLength);
+	}
+
+	protected getFunctionBodyRange(
+		document: TextDocument,
+		functionRange: Range
+	): Range {
+		console.log("Get function body range", functionRange);
+		const startLine = functionRange.start.line;
+		let endLine = startLine + 1;
+
+		while (endLine < document.lineCount) {
+			const line = document.getText({
+				start: { line: endLine, character: 0 },
+				end: { line: endLine, character: Number.MAX_SAFE_INTEGER },
+			});
+
+			if (line.trim() === "") {
+				break;
+			}
+
+			endLine++;
+		}
+
+		return LspRange.create(
+			Position.create(startLine, functionRange.start.character),
+			Position.create(endLine, 0)
+		);
+	}
+
 	protected async fetchSuggestedNameFromLLM({
 		message,
+		functionBody,
 		modelType,
 	}: {
 		message: string;
+		functionBody?: string;
 		modelType: "groq" | "openai";
 		languageId?: string;
 	}): Promise<any> {
 		message = `${message} Note: align suggestion with ${this.languageId} naming conventions (i.e. snakecase, camelcase, etc.).`;
+		if (functionBody) {
+			message += ` Here is the function body for context:\n\n${functionBody}`;
+		}
 
 		if (modelType === "openai") {
 			return await chatWithOpenAI(message);

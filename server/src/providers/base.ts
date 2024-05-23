@@ -224,19 +224,22 @@ export abstract class LanguageProvider {
 			console.warn("No variable name found.");
 			return { violates: false, reason: "" };
 		}
-		const conventions = this.getConventions();
+		const {
+			expressiveNames: { variables },
+			boolean,
+		} = this.getConventions();
 
-		if (conventions.expressive) {
-			const minLength = conventions.avoidAbbreviation ? 3 : 2;
-			if (variableName.length < minLength) {
-				return {
-					violates: true,
-					reason: `Name "${variableName}" is too short, violating expressiveness rules.`,
-				};
-			}
+		if (!variables.isEnabled) return { violates: false, reason: "" };
+
+		const minLength = variables.avoidAbbreviation ? 3 : 2;
+		if (variableName.length < minLength) {
+			return {
+				violates: true,
+				reason: `Name "${variableName}" is too short, violating expressiveness rules.`,
+			};
 		}
 
-		if (conventions.avoidAbbreviation && containsAbbreviation(variableName)) {
+		if (variables.avoidAbbreviation && containsAbbreviation(variableName)) {
 			return {
 				violates: true,
 				reason: `Name "${variableName}" contains abbreviations, which are to be avoided.`,
@@ -246,12 +249,9 @@ export abstract class LanguageProvider {
 		const isExplicitBoolean =
 			typeof variableValue === "boolean" ||
 			/^(true|false)$/i.test(variableValue);
-		if (
-			conventions.boolean &&
-			(isLikelyBoolean(variableName) || isExplicitBoolean)
-		) {
-			const prefixes = this.settings.prefixes;
-			const { positiveNaming, usePrefix } = conventions.boolean;
+		if (boolean && (isLikelyBoolean(variableName) || isExplicitBoolean)) {
+			const prefixes = this.settings.general.prefixes;
+			const { positiveNaming, usePrefix } = boolean;
 			if (
 				usePrefix &&
 				!prefixes.some((prefix) => variableName.startsWith(prefix))

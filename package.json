@@ -50,7 +50,7 @@
 			}
 		],
 		"configuration": {
-			"title": "When in Rome",
+			"title": "When In Rome",
 			"properties": {
 				"whenInRome.general.onlyCheckNewCode": {
 					"type": "boolean",
@@ -58,7 +58,7 @@
 					"description": "Check only new or modified code.",
 					"order": 1
 				},
-				"whenInRome.general.devMode": {
+				"whenInRome.general.isDevMode": {
 					"type": "boolean",
 					"default": false,
 					"description": "Toggle development mode for additional logging and diagnostics.",
@@ -70,91 +70,7 @@
 					"description": "Interval in minutes to control the frequency of notifications.",
 					"order": 3
 				},
-				"whenInRome.comments.flagRedundant": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enable to identify and flag comments that are unnecessary because the code is self-explanatory. To bypass this check for specific comments, include '@rome-ignore', 'TODO', or 'FIXME' in the comment text.",
-					"order": 4
-				},
-				"whenInRome.languages.javascript.enabled": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enable/disable features specifically.",
-					"order": 5
-				},
-				"whenInRome.languages.javascript.expressiveNames": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enforce expressive variable names."
-				},
-				"whenInRome.languages.javascript.avoidAbbreviations": {
-					"type": "boolean",
-					"default": true,
-					"description": "Avoid using abbreviations in variable names."
-				},
-				"whenInRome.languages.javascript.boolean.positiveNaming": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enforce positive naming conventions."
-				},
-				"whenInRome.languages.javascript.boolean.usePrefix": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enforce boolean variable prefixes."
-				},
-				"whenInRome.languages.typescript.enabled": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enable/disable features specifically.",
-					"order": 6
-				},
-				"whenInRome.languages.typescript.expressiveNames": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enforce expressive variable names."
-				},
-				"whenInRome.languages.typescript.avoidAbbreviations": {
-					"type": "boolean",
-					"default": true,
-					"description": "Avoid using abbreviations in variable names."
-				},
-				"whenInRome.languages.typescript.boolean.positiveNaming": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enforce positive naming conventions."
-				},
-				"whenInRome.languages.typescript.boolean.usePrefix": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enforce boolean variable prefixes."
-				},
-				"whenInRome.languages.python.enabled": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enable/disable features specifically.",
-					"order": 7
-				},
-				"whenInRome.languages.python.expressiveNames": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enforce expressive variable names."
-				},
-				"whenInRome.languages.python.avoidAbbreviations": {
-					"type": "boolean",
-					"default": true,
-					"description": "Avoid using abbreviations in variable names."
-				},
-				"whenInRome.languages.python.boolean.positiveNaming": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enforce positive naming conventions."
-				},
-				"whenInRome.languages.python.boolean.usePrefix": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enforce boolean variable prefixes."
-				},
-				"whenInRome.languages.prefixes": {
+				"whenInRome.general.prefixes": {
 					"type": "array",
 					"default": [
 						"is",
@@ -166,7 +82,212 @@
 					"items": {
 						"type": "string"
 					},
-					"description": "Prefixes to use for boolean variables."
+					"description": "Prefixes to use for boolean variables.",
+					"order": 4
+				},
+				"whenInRome.comments.flagRedundant": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enable to identify and flag comments that are unnecessary because the code is self-explanatory. To bypass this check for specific comments, include '@rome-ignore', 'TODO', or 'FIXME' in the comment text.",
+					"order": 5
+				},
+				"whenInRome.languages.javascript.isEnabled": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enable/disable features specifically.",
+					"order": 6
+				},
+				"whenInRome.languages.javascript.expressiveNames.variables.isEnabled": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enforce expressive variable names.",
+					"order": 7
+				},
+				"whenInRome.languages.javascript.expressiveNames.variables.avoidAbbreviation": {
+					"type": "boolean",
+					"default": true,
+					"description": "Avoid using abbreviations in variable names.",
+					"order": 8
+				},
+				"whenInRome.languages.javascript.expressiveNames.variables.avoidGenericNames": {
+					"type": "boolean",
+					"default": true,
+					"description": "Avoid using generic variable names.",
+					"order": 9
+				},
+				"whenInRome.languages.javascript.expressiveNames.functions.isEnabled": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enforce expressive function names.",
+					"order": 10
+				},
+				"whenInRome.languages.javascript.expressiveNames.functions.avoidAbbreviation": {
+					"type": "boolean",
+					"default": true,
+					"description": "Avoid using abbreviations in function names.",
+					"order": 11
+				},
+				"whenInRome.languages.javascript.expressiveNames.functions.avoidGenericNames": {
+					"type": "boolean",
+					"default": true,
+					"description": "Avoid using generic function names.",
+					"order": 12
+				},
+				"whenInRome.languages.javascript.expressiveNames.functions.functionLengthLimit": {
+					"type": "number",
+					"default": 30,
+					"description": "Set the maximum length for functions.",
+					"order": 13
+				},
+				"whenInRome.languages.javascript.expressiveNames.functions.maxCyclomaticComplexity": {
+					"type": "number",
+					"default": 10,
+					"description": "Set the maximum cyclomatic complexity for functions.",
+					"order": 14
+				},
+				"whenInRome.languages.javascript.boolean.positiveNaming": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enforce positive naming conventions.",
+					"order": 15
+				},
+				"whenInRome.languages.javascript.boolean.usePrefix": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enforce boolean variable prefixes.",
+					"order": 16
+				},
+				"whenInRome.languages.typescript.isEnabled": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enable/disable features specifically.",
+					"order": 17
+				},
+				"whenInRome.languages.typescript.expressiveNames.variables.isEnabled": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enforce expressive variable names.",
+					"order": 18
+				},
+				"whenInRome.languages.typescript.expressiveNames.variables.avoidAbbreviation": {
+					"type": "boolean",
+					"default": true,
+					"description": "Avoid using abbreviations in variable names.",
+					"order": 19
+				},
+				"whenInRome.languages.typescript.expressiveNames.variables.avoidGenericNames": {
+					"type": "boolean",
+					"default": true,
+					"description": "Avoid using generic variable names.",
+					"order": 20
+				},
+				"whenInRome.languages.typescript.expressiveNames.functions.isEnabled": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enforce expressive function names.",
+					"order": 21
+				},
+				"whenInRome.languages.typescript.expressiveNames.functions.avoidAbbreviation": {
+					"type": "boolean",
+					"default": true,
+					"description": "Avoid using abbreviations in function names.",
+					"order": 22
+				},
+				"whenInRome.languages.typescript.expressiveNames.functions.avoidGenericNames": {
+					"type": "boolean",
+					"default": true,
+					"description": "Avoid using generic function names.",
+					"order": 23
+				},
+				"whenInRome.languages.typescript.expressiveNames.functions.functionLengthLimit": {
+					"type": "number",
+					"default": 30,
+					"description": "Set the maximum length for functions.",
+					"order": 24
+				},
+				"whenInRome.languages.typescript.expressiveNames.functions.maxCyclomaticComplexity": {
+					"type": "number",
+					"default": 10,
+					"description": "Set the maximum cyclomatic complexity for functions.",
+					"order": 25
+				},
+				"whenInRome.languages.typescript.boolean.positiveNaming": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enforce positive naming conventions.",
+					"order": 26
+				},
+				"whenInRome.languages.typescript.boolean.usePrefix": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enforce boolean variable prefixes.",
+					"order": 27
+				},
+				"whenInRome.languages.python.isEnabled": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enable/disable features specifically.",
+					"order": 28
+				},
+				"whenInRome.languages.python.expressiveNames.variables.isEnabled": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enforce expressive variable names.",
+					"order": 29
+				},
+				"whenInRome.languages.python.expressiveNames.variables.avoidAbbreviation": {
+					"type": "boolean",
+					"default": true,
+					"description": "Avoid using abbreviations in variable names.",
+					"order": 30
+				},
+				"whenInRome.languages.python.expressiveNames.variables.avoidGenericNames": {
+					"type": "boolean",
+					"default": true,
+					"description": "Avoid using generic variable names.",
+					"order": 31
+				},
+				"whenInRome.languages.python.expressiveNames.functions.isEnabled": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enforce expressive function names.",
+					"order": 32
+				},
+				"whenInRome.languages.python.expressiveNames.functions.avoidAbbreviation": {
+					"type": "boolean",
+					"default": true,
+					"description": "Avoid using abbreviations in function names.",
+					"order": 33
+				},
+				"whenInRome.languages.python.expressiveNames.functions.avoidGenericNames": {
+					"type": "boolean",
+					"default": true,
+					"description": "Avoid using generic function names.",
+					"order": 34
+				},
+				"whenInRome.languages.python.expressiveNames.functions.functionLengthLimit": {
+					"type": "number",
+					"default": 30,
+					"description": "Set the maximum length for functions.",
+					"order": 35
+				},
+				"whenInRome.languages.python.expressiveNames.functions.maxCyclomaticComplexity": {
+					"type": "number",
+					"default": 10,
+					"description": "Set the maximum cyclomatic complexity for functions.",
+					"order": 36
+				},
+				"whenInRome.languages.python.boolean.positiveNaming": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enforce positive naming conventions.",
+					"order": 37
+				},
+				"whenInRome.languages.python.boolean.usePrefix": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enforce boolean variable prefixes.",
+					"order": 38
 				}
 			}
 		}

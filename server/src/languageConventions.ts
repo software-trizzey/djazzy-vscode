@@ -3,6 +3,23 @@ interface BooleanRuleSettings {
 	usePrefix: boolean;
 }
 
+interface ExpressiveNamesBaseRulesSettings {
+	isEnabled: boolean;
+	avoidAbbreviation: boolean;
+	avoidGenericNames: boolean;
+}
+
+interface ExpressiveVariableNameRulesSettings
+	extends ExpressiveNamesBaseRulesSettings {
+	// TODO: add support for additional variable conventions
+}
+
+interface ExpressiveFunctionNameRulesSettings
+	extends ExpressiveNamesBaseRulesSettings {
+	functionLengthLimit: number;
+	maxCyclomaticComplexity: number;
+}
+
 interface FileRuleSettings {
 	avoidComponentInNonXSuffix: boolean;
 	avoidIndexJs: boolean;
@@ -12,19 +29,10 @@ interface FileRuleSettings {
 // Server settings
 export interface LanguageConventions {
 	isEnabled: boolean;
-	expressive: boolean;
-	avoidAbbreviation: boolean;
+	expressiveNames: {
+		variables: ExpressiveVariableNameRulesSettings;
+		functions: ExpressiveFunctionNameRulesSettings;
+	};
 	boolean: BooleanRuleSettings;
 	file?: FileRuleSettings; // TODO: add support for file conventions
 }
-
-export interface ClientExtensionLanguageSettings {
-	enabled: boolean;
-	expressiveNames: boolean;
-	avoidAbbreviations: boolean;
-	boolean: {
-		positiveNaming: boolean;
-		usePrefix: boolean;
-	};
-}
-

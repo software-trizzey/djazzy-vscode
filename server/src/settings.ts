@@ -1,7 +1,4 @@
-import type {
-	ClientExtensionLanguageSettings,
-	LanguageConventions,
-} from "./languageConventions";
+import type { LanguageConventions } from "./languageConventions";
 import type { CommentConventions } from "./commentConventions";
 
 export let settingsVersion: number = 0;
@@ -15,33 +12,47 @@ export interface ExtensionSettings {
 		onlyCheckNewCode: boolean;
 		isDevMode: boolean;
 		notificationInterval: number;
+		prefixes: string[];
 	};
-	prefixes: string[];
 	comments: CommentConventions;
 	languages: {
-		javascript?: LanguageConventions;
-		typescript?: LanguageConventions;
-		python?: LanguageConventions;
+		javascript: LanguageConventions;
+		typescript: LanguageConventions;
+		python: LanguageConventions;
 	};
 }
 
 export const defaultPrefixes: string[] = ["is", "has", "should", "can", "did"];
+export const defaultFunctionLengthLimit: number = 30;
+export const maxCyclomaticComplexity: number = 10;
 
 export const defaultConventions: ExtensionSettings = {
 	general: {
 		onlyCheckNewCode: false,
 		isDevMode: false,
 		notificationInterval: 45, // minutes
+		prefixes: defaultPrefixes,
 	},
-	prefixes: defaultPrefixes,
 	comments: {
 		flagRedundant: true,
 	},
 	languages: {
 		javascript: {
 			isEnabled: true,
-			expressive: true,
-			avoidAbbreviation: true,
+			expressiveNames: {
+				variables: {
+					isEnabled: true,
+					avoidAbbreviation: true,
+					avoidGenericNames: true,
+				},
+				functions: {
+					isEnabled: true,
+					avoidAbbreviation: true,
+					avoidGenericNames: true,
+					functionLengthLimit: defaultFunctionLengthLimit,
+					maxCyclomaticComplexity: maxCyclomaticComplexity,
+				},
+			},
 			boolean: {
 				positiveNaming: true,
 				usePrefix: true,
@@ -49,8 +60,20 @@ export const defaultConventions: ExtensionSettings = {
 		},
 		typescript: {
 			isEnabled: true,
-			expressive: true,
-			avoidAbbreviation: true,
+			expressiveNames: {
+				variables: {
+					isEnabled: true,
+					avoidAbbreviation: true,
+					avoidGenericNames: true,
+				},
+				functions: {
+					isEnabled: true,
+					avoidAbbreviation: true,
+					avoidGenericNames: true,
+					functionLengthLimit: defaultFunctionLengthLimit,
+					maxCyclomaticComplexity: maxCyclomaticComplexity,
+				},
+			},
 			boolean: {
 				positiveNaming: true,
 				usePrefix: true,
@@ -58,8 +81,20 @@ export const defaultConventions: ExtensionSettings = {
 		},
 		python: {
 			isEnabled: true,
-			expressive: true,
-			avoidAbbreviation: true,
+			expressiveNames: {
+				variables: {
+					isEnabled: true,
+					avoidAbbreviation: true,
+					avoidGenericNames: true,
+				},
+				functions: {
+					isEnabled: true,
+					avoidAbbreviation: true,
+					avoidGenericNames: true,
+					functionLengthLimit: defaultFunctionLengthLimit,
+					maxCyclomaticComplexity: maxCyclomaticComplexity,
+				},
+			},
 			boolean: {
 				positiveNaming: true,
 				usePrefix: true,
@@ -77,22 +112,22 @@ export interface ClientExtensionSettings {
 	comments: CommentConventions;
 	languages: {
 		prefixes: string[];
-		javascript: ClientExtensionLanguageSettings;
-		typescript: ClientExtensionLanguageSettings;
-		python: ClientExtensionLanguageSettings;
+		javascript: LanguageConventions;
+		typescript: LanguageConventions;
+		python: LanguageConventions;
 	};
 }
 
 export const normalizeClientSettings = (
-	settings: ClientExtensionSettings
+	settings: ExtensionSettings
 ): ExtensionSettings => {
 	return {
 		general: {
 			onlyCheckNewCode: settings.general.onlyCheckNewCode,
-			isDevMode: settings.general.devMode,
+			isDevMode: settings.general.isDevMode,
 			notificationInterval: settings.general.notificationInterval,
+			prefixes: settings.general.prefixes,
 		},
-		prefixes: settings.languages.prefixes,
 		comments: settings.comments,
 		languages: {
 			javascript: normalizeLanguageSettings(settings.languages.javascript),
@@ -103,12 +138,30 @@ export const normalizeClientSettings = (
 };
 
 export const normalizeLanguageSettings = (
-	languageSettings: ClientExtensionLanguageSettings
+	languageSettings: LanguageConventions
 ): LanguageConventions => {
 	return {
-		isEnabled: languageSettings.enabled,
-		expressive: languageSettings.expressiveNames,
-		avoidAbbreviation: languageSettings.avoidAbbreviations,
+		isEnabled: languageSettings.isEnabled,
+		expressiveNames: {
+			variables: {
+				isEnabled: languageSettings.expressiveNames.variables.isEnabled,
+				avoidAbbreviation:
+					languageSettings.expressiveNames.variables.avoidAbbreviation,
+				avoidGenericNames:
+					languageSettings.expressiveNames.variables.avoidGenericNames,
+			},
+			functions: {
+				isEnabled: languageSettings.expressiveNames.functions.isEnabled,
+				avoidAbbreviation:
+					languageSettings.expressiveNames.functions.avoidAbbreviation,
+				avoidGenericNames:
+					languageSettings.expressiveNames.functions.avoidGenericNames,
+				functionLengthLimit:
+					languageSettings.expressiveNames.functions.functionLengthLimit,
+				maxCyclomaticComplexity:
+					languageSettings.expressiveNames.functions.maxCyclomaticComplexity,
+			},
+		},
 		boolean: {
 			positiveNaming: languageSettings.boolean.positiveNaming,
 			usePrefix: languageSettings.boolean.usePrefix,

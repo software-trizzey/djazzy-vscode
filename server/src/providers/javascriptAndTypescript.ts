@@ -4,6 +4,7 @@ import {
 	CodeActionKind,
 	Diagnostic,
 	DiagnosticSeverity,
+	Position,
 	Range,
 	TextEdit,
 	WorkspaceEdit,
@@ -306,19 +307,24 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 			!node.body.loc.start ||
 			!node.body.loc.end
 		) {
-			console.log("node has no body property");
+			console.warn("node has no body property");
 			return;
 		}
 
 		const conventions = this.getConventions();
+		const bodyStartLine = node.body.loc.start.line;
+		const bodyEndLine = node.body.loc.end.line;
+		const functionBodyLines = bodyEndLine - bodyStartLine + 1;
+
 		const bodyRange = Range.create(
-			document.positionAt(node.body.start),
-			document.positionAt(node.body.end)
+			Position.create(bodyStartLine - 1, 0),
+			Position.create(bodyEndLine, 0)
 		);
 		const functionBody = this.extractFunctionBody(document, bodyRange);
 		const result = await this.validateFunctionName(
 			name,
 			functionBody,
+			functionBodyLines,
 			conventions
 		);
 
@@ -343,6 +349,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 	private async validateFunctionName(
 		functionName: string,
 		functionBody: string,
+		functionBodyLines: number,
 		languageConventions: LanguageConventions
 	): Promise<{
 		violates: boolean;
@@ -351,6 +358,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		return await validateJavaScriptAndTypeScriptFunctionName(
 			functionName,
 			functionBody,
+			functionBodyLines,
 			languageConventions
 		);
 	}

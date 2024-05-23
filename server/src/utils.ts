@@ -129,6 +129,7 @@ export function validateVariableNameCase(
 export async function validateJavaScriptAndTypeScriptFunctionName(
 	functionName: string,
 	functionBody: string,
+	functionBodyLines: number,
 	languageConventions: LanguageConventions
 ): Promise<{ violates: boolean; reason: string }> {
 	const actionWord = Object.keys(actionWordsDictionary).find((word) => {
@@ -160,7 +161,7 @@ export async function validateJavaScriptAndTypeScriptFunctionName(
 	} = languageConventions;
 	// TODO: handle this rule const cyclomaticComplexity = calculateCyclomaticComplexity(functionBody);
 
-	if (functionBody.length > functions.functionLengthLimit) {
+	if (functionBodyLines > functions.functionLengthLimit) {
 		return {
 			violates: true,
 			reason: `Function "${functionName}" exceeds the maximum length of ${functions.functionLengthLimit} lines.`,

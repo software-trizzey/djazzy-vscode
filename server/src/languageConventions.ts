@@ -5,7 +5,7 @@ interface BooleanRuleSettings {
 
 interface ExpressiveNamesBaseRulesSettings {
 	isEnabled: boolean;
-	avoidAbbreviation: boolean;
+	avoidShortNames: boolean;
 	avoidGenericNames: boolean;
 }
 

@@ -18,7 +18,6 @@ import {
 	isLikelyBoolean,
 	hasNegativePattern,
 	getChangedLinesFromClient,
-	containsAbbreviation,
 } from "../utils";
 import {
 	ExtensionSettings,
@@ -252,7 +251,7 @@ export abstract class LanguageProvider {
 		if (!variables.isEnabled) return { violates: false, reason: "" };
 
 		// TODO: rename this value to avoidShortNames
-		if (variables.avoidAbbreviation && variableName.length < 3) {
+		if (variables.avoidShortNames && variableName.length < 3) {
 			return {
 				violates: true,
 				reason: `Variable "${variableName}" is too short and must be more descriptive`,

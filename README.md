@@ -39,7 +39,7 @@ When In Rome is an AI-driven code stylist that helps teams enforce their coding 
 - **Language-Specific Settings**: Adjust settings for JavaScript, TypeScript, and Python, including:
   - Toggle the extension on or off for the selected language.
   - Enforcing expressive variable names.
-  - Avoiding abbreviations.
+  - Prefer descriptive names over short ones.
   - Using boolean variable prefixes.
   - Maintaining positive naming conventions.
 

@@ -2,17 +2,17 @@ const defaultConventions = {
 	python: {
 		variable: {
 			expressive: true,
-			avoidAbbreviation: true,
+			avoidShortNames: true,
 			example: "user_response",
 		},
 		function: {
 			expressive: true,
-			avoidAbbreviation: true,
+			avoidShortNames: true,
 			example: "get_user_profile",
 		},
 		class: {
 			expressive: true,
-			avoidAbbreviation: true,
+			avoidShortNames: true,
 			example: "UserProfile",
 		},
 		boolean: {
@@ -30,17 +30,17 @@ const defaultConventions = {
 	javascript: {
 		variable: {
 			expressive: true,
-			avoidAbbreviation: true,
+			avoidShortNames: true,
 			example: "userResponse",
 		},
 		function: {
 			expressive: true,
-			avoidAbbreviation: true,
+			avoidShortNames: true,
 			example: "getUserProfile",
 		},
 		class: {
 			expressive: true,
-			avoidAbbreviation: true,
+			avoidShortNames: true,
 			example: "UserProfile",
 		},
 		boolean: {
@@ -61,17 +61,17 @@ const defaultConventions = {
 	typescript: {
 		variable: {
 			expressive: true,
-			avoidAbbreviation: true,
+			avoidShortNames: true,
 			example: "userResponse",
 		},
 		function: {
 			expressive: true,
-			avoidAbbreviation: true,
+			avoidShortNames: true,
 			example: "getUserProfile",
 		},
 		class: {
 			expressive: true,
-			avoidAbbreviation: true,
+			avoidShortNames: true,
 			example: "UserProfile",
 		},
 		interface: {

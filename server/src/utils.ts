@@ -82,24 +82,6 @@ export function hasNegativePattern(variableName: string): boolean {
 	return negativePatterns.some((pattern) => pattern.test(variableName));
 }
 
-export function containsAbbreviation(name: string): boolean {
-	const commonAbbreviations = [
-		"id",
-		"info",
-		"num",
-		"qty",
-		"calc",
-		"tmp",
-		"cfg",
-		"msg",
-	];
-	const wordBoundaryRegex = new RegExp(
-		`\\b(${commonAbbreviations.join("|")})\\b`,
-		"i"
-	);
-	return wordBoundaryRegex.test(name);
-}
-
 /**
  * Check naming style (camelCase for JS/TS, snake_case for Python)
  */
@@ -135,7 +117,7 @@ export async function validateJavaScriptAndTypeScriptFunctionName(
 		expressiveNames: { functions },
 	} = languageConventions;
 
-	if (functions.avoidAbbreviation && functionName.length <= 3) {
+	if (functions.avoidShortNames && functionName.length <= 3) {
 		return {
 			violates: true,
 			reason: `Function name "${functionName}" is too short and must be more descriptive.`,
@@ -195,7 +177,7 @@ export async function validatePythonFunctionName(
 		return { violates: false, reason: "" };
 	}
 
-	if (functions.avoidAbbreviation && functionName.length < 3) {
+	if (functions.avoidShortNames && functionName.length < 3) {
 		return {
 			violates: true,
 			reason: `Function name "${functionName}" is too short and must be more descriptive.`,

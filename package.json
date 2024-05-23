@@ -103,10 +103,10 @@
 					"description": "Enforce expressive variable names.",
 					"order": 7
 				},
-				"whenInRome.languages.javascript.expressiveNames.variables.avoidAbbreviation": {
+				"whenInRome.languages.javascript.expressiveNames.variables.avoidShortNames": {
 					"type": "boolean",
 					"default": true,
-					"description": "Avoid using abbreviations in variable names.",
+					"description": "Avoid using short variable names.",
 					"order": 8
 				},
 				"whenInRome.languages.javascript.expressiveNames.variables.avoidGenericNames": {
@@ -121,10 +121,10 @@
 					"description": "Enforce expressive function names.",
 					"order": 10
 				},
-				"whenInRome.languages.javascript.expressiveNames.functions.avoidAbbreviation": {
+				"whenInRome.languages.javascript.expressiveNames.functions.avoidShortNames": {
 					"type": "boolean",
 					"default": true,
-					"description": "Avoid using abbreviations in function names.",
+					"description": "Avoid using short function names.",
 					"order": 11
 				},
 				"whenInRome.languages.javascript.expressiveNames.functions.avoidGenericNames": {
@@ -169,10 +169,10 @@
 					"description": "Enforce expressive variable names.",
 					"order": 18
 				},
-				"whenInRome.languages.typescript.expressiveNames.variables.avoidAbbreviation": {
+				"whenInRome.languages.typescript.expressiveNames.variables.avoidShortNames": {
 					"type": "boolean",
 					"default": true,
-					"description": "Avoid using abbreviations in variable names.",
+					"description": "Avoid using short variable names.",
 					"order": 19
 				},
 				"whenInRome.languages.typescript.expressiveNames.variables.avoidGenericNames": {
@@ -187,10 +187,10 @@
 					"description": "Enforce expressive function names.",
 					"order": 21
 				},
-				"whenInRome.languages.typescript.expressiveNames.functions.avoidAbbreviation": {
+				"whenInRome.languages.typescript.expressiveNames.functions.avoidShortNames": {
 					"type": "boolean",
 					"default": true,
-					"description": "Avoid using abbreviations in function names.",
+					"description": "Avoid using short function names.",
 					"order": 22
 				},
 				"whenInRome.languages.typescript.expressiveNames.functions.avoidGenericNames": {
@@ -235,10 +235,10 @@
 					"description": "Enforce expressive variable names.",
 					"order": 29
 				},
-				"whenInRome.languages.python.expressiveNames.variables.avoidAbbreviation": {
+				"whenInRome.languages.python.expressiveNames.variables.avoidShortNames": {
 					"type": "boolean",
 					"default": true,
-					"description": "Avoid using abbreviations in variable names.",
+					"description": "Avoid using short variable names.",
 					"order": 30
 				},
 				"whenInRome.languages.python.expressiveNames.variables.avoidGenericNames": {
@@ -253,10 +253,10 @@
 					"description": "Enforce expressive function names.",
 					"order": 32
 				},
-				"whenInRome.languages.python.expressiveNames.functions.avoidAbbreviation": {
+				"whenInRome.languages.python.expressiveNames.functions.avoidShortNames": {
 					"type": "boolean",
 					"default": true,
-					"description": "Avoid using abbreviations in function names.",
+					"description": "Avoid using short function names.",
 					"order": 33
 				},
 				"whenInRome.languages.python.expressiveNames.functions.avoidGenericNames": {

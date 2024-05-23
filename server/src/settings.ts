@@ -42,12 +42,12 @@ export const defaultConventions: ExtensionSettings = {
 			expressiveNames: {
 				variables: {
 					isEnabled: true,
-					avoidAbbreviation: true,
+					avoidShortNames: true,
 					avoidGenericNames: true,
 				},
 				functions: {
 					isEnabled: true,
-					avoidAbbreviation: true,
+					avoidShortNames: true,
 					avoidGenericNames: true,
 					functionLengthLimit: defaultFunctionLengthLimit,
 					maxCyclomaticComplexity: maxCyclomaticComplexity,
@@ -63,12 +63,12 @@ export const defaultConventions: ExtensionSettings = {
 			expressiveNames: {
 				variables: {
 					isEnabled: true,
-					avoidAbbreviation: true,
+					avoidShortNames: true,
 					avoidGenericNames: true,
 				},
 				functions: {
 					isEnabled: true,
-					avoidAbbreviation: true,
+					avoidShortNames: true,
 					avoidGenericNames: true,
 					functionLengthLimit: defaultFunctionLengthLimit,
 					maxCyclomaticComplexity: maxCyclomaticComplexity,
@@ -84,12 +84,12 @@ export const defaultConventions: ExtensionSettings = {
 			expressiveNames: {
 				variables: {
 					isEnabled: true,
-					avoidAbbreviation: true,
+					avoidShortNames: true,
 					avoidGenericNames: true,
 				},
 				functions: {
 					isEnabled: true,
-					avoidAbbreviation: true,
+					avoidShortNames: true,
 					avoidGenericNames: true,
 					functionLengthLimit: defaultFunctionLengthLimit,
 					maxCyclomaticComplexity: maxCyclomaticComplexity,
@@ -132,15 +132,15 @@ export const normalizeLanguageSettings = (
 		expressiveNames: {
 			variables: {
 				isEnabled: languageSettings.expressiveNames.variables.isEnabled,
-				avoidAbbreviation:
-					languageSettings.expressiveNames.variables.avoidAbbreviation,
+				avoidShortNames:
+					languageSettings.expressiveNames.variables.avoidShortNames,
 				avoidGenericNames:
 					languageSettings.expressiveNames.variables.avoidGenericNames,
 			},
 			functions: {
 				isEnabled: languageSettings.expressiveNames.functions.isEnabled,
-				avoidAbbreviation:
-					languageSettings.expressiveNames.functions.avoidAbbreviation,
+				avoidShortNames:
+					languageSettings.expressiveNames.functions.avoidShortNames,
 				avoidGenericNames:
 					languageSettings.expressiveNames.functions.avoidGenericNames,
 				functionLengthLimit:

@@ -251,18 +251,11 @@ export abstract class LanguageProvider {
 
 		if (!variables.isEnabled) return { violates: false, reason: "" };
 
-		const minLength = variables.avoidAbbreviation ? 3 : 2;
-		if (variableName.length < minLength) {
+		// TODO: rename this value to avoidShortNames
+		if (variables.avoidAbbreviation && variableName.length < 3) {
 			return {
 				violates: true,
-				reason: `Name "${variableName}" is too short, violating expressiveness rules.`,
-			};
-		}
-
-		if (variables.avoidAbbreviation && containsAbbreviation(variableName)) {
-			return {
-				violates: true,
-				reason: `Name "${variableName}" contains abbreviations, which are to be avoided.`,
+				reason: `Variable "${variableName}" is too short and must be more descriptive`,
 			};
 		}
 

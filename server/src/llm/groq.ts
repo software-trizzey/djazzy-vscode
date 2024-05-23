@@ -1,5 +1,5 @@
 import { ChatGroq } from "@langchain/groq";
-import { systemMessageWithJsonResponse } from "../constants/chat";
+import { MAX_TOKENS, systemMessageWithJsonResponse } from "../constants/chat";
 
 //  pricing : https://wow.groq.com/ (as of April 28, 2024)
 const models = {
@@ -12,7 +12,7 @@ export const groqModel = new ChatGroq({
 	apiKey: "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",
 	model: models.gemma7,
 	temperature: 1,
-	maxTokens: 256,
+	maxTokens: MAX_TOKENS,
 });
 
 export async function chatWithGroq(developerInput: string) {

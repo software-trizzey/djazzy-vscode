@@ -1,12 +1,12 @@
 import { ChatOpenAI } from "@langchain/openai";
-import { systemMessageWithJsonResponse } from "../constants/chat";
+import { MAX_TOKENS, systemMessageWithJsonResponse } from "../constants/chat";
 
 const modelName = "gpt-3.5-turbo"; // $0.50/$1.50 per 1M tokens (input/output)
 
 // FIXME: create a new api key after beta
 export const openAIModel = new ChatOpenAI({
 	model: modelName,
-	maxTokens: 256,
+	maxTokens: MAX_TOKENS,
 	apiKey: "sk-proj-sSGRDSuOaXIvL8aucA9AT3BlbkFJQHvR9z2WemH0uEaQrGxa",
 }).bind({
 	response_format: {

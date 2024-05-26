@@ -282,9 +282,12 @@ async function validateTextDocument(
 	return diagnostics;
 }
 
-const debouncedValidateTextDocument = debounce(async (document) => {
-	return await validateTextDocument(document);
-}, 1000);
+const debouncedValidateTextDocument = debounce(
+	async (document: TextDocument) => {
+		return await validateTextDocument(document);
+	},
+	2000
+);
 
 connection.onDidChangeWatchedFiles((params: DidChangeWatchedFilesParams) => {
 	params.changes.forEach((change) => {

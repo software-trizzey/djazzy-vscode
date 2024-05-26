@@ -1,6 +1,9 @@
 export const EXTENSION_NAME = "When In Rome";
 export const EXTENSION_ID = "whenInRome";
 
+export const SESSION_TOKEN_KEY = `${EXTENSION_ID}UserToken`;
+export const SESSION_USER = `${EXTENSION_ID}User`;
+
 export const COMMANDS = {
 	SIGN_IN: `${EXTENSION_ID}.signIn`,
 	SIGN_OUT: `${EXTENSION_ID}.signOut`,

@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
 
-import uuid from "uuid";
+import { v4 as uuidv4 } from "uuid";
 
 import logger from "../logs";
-import { AUTH_SERVER_URL } from "../constants";
+import { AUTH_SERVER_URL, SESSION_TOKEN_KEY, SESSION_USER } from "../constants";
 
 import { Credentials } from "./github";
 
@@ -29,9 +29,9 @@ export async function signInWithGitHub(
 	const octokit = await credentials.getOctokit();
 	const userInfo = await octokit.users.getAuthenticated();
 
-	const newUser = {
+	const userPayload = {
 		email: userInfo.data.email,
-		password: "Masterful1" || uuid.v4(),
+		password: uuidv4(), // TODO: sign up user with random password for MVP
 		github_login: userInfo.data.login,
 		has_agreed_to_terms: true,
 		profile: {
@@ -45,25 +45,27 @@ export async function signInWithGitHub(
 			"Content-Type": "application/json",
 		},
 		method: "POST",
-		body: JSON.stringify(newUser),
+		body: JSON.stringify(userPayload),
 	});
+	const responseData = await serverResponse.json();
 
 	if (serverResponse.ok) {
-		const responseData = await serverResponse.json();
-		await context.globalState.update("whenInRomeUserToken", responseData.token);
-		await context.globalState.update("whenInRomeUser", responseData.user);
+		await context.globalState.update(SESSION_TOKEN_KEY, responseData.token);
+		await context.globalState.update(SESSION_USER, responseData.user);
 		vscode.window.showInformationMessage(
 			`Welcome to Rome, ${responseData.user.github_login}! 🏛️🫡`
 		);
 	} else {
-		vscode.window.showErrorMessage(`Authentication failed: ${serverResponse}`);
+		vscode.window.showErrorMessage(
+			`Authentication failed: ${serverResponse.error}`
+		);
+		console.error(serverResponse.error);
 		logger.error(serverResponse.error);
-		console.log(serverResponse);
 	}
 }
 
 export async function signOutUser(context: vscode.ExtensionContext) {
-	const token = context.globalState.get("whenInRomeUserToken");
+	const token = context.globalState.get(SESSION_TOKEN_KEY);
 
 	if (token) {
 		try {
@@ -91,6 +93,6 @@ export async function signOutUser(context: vscode.ExtensionContext) {
 		logger.error(errorMessage);
 	}
 
-	await context.globalState.update("whenInRomeUser", undefined);
-	await context.globalState.update("whenInRomeUserToken", undefined);
+	await context.globalState.update(SESSION_USER, undefined);
+	await context.globalState.update(SESSION_TOKEN_KEY, undefined);
 }

@@ -12,6 +12,8 @@ import { Credentials } from "./common/auth/github";
 import { signInWithGitHub, signOutUser } from "./common/auth/api";
 import type { UserSession } from "./common/auth/github";
 
+import { EXTENSION_ID, EXTENSION_NAME, COMMANDS } from "./common/constants";
+
 import {
 	createGitRepository,
 	getChangedLines,
@@ -39,12 +41,12 @@ let client: LanguageClient;
 
 export async function activate(context: vscode.ExtensionContext) {
 	const signInWithGitHubCommand = vscode.commands.registerCommand(
-		"whenInRome.signIn",
+		COMMANDS.SIGN_IN,
 		() => signInWithGitHub(credentials, context, deactivate)
 	);
 	context.subscriptions.push(signInWithGitHubCommand);
 	const signOutCommand = vscode.commands.registerCommand(
-		"whenInRome.signOut",
+		COMMANDS.SIGN_OUT,
 		() => signOutUser(context)
 	);
 	context.subscriptions.push(signOutCommand);
@@ -95,7 +97,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		middleware: {
 			executeCommand: async (command, args, next) => {
 				// FIXME: probably won't work. Convert to listener like one for changedLines
-				if (command === "whenInRome.createRepository") {
+				if (command === COMMANDS.CREATE_REPOSITORY) {
 					createGitRepository();
 					return;
 				}
@@ -105,8 +107,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	};
 
 	client = new LanguageClient(
-		"whenInRome",
-		"When In Rome",
+		EXTENSION_ID,
+		EXTENSION_NAME,
 		serverOptions,
 		clientOptions
 	);
@@ -114,7 +116,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	const authenticated = await initializeAuthentication(credentials, context);
 	if (authenticated) {
 		client.start().then(() => {
-			client.onRequest("whenInRome.getGitDiff", getChangedLines);
+			client.onRequest(COMMANDS.GET_GIT_DIFF, getChangedLines);
 		});
 	}
 }

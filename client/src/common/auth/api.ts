@@ -56,10 +56,9 @@ export async function signInWithGitHub(
 			`Welcome to Rome, ${responseData.user.github_login}! 🏛️🫡`
 		);
 	} else {
-		vscode.window.showErrorMessage(
-			`Authentication failed: ${serverResponse.error}`
-		);
+		vscode.window.showErrorMessage(`Authentication failed: ${serverResponse}`);
 		logger.error(serverResponse.error);
+		console.log(serverResponse);
 	}
 }
 

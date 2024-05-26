@@ -204,7 +204,8 @@ export abstract class LanguageProvider {
 	}
 
 	public handleError(error: Error) {
-		const message = error?.message;
+		const message = error?.message || error.toString();
+		console.log("Error message:", message);
 
 		if (error.toString().includes("Could not access 'HEAD'")) {
 			const actionText = "Create Repository";

@@ -81,7 +81,8 @@ export async function signOutUser(context: vscode.ExtensionContext) {
 					"Signed out of When In Rome. Vale! 👋"
 				);
 			} else {
-				throw new Error("Error signing out from the server.");
+				const responseData = (await response.json()) as any;
+				console.error(responseData.error);
 			}
 		} catch (error) {
 			vscode.window.showErrorMessage("Error signing out from the server.");

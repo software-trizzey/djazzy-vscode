@@ -30,8 +30,8 @@ export async function signInWithGitHub(
 	const userInfo = await octokit.users.getAuthenticated();
 
 	const userPayload = {
-		email: userInfo.data.email,
-		password: uuidv4(), // TODO: sign up user with random password for MVP
+		email: userInfo.data.email || null, // @rome-ignore: some users might not have public emails
+		password: uuidv4(),
 		github_login: userInfo.data.login,
 		has_agreed_to_terms: true,
 		profile: {
@@ -40,7 +40,7 @@ export async function signInWithGitHub(
 		},
 	};
 
-	const serverResponse: any = await fetch(`${AUTH_SERVER_URL}/auth/users/`, {
+	const serverResponse: any = await fetch(`${AUTH_SERVER_URL}/auth/users/login/`, {
 		headers: {
 			"Content-Type": "application/json",
 		},
@@ -53,7 +53,7 @@ export async function signInWithGitHub(
 		await context.globalState.update(SESSION_TOKEN_KEY, responseData.token);
 		await context.globalState.update(SESSION_USER, responseData.user);
 		vscode.window.showInformationMessage(
-			`Welcome to Rome, ${responseData.user.github_login}! 🏛️🫡`
+			`Welcome to Rome, ${responseData.user.github_login || responseData.user.email}! 🏛️🫡`
 		);
 	} else {
 		vscode.window.showErrorMessage(

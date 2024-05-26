@@ -4,4 +4,6 @@ export const CREATE_REPOSITORY = "whenInRome.createRepository";
 
 const COMMANDS = { FIX_NAME, GET_CHANGED_LINES, CREATE_REPOSITORY };
 
+export const COMMANDS_LIST = Object.values(COMMANDS);
+
 export default COMMANDS;

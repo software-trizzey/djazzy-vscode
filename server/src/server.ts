@@ -34,7 +34,7 @@ import {
 } from "./settings";
 import { debounce } from "./utils";
 
-import COMMANDS from "./constants/commands";
+import COMMANDS, { COMMANDS_LIST } from "./constants/commands";
 import { rollbar } from "./common/logs";
 
 // Create a connection for the server, using Node's IPC as a transport.
@@ -94,7 +94,7 @@ connection.onInitialize((params: InitializeParams) => {
 				prepareProvider: true,
 			},
 			executeCommandProvider: {
-				commands: Object.values(COMMANDS),
+				commands: COMMANDS_LIST,
 			},
 		},
 	};

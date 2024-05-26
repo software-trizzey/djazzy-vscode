@@ -1,5 +1,6 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { MAX_TOKENS, systemMessageWithJsonResponse } from "../constants/chat";
+import LOGGER from "../common/logs";
 
 const modelName = "gpt-3.5-turbo"; // $0.50/$1.50 per 1M tokens (input/output)
 
@@ -15,13 +16,17 @@ export const openAIModel = new ChatOpenAI({
 });
 
 export async function chatWithOpenAI(developerInput: string) {
-	const response = await openAIModel.invoke([
-		["system", systemMessageWithJsonResponse],
-		["human", developerInput],
-	]);
-	if (!response || !response.content) {
-		console.log("Error while fetching response from OpenAI", response);
-		throw new Error("Error while fetching response from OpenAI");
+	try {
+		const response = await openAIModel.invoke([
+			["system", systemMessageWithJsonResponse],
+			["human", developerInput],
+		]);
+		if (!response || !response.content) {
+			console.log("Error while fetching response from OpenAI", response);
+			throw new Error("Error while fetching response from OpenAI");
+		}
+		return response.content;
+	} catch (error: any) {
+		LOGGER.error(error);
 	}
-	return response.content;
 }

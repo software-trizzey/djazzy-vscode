@@ -1,6 +1,8 @@
 import { ChatGroq } from "@langchain/groq";
 import { MAX_TOKENS, systemMessageWithJsonResponse } from "../constants/chat";
 
+import LOGGER from "../common/logs";
+
 //  pricing : https://wow.groq.com/ (as of April 28, 2024)
 const models = {
 	gemma7: "gemma-7b-it", // $0.10/$0.10 per 1M tokens (input/output)
@@ -16,19 +18,23 @@ export const groqModel = new ChatGroq({
 });
 
 export async function chatWithGroq(developerInput: string) {
-	const response = await groqModel.invoke(
-		[
-			["system", systemMessageWithJsonResponse],
-			["human", developerInput],
-		],
-		{
-			response_format: { type: "json_object" },
-		}
-	);
+	try {
+		const response = await groqModel.invoke(
+			[
+				["system", systemMessageWithJsonResponse],
+				["human", developerInput],
+			],
+			{
+				response_format: { type: "json_object" },
+			}
+		);
 
-	if (!response || !response.content) {
-		console.log("Error while fetching response from LLM", response);
-		throw new Error("Error while fetching response from LLM");
+		if (!response || !response.content) {
+			console.log("Error while fetching response from LLM", response);
+			throw new Error("Error while fetching response from LLM");
+		}
+		return response.content;
+	} catch (error: any) {
+		LOGGER.error(error);
 	}
-	return response.content;
 }

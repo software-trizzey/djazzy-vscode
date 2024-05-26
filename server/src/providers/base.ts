@@ -128,7 +128,7 @@ export abstract class LanguageProvider {
 	abstract generateFixForNamingConventionViolation(
 		document: TextDocument,
 		diagnostic: Diagnostic
-	): Promise<CodeAction>;
+	): Promise<CodeAction | undefined>;
 
 	public static readonly providedCodeActionKinds = [
 		CodeActionKind.QuickFix,
@@ -151,9 +151,11 @@ export abstract class LanguageProvider {
 			}
 			return false;
 		});
-		const actionPromises = namingConventionDiagnostics.map((diagnostic) =>
-			this.generateFixForNamingConventionViolation(document, diagnostic)
-		);
+		const actionPromises = namingConventionDiagnostics
+			.map((diagnostic) =>
+				this.generateFixForNamingConventionViolation(document, diagnostic)
+			)
+			.filter((promise) => promise !== undefined) as Promise<CodeAction>[];
 		return await Promise.all(actionPromises);
 	}
 
@@ -408,10 +410,19 @@ export abstract class LanguageProvider {
 			message += ` Here is the function body for context:\n\n${functionBody}`;
 		}
 
-		if (modelType === "openai") {
-			return await chatWithOpenAI(message);
-		} else if (modelType === "groq") {
-			return await chatWithGroq(message);
+		try {
+			if (modelType === "openai") {
+				return await chatWithOpenAI(message);
+			} else if (modelType === "groq") {
+				return await chatWithGroq(message);
+			}
+		} catch (error: any) {
+			if (error.error.type === "invalid_request_error") {
+				LOGGER.error("InvalidRequestError:", error.error);
+			} else {
+				LOGGER.error("Error fetching suggested name from LLM:", error);
+			}
+			return null;
 		}
 	}
 

@@ -46,7 +46,7 @@ export class PythonProvider extends LanguageProvider {
 	async generateFixForNamingConventionViolation(
 		document: TextDocument,
 		diagnostic: Diagnostic
-	): Promise<CodeAction> {
+	): Promise<CodeAction | undefined> {
 		const flaggedName = document.getText(diagnostic.range);
 		const violationMessage = diagnostic.message;
 		const cacheKey = `${violationMessage}-${diagnostic.range.start.line}-${diagnostic.range.start.character}`;
@@ -107,6 +107,7 @@ export class PythonProvider extends LanguageProvider {
 					functionBody: limitedFunctionBody,
 					modelType: "groq",
 				});
+				if (!response) return;
 				const data = JSON.parse(response);
 				suggestedName = data.suggestedName;
 				// TODO: Provide justification for action words?

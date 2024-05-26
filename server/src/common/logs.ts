@@ -6,3 +6,8 @@ export const rollbar = new Rollbar({
 	captureUncaught: true,
 	captureUnhandledRejections: true,
 });
+
+
+const LOGGER = process.env.NODE_ENV === "development" ? console : rollbar;
+
+export default LOGGER;

@@ -24,7 +24,7 @@ import {
 	defaultConventions,
 	settingsVersion,
 } from "../settings";
-import { rollbar } from "../common/logs";
+import LOGGER from "../common/logs";
 
 import type { LanguageConventions } from "../languageConventions";
 
@@ -202,6 +202,8 @@ export abstract class LanguageProvider {
 	}
 
 	public handleError(error: Error) {
+		const message = error?.message;
+
 		if (error.toString().includes("Could not access 'HEAD'")) {
 			const actionText = "Create Repository";
 			const params = {
@@ -223,12 +225,14 @@ export abstract class LanguageProvider {
 					});
 				}
 			});
+		} else if (
+			message.includes("SyntaxError") ||
+			message.includes("IndentationError")
+		) {
+			// @rome-ignore - gracefully catch and log user generated syntax errors
+			LOGGER.debug(error);
 		} else {
-			if (!this.settings.general.isDevMode) {
-				rollbar.error(error);
-				return;
-			}
-			console.error(error);
+			LOGGER.error(error);
 		}
 	}
 

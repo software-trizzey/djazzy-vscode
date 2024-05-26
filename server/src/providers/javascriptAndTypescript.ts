@@ -4,7 +4,6 @@ import {
 	CodeActionKind,
 	Diagnostic,
 	DiagnosticSeverity,
-	Position,
 	Range,
 	TextEdit,
 	WorkspaceEdit,

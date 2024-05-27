@@ -15,10 +15,10 @@ export const groqModel = new ChatGroq({
 	maxTokens: MAX_TOKENS,
 });
 
-export async function chatWithGroq(developerInput: string) {
+export async function chatWithGroq(systemMessage: string, developerInput: string) {
 	const response = await groqModel.invoke(
 		[
-			["system", systemMessageWithJsonResponse],
+			["system", systemMessage || systemMessageWithJsonResponse],
 			["human", developerInput],
 		],
 		{

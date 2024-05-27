@@ -35,6 +35,8 @@ export abstract class LanguageProvider {
 	protected conventions?: LanguageConventions;
 	protected settings: ExtensionSettings;
 
+	private systemMessage: string = '';
+
 	protected diagnostics: Map<
 		string,
 		{
@@ -49,6 +51,7 @@ export abstract class LanguageProvider {
 		connection: Connection,
 		settings: ExtensionSettings
 	) {
+
 		this.connection = connection;
 		this.cache = new Map<string, any>();
 
@@ -60,6 +63,20 @@ export abstract class LanguageProvider {
 			return;
 		}
 		this.conventions = languageSettings;
+
+		this.systemMessage = `You are a code assistant tasked with correcting naming convention violations according to standard coding practices. The user will provide a variable or function name that violates their team's style conventions along with the function body for context.
+		Your task is to suggest a more descriptive name that aligns with the project's naming conventions. Consider the following project-specific information:
+		- Programming language: ${this.languageId}
+		- Naming conventions: snake_case, camelCase, PascalCase, etc.
+		- Existing code patterns: If a function body is provided, analyze it and any relevant surrounding code to understand the context and generate a suitable suggestion.
+		
+		Respond with a JSON object containing three keys:
+		{
+			"originalName": "string",
+			"suggestedName": "string",
+			"justification": "string"
+		}
+		Ensure the JSON object is well-formed and does not contain any extraneous characters.`;
 	}
 
 	protected getConventions(): LanguageConventions {
@@ -396,6 +413,35 @@ export abstract class LanguageProvider {
 		);
 	}
 
+	/**
+	 * Get the surrounding code of the given range.
+	 */
+	getSurroundingCode(document: TextDocument, range: Range): string {
+        const startLine = Math.max(range.start.line - 3, 0);
+        const endLine = Math.min(range.end.line + 3, document.lineCount - 1);
+        const surroundingCode = document.getText(LspRange.create(startLine, 0, endLine, 0));
+        return surroundingCode;
+    }
+
+	getProjectNamingExamples() {
+		// FIXME: This is a placeholder. Implement logic to gather examples from the project.
+		return `
+		- Existing function names: calculateArea, fetchData, isUserLoggedIn
+		- Variable names: user_id, totalAmount, isActive
+		`;
+	}
+
+	generateMessage(message: string, functionBody: string, document: TextDocument, diagnostic: Diagnostic) {
+        const surroundingCode = this.getSurroundingCode(document, diagnostic.range);
+		message = `${message} Note: align the suggestion with ${this.languageId} naming conventions (e.g., snake_case, camelCase, PascalCase).`;
+		if (functionBody) {
+			message += ` Here is the function body for context:\n\n${functionBody}\n\n`;
+		}
+		message += `For additional context, here are examples of naming conventions used in this project:\n\n${this.getProjectNamingExamples()}\n\nConsider the following surrounding code when generating your suggestion:\n\n${surroundingCode}`;
+		return message;
+    }
+
+
 	protected async fetchSuggestedNameFromLLM({
 		message,
 		functionBody,
@@ -406,16 +452,13 @@ export abstract class LanguageProvider {
 		modelType: "groq" | "openai";
 		languageId?: string;
 	}): Promise<any> {
-		message = `${message} Note: align suggestion with ${this.languageId} naming conventions (i.e. snakecase, camelcase, etc.).`;
-		if (functionBody) {
-			message += ` Here is the function body for context:\n\n${functionBody}`;
-		}
-
+		const requestMessage = this.generateMessage(message, functionBody);
+		
 		try {
 			if (modelType === "openai") {
-				return await chatWithOpenAI(message);
+				return await chatWithOpenAI(this.systemMessage, requestMessage);
 			} else if (modelType === "groq") {
-				return await chatWithGroq(message);
+				return await chatWithGroq(this.systemMessage, requestMessage);
 			}
 		} catch (error: any) {
 			if (error.error.type === "invalid_request_error") {

@@ -15,10 +15,10 @@ export const openAIModel = new ChatOpenAI({
 	},
 });
 
-export async function chatWithOpenAI(developerInput: string) {
+export async function chatWithOpenAI(systemMessage: string, developerInput: string) {
 	try {
 		const response = await openAIModel.invoke([
-			["system", systemMessageWithJsonResponse],
+			["system", systemMessage || systemMessageWithJsonResponse],
 			["human", developerInput],
 		]);
 		if (!response || !response.content) {

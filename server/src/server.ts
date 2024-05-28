@@ -78,8 +78,6 @@ connection.onInitialize((params: InitializeParams) => {
 		capabilities.textDocument.publishDiagnostics.relatedInformation
 	);
 
-	setWorkspaceRoot(params);
-
 	const result: InitializeResult = {
 		capabilities: {
 			textDocumentSync: TextDocumentSyncKind.Incremental,
@@ -114,6 +112,8 @@ connection.onInitialize((params: InitializeParams) => {
 connection.onInitialized(async () => {
 	const settings = await getDocumentSettings("N/A");
 	const routeId = "server#index";
+	const workspaceFolders = await connection.workspace.getWorkspaceFolders();
+	setWorkspaceRoot(workspaceFolders);
 
 	if (!settings.general.isDevMode || process.env.NODE_ENV === "production") {
 		rollbar.configure({

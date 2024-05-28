@@ -1,4 +1,4 @@
-import vscodeUri from 'vscode-uri';
+import { URI } from 'vscode-uri';
 
 import type { LanguageConventions } from "./languageConventions";
 import type { CommentConventions } from "./commentConventions";
@@ -6,14 +6,13 @@ import type { CommentConventions } from "./commentConventions";
 export let workspaceRoot = '';
 export let settingsVersion: number = 0;
 
-export function setWorkspaceRoot(params: any): void {
-	if (params.workspaceFolders) {
-        workspaceRoot = uriToPath(params.workspaceFolders[0].uri);
-    } else if (params.rootUri) {
-        workspaceRoot = uriToPath(params.rootUri);
-    } else {
-        workspaceRoot = '';
-    }
+export  function setWorkspaceRoot(workspaceFolders: any): void {
+	if (workspaceFolders && workspaceFolders.length > 0) {
+        workspaceRoot = uriToPath(workspaceFolders[0].uri);
+	} else {
+		console.warn("No workspace folders found");
+		workspaceRoot = '';
+	}
 }
 
 export function incrementSettingsVersion() {
@@ -171,5 +170,7 @@ export const normalizeLanguageSettings = (
 
 
 function uriToPath(uri: string): string {
-    return vscodeUri.URI.parse(uri).fsPath;
+	const parsedUri = URI.parse(uri);
+    const filePath = parsedUri.fsPath;
+	return filePath;
 }

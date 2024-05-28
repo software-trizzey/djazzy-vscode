@@ -113,6 +113,7 @@ export abstract class LanguageProvider {
 	}
 
 	loadNamingConventionExamples() {
+		console.log("Workspace root: ", workspaceRoot);
 		if (!workspaceRoot) {
 			console.warn('Workspace root not set');
 			return null;

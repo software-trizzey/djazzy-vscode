@@ -1,7 +1,20 @@
+import vscodeUri from 'vscode-uri';
+
 import type { LanguageConventions } from "./languageConventions";
 import type { CommentConventions } from "./commentConventions";
 
+export let workspaceRoot = '';
 export let settingsVersion: number = 0;
+
+export function setWorkspaceRoot(params: any): void {
+	if (params.workspaceFolders) {
+        workspaceRoot = uriToPath(params.workspaceFolders[0].uri);
+    } else if (params.rootUri) {
+        workspaceRoot = uriToPath(params.rootUri);
+    } else {
+        workspaceRoot = '';
+    }
+}
 
 export function incrementSettingsVersion() {
 	settingsVersion++;
@@ -155,3 +168,8 @@ export const normalizeLanguageSettings = (
 		},
 	};
 };
+
+
+function uriToPath(uri: string): string {
+    return vscodeUri.URI.parse(uri).fsPath;
+}

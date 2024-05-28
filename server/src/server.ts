@@ -31,6 +31,7 @@ import {
 	defaultConventions,
 	normalizeClientSettings,
 	incrementSettingsVersion,
+	setWorkspaceRoot,
 } from "./settings";
 import { debounce } from "./utils";
 
@@ -76,6 +77,8 @@ connection.onInitialize((params: InitializeParams) => {
 		capabilities.textDocument.publishDiagnostics &&
 		capabilities.textDocument.publishDiagnostics.relatedInformation
 	);
+
+	setWorkspaceRoot(params);
 
 	const result: InitializeResult = {
 		capabilities: {

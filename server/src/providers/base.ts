@@ -444,14 +444,6 @@ export abstract class LanguageProvider {
         return surroundingCode;
     }
 
-	getProjectNamingExamples() {
-		// FIXME: This is a placeholder. Implement logic to gather examples from the project.
-		return `
-		- Existing function names: calculateArea, fetchData, isUserLoggedIn
-		- Variable names: user_id, totalAmount, isActive
-		`;
-	}
-
 	generateVariableNameMessage(message: string, document: TextDocument, diagnostic: Diagnostic) {
 		const variableUsage = this.getSurroundingCode(document, diagnostic.range);
 		message = `${message} Note: align the suggestion with ${this.languageId} naming conventions (e.g., snake_case, camelCase). Here is the variable usage for context:\n\n${variableUsage}`;
@@ -505,7 +497,7 @@ export abstract class LanguageProvider {
 				return await chatWithGroq(this.systemMessage, requestMessage);
 			}
 		} catch (error: any) {
-			if (error.error.type === "invalid_request_error") {
+			if (error.error?.type === "invalid_request_error") {
 				LOGGER.error("InvalidRequestError:", error.error);
 			} else {
 				LOGGER.error("Error fetching suggested name from LLM:", error);

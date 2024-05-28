@@ -106,6 +106,8 @@ export class PythonProvider extends LanguageProvider {
 					message: violationMessage,
 					functionBody: limitedFunctionBody,
 					modelType: "groq",
+					diagnostic,
+					document,
 				});
 				if (!response) return;
 				const data = JSON.parse(response);

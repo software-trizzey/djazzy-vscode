@@ -104,6 +104,8 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 					message: violationMessage,
 					functionBody: limitedFunctionBody,
 					modelType: "groq",
+					document,
+					diagnostic,
 				});
 				if (!response) return;
 				const data = JSON.parse(response);

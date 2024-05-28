@@ -1,3 +1,6 @@
+import * as fs from "fs";
+import * as path from "path";
+
 import {
 	Connection,
 	Diagnostic,
@@ -23,6 +26,7 @@ import {
 	ExtensionSettings,
 	defaultConventions,
 	settingsVersion,
+	workspaceRoot,
 } from "../settings";
 import LOGGER from "../common/logs";
 
@@ -33,6 +37,7 @@ export abstract class LanguageProvider {
 	protected cache: Map<string, any>;
 	protected cancellationId: number = 0;
 	protected conventions?: LanguageConventions;
+	protected namingConventionExamples; // it'll be JSON
 	protected settings: ExtensionSettings;
 
 	private systemMessage: string = '';
@@ -63,6 +68,7 @@ export abstract class LanguageProvider {
 			return;
 		}
 		this.conventions = languageSettings;
+		this.namingConventionExamples = this.loadNamingConventionExamples();
 
 		this.systemMessage = `You are a code assistant tasked with correcting naming convention violations according to standard coding practices. The user will provide a variable or function name that violates their team's style conventions along with the function body for context.
 		Your task is to suggest a more descriptive name that aligns with the project's naming conventions. Consider the following project-specific information:
@@ -105,6 +111,21 @@ export abstract class LanguageProvider {
 		}
 		this.conventions = languageSettings;
 	}
+
+	loadNamingConventionExamples() {
+		if (!workspaceRoot) {
+			console.warn('Workspace root not set');
+			return null;
+		}
+		const configPath = path.join(workspaceRoot, 'naming_conventions.rome.json');
+		if (fs.existsSync(configPath)) {
+			const rawData = fs.readFileSync(configPath);
+			return JSON.parse(rawData.toString());
+		} else {
+			console.warn('Naming conventions file not found');
+			return null;
+		}
+    }
 
 	public async provideDiagnostics(
 		document: TextDocument
@@ -431,28 +452,51 @@ export abstract class LanguageProvider {
 		`;
 	}
 
-	generateMessage(message: string, functionBody: string, document: TextDocument, diagnostic: Diagnostic) {
-        const surroundingCode = this.getSurroundingCode(document, diagnostic.range);
-		message = `${message} Note: align the suggestion with ${this.languageId} naming conventions (e.g., snake_case, camelCase, PascalCase).`;
-		if (functionBody) {
-			message += ` Here is the function body for context:\n\n${functionBody}\n\n`;
-		}
-		message += `For additional context, here are examples of naming conventions used in this project:\n\n${this.getProjectNamingExamples()}\n\nConsider the following surrounding code when generating your suggestion:\n\n${surroundingCode}`;
+	generateVariableNameMessage(message: string, document: TextDocument, diagnostic: Diagnostic) {
+		const variableUsage = this.getSurroundingCode(document, diagnostic.range);
+		message = `${message} Note: align the suggestion with ${this.languageId} naming conventions (e.g., snake_case, camelCase). Here is the variable usage for context:\n\n${variableUsage}`;
+
+        if (!this.namingConventionExamples || !this.namingConventionExamples.languages[this.languageId]) {
+            return message;
+        }
+        const variableExamples = this.namingConventionExamples.languages[this.languageId].variables.join(', ');
+
+		message += `\n\nHere are some examples of variable naming conventions used in ${this.languageId} projects:\nVariables: ${variableExamples}\n\nConsider these conventions when generating your suggestion.`;
 		return message;
     }
 
+	generateFunctionMessage(message: string, functionBody: string,  document: TextDocument, diagnostic: Diagnostic) {
+        const surroundingCode = this.getSurroundingCode(document, diagnostic.range);
+		message = `${message} Note: align the suggestion with ${this.languageId} naming conventions (e.g., snake_case, camelCase, PascalCase). Here is the function body for context:\n\n${functionBody}\n\nConsider the following surrounding code when generating your suggestion:\n\n${surroundingCode}`;
+
+		if (!this.namingConventionExamples || !this.namingConventionExamples.languages[this.languageId]) {
+            return message;
+        }
+		const functionExamples = this.namingConventionExamples.languages[this.languageId].functions.join(', ');
+
+		message += `\n\nFor additional context, here are examples of naming conventions used in this project:\n\n${functionExamples}`;
+		return message;
+    }
 
 	protected async fetchSuggestedNameFromLLM({
 		message,
+		document,
+		diagnostic,
 		functionBody,
 		modelType,
 	}: {
 		message: string;
-		functionBody?: string;
 		modelType: "groq" | "openai";
-		languageId?: string;
+		document: TextDocument;
+		diagnostic: Diagnostic;
+		functionBody?: string;
 	}): Promise<any> {
-		const requestMessage = this.generateMessage(message, functionBody);
+		let requestMessage = message;
+		if (functionBody) {
+			requestMessage = this.generateFunctionMessage(message, functionBody, document, diagnostic);
+		} else {
+			requestMessage = this.generateVariableNameMessage(message, document, diagnostic);
+		}
 		
 		try {
 			if (modelType === "openai") {

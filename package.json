@@ -288,6 +288,60 @@
 					"default": true,
 					"description": "Enforce boolean variable prefixes.",
 					"order": 38
+				},
+				"whenInRome.languages.python.expressiveNames.variables.examples": {
+					"type": "array",
+					"default": [],
+					"items": {
+						"type": "string"
+					},
+					"description": "Examples of Python variable naming conventions",
+					"order": 40
+				},
+				"whenInRome.languages.python.expressiveNames.functions.examples": {
+					"type": "array",
+					"default": [],
+					"items": {
+						"type": "string"
+					},
+					"description": "Examples of Python function naming conventions",
+					"order": 41
+				},
+				"whenInRome.languages.javascript.expressiveNames.variables.examples": {
+					"type": "array",
+					"default": [],
+					"items": {
+						"type": "string"
+					},
+					"description": "Examples of JavaScript variable naming conventions",
+					"order": 42
+				},
+				"whenInRome.languages.javascript.expressiveNames.functions.examples": {
+					"type": "array",
+					"default": [],
+					"items": {
+						"type": "string"
+					},
+					"description": "Examples of JavaScript function naming conventions",
+					"order": 43
+				},
+				"whenInRome.languages.typescript.expressiveNames.variables.examples": {
+					"type": "array",
+					"default": [],
+					"items": {
+						"type": "string"
+					},
+					"description": "Examples of TypeScript variable naming conventions",
+					"order": 42
+				},
+				"whenInRome.languages.typescript.expressiveNames.functions.examples": {
+					"type": "array",
+					"default": [],
+					"items": {
+						"type": "string"
+					},
+					"description": "Examples of TypeScript function naming conventions",
+					"order": 43
 				}
 			}
 		}

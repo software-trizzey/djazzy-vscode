@@ -7,6 +7,7 @@ interface ExpressiveNamesBaseRulesSettings {
 	isEnabled: boolean;
 	avoidShortNames: boolean;
 	avoidGenericNames: boolean;
+	examples: string[];
 }
 
 interface ExpressiveVariableNameRulesSettings

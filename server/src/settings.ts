@@ -56,6 +56,7 @@ export const defaultConventions: ExtensionSettings = {
 					isEnabled: true,
 					avoidShortNames: true,
 					avoidGenericNames: true,
+					examples: [],
 				},
 				functions: {
 					isEnabled: true,
@@ -63,6 +64,7 @@ export const defaultConventions: ExtensionSettings = {
 					avoidGenericNames: true,
 					functionLengthLimit: defaultFunctionLengthLimit,
 					maxCyclomaticComplexity: maxCyclomaticComplexity,
+					examples: [],
 				},
 			},
 			boolean: {
@@ -77,6 +79,7 @@ export const defaultConventions: ExtensionSettings = {
 					isEnabled: true,
 					avoidShortNames: true,
 					avoidGenericNames: true,
+					examples: [],
 				},
 				functions: {
 					isEnabled: true,
@@ -84,6 +87,7 @@ export const defaultConventions: ExtensionSettings = {
 					avoidGenericNames: true,
 					functionLengthLimit: defaultFunctionLengthLimit,
 					maxCyclomaticComplexity: maxCyclomaticComplexity,
+					examples: [],
 				},
 			},
 			boolean: {
@@ -98,6 +102,7 @@ export const defaultConventions: ExtensionSettings = {
 					isEnabled: true,
 					avoidShortNames: true,
 					avoidGenericNames: true,
+					examples: [],
 				},
 				functions: {
 					isEnabled: true,
@@ -105,6 +110,7 @@ export const defaultConventions: ExtensionSettings = {
 					avoidGenericNames: true,
 					functionLengthLimit: defaultFunctionLengthLimit,
 					maxCyclomaticComplexity: maxCyclomaticComplexity,
+					examples: [],
 				},
 			},
 			boolean: {
@@ -148,6 +154,7 @@ export const normalizeLanguageSettings = (
 					languageSettings.expressiveNames.variables.avoidShortNames,
 				avoidGenericNames:
 					languageSettings.expressiveNames.variables.avoidGenericNames,
+					examples: languageSettings.expressiveNames.variables.examples,
 			},
 			functions: {
 				isEnabled: languageSettings.expressiveNames.functions.isEnabled,
@@ -159,6 +166,7 @@ export const normalizeLanguageSettings = (
 					languageSettings.expressiveNames.functions.functionLengthLimit,
 				maxCyclomaticComplexity:
 					languageSettings.expressiveNames.functions.maxCyclomaticComplexity,
+					examples: languageSettings.expressiveNames.functions.examples,
 			},
 		},
 		boolean: {

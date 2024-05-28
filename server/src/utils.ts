@@ -2,6 +2,8 @@ import { RequestType } from "vscode-languageserver";
 import { Connection } from "vscode-languageserver/node";
 
 import { GET_CHANGED_LINES } from "./constants/commands";
+import { RULE_MESSAGES } from './constants/rules';
+
 import { actionWordsDictionary, commonWords } from "./data";
 import { LanguageConventions } from "./languageConventions";
 
@@ -109,114 +111,107 @@ export function validateVariableNameCase(
 }
 
 export async function validateJavaScriptAndTypeScriptFunctionName(
-	functionName: string,
-	functionBodyLines: number,
-	languageConventions: LanguageConventions
+    functionName: string,
+    functionBodyLines: number,
+    languageConventions: LanguageConventions
 ): Promise<{ violates: boolean; reason: string }> {
-	const {
-		expressiveNames: { functions },
-	} = languageConventions;
+    const {
+        expressiveNames: { functions },
+    } = languageConventions;
 
-	if (functions.avoidShortNames && functionName.length <= 3) {
-		return {
-			violates: true,
-			reason: `Function name "${functionName}" is too short and must be more descriptive.`,
-		};
-	}
+    if (functions.avoidShortNames && functionName.length <= 3) {
+        return {
+            violates: true,
+            reason: RULE_MESSAGES.FUNCTION_TOO_SHORT.replace("{name}", functionName),
+        };
+    }
 
-	const actionWord = Object.keys(actionWordsDictionary).find((word) => {
-		const functionNameWithoutUnderscorePrefix = functionName.startsWith("_")
-			? functionName.substring(1)
-			: functionName;
-		const result = functionNameWithoutUnderscorePrefix.startsWith(word);
-		return result;
-	});
+    const actionWord = Object.keys(actionWordsDictionary).find((word) => {
+        const functionNameWithoutUnderscorePrefix = functionName.startsWith("_")
+            ? functionName.substring(1)
+            : functionName;
+        return functionNameWithoutUnderscorePrefix.startsWith(word);
+    });
 
-	if (!actionWord) {
-		return {
-			violates: true,
-			reason: `Function "${functionName}" does not start with a recognized action word.`,
-		};
-	}
+    if (!actionWord) {
+        return {
+            violates: true,
+            reason: RULE_MESSAGES.FUNCTION_NO_ACTION_WORD.replace("{name}", functionName),
+        };
+    }
 
-	const nameWithoutActionWord = functionName.substring(actionWord.length);
-	const words = await maxMatch(nameWithoutActionWord);
+    const nameWithoutActionWord = functionName.substring(actionWord.length);
+    const words = await maxMatch(nameWithoutActionWord);
 
-	if (words.length === 0) {
-		return {
-			violates: true,
-			reason: `Function "${functionName}" must contain at least two words, e.g., 'getWeather'.`,
-		};
-	}
+    if (words.length === 0) {
+        return {
+            violates: true,
+            reason: RULE_MESSAGES.FUNCTION_MIN_TWO_WORDS.replace("{name}", functionName),
+        };
+    }
 
-	// TODO: handle this rule const cyclomaticComplexity = calculateCyclomaticComplexity(functionBody);
+    if (functionBodyLines > functions.functionLengthLimit) {
+        return {
+            violates: true,
+            reason: RULE_MESSAGES.FUNCTION_TOO_LONG.replace("{name}", functionName).replace("{limit}", functions.functionLengthLimit.toString()),
+        };
+    }
 
-	if (functionBodyLines > functions.functionLengthLimit) {
-		return {
-			violates: true,
-			reason: `Function "${functionName}" exceeds the maximum length of ${functions.functionLengthLimit} lines.`,
-		};
-	}
-
-	return { violates: false, reason: "" };
+    return { violates: false, reason: "" };
 }
 
 export async function validatePythonFunctionName(
-	functionName: string,
-	functionBody: { content: string; bodyLength: number },
-	languageConventions: LanguageConventions
-): Promise<{
-	violates: boolean;
-	reason: string;
-}> {
-	const {
-		expressiveNames: { functions },
-	} = languageConventions;
+    functionName: string,
+    functionBody: { content: string; bodyLength: number },
+    languageConventions: LanguageConventions
+): Promise<{ violates: boolean; reason: string }> {
+    const {
+        expressiveNames: { functions },
+    } = languageConventions;
 
-	if (functionName === "__init__" || functionName === "__main__") {
-		return { violates: false, reason: "" };
-	}
+    if (functionName === "__init__" || functionName === "__main__") {
+        return { violates: false, reason: "" };
+    }
 
-	if (functions.avoidShortNames && functionName.length < 3) {
-		return {
-			violates: true,
-			reason: `Function name "${functionName}" is too short and must be more descriptive.`,
-		};
-	}
+    if (functions.avoidShortNames && functionName.length < 3) {
+        return {
+            violates: true,
+            reason: RULE_MESSAGES.FUNCTION_TOO_SHORT.replace("{name}", functionName),
+        };
+    }
 
-	const actionWord = Object.keys(actionWordsDictionary).find((word) => {
-		const functionNameWithoutUnderscorePrefix = functionName.startsWith("_")
-			? functionName.substring(1)
-			: functionName;
-		const result = functionNameWithoutUnderscorePrefix.startsWith(word);
-		return result;
-	});
-	if (!actionWord) {
-		return {
-			violates: true,
-			reason: `Function "${functionName}" does not start with a recognized action word.`,
-		};
-	}
+    const actionWord = Object.keys(actionWordsDictionary).find((word) => {
+        const functionNameWithoutUnderscorePrefix = functionName.startsWith("_")
+            ? functionName.substring(1)
+            : functionName;
+        return functionNameWithoutUnderscorePrefix.startsWith(word);
+    });
 
-	const nameWithoutActionWord = functionName.substring(actionWord.length);
-	const words = await maxMatch(nameWithoutActionWord);
+    if (!actionWord) {
+        return {
+            violates: true,
+            reason: RULE_MESSAGES.FUNCTION_NO_ACTION_WORD.replace("{name}", functionName),
+        };
+    }
 
-	if (words.length === 0) {
-		return {
-			violates: true,
-			reason: `Function "${functionName}" must contain at least two words, e.g., 'get_snacks'.`,
-		};
-	}
+    const nameWithoutActionWord = functionName.substring(actionWord.length);
+    const words = await maxMatch(nameWithoutActionWord);
 
-	// TODO: handle this rule const cyclomaticComplexity = calculateCyclomaticComplexity(functionBody);
-	if (functionBody.bodyLength > functions.functionLengthLimit) {
-		return {
-			violates: true,
-			reason: `Function "${functionName}" exceeds the maximum length of ${functions.functionLengthLimit} lines.`,
-		};
-	}
+    if (words.length === 0) {
+        return {
+            violates: true,
+            reason: RULE_MESSAGES.FUNCTION_MIN_TWO_WORDS.replace("{name}", functionName),
+        };
+    }
 
-	return { violates: false, reason: "" };
+    if (functionBody.bodyLength > functions.functionLengthLimit) {
+        return {
+            violates: true,
+            reason: RULE_MESSAGES.FUNCTION_TOO_LONG.replace("{name}", functionName).replace("{limit}", functions.functionLengthLimit.toString()),
+        };
+    }
+
+    return { violates: false, reason: "" };
 }
 
 export async function getChangedLinesFromClient(

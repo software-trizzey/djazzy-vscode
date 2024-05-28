@@ -21,6 +21,7 @@ import { debounce, validatePythonFunctionName } from "../utils";
 import { ExtensionSettings, defaultConventions } from "../settings";
 import { PYTHON_DIRECTORY } from "../constants/filepaths";
 import { FIX_NAME } from "../constants/commands";
+import { RULE_MESSAGES } from '../constants/rules';
 import { SOURCE_NAME, SOURCE_TYPE } from "../constants/diagnostics";
 import { LanguageConventions } from "../languageConventions";
 
@@ -52,55 +53,40 @@ export class PythonProvider extends LanguageProvider {
 		const cacheKey = `${violationMessage}-${diagnostic.range.start.line}-${diagnostic.range.start.character}`;
 		const cachedAction = this.codeActionsMessageCache.get(cacheKey);
 		let suggestedName = "";
-
+	
 		if (cachedAction) {
 			return cachedAction;
 		}
-
-		if (
-			violationMessage.includes(
-				'does not follow "snake_case" naming convention'
-			)
-		) {
-			const snakeCasedName = flaggedName
-				.replace(/([A-Z])/g, "_$1")
-				.toLowerCase()
-				.replace(/[- ]+/g, "_");
-			suggestedName = snakeCasedName;
-		} else if (
-			violationMessage.includes("does not start with a conventional prefix")
-		) {
+		
+		if (violationMessage.includes(RULE_MESSAGES.VARIABLE_TOO_SHORT.replace("{name}", flaggedName))) {
+			const response = await this.fetchSuggestedNameFromLLM({
+				message: violationMessage,
+				modelType: "groq",
+				document,
+				diagnostic,
+			});
+			if (!response) return;
+			const data = JSON.parse(response);
+			suggestedName = data.suggestedName;
+		} else if (violationMessage.includes(RULE_MESSAGES.BOOLEAN_NO_PREFIX.replace("{name}", flaggedName))) {
 			suggestedName = `is_${flaggedName}`;
-		} else if (violationMessage.includes("has a negative naming pattern")) {
-			// detect _not_ and not_ patterns
+		} else if (violationMessage.includes(RULE_MESSAGES.BOOLEAN_NEGATIVE_PATTERN.replace("{name}", flaggedName))) {
 			suggestedName = flaggedName
 				.replace(/_not_([^_]+)/i, (_match, p1) => `_${p1}`)
-				.replace(/not_([^_]+)/i, (_match, p1) => `${p1}`);
-			// provide suggestions
-			suggestedName = suggestedName
+				.replace(/not_([^_]+)/i, (_match, p1) => `${p1}`)
 				.replace(/is_not_/i, "is_")
 				.replace(/did_not_/i, "did_")
 				.replace(/cannot_/i, "can_")
 				.replace(/does_not_/i, "does_")
 				.replace(/has_not_/i, "has_")
 				.toLowerCase();
-		} else if (
-			violationMessage.includes(
-				"does not start with a recognized action word"
-			) ||
-			violationMessage.includes("is too short and must be more descriptive")
-		) {
+		} else if (violationMessage.includes(RULE_MESSAGES.FUNCTION_NO_ACTION_WORD.replace("{name}", flaggedName)) ||
+				violationMessage.includes(RULE_MESSAGES.FUNCTION_TOO_SHORT.replace("{name}", flaggedName))) {
 			if (this.settings.general.isDevMode) {
 				suggestedName = `get${flaggedName}`;
 			} else {
-				const functionBodyRange = this.getFunctionBodyRange(
-					document,
-					diagnostic.range
-				);
-				const functionBody = this.extractFunctionBody(
-					document,
-					functionBodyRange
-				);
+				const functionBodyRange = this.getFunctionBodyRange(document, diagnostic.range);
+				const functionBody = this.extractFunctionBody(document, functionBodyRange);
 				const limitedFunctionBody = this.limitFunctionBodySize(functionBody);
 				const response = await this.fetchSuggestedNameFromLLM({
 					message: violationMessage,
@@ -112,19 +98,11 @@ export class PythonProvider extends LanguageProvider {
 				if (!response) return;
 				const data = JSON.parse(response);
 				suggestedName = data.suggestedName;
-				// TODO: Provide justification for action words?
-				// const justification = data.justification;
 			}
 		}
 		const title = `Rename to '${suggestedName}'`;
 		const range = diagnostic.range;
-		const cmd = Command.create(
-			title,
-			FIX_NAME,
-			document.uri,
-			suggestedName,
-			range
-		);
+		const cmd = Command.create(title, FIX_NAME, document.uri, suggestedName, range);
 		const fix = CodeAction.create(title, cmd, CodeActionKind.QuickFix);
 		fix.isPreferred = true;
 		fix.diagnostics = [diagnostic];

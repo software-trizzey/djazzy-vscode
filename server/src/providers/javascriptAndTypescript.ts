@@ -22,6 +22,7 @@ import {
 
 import { ExtensionSettings, defaultConventions } from "../settings";
 import { SOURCE_NAME, SOURCE_TYPE } from "../constants/diagnostics";
+import { RULE_MESSAGES } from '../constants/rules';
 import { LanguageConventions } from "../languageConventions";
 
 export class JavascriptAndTypescriptProvider extends LanguageProvider {
@@ -61,44 +62,33 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		const cacheKey = `${violationMessage}-${diagnostic.range.start.line}-${diagnostic.range.start.character}`;
 		const cachedAction = this.codeActionsMessageCache.get(cacheKey);
 		let suggestedName = "";
-
+	
 		if (cachedAction) {
 			return cachedAction;
 		}
 
-		if (
-			violationMessage.includes('does not follow "camelCase" naming convention')
-		) {
-			const camelCasedName = flaggedName.replace(/[-_](.)/g, (_, c) =>
-				c.toUpperCase()
-			);
-			suggestedName = camelCasedName;
-		} else if (violationMessage.includes("has a negative naming pattern")) {
+		if (violationMessage.includes(RULE_MESSAGES.VARIABLE_TOO_SHORT.replace("{name}", flaggedName))) {
+			const response = await this.fetchSuggestedNameFromLLM({
+				message: violationMessage,
+				modelType: "groq",
+				document,
+				diagnostic,
+			});
+			if (!response) return;
+			const data = JSON.parse(response);
+			suggestedName = data.suggestedName;
+		} else if (violationMessage.includes(RULE_MESSAGES.BOOLEAN_NEGATIVE_PATTERN.replace("{name}", flaggedName))) {
 			suggestedName = flaggedName.replace(/not/i, "");
-		} else if (
-			violationMessage.includes("does not start with a conventional prefix")
-		) {
-			// TODO: can improve suggestions by providing more context
-			const capitalizedName =
-				flaggedName.charAt(0).toUpperCase() + flaggedName.slice(1);
+		} else if (violationMessage.includes(RULE_MESSAGES.BOOLEAN_NO_PREFIX.replace("{name}", flaggedName))) {
+			const capitalizedName = flaggedName.charAt(0).toUpperCase() + flaggedName.slice(1);
 			suggestedName = `is${capitalizedName}`;
-		} else if (
-			violationMessage.includes(
-				"does not start with a recognized action word"
-			) ||
-			violationMessage.includes("is too short and must be more descriptive")
-		) {
+		} else if (violationMessage.includes(RULE_MESSAGES.FUNCTION_NO_ACTION_WORD.replace("{name}", flaggedName)) ||
+				violationMessage.includes(RULE_MESSAGES.FUNCTION_TOO_SHORT.replace("{name}", flaggedName))) {
 			if (this.settings.general.isDevMode) {
 				suggestedName = `get${flaggedName}`;
 			} else {
-				const functionBodyRange = this.getFunctionBodyRange(
-					document,
-					diagnostic.range
-				);
-				const functionBody = this.extractFunctionBody(
-					document,
-					functionBodyRange
-				);
+				const functionBodyRange = this.getFunctionBodyRange(document, diagnostic.range);
+				const functionBody = this.extractFunctionBody(document, functionBodyRange);
 				const limitedFunctionBody = this.limitFunctionBodySize(functionBody);
 				const response = await this.fetchSuggestedNameFromLLM({
 					message: violationMessage,
@@ -110,8 +100,6 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 				if (!response) return;
 				const data = JSON.parse(response);
 				suggestedName = data.suggestedName;
-				// TODO: Provide justification for action words?
-				// const justification = data.justification;
 			}
 		}
 		const title = `Rename to '${suggestedName}'`;
@@ -122,11 +110,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 				[document.uri]: [textEdit],
 			},
 		};
-		const fix = CodeAction.create(
-			title,
-			workspaceEdit,
-			CodeActionKind.QuickFix
-		);
+		const fix = CodeAction.create(title, workspaceEdit, CodeActionKind.QuickFix);
 		fix.diagnostics = [diagnostic];
 		fix.isPreferred = true;
 		this.codeActionsMessageCache.set(cacheKey, fix);

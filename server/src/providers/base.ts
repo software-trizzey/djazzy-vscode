@@ -27,6 +27,7 @@ import {
 import LOGGER from "../common/logs";
 
 import type { LanguageConventions } from "../languageConventions";
+import { RULE_MESSAGES } from '../constants/rules';
 
 export abstract class LanguageProvider {
 	protected connection: Connection;
@@ -271,17 +272,16 @@ export abstract class LanguageProvider {
 			expressiveNames: { variables },
 			boolean,
 		} = this.getConventions();
-
+	
 		if (!variables.isEnabled) return { violates: false, reason: "" };
-
-		// TODO: rename this value to avoidShortNames
+	
 		if (variables.avoidShortNames && variableName.length < 3) {
 			return {
 				violates: true,
-				reason: `Variable "${variableName}" is too short and must be more descriptive`,
+				reason: RULE_MESSAGES.VARIABLE_TOO_SHORT.replace("{name}", variableName),
 			};
 		}
-
+	
 		const isExplicitBoolean =
 			typeof variableValue === "boolean" ||
 			/^(true|false)$/i.test(variableValue);
@@ -295,13 +295,13 @@ export abstract class LanguageProvider {
 				const prefixExamples = prefixes.join(", ");
 				return {
 					violates: true,
-					reason: `Boolean variable "${variableName}" does not start with a conventional prefix (e.g., ${prefixExamples}).`,
+					reason: RULE_MESSAGES.BOOLEAN_NO_PREFIX.replace("{name}", variableName),
 				};
 			}
 			if (positiveNaming && hasNegativePattern(variableName)) {
 				return {
 					violates: true,
-					reason: `Boolean variable "${variableName}" has a negative naming pattern, which contradicts the positive naming convention.`,
+					reason: RULE_MESSAGES.BOOLEAN_NEGATIVE_PATTERN.replace("{name}", variableName),
 				};
 			}
 		}

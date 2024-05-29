@@ -19,6 +19,7 @@ import {
 	getChangedLines,
 	checkAndNotify,
 } from "./common/utils/git";
+import { renameSymbolWithSuggestions } from './common/utils/rename';
 
 async function initializeAuthentication(
 	credentials: Credentials,
@@ -50,6 +51,11 @@ export async function activate(context: vscode.ExtensionContext) {
 		() => signOutUser(context)
 	);
 	context.subscriptions.push(signOutCommand);
+	const renameSymbolCommand = vscode.commands.registerCommand(
+		COMMANDS.RENAME_SYMBOL,
+		() => renameSymbolWithSuggestions(client)
+	);
+	context.subscriptions.push(renameSymbolCommand);
 
 	const credentials = new Credentials();
 	await credentials.initialize(context);

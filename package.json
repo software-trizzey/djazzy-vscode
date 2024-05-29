@@ -47,8 +47,41 @@
 			{
 				"command": "whenInRome.signOut",
 				"title": "When In Rome: Sign Out"
-			}
+			},
+			{
+				"command": "whenInRome.renameSymbol",
+				"title": "Rename Symbol (When In Rome)"
+			  }
 		],
+		"menus": {
+			"editor/context": [
+			  {
+				"command": "whenInRome.renameSymbol",
+				"when": "editorTextFocus && !editorReadonly",
+				"group": "navigation"
+			  }
+			]
+		},
+		"languages": [
+			{
+			  "id": "javascript",
+			  "aliases": ["JavaScript", "js"],
+			  "extensions": [".js"],
+			  "configuration": "./language-configuration.json"
+			},
+			{
+			  "id": "typescript",
+			  "aliases": ["TypeScript", "ts"],
+			  "extensions": [".ts"],
+			  "configuration": "./language-configuration.json"
+			},
+			{
+			  "id": "python",
+			  "aliases": ["Python", "py"],
+			  "extensions": [".py"],
+			  "configuration": "./language-configuration.json"
+			}
+		  ],
 		"configuration": {
 			"title": "When In Rome",
 			"properties": {

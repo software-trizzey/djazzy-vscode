@@ -9,6 +9,9 @@ export const COMMANDS = {
 	SIGN_OUT: `${EXTENSION_ID}.signOut`,
 	GET_GIT_DIFF: `${EXTENSION_ID}.getGitDiff`,
 	CREATE_REPOSITORY: `${EXTENSION_ID}.createRepository`,
+	RENAME_SYMBOL: `${EXTENSION_ID}.renameSymbol`,
+	PROVIDE_RENAME_SUGGESTIONS: `${EXTENSION_ID}.provideRenameSuggestions`,
+	APPLY_RENAME_SYMBOL: `${EXTENSION_ID}.applyRenameSymbol`
 };
 
 export const AUTH_SERVER_URL = "https://rome-django-auth.onrender.com";

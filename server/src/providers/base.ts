@@ -223,7 +223,6 @@ export abstract class LanguageProvider {
 
 	public handleError(error: Error) {
 		const message = error?.message || error.toString();
-		console.log("Error message:", message);
 
 		if (error.toString().includes("Could not access 'HEAD'")) {
 			const actionText = "Create Repository";
@@ -248,7 +247,8 @@ export abstract class LanguageProvider {
 			});
 		} else if (
 			message.includes("SyntaxError") ||
-			message.includes("IndentationError")
+			message.includes("IndentationError") ||
+			message.includes("Unexpected token")
 		) {
 			// @rome-ignore - gracefully catch and log user generated syntax errors
 			LOGGER.debug(error);

@@ -1,4 +1,4 @@
-import { RequestType } from "vscode-languageserver";
+import { Position, Range, RequestType } from "vscode-languageserver";
 import { Connection } from "vscode-languageserver/node";
 
 import { GET_CHANGED_LINES } from "./constants/commands";
@@ -6,6 +6,7 @@ import { RULE_MESSAGES } from './constants/rules';
 
 import { actionWordsDictionary, commonWords } from "./data";
 import { LanguageConventions } from "./languageConventions";
+import { TextDocument } from 'vscode-languageserver-textdocument';
 
 const cache = new Map<string, boolean>();
 
@@ -288,4 +289,18 @@ async function validateWords(tokens: string[]) {
 async function maxMatch(name: string): Promise<string[]> {
 	const tokens = splitNameIntoWords(name);
 	return await validateWords(tokens);
+}
+
+export function getWordRangeAt(document: TextDocument, position: Position) {
+	const text = document.getText();
+	const offset = document.offsetAt(position);
+	let start = offset;
+	let end = offset;
+	while (start > 0 && /\w/.test(text.charAt(start - 1))) {
+		start--;
+	}
+	while (end < text.length && /\w/.test(text.charAt(end))) {
+		end++;
+	}
+	return Range.create(document.positionAt(start), document.positionAt(end));
 }

@@ -16,8 +16,10 @@ import {
 	TextDocumentSyncKind,
 	TextDocumentEdit,
 	InitializeResult,
+	WorkspaceEdit,
 	DocumentDiagnosticReportKind,
 	type DocumentDiagnosticReport,
+	DiagnosticSeverity,
 } from "vscode-languageserver/node";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
@@ -33,10 +35,11 @@ import {
 	incrementSettingsVersion,
 	setWorkspaceRoot,
 } from "./settings";
-import { debounce } from "./utils";
+import { debounce, getWordRangeAt } from "./utils";
 
 import COMMANDS, { COMMANDS_LIST } from "./constants/commands";
 import { rollbar } from "./common/logs";
+import { SOURCE_NAME } from './constants/diagnostics';
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -91,9 +94,7 @@ connection.onInitialize((params: InitializeParams) => {
 			codeActionProvider: {
 				codeActionKinds: [CodeActionKind.QuickFix],
 			},
-			renameProvider: {
-				prepareProvider: true,
-			},
+			renameProvider: true,
 			executeCommandProvider: {
 				commands: COMMANDS_LIST,
 			},
@@ -372,6 +373,62 @@ connection.onExecuteCommand((params) => {
 			),
 		],
 	});
+});
+
+connection.onRenameRequest(async (params) => {
+	console.log("Rename Request", params);
+	const { textDocument, position, newName } = params;
+	const document = documents.get(textDocument.uri);
+	if (!document) return;
+  
+	const settings = await getDocumentSettings(document.uri);
+	const languageId = document.languageId;
+	const provider = getOrCreateProvider(languageId, settings);
+  
+	const wordRange = getWordRangeAt(document, position);
+	const oldName = document.getText(wordRange);
+  
+	let diagnostics = provider.getDiagnostic(textDocument.uri, document.version);
+	let diagnostic = diagnostics?.find(diag => diag.range.start.line === wordRange.start.line && diag.range.start.character === wordRange.start.character);
+
+	if (!diagnostic) {
+		console.log("No diagnostic found for the word range", wordRange);
+		diagnostic = {
+		range: wordRange,
+		message: `The symbol "${oldName}" does not follow naming conventions.`,
+		severity: DiagnosticSeverity.Warning,
+		source: SOURCE_NAME,
+		};
+
+		diagnostics = diagnostics || [];
+		diagnostics.push(diagnostic);
+		provider.setDiagnostic(textDocument.uri, document.version, diagnostics);
+	}
+	const fix = await provider.generateFixForNamingConventionViolation(document, diagnostic);
+	console.log("Fix", fix);
+
+	if (!fix?.edit?.changes) {
+		return null;
+		// return {
+		// 	changes: {},
+		// 	error: {
+		// 	code: -32001,
+		// 	message: `The name "${newName}" does not follow the naming conventions.`,
+		// 	},
+		// };
+	}
+
+	const suggestedName = fix.edit.changes[textDocument.uri][0].newText;
+	const edit: WorkspaceEdit = {
+		documentChanges: [
+			TextDocumentEdit.create(
+				{ uri: textDocument.uri, version: document.version },
+				[TextEdit.replace(wordRange, suggestedName)]
+			),
+		],
+	};
+	console.log("Edit", edit);
+	return edit;
 });
 
 documents.listen(connection);

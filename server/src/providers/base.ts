@@ -29,6 +29,13 @@ import LOGGER from "../common/logs";
 import type { LanguageConventions } from "../languageConventions";
 import { RULE_MESSAGES } from '../constants/rules';
 
+
+export interface RenameSuggestion {
+	suggestedName: string;
+	justification: string;
+}
+
+
 export abstract class LanguageProvider {
 	protected connection: Connection;
 	protected cache: Map<string, any>;
@@ -175,6 +182,68 @@ export abstract class LanguageProvider {
 			)
 			.filter((promise) => promise !== undefined) as Promise<CodeAction>[];
 		return await Promise.all(actionPromises);
+	}
+
+	async generateNameSuggestions(
+		document: TextDocument,
+		diagnostic: Diagnostic,
+		suggestionCount: number = 1
+	): Promise<RenameSuggestion[]> {
+		const flaggedName = document.getText(diagnostic.range);
+		const violationMessage = diagnostic.message;
+		const suggestions: RenameSuggestion[] = [];
+		let currentCount = 0;
+
+		while (currentCount < suggestionCount) {
+			if (violationMessage.includes(RULE_MESSAGES.VARIABLE_TOO_SHORT.replace("{name}", flaggedName))) {
+				const response = await this.fetchSuggestedNameFromLLM({
+					message: violationMessage,
+					modelType: "groq",
+					document,
+					diagnostic,
+				});
+				if (response) {
+					const data = JSON.parse(response);
+					suggestions.push(data);
+				}
+			} else if (violationMessage.includes(RULE_MESSAGES.BOOLEAN_NEGATIVE_PATTERN.replace("{name}", flaggedName))) {
+				suggestions.push({
+					suggestedName: flaggedName.replace(/not/i, ""),
+					justification: "Remove negative pattern"
+				});
+			} else if (violationMessage.includes(RULE_MESSAGES.BOOLEAN_NO_PREFIX.replace("{name}", flaggedName))) {
+				const capitalizedName = flaggedName.charAt(0).toUpperCase() + flaggedName.slice(1);
+				suggestions.push({
+					suggestedName: `is${capitalizedName}`,
+					justification: "Add boolean prefix"
+				});
+			} else if (violationMessage.includes(RULE_MESSAGES.FUNCTION_NO_ACTION_WORD.replace("{name}", flaggedName)) ||
+				violationMessage.includes(RULE_MESSAGES.FUNCTION_TOO_SHORT.replace("{name}", flaggedName))) {
+					if (this.settings.general.isDevMode) {
+					suggestions.push({
+						suggestedName: `get${flaggedName}`,
+						justification: "Add action word"
+					});
+					} else {
+						const functionBodyRange = this.getFunctionBodyRange(document, diagnostic.range);
+						const functionBody = this.extractFunctionBody(document, functionBodyRange);
+						const limitedFunctionBody = this.limitFunctionBodySize(functionBody);
+						const response = await this.fetchSuggestedNameFromLLM({
+							message: violationMessage,
+							functionBody: limitedFunctionBody,
+							modelType: "groq",
+							document,
+							diagnostic,
+						});
+						if (response) {
+							const data = JSON.parse(response);
+							suggestions.push(data);
+						}
+					}
+				}
+				currentCount++;
+			}
+		return suggestions;
 	}
 
 	public getDiagnostic(

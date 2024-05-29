@@ -375,24 +375,48 @@ connection.onExecuteCommand((params) => {
 	});
 });
 
-connection.onRenameRequest(async (params) => {
-	console.log("Rename Request", params);
-	const { textDocument, position, newName } = params;
+connection.onRequest(COMMANDS.APPLY_RENAME_SYMBOL, async (params) => {
+	const { textDocument, newName, references } = params;
 	const document = documents.get(textDocument.uri);
 	if (!document) return;
-  
+
+	const changes = [];
+
+	for (const ref of references) {
+		const refDocument = documents.get(ref.uri);
+		if (!refDocument) continue;
+		const refWordRange = getWordRangeAt(refDocument, ref.range.start);
+		changes.push(TextEdit.replace(refWordRange, newName));
+	}
+
+	const edit = {
+		documentChanges: [
+		TextDocumentEdit.create(
+			{ uri: textDocument.uri, version: document.version },
+			changes
+		),
+		],
+	};
+
+	return edit;
+});
+
+connection.onRequest(COMMANDS.PROVIDE_RENAME_SUGGESTIONS, async (params) => {
+	const { textDocument, position } = params;
+	const document = documents.get(textDocument.uri);
+	if (!document) return [];
+
 	const settings = await getDocumentSettings(document.uri);
 	const languageId = document.languageId;
 	const provider = getOrCreateProvider(languageId, settings);
-  
+
 	const wordRange = getWordRangeAt(document, position);
 	const oldName = document.getText(wordRange);
-  
+
 	let diagnostics = provider.getDiagnostic(textDocument.uri, document.version);
 	let diagnostic = diagnostics?.find(diag => diag.range.start.line === wordRange.start.line && diag.range.start.character === wordRange.start.character);
 
 	if (!diagnostic) {
-		console.log("No diagnostic found for the word range", wordRange);
 		diagnostic = {
 		range: wordRange,
 		message: `The symbol "${oldName}" does not follow naming conventions.`,
@@ -404,31 +428,12 @@ connection.onRenameRequest(async (params) => {
 		diagnostics.push(diagnostic);
 		provider.setDiagnostic(textDocument.uri, document.version, diagnostics);
 	}
-	const fix = await provider.generateFixForNamingConventionViolation(document, diagnostic);
-	console.log("Fix", fix);
 
-	if (!fix?.edit?.changes) {
-		return null;
-		// return {
-		// 	changes: {},
-		// 	error: {
-		// 	code: -32001,
-		// 	message: `The name "${newName}" does not follow the naming conventions.`,
-		// 	},
-		// };
-	}
-
-	const suggestedName = fix.edit.changes[textDocument.uri][0].newText;
-	const edit: WorkspaceEdit = {
-		documentChanges: [
-			TextDocumentEdit.create(
-				{ uri: textDocument.uri, version: document.version },
-				[TextEdit.replace(wordRange, suggestedName)]
-			),
-		],
-	};
-	console.log("Edit", edit);
-	return edit;
+	const suggestions = await provider.generateNameSuggestions(document, diagnostic);
+	return suggestions.map(suggestion => ({
+		label: suggestion.suggestedName,
+		description: suggestion.justification
+	}));
 });
 
 documents.listen(connection);

@@ -1,5 +1,7 @@
 import { Uri, workspace } from "vscode";
 
+import { EXTENSION_ID } from "../constants";
+
 export const notificationTimes = new Map();
 export const TWENTY_MINUTES = 20;
 
@@ -13,7 +15,7 @@ export function updateLastNotifiedTime(uri: Uri, time: number) {
 
 export function getNotificationInterval(): number {
 	const intervalInMinutes = workspace
-		.getConfiguration("whenInRome")
+		.getConfiguration(EXTENSION_ID)
 		.get("notificationInterval", TWENTY_MINUTES);
 	const intervalInMilliseconds = intervalInMinutes * 60 * 1000;
 	return intervalInMilliseconds;

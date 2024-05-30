@@ -62,9 +62,7 @@ export async function renameSymbolWithSuggestions(client: LanguageClient) {
     const response = await client.sendRequest(COMMANDS.APPLY_RENAME_SYMBOL, renameParams) as any;
     if (response) {
 		const workspaceEdit = new vscode.WorkspaceEdit();
-		console.log("Updating symbol references");
 		for (const change of response.documentChanges) {
-			console.log("change", change);
 			const uri = vscode.Uri.parse(change.textDocument.uri);
 			const edits = change.edits.map((edit: any) => vscode.TextEdit.replace(
 				new vscode.Range(
@@ -73,7 +71,6 @@ export async function renameSymbolWithSuggestions(client: LanguageClient) {
 				),
 				edit.newText
 			));
-			console.log("edits", edits);
 			workspaceEdit.set(uri, edits);
 		}	
 		await vscode.workspace.applyEdit(workspaceEdit);

@@ -12,7 +12,7 @@ import { Credentials } from "./common/auth/github";
 import { signInWithGitHub, signOutUser } from "./common/auth/api";
 import type { UserSession } from "./common/auth/github";
 
-import { EXTENSION_ID, EXTENSION_NAME, COMMANDS } from "./common/constants";
+import { EXTENSION_ID, EXTENSION_NAME, COMMANDS, SESSION_USER, SESSION_TOKEN_KEY } from "./common/constants";
 
 import {
 	createGitRepository,
@@ -26,8 +26,8 @@ async function initializeAuthentication(
 	context: vscode.ExtensionContext
 ): Promise<boolean> {
 	console.log("Initializing authentication...");
-	const storedUser: UserSession = context.globalState.get("whenInRomeUser");
-	const token = context.globalState.get("whenInRomeUserToken");
+	const storedUser: UserSession = context.globalState.get(SESSION_USER);
+	const token = context.globalState.get(SESSION_TOKEN_KEY);
 	if (token && storedUser) {
 		const { github_login, email } = storedUser;
 		console.log("User is already signed in.", github_login || email);
@@ -64,8 +64,6 @@ export async function activate(context: vscode.ExtensionContext) {
 		path.join("server", "out", "server.js")
 	);
 
-	// If the extension is launched in debug mode then the debug server options are used
-	// Otherwise the run options are used
 	const serverOptions: ServerOptions = {
 		run: {
 			module: serverModule,

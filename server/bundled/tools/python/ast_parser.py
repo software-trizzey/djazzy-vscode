@@ -6,6 +6,24 @@ import sys
 import tokenize
 from io import StringIO
 
+DJANGO_IGNORE_FUNCTIONS = {
+    "save": True,
+    "delete": True,
+    "__str__": True,
+    "clean": True,
+    "get_absolute_url": True,
+    "create": True,
+    "update": True,
+    "validate": True,
+    "get_queryset": True,
+    "get": True,
+    "post": True,
+    "put": True,
+    "get_context_data": True,
+    "validate_<field_name>": True,
+    "delete": True,
+    "perform_create": True,
+}
 
 class Analyzer(ast.NodeVisitor):
     def __init__(self, source_code):
@@ -106,10 +124,14 @@ class Analyzer(ast.NodeVisitor):
             col_offset += len('def ')
             function_start_line = node.body[0].lineno
             function_end_line = node.body[-1].end_lineno if hasattr(node.body[-1], 'end_lineno') else node.body[-1].lineno
-            is_reserved = self.is_python_reserved(node.name)
+            is_reserved = DJANGO_IGNORE_FUNCTIONS.get(node.name, False) or self.is_python_reserved(node.name)
             body = ast.get_source_segment(self.source_code, node)
         elif isinstance(node, ast.ClassDef):
             col_offset += len('class ')
+        elif isinstance(node, ast.Assign):
+            targets = [target.id for target in node.targets if isinstance(target, ast.Name)]
+            if targets:
+                name = targets[0]
 
         self.symbols.append(self._create_symbol_dict(
             type=node.__class__.__name__.lower(),
@@ -133,48 +155,44 @@ class Analyzer(ast.NodeVisitor):
         self.generic_node_visit(node)
 
     def visit_Assign(self, node):
-        for target in node.targets:
-            if isinstance(target, ast.Name):
-                value_source = ast.get_source_segment(self.source_code, node.value)
-                comments = self.get_related_comments(node)
-                self.symbols.append(self._create_symbol_dict(
-                    type='variable',
-                    name=target.id,
-                    comments=comments,
-                    line=node.lineno - 1,
-                    col_offset=target.col_offset,
-                    end_col_offset=target.col_offset + len(target.id),
-                    is_reserved=False,
-                    value=value_source
-                ))
-        self.generic_visit(node)
+        self.generic_node_visit(node)
 
     def visit_Dict(self, node):
         comments = self.get_related_comments(node)
-        self.symbols.append(self._create_symbol_dict(
-            type='dictionary',
-            name=None,
-            comments=comments,
-            line=node.lineno - 1,
-            col_offset=node.col_offset,
-            end_col_offset=node.end_col_offset if hasattr(node, 'end_col_offset') else None,
-            is_reserved=False,
-            value=ast.get_source_segment(self.source_code, node)
-        ))
+        for parent in ast.walk(node):
+            if isinstance(parent, ast.Assign):
+                targets = [t.id for t in parent.targets if isinstance(t, ast.Name)]
+                if targets:
+                    name = targets[0]
+                    self.symbols.append(self._create_symbol_dict(
+                        type='dictionary',
+                        name=name,
+                        comments=comments,
+                        line=node.lineno - 1,
+                        col_offset=node.col_offset,
+                        end_col_offset=node.end_col_offset if hasattr(node, 'end_col_offset') else None,
+                        is_reserved=False,
+                        value=ast.get_source_segment(self.source_code, node)
+                    ))
         self.generic_visit(node)
 
     def visit_List(self, node):
         comments = self.get_related_comments(node)
-        self.symbols.append(self._create_symbol_dict(
-            type='list',
-            name=None,
-            comments=comments,
-            line=node.lineno - 1,
-            col_offset=node.col_offset,
-            end_col_offset=node.end_col_offset if hasattr(node, 'end_col_offset') else None,
-            is_reserved=False,
-            value=ast.get_source_segment(self.source_code, node)
-        ))
+        for parent in ast.walk(node):
+            if isinstance(parent, ast.Assign):
+                targets = [t.id for t in parent.targets if isinstance(t, ast.Name)]
+                if targets:
+                    name = targets[0]
+                    self.symbols.append(self._create_symbol_dict(
+                        type='list',
+                        name=name,
+                        comments=comments,
+                        line=node.lineno - 1,
+                        col_offset=node.col_offset,
+                        end_col_offset=node.end_col_offset if hasattr(node, 'end_col_offset') else None,
+                        is_reserved=False,
+                        value=ast.get_source_segment(self.source_code, node)
+                    ))
         self.generic_visit(node)
 
     def visit_Return(self, node):

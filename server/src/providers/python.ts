@@ -216,6 +216,8 @@ export class PythonProvider extends LanguageProvider {
 					);
 					break;
 				case "variable":
+				case "assignment":
+				case "assign":
 					result = this.validateVariableName({
 						variableName: name,
 						variableValue: value,
@@ -241,9 +243,6 @@ export class PythonProvider extends LanguageProvider {
 					break;
 				case "django_serializer_field":
 					// TODO: Handle serializer field validation if different from standard fields
-					break;
-				case "assignment":
-				case "assign":
 					break;
 			}
 

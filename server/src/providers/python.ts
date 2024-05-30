@@ -244,7 +244,6 @@ export class PythonProvider extends LanguageProvider {
 					break;
 				case "assignment":
 				case "assign":
-					console.log("Assignment", name, value);
 					break;
 			}
 

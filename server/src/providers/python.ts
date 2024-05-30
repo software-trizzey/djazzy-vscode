@@ -14,7 +14,6 @@ import { spawn } from "child_process";
 import * as path from "path";
 
 import { LanguageProvider } from "./base";
-import { DJANGO_RESERVED_NAMES } from "../data/reservedNames";
 
 import { debounce, validatePythonFunctionName } from "../utils";
 
@@ -178,7 +177,6 @@ export class PythonProvider extends LanguageProvider {
 		changedLines: Set<number> | undefined
 	): Promise<void> {
 		const conventions = this.getConventions();
-
 		for (const symbol of symbols) {
 			const {
 				type,
@@ -190,7 +188,12 @@ export class PythonProvider extends LanguageProvider {
 				body,
 				function_start_line,
 				function_end_line,
+				is_reserved,
 			} = symbol;
+
+			if (is_reserved) {
+				continue; // Skip validation for reserved symbols
+			}
 
 			if (changedLines && !changedLines.has(line)) {
 				continue; // Skip validation if line not in changedLines
@@ -199,6 +202,10 @@ export class PythonProvider extends LanguageProvider {
 			let result = null;
 			switch (type) {
 				case "functiondef":
+				case "django_model_method":
+				case "django_serializer_method":
+				case "django_view_method":
+				case "django_testcase_method":
 					result = await this.validateFunctionName(
 						name,
 						{
@@ -226,11 +233,6 @@ export class PythonProvider extends LanguageProvider {
 				case "django_model":
 					// TODO: Implement model name validation (probably similar to class)
 					break;
-				case "django_method":
-					if (this.shouldValidateFunctionName(name, "model")) {
-						result = await this.validateFunctionName(name, body, conventions);
-					}
-					break;
 				case "django_model_field":
 					result = this.validateVariableName({
 						variableName: name,
@@ -240,13 +242,9 @@ export class PythonProvider extends LanguageProvider {
 				case "django_serializer_field":
 					// TODO: Handle serializer field validation if different from standard fields
 					break;
-				case "django_view_method":
-					// TODO: Handle method validation in views
-					break;
-				case "django_test_method":
-					// TODO: Handle validation for test methods
-					break;
 				case "assignment":
+				case "assign":
+					console.log("Assignment", name, value);
 					break;
 			}
 
@@ -284,7 +282,26 @@ export class PythonProvider extends LanguageProvider {
 
 	private getParserFilePath(text: string): string {
 		let parserFilePath = "";
-		if (text.includes("from django")) {
+	
+		const djangoPatterns = [
+			"from django",
+			"import django",
+			"from rest_framework",
+			"import rest_framework",
+			"from .models",       
+			"from .views",
+			"from .serializers",
+			"from .forms",
+			"from .admin",
+			"import models",       
+			"import views",
+			"import serializers",
+			"import forms",
+			"import admin"
+		];
+	
+		const isDjangoFile = djangoPatterns.some(pattern => text.includes(pattern));
+		if (isDjangoFile) {
 			parserFilePath = path.join(
 				__dirname,
 				"..",
@@ -300,22 +317,6 @@ export class PythonProvider extends LanguageProvider {
 			);
 		}
 		return parserFilePath;
-	}
-
-	private shouldValidateFunctionName(
-		method_name: string,
-		component_type: "model" | "serializer" | "view"
-	): boolean {
-		if (DJANGO_RESERVED_NAMES[component_type].includes(method_name)) {
-			return false;
-		}
-		if (
-			component_type === "serializer" &&
-			method_name.startsWith("validate_")
-		) {
-			return false;
-		}
-		return true;
 	}
 
 	private extractDjangoFieldValue(fieldValue: string): any {

@@ -97,9 +97,6 @@ class DjangoAnalyzer(Analyzer):
         return None
 
     def _is_django_component(self, name):
-        """
-        Checks if a given name is a Django component.
-        """
         return any(name in components for components in DJANGO_COMPONENTS.values())
 
     def _get_component_type(self, name):

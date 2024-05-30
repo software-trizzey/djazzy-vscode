@@ -43,7 +43,7 @@ class DjangoAnalyzer(Analyzer):
         if class_type:
             comments = self.get_related_comments(node)
             self.symbols.append(self._create_symbol_dict(
-                class_type, node.name, comments, node.lineno - 1, node.col_offset
+                class_type, node.name, comments, node.lineno - 1, node.col_offset, node.col_offset + len(node.name), False
             ))
             self.current_class_type = class_type
         else:
@@ -59,7 +59,10 @@ class DjangoAnalyzer(Analyzer):
             comments = self.get_related_comments(node)
             is_reserved = DJANGO_IGNORE_FUNCTIONS.get(node.name, False) or self.is_python_reserved(node.name)
             self.symbols.append(self._create_symbol_dict(
-                f'{self.current_class_type}_method', node.name, comments, node.lineno - 1, node.col_offset, is_reserved
+                f'{self.current_class_type}_method', node.name, comments, node.lineno - 1, node.col_offset, node.col_offset + len(node.name), is_reserved,
+                body=ast.get_source_segment(self.source_code, node),
+                function_start_line=node.body[0].lineno,
+                function_end_line=node.body[-1].end_lineno if hasattr(node.body[-1], 'end_lineno') else node.body[-1].lineno
             ))
             self.handle_nested_structures(node)
         else:
@@ -75,7 +78,8 @@ class DjangoAnalyzer(Analyzer):
                     value_source = ast.get_source_segment(self.source_code, node.value)
                     comments = self.get_related_comments(node)
                     self.symbols.append(self._create_symbol_dict(
-                        f'{self.current_class_type}_field', target.id, comments, node.lineno - 1, target.col_offset, value_source
+                        f'{self.current_class_type}_field', target.id, comments, node.lineno - 1, target.col_offset, target.col_offset + len(target.id), False,
+                        value=value_source
                     ))
         else:
             super().visit_Assign(node)
@@ -107,22 +111,6 @@ class DjangoAnalyzer(Analyzer):
                 return f'django_{component}'
         return None
 
-    def _create_symbol_dict(self, type, name, comments, line, col_offset, is_reserved, value=None):
-        """
-        Creates a dictionary representation of a symbol.
-        """
-        symbol = {
-            'type': type,
-            'name': name,
-            'leading_comments': comments,
-            'line': line,
-            'col_offset': col_offset,
-            'end_col_offset': col_offset + len(name),
-            'is_reserved': is_reserved
-        }
-        if value:
-            symbol['value'] = value
-        return symbol
 
 def main():
     input_code = sys.stdin.read()

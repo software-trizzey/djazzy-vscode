@@ -7,7 +7,6 @@ import tokenize
 from io import StringIO
 
 
-
 class Analyzer(ast.NodeVisitor):
     def __init__(self, source_code):
         self.source_code = source_code
@@ -57,32 +56,73 @@ class Analyzer(ast.NodeVisitor):
                 related_comments.append(comment)
         return related_comments
 
+    def _create_symbol_dict(
+            self,
+            type,
+            name,
+            comments,
+            line,
+            col_offset,
+            end_col_offset,
+            is_reserved,
+            value=None,
+            body=None,
+            function_start_line=None,
+            function_end_line=None
+        ):
+        """
+        Creates a dictionary representation of a symbol.
+        """
+        symbol = {
+            'type': type,
+            'name': name,
+            'leading_comments': comments,
+            'line': line,
+            'col_offset': col_offset,
+            'end_col_offset': end_col_offset,
+            'is_reserved': is_reserved,
+        }
+        if value:
+            symbol['value'] = value
+        if body:
+            symbol['body'] = body
+        if function_start_line is not None:
+            symbol['function_start_line'] = function_start_line
+        if function_end_line is not None:
+            symbol['function_end_line'] = function_end_line
+        return symbol
+
     def generic_node_visit(self, node):
         comments = self.get_related_comments(node)
         name = getattr(node, 'name', None)
         col_offset = node.col_offset
+        end_col_offset = col_offset + (len(name) if name else 0)
         function_start_line = node.lineno
         function_end_line = node.lineno
         is_reserved = False
+        body = None
+
         if isinstance(node, ast.FunctionDef):
             col_offset += len('def ')
             function_start_line = node.body[0].lineno
             function_end_line = node.body[-1].end_lineno if hasattr(node.body[-1], 'end_lineno') else node.body[-1].lineno
             is_reserved = self.is_python_reserved(node.name)
+            body = ast.get_source_segment(self.source_code, node)
         elif isinstance(node, ast.ClassDef):
             col_offset += len('class ')
-        self.symbols.append({
-            'type': type(node).__name__.lower(),
-            'name': name,
-            'leading_comments': comments,
-            'line': node.lineno - 1,
-            'col_offset': col_offset,
-            'end_col_offset': col_offset + (len(name) if name else 0),
-            'body': ast.get_source_segment(self.source_code, node) if isinstance(node, ast.FunctionDef) else None,
-            'function_start_line': function_start_line,
-            'function_end_line': function_end_line,
-            'is_reserved': is_reserved
-        })
+
+        self.symbols.append(self._create_symbol_dict(
+            type=node.__class__.__name__.lower(),
+            name=name,
+            comments=comments,
+            line=node.lineno - 1,
+            col_offset=col_offset,
+            end_col_offset=end_col_offset,
+            is_reserved=is_reserved,
+            body=body,
+            function_start_line=function_start_line,
+            function_end_line=function_end_line
+        ))
         self.handle_nested_structures(node)
         self.generic_visit(node)
 
@@ -97,52 +137,59 @@ class Analyzer(ast.NodeVisitor):
             if isinstance(target, ast.Name):
                 value_source = ast.get_source_segment(self.source_code, node.value)
                 comments = self.get_related_comments(node)
-                self.symbols.append({
-                    'type': 'variable',
-                    'name': target.id,
-                    'leading_comments': comments,
-                    'value': value_source,
-                    'line': node.lineno - 1,
-                    'col_offset': target.col_offset,
-                    'end_col_offset': target.col_offset + len(target.id)
-                })
+                self.symbols.append(self._create_symbol_dict(
+                    type='variable',
+                    name=target.id,
+                    comments=comments,
+                    line=node.lineno - 1,
+                    col_offset=target.col_offset,
+                    end_col_offset=target.col_offset + len(target.id),
+                    is_reserved=False,
+                    value=value_source
+                ))
         self.generic_visit(node)
 
     def visit_Dict(self, node):
         comments = self.get_related_comments(node)
-        self.symbols.append({
-            'type': 'dictionary',
-            'value': ast.get_source_segment(self.source_code, node),
-            'line': node.lineno - 1,
-            'col_offset': node.col_offset,
-            'end_col_offset': node.end_col_offset if hasattr(node, 'end_col_offset') else None,
-            'leading_comments': comments
-        })
+        self.symbols.append(self._create_symbol_dict(
+            type='dictionary',
+            name=None,
+            comments=comments,
+            line=node.lineno - 1,
+            col_offset=node.col_offset,
+            end_col_offset=node.end_col_offset if hasattr(node, 'end_col_offset') else None,
+            is_reserved=False,
+            value=ast.get_source_segment(self.source_code, node)
+        ))
         self.generic_visit(node)
 
     def visit_List(self, node):
         comments = self.get_related_comments(node)
-        self.symbols.append({
-            'type': 'list',
-            'value': ast.get_source_segment(self.source_code, node),
-            'line': node.lineno - 1,
-            'col_offset': node.col_offset,
-            'end_col_offset': node.end_col_offset if hasattr(node, 'end_col_offset') else None,
-            'leading_comments': comments
-        })
+        self.symbols.append(self._create_symbol_dict(
+            type='list',
+            name=None,
+            comments=comments,
+            line=node.lineno - 1,
+            col_offset=node.col_offset,
+            end_col_offset=node.end_col_offset if hasattr(node, 'end_col_offset') else None,
+            is_reserved=False,
+            value=ast.get_source_segment(self.source_code, node)
+        ))
         self.generic_visit(node)
 
     def visit_Return(self, node):
         comments = self.get_related_comments(node)
         if comments:
-            self.symbols.append({
-                'type': 'return',
-                'value': ast.get_source_segment(self.source_code, node.value) if node.value else None,
-                'line': node.lineno - 1,
-                'col_offset': node.col_offset if node.value else None,
-                'end_col_offset': node.col_offset + len(ast.get_source_segment(self.source_code, node.value)) if node.value else None,
-                'leading_comments': comments
-            })
+            self.symbols.append(self._create_symbol_dict(
+                type='return',
+                name=None,
+                comments=comments,
+                line=node.lineno - 1,
+                col_offset=node.col_offset if node.value else None,
+                end_col_offset=node.col_offset + len(ast.get_source_segment(self.source_code, node.value)) if node.value else None,
+                is_reserved=False,
+                value=ast.get_source_segment(self.source_code, node.value) if node.value else None
+            ))
         self.generic_visit(node)
 
     def handle_nested_structures(self, node):
@@ -157,15 +204,16 @@ class Analyzer(ast.NodeVisitor):
         for target in node.targets:
             if isinstance(target, ast.Name):
                 value_source = ast.get_source_segment(self.source_code, node.value)
-                self.symbols.append({
-                    'type': 'assignment',
-                    'name': target.id,
-                    'leading_comments': comments,
-                    'value': value_source,
-                    'line': node.lineno - 1,
-                    'col_offset': target.col_offset,
-                    'end_col_offset': target.col_offset + len(target.id)
-                })
+                self.symbols.append(self._create_symbol_dict(
+                    type='assignment',
+                    name=target.id,
+                    comments=comments,
+                    line=node.lineno - 1,
+                    col_offset=target.col_offset,
+                    end_col_offset=target.col_offset + len(target.id),
+                    is_reserved=False,
+                    value=value_source
+                ))
 
     def parse_code(self):
         self.get_comments()

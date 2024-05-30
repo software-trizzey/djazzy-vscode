@@ -1,11 +1,11 @@
 # When In Rome, Code as The Romans Do
 
 
-## See It In Action
+## Handle Style Issues In Real-time
 
 ![Quick Fix Suggestions](https://raw.githubusercontent.com/software-trizzey/images/main/assets/images/quick-fix-demo.gif)
 
-*Watch as When In Rome highlights coding convention violations and offers immediate, actionable recommendations for fixing them, streamlining your coding process.*
+*When In Rome highlights coding convention violations and offers immediate, actionable recommendations for fixing them, streamlining your coding process.*
 
 ## What's this thing do?
 

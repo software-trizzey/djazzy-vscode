@@ -512,7 +512,6 @@ export abstract class LanguageProvider {
 		message = `${message} Note: align the suggestion with ${this.languageId} naming conventions (e.g., snake_case, camelCase, PascalCase). Here is the function body for context:\n\n${functionBody}\n\nConsider the following surrounding code when generating your suggestion:\n\n${surroundingCode}`;
 
 		const { expressiveNames: { functions } } = this.getConventions();
-		console.log("Function examples: ", functions.examples);
 		if (functions.examples.length === 0) {
             return message;
         }

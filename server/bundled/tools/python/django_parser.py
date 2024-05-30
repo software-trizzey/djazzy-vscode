@@ -9,6 +9,24 @@ DJANGO_COMPONENTS = {
     'testcase': ['TestCase', 'BaseTestCase']
 }
 
+DJANGO_IGNORE_FUNCTIONS = {
+    "save": True,
+    "delete": True,
+    "__str__": True,
+    "clean": True,
+    "get_absolute_url": True,
+    "create": True,
+    "update": True,
+    "validate": True,
+    "get_queryset": True,
+    "get": True,
+    "post": True,
+    "put": True,
+    "get_context_data": True,
+    "validate_<field_name>": True,
+    "delete": True,
+}
+
 class DjangoAnalyzer(Analyzer):
     """
     Custom AST Analyzer for Django files.
@@ -39,8 +57,9 @@ class DjangoAnalyzer(Analyzer):
         """
         if self.current_class_type:
             comments = self.get_related_comments(node)
+            is_reserved = DJANGO_IGNORE_FUNCTIONS.get(node.name, False) or self.is_python_reserved(node.name)
             self.symbols.append(self._create_symbol_dict(
-                f'{self.current_class_type}_method', node.name, comments, node.lineno - 1, node.col_offset
+                f'{self.current_class_type}_method', node.name, comments, node.lineno - 1, node.col_offset, is_reserved
             ))
             self.handle_nested_structures(node)
         else:
@@ -88,7 +107,7 @@ class DjangoAnalyzer(Analyzer):
                 return f'django_{component}'
         return None
 
-    def _create_symbol_dict(self, type, name, comments, line, col_offset, value=None):
+    def _create_symbol_dict(self, type, name, comments, line, col_offset, is_reserved, value=None):
         """
         Creates a dictionary representation of a symbol.
         """
@@ -98,7 +117,8 @@ class DjangoAnalyzer(Analyzer):
             'leading_comments': comments,
             'line': line,
             'col_offset': col_offset,
-            'end_col_offset': col_offset + len(name)
+            'end_col_offset': col_offset + len(name),
+            'is_reserved': is_reserved
         }
         if value:
             symbol['value'] = value

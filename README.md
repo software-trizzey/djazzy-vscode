@@ -1,12 +1,15 @@
-# When In Rome VSCode Extension
+# When In Rome, Code as The Romans Do
 
-When In Rome is an AI-driven code stylist that helps teams enforce their coding conventions, reducing review cycles and improving code quality. Our tool ensures that the code adheres to team-defined conventions before submission, saving everyone valuable time.
 
 ## See It In Action
 
 ![Quick Fix Suggestions](https://raw.githubusercontent.com/software-trizzey/images/main/assets/images/quick-fix-demo.gif)
 
 *Watch as When In Rome highlights coding convention violations and offers immediate, actionable recommendations for fixing them, streamlining your coding process.*
+
+## What's this thing do?
+
+When In Rome is a code stylist that helps teams enforce their coding conventions, reducing review cycles and improving code quality. Our tool ensures that the code adheres to team-defined conventions before submission, saving everyone valuable time.
 
 ## Features ✨
 

@@ -1,8 +1,12 @@
 import ast
+import keyword
+import builtins
 import json
 import sys
 import tokenize
 from io import StringIO
+
+
 
 class Analyzer(ast.NodeVisitor):
     def __init__(self, source_code):
@@ -10,6 +14,12 @@ class Analyzer(ast.NodeVisitor):
         self.symbols = []
         self.comments = []
         self.pending_comments = []
+
+    def is_python_reserved(self, name: str) -> bool:
+        """
+        Check if the given name is a Python reserved keyword or a built-in function/method.
+        """
+        return keyword.iskeyword(name) or hasattr(builtins, name)
 
     def get_comments(self):
         tokens = tokenize.generate_tokens(StringIO(self.source_code).readline)
@@ -53,10 +63,12 @@ class Analyzer(ast.NodeVisitor):
         col_offset = node.col_offset
         function_start_line = node.lineno
         function_end_line = node.lineno
+        is_reserved = False
         if isinstance(node, ast.FunctionDef):
             col_offset += len('def ')
             function_start_line = node.body[0].lineno
             function_end_line = node.body[-1].end_lineno if hasattr(node.body[-1], 'end_lineno') else node.body[-1].lineno
+            is_reserved = self.is_python_reserved(node.name)
         elif isinstance(node, ast.ClassDef):
             col_offset += len('class ')
         self.symbols.append({
@@ -69,6 +81,7 @@ class Analyzer(ast.NodeVisitor):
             'body': ast.get_source_segment(self.source_code, node) if isinstance(node, ast.FunctionDef) else None,
             'function_start_line': function_start_line,
             'function_end_line': function_end_line,
+            'is_reserved': is_reserved
         })
         self.handle_nested_structures(node)
         self.generic_visit(node)

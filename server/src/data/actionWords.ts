@@ -182,6 +182,7 @@ export const actionWordsDictionary: { [key: string]: string } = {
 	optimize: "optimize",
 	organize: "organize",
 	package: "package",
+	perform: "perform",
 	preserve: "preserve",
 	prevent: "prevent",
 	provide: "provide",

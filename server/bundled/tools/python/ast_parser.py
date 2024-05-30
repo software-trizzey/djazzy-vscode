@@ -119,6 +119,7 @@ class Analyzer(ast.NodeVisitor):
         function_end_line = node.lineno
         is_reserved = False
         body = None
+        value = None
 
         if isinstance(node, ast.FunctionDef):
             col_offset += len('def ')
@@ -132,6 +133,7 @@ class Analyzer(ast.NodeVisitor):
             targets = [target.id for target in node.targets if isinstance(target, ast.Name)]
             if targets:
                 name = targets[0]
+            value = ast.get_source_segment(self.source_code, node.value)
 
         self.symbols.append(self._create_symbol_dict(
             type=node.__class__.__name__.lower(),
@@ -143,7 +145,8 @@ class Analyzer(ast.NodeVisitor):
             is_reserved=is_reserved,
             body=body,
             function_start_line=function_start_line,
-            function_end_line=function_end_line
+            function_end_line=function_end_line,
+            value=value
         ))
         self.handle_nested_structures(node)
         self.generic_visit(node)

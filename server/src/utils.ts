@@ -1,3 +1,6 @@
+import * as fs from 'fs';
+import * as path from 'path';
+
 import { Position, Range, RequestType } from "vscode-languageserver";
 import { Connection } from "vscode-languageserver/node";
 
@@ -304,3 +307,73 @@ export function getWordRangeAt(document: TextDocument, position: Position) {
 	}
 	return Range.create(document.positionAt(start), document.positionAt(end));
 }
+
+const getPossibleTestPaths = (sourceUri: string): string[] => {
+    const parsedPath = path.parse(sourceUri);
+    let testPaths: string[] = [];
+
+    switch (parsedPath.ext) {
+        case '.js':
+        case '.ts':
+            testPaths = getJavaScriptTestPaths(parsedPath);
+            break;
+        case '.py':
+            testPaths = getPythonTestPaths(parsedPath);
+            break;
+    }
+    
+    return testPaths;
+};
+
+const getJavaScriptTestPaths = (parsedPath: path.ParsedPath) => {
+    const testDirs = [
+        parsedPath.dir,
+        path.join(parsedPath.dir, '__tests__'),
+        parsedPath.dir.replace(/(\/api\/|\/views\/)/, '/tests$1')
+    ];
+    const testNames = [
+        `${parsedPath.name}.test${parsedPath.ext}`,
+        `${parsedPath.name}.spec${parsedPath.ext}`
+    ];
+    
+    const testPaths = [];
+    for (const testDir of testDirs) {
+        for (const testName of testNames) {
+            testPaths.push(path.join(testDir, testName));
+        }
+    }
+    return testPaths;
+};
+
+const getPythonTestPaths = (parsedPath: path.ParsedPath) => {
+    const testDirs = [
+        parsedPath.dir,
+        path.join(parsedPath.dir, 'tests'),
+        parsedPath.dir.replace(/(\/api\/|\/views\/)/, '/tests$1')
+    ];
+    const testNames = [
+        `test_${parsedPath.name}${parsedPath.ext}`
+    ];
+    
+    const testPaths = [];
+    for (const testDir of testDirs) {
+        for (const testName of testNames) {
+            testPaths.push(path.join(testDir, testName));
+        }
+    }
+    return testPaths;
+};
+
+export const checkForTestFile = async (uri: string): Promise<boolean> => {
+    const testPaths = getPossibleTestPaths(uri);
+    for (const testPath of testPaths) {
+        try {
+            await fs.promises.access(testPath, fs.constants.F_OK);
+            return true;
+        } catch {
+			console.log(`Test file not found: ${testPath}`);
+			continue;
+        }
+    }
+    return false;
+};

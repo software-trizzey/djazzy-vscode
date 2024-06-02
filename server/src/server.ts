@@ -35,7 +35,7 @@ import {
 	incrementSettingsVersion,
 	setWorkspaceRoot,
 } from "./settings";
-import { debounce, getWordRangeAt } from "./utils";
+import { checkForTestFile, debounce, getWordRangeAt } from "./utils";
 
 import COMMANDS, { COMMANDS_LIST } from "./constants/commands";
 import { rollbar } from "./common/logs";
@@ -293,13 +293,9 @@ const debouncedValidateTextDocument = debounce(
 	2000
 );
 
-connection.onDidChangeWatchedFiles((params: DidChangeWatchedFilesParams) => {
-	params.changes.forEach((change) => {
-		if (change.uri.includes("/api/") || change.uri.includes("/views/")) {
-			// TODO: ensure files have corresponding tests
-			console.log("Checking for tests");
-		}
-	});
+connection.onRequest(COMMANDS.CHECK_TESTS_EXISTS, async (relativePath: string) => {
+    const testExists = await checkForTestFile(relativePath);
+    return { testExists };
 });
 
 connection.onCodeAction(async (params) => {

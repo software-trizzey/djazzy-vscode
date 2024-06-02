@@ -349,10 +349,17 @@ const getPythonTestPaths = (parsedPath: path.ParsedPath) => {
     const testDirs = [
         parsedPath.dir,
         path.join(parsedPath.dir, 'tests'),
-        parsedPath.dir.replace(/(\/api\/|\/views\/)/, '/tests/')
+        path.join(parsedPath.dir, '..', 'tests', parsedPath.dir.replace(/^.*\/(\w+)$/, '$1')),
+        path.join(parsedPath.dir, '..', 'tests', 'views'),
+        path.join(parsedPath.dir, '..', 'tests', 'api'),
+        path.join(parsedPath.dir, '..', 'tests', path.basename(parsedPath.dir))
     ];
+
     const testNames = [
-        `test_${parsedPath.name}${parsedPath.ext}`
+        `test_${parsedPath.name}${parsedPath.ext}`,
+        `test_${parsedPath.name}s${parsedPath.ext}`,
+        `${parsedPath.name}_tests${parsedPath.ext}`,
+        `${parsedPath.name}s_tests${parsedPath.ext}`
     ];
     
     const testPaths = [];

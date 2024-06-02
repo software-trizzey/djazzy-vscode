@@ -371,7 +371,6 @@ export const checkForTestFile = async (uri: string): Promise<boolean> => {
             await fs.promises.access(testPath, fs.constants.F_OK);
             return true;
         } catch {
-			console.log(`Test file not found: ${testPath}`);
 			continue;
         }
     }

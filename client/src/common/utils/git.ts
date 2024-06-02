@@ -51,12 +51,12 @@ export async function checkAndNotify(uri: vscode.Uri, client: LanguageClient) {
         const response = await client.sendRequest(COMMANDS.CHECK_TESTS_EXISTS, relativePath) as {testExists: boolean};
         if (!response.testExists) {
             vscode.window.showWarningMessage(
-                `Test file for ${relativePath} does not exist. Ensure you've tested the changes.`,
+                `Test file for "${relativePath}" does not exist. Please add a test file before committing changes.`,
                 "Ok"
             );
         } else {
             vscode.window.showWarningMessage(
-                `Ensure you've tested the changes in ${relativePath}`,
+                `Ensure you've tested the changes in "${relativePath}"`,
                 "Ok"
             );
         }

@@ -83,8 +83,8 @@ export async function activate(context: vscode.ExtensionContext) {
 		const watcher = vscode.workspace.createFileSystemWatcher(
 			new vscode.RelativePattern(uri, "**/*")
 		);
-		watcher.onDidChange(checkAndNotify);
-		watcher.onDidCreate(checkAndNotify);
+		watcher.onDidChange(() => checkAndNotify(uri, client));
+		watcher.onDidCreate(() => checkAndNotify(uri, client));
 		context.subscriptions.push(watcher);
 		return watcher;
 	});

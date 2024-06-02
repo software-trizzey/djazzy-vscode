@@ -11,7 +11,8 @@ export const COMMANDS = {
 	CREATE_REPOSITORY: `${EXTENSION_ID}.createRepository`,
 	RENAME_SYMBOL: `${EXTENSION_ID}.renameSymbol`,
 	PROVIDE_RENAME_SUGGESTIONS: `${EXTENSION_ID}.provideRenameSuggestions`,
-	APPLY_RENAME_SYMBOL: `${EXTENSION_ID}.applyRenameSymbol`
+	APPLY_RENAME_SYMBOL: `${EXTENSION_ID}.applyRenameSymbol`,
+	CHECK_TESTS_EXISTS: `${EXTENSION_ID}.checkTestExists`
 };
 
 export const AUTH_SERVER_URL = "https://rome-django-auth.onrender.com";

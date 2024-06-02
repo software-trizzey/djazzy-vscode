@@ -5,6 +5,8 @@ import {
 	getNotificationInterval,
 	updateLastNotifiedTime,
 } from "./notifications";
+import { LanguageClient } from 'vscode-languageclient/node';
+import { COMMANDS } from '../constants';
 
 async function initializeGitRepository() {
 	const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -31,12 +33,13 @@ async function initializeGitRepository() {
 	return repository;
 }
 
-export async function checkAndNotify(uri: vscode.Uri) {
+export async function checkAndNotify(uri: vscode.Uri, client: LanguageClient) {
 	const lastNotified = getLastNotifiedTime(uri);
 	const currentTime = new Date().getTime();
 	const notificationInterval = getNotificationInterval();
 
 	if (currentTime - lastNotified <= notificationInterval) {
+		console.log("Not enough time has passed since last notification.");
 		return;
 	}
 
@@ -45,12 +48,20 @@ export async function checkAndNotify(uri: vscode.Uri) {
 	const diff = await repository.diff(["HEAD", relativePath]);
 
 	if (diff.length > 0) {
-		vscode.window.showWarningMessage(
-			`Ensure you've tested the changes in ${relativePath}`,
-			"Ok"
-		);
-		updateLastNotifiedTime(uri, currentTime);
-	}
+        const response = await client.sendRequest(COMMANDS.CHECK_TESTS_EXISTS, relativePath) as {testExists: boolean};
+        if (!response.testExists) {
+            vscode.window.showWarningMessage(
+                `Test file for ${relativePath} does not exist. Ensure you've tested the changes.`,
+                "Ok"
+            );
+        } else {
+            vscode.window.showWarningMessage(
+                `Ensure you've tested the changes in ${relativePath}`,
+                "Ok"
+            );
+        }
+        updateLastNotifiedTime(uri, currentTime);
+    }
 }
 
 export async function createGitRepository(): Promise<SimpleGit> {

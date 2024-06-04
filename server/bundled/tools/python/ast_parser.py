@@ -238,8 +238,12 @@ class Analyzer(ast.NodeVisitor):
 
     def parse_code(self):
         self.get_comments()
-        tree = ast.parse(self.source_code)
-        self.visit(tree)
+        try:
+            tree = ast.parse(self.source_code)
+            self.visit(tree)
+        except SyntaxError as e:
+            # @rome-ignore: we're not worried about syntax errors triggered by the user's code
+            pass
         return json.dumps(self.symbols)
 
 def main():

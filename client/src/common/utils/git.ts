@@ -46,8 +46,11 @@ export async function checkAndNotify(uri: vscode.Uri, client: LanguageClient) {
 	const relativePath = vscode.workspace.asRelativePath(uri);
 	const repository = await initializeGitRepository();
 	const diff = await repository.diff(["HEAD", relativePath]);
+	
+	const untrackedFiles = await repository.raw(['ls-files', '--others', '--exclude-standard']);
+	const isNewFile = untrackedFiles.includes(relativePath);
 
-	if (diff.length > 0) {
+	if (diff.length > 0 || isNewFile) {
         const response = await client.sendRequest(COMMANDS.CHECK_TESTS_EXISTS, relativePath) as {testExists: boolean};
         if (!response.testExists) {
             vscode.window.showWarningMessage(

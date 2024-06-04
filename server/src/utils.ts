@@ -123,19 +123,16 @@ export async function validateJavaScriptAndTypeScriptFunctionName(
         expressiveNames: { functions },
     } = languageConventions;
 
-    if (functions.avoidShortNames && functionName.length <= 3) {
+	const functionNameWithoutUnderscorePrefix = functionName.startsWith("_") ? functionName.substring(1) : functionName;
+
+    if (functions.avoidShortNames && functionNameWithoutUnderscorePrefix.length <= 3) {
         return {
             violates: true,
             reason: RULE_MESSAGES.FUNCTION_TOO_SHORT.replace("{name}", functionName),
         };
     }
 
-    const actionWord = Object.keys(actionWordsDictionary).find((word) => {
-        const functionNameWithoutUnderscorePrefix = functionName.startsWith("_")
-            ? functionName.substring(1)
-            : functionName;
-        return functionNameWithoutUnderscorePrefix.startsWith(word);
-    });
+    const actionWord = Object.keys(actionWordsDictionary).find((word) => functionNameWithoutUnderscorePrefix.startsWith(word));
 
     if (!actionWord) {
         return {
@@ -144,7 +141,7 @@ export async function validateJavaScriptAndTypeScriptFunctionName(
         };
     }
 
-    const nameWithoutActionWord = functionName.substring(actionWord.length);
+    const nameWithoutActionWord = functionNameWithoutUnderscorePrefix.substring(actionWord.length);
     const words = await maxMatch(nameWithoutActionWord);
 
     if (words.length === 0) {
@@ -177,19 +174,18 @@ export async function validatePythonFunctionName(
         return { violates: false, reason: "" };
     }
 
-    if (functions.avoidShortNames && functionName.length < 3) {
+	const functionNameWithoutUnderscorePrefix = functionName.startsWith("_") ? functionName.substring(1) : functionName;
+
+    if (functions.avoidShortNames && functionNameWithoutUnderscorePrefix.length < 3) {
         return {
             violates: true,
             reason: RULE_MESSAGES.FUNCTION_TOO_SHORT.replace("{name}", functionName),
         };
     }
 
-    const actionWord = Object.keys(actionWordsDictionary).find((word) => {
-        const functionNameWithoutUnderscorePrefix = functionName.startsWith("_")
-            ? functionName.substring(1)
-            : functionName;
-        return functionNameWithoutUnderscorePrefix.startsWith(word);
-    });
+    const actionWord = Object.keys(actionWordsDictionary).find((word) => 
+        functionNameWithoutUnderscorePrefix.startsWith(word)
+    );
 
     if (!actionWord) {
         return {
@@ -198,7 +194,7 @@ export async function validatePythonFunctionName(
         };
     }
 
-    const nameWithoutActionWord = functionName.substring(actionWord.length);
+    const nameWithoutActionWord = functionNameWithoutUnderscorePrefix.substring(actionWord.length);
     const words = await maxMatch(nameWithoutActionWord);
 
     if (words.length === 0) {

@@ -343,8 +343,10 @@ export abstract class LanguageProvider {
 		} = this.getConventions();
 	
 		if (!variables.isEnabled) return { violates: false, reason: "" };
+
+		const nameWithoutUnderscorePrefix = variableName.startsWith("_") ? variableName.substring(1) : variableName;
 	
-		if (variables.avoidShortNames && variableName.length < 3) {
+		if (variables.avoidShortNames && nameWithoutUnderscorePrefix.length < 3) {
 			return {
 				violates: true,
 				reason: RULE_MESSAGES.VARIABLE_TOO_SHORT.replace("{name}", variableName),
@@ -354,12 +356,12 @@ export abstract class LanguageProvider {
 		const isExplicitBoolean =
 			typeof variableValue === "boolean" ||
 			/^(true|false)$/i.test(variableValue);
-		if (boolean && (isLikelyBoolean(variableName) || isExplicitBoolean)) {
+		if (boolean && (isLikelyBoolean(nameWithoutUnderscorePrefix) || isExplicitBoolean)) {
 			const prefixes = this.settings.general.prefixes;
 			const { positiveNaming, usePrefix } = boolean;
 			if (
 				usePrefix &&
-				!prefixes.some((prefix) => variableName.startsWith(prefix))
+				!prefixes.some((prefix) => nameWithoutUnderscorePrefix.startsWith(prefix))
 			) {
 				const prefixExamples = prefixes.join(", ");
 				return {
@@ -367,7 +369,7 @@ export abstract class LanguageProvider {
 					reason: RULE_MESSAGES.BOOLEAN_NO_PREFIX.replace("{name}", variableName),
 				};
 			}
-			if (positiveNaming && hasNegativePattern(variableName)) {
+			if (positiveNaming && hasNegativePattern(nameWithoutUnderscorePrefix)) {
 				return {
 					violates: true,
 					reason: RULE_MESSAGES.BOOLEAN_NEGATIVE_PATTERN.replace("{name}", variableName),

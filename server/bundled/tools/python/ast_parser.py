@@ -241,8 +241,11 @@ class Analyzer(ast.NodeVisitor):
         try:
             tree = ast.parse(self.source_code)
             self.visit(tree)
-        except SyntaxError as e:
+        except (SyntaxError, IndentationError) as e:
             # @rome-ignore: we're not worried about syntax errors triggered by the user's code
+            pass
+        except Exception as e:
+            # @rome-ignore: we're not worried about runtime errors triggered by the user's code
             pass
         return json.dumps(self.symbols)
 

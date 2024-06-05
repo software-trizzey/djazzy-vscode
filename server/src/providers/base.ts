@@ -281,13 +281,17 @@ export abstract class LanguageProvider {
 		this.diagnostics.delete(documentUri);
 	}
 
-	isDiagnosticsOutdated(document: TextDocument): boolean {
+	public isDiagnosticsOutdated(document: TextDocument): boolean {
 		const cacheEntry = this.diagnostics.get(document.uri);
 		return (
 			!cacheEntry ||
 			cacheEntry.settingsVersion !== settingsVersion ||
 			cacheEntry.documentVersion !== document.version
 		);
+	}
+
+	public clearDiagnostics(uri: string) {
+		this.connection.sendDiagnostics({ uri, diagnostics: [] });
 	}
 
 	public handleError(error: Error) {

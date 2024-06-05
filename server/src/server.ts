@@ -274,13 +274,17 @@ async function validateTextDocument(
 	let diagnostics = await provider.getDiagnostic(
 		textDocument.uri,
 		textDocument.version
-	);
+	) || [];
 
 	console.info(`Validating file: ${textDocument.uri}`, {
 		context: "server#validateTextDocument",
 	});
 
-	if (!diagnostics || provider.isDiagnosticsOutdated(textDocument)) {
+	const diagnosticsOutdated = !diagnostics || provider.isDiagnosticsOutdated(textDocument);
+	if (diagnosticsOutdated) {
+		provider.deleteDiagnostic(textDocument.uri);
+        provider.clearDiagnostics(textDocument.uri);
+
 		diagnostics = await provider.provideDiagnostics(textDocument);
 	}
 	return diagnostics;

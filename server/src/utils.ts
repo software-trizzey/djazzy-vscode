@@ -170,7 +170,7 @@ export async function validatePythonFunctionName(
         expressiveNames: { functions },
     } = languageConventions;
 
-    if (functionName === "__init__" || functionName === "__main__") {
+    if (functionName === "__init__" || functionName === "__main__" || functionName === "main") {
         return { violates: false, reason: "" };
     }
 

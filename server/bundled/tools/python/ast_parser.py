@@ -237,8 +237,8 @@ class Analyzer(ast.NodeVisitor):
                 ))
 
     def parse_code(self):
-        self.get_comments()
         try:
+            self.get_comments()
             tree = ast.parse(self.source_code)
             self.visit(tree)
         except (SyntaxError, IndentationError) as e:

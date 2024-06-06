@@ -9,4 +9,9 @@ export const rollbar = new Rollbar({
 
 const logger = process.env.NODE_ENV === "development" ? console : rollbar;
 
+
+export function trackUserInterestInCustomRules(user_id: string) {
+	logger.info("User is interested in custom rules", { user_id });
+}
+
 export default logger;

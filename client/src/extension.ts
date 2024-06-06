@@ -19,7 +19,7 @@ import {
 	getChangedLines,
 	checkAndNotify,
 } from "./common/utils/git";
-import { renameSymbolWithSuggestions } from './common/utils/rename';
+import { registerCommands } from './common/commands';
 
 async function initializeAuthentication(
 	credentials: Credentials,
@@ -41,22 +41,6 @@ async function initializeAuthentication(
 let client: LanguageClient;
 
 export async function activate(context: vscode.ExtensionContext) {
-	const signInWithGitHubCommand = vscode.commands.registerCommand(
-		COMMANDS.SIGN_IN,
-		() => signInWithGitHub(credentials, context, deactivate)
-	);
-	context.subscriptions.push(signInWithGitHubCommand);
-	const signOutCommand = vscode.commands.registerCommand(
-		COMMANDS.SIGN_OUT,
-		() => signOutUser(context)
-	);
-	context.subscriptions.push(signOutCommand);
-	const renameSymbolCommand = vscode.commands.registerCommand(
-		COMMANDS.RENAME_SYMBOL,
-		() => renameSymbolWithSuggestions(client)
-	);
-	context.subscriptions.push(renameSymbolCommand);
-
 	const credentials = new Credentials();
 	await credentials.initialize(context);
 
@@ -116,6 +100,8 @@ export async function activate(context: vscode.ExtensionContext) {
 		serverOptions,
 		clientOptions
 	);
+
+	registerCommands(context, client, deactivate);
 
 	const authenticated = await initializeAuthentication(credentials, context);
 	if (authenticated) {

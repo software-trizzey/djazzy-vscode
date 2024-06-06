@@ -142,7 +142,7 @@ export async function validateJavaScriptAndTypeScriptFunctionName(
     }
 
     const nameWithoutActionWord = functionNameWithoutUnderscorePrefix.substring(actionWord.length);
-    const words = await maxMatch(nameWithoutActionWord);
+    const words = await findMatchingWords(nameWithoutActionWord);
 
     if (words.length === 0) {
         return {
@@ -195,7 +195,7 @@ export async function validatePythonFunctionName(
     }
 
     const nameWithoutActionWord = functionNameWithoutUnderscorePrefix.substring(actionWord.length);
-    const words = await maxMatch(nameWithoutActionWord);
+    const words = await findMatchingWords(nameWithoutActionWord);
 
     if (words.length === 0) {
         return {
@@ -285,7 +285,7 @@ async function validateWords(tokens: string[]) {
 	return validWords;
 }
 
-async function maxMatch(name: string): Promise<string[]> {
+async function findMatchingWords(name: string): Promise<string[]> {
 	const tokens = splitNameIntoWords(name);
 	return await validateWords(tokens);
 }

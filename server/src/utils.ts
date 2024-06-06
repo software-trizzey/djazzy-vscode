@@ -176,7 +176,7 @@ export async function validatePythonFunctionName(
 
 	const functionNameWithoutUnderscorePrefix = functionName.startsWith("_") ? functionName.substring(1) : functionName;
 
-    if (functions.avoidShortNames && functionNameWithoutUnderscorePrefix.length < 3) {
+    if (functions.avoidShortNames && functionNameWithoutUnderscorePrefix.length <= 3) {
         return {
             violates: true,
             reason: RULE_MESSAGES.FUNCTION_TOO_SHORT.replace("{name}", functionName),
@@ -268,6 +268,7 @@ function splitNameIntoWords(name: string): string[] {
 	return tokens;
 }
 
+// TODO: return list of objects where the word is marked as valid or not. This will help in highlighting invalid words in the editor. and we can also show suggestions for valid words.
 async function validateWords(tokens: string[]) {
 	const validWords = [];
 	for (const token of tokens) {

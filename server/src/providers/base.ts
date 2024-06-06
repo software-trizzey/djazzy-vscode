@@ -506,10 +506,10 @@ export abstract class LanguageProvider {
 		message = `${message} Note: align the suggestion with ${this.languageId} naming conventions (e.g., snake_case, camelCase). Here is the variable usage for context:\n\n${variableUsage}`;
 
 		const { expressiveNames: { variables } } = this.getConventions();
-		console.log("Variable examples: ", variables.examples);
         if (variables.examples.length === 0) {
 			return message;
 			}
+		console.log("Variable examples: ", variables.examples);
         const variableExamples = variables.examples.join(', ');
 
 		message += `\n\nHere are some examples of variable naming conventions used in ${this.languageId} projects:\nVariables: ${variableExamples}\n\nConsider these conventions when generating your suggestion.`;
@@ -525,6 +525,7 @@ export abstract class LanguageProvider {
 		if (functions.examples.length === 0) {
             return message;
         }
+		console.log("Function examples: ", functions.examples);
 		const functionExamples = functions.examples.join(', ');
 
 		message += `\n\nFor additional context, here are examples of naming conventions used in this project:\n\n${functionExamples}`;

@@ -52,6 +52,10 @@
 			{
 				"command": "whenInRome.renameSymbol",
 				"title": "Rename Symbol (When In Rome)"
+			},
+			{
+				"command": "whenInRome.openSettings",
+				"title": "When In Rome: Open Settings"
 			}
 		],
 		"walkthroughs": [
@@ -77,9 +81,7 @@
 					"image": "images/signIn.png",
 					"altText": "Sign In"
 					},
-					"completionEvents": [
-					"onCommand:whenInRome.signIn"
-					]
+					"completionEvents": ["onCommand:whenInRome.signIn"]
 				},
 				{
 					"id": "whenInRome.namingConvention",
@@ -100,17 +102,14 @@
 					}
 				},
 				{
-					"id": "whenInRome.addCustomRule",
-					"title": "Add Custom Rule",
-					"description": "Go to the extension settings and click the 'Add Custom Rule' button to express interest in custom rules. This feature is coming soon!",
+					"id": "whenInRome.setupRules",
+					"title": "Setup Naming and Testing Rules",
+					"description": "Customize naming conventions and test requirements for your workspace.\n[Customize Rules](command:whenInRome.openSettings)\n\n[Import Conventions](command:whenInRome.addCustomRule)",
 					"media": {
-					"image": "images/customRule.png",
-					"altText": "Custom Rule"
-					},
-					"completionEvents": [
-					"onCommand:whenInRome.addCustomRule"
-					]
-				}
+					  "image": "images/walkthrough/setup-rules.png",
+					  "altText": "Setup Rules"
+					}
+				  }
 				]
 			}
 		],

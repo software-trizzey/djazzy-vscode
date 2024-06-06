@@ -1,3 +1,5 @@
+
+```markdown
 # Changelog
 
 All notable changes to this project will be documented in this file.
@@ -21,6 +23,21 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
+## [Version 0.0.25] - 2024-06-05
+
+### Changed
+
+- [Update] Improved handling of incomplete user-typed code to avoid crashes in the parser.
+
+### Fixed
+
+- [Bugfix] Resolved an issue where resolved warnings would still appear in the UI.
+- [Bugfix] Addressed caching issues that caused outdated diagnostics to persist.
+
+### Removed
+
+- [Removal] Eliminated redundant error handling in the parser to simplify codebase.
+
 ## [Version 0.0.24] - 2024-06-04
 
 ### Added
@@ -33,7 +50,6 @@ All notable changes to this project will be documented in this file.
 
 - [Update] Improved error handling in Python/Django parser to gracefully handle syntax errors.
 - [Update] Refactored `checkAndNotify` function to better handle new file changes in Git diff.
-- [Update] Enhanced rename symbol function to find references in other files.
 
 ### Fixed
 
@@ -43,3 +59,4 @@ All notable changes to this project will be documented in this file.
 ### Removed
 
 - [Removal] Removed unnecessary file path checks that were redundant.
+```

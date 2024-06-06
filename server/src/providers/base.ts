@@ -354,7 +354,7 @@ export abstract class LanguageProvider {
 
 		const nameWithoutUnderscorePrefix = variableName.startsWith("_") ? variableName.substring(1) : variableName;
 	
-		if (variables.avoidShortNames && nameWithoutUnderscorePrefix.length < 3) {
+		if (variables.avoidShortNames && nameWithoutUnderscorePrefix.length <= 3) {
 			return {
 				violates: true,
 				reason: RULE_MESSAGES.VARIABLE_TOO_SHORT.replace("{name}", variableName),

@@ -22,6 +22,17 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
+## [Version 0.0.27] - 2024-06-06
+
+### Changed
+
+- [Update] Add TODO comments for future rule improvements
+
+### Fixed
+
+- [Bugfix] Update function and variable name rule to flag names 3 characters or less.
+
+
 ## [Version 0.0.26] - 2024-06-06
 
 ### Changed

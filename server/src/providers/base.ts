@@ -28,6 +28,9 @@ import LOGGER from "../common/logs";
 
 import type { LanguageConventions } from "../languageConventions";
 import { RULE_MESSAGES } from '../constants/rules';
+import { actionWordsDictionary } from '../data';
+
+const actionWordsValues = Object.values(actionWordsDictionary);
 
 
 export interface RenameSuggestion {
@@ -524,6 +527,7 @@ export abstract class LanguageProvider {
 		const functionExamples = functions.examples.join(', ');
 
 		message += `\n\nFor additional context, here are examples of naming conventions used in this project:\n\n${functionExamples}`;
+		message += `\n\nFinally, use a verb from the approved list that best describes the function's purpose: ${actionWordsValues.join(', ')}.`;
 		return message;
     }
 

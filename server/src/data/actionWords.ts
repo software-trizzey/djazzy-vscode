@@ -211,6 +211,7 @@ export const actionWordsDictionary: { [key: string]: string } = {
 	terminate: "terminate",
 	translate: "translate",
 	transport: "transport",
+	track: "track",
 	trim: "trim",
 	undo: "undo",
 	upgrade: "upgrade",

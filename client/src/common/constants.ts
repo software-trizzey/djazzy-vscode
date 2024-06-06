@@ -1,5 +1,7 @@
-export const EXTENSION_NAME = "When In Rome";
+export const EXTENSION_NAME = "when-in-rome";
+export const EXTENSION_DISPLAY_NAME = "When In Rome";
 export const EXTENSION_ID = "whenInRome";
+export const PUBLISHER = "alchemized";
 
 export const SESSION_USER = `${EXTENSION_ID}User`;
 export const SESSION_TOKEN_KEY = `${EXTENSION_ID}UserToken`;
@@ -14,6 +16,8 @@ export const COMMANDS = {
 	APPLY_RENAME_SYMBOL: `${EXTENSION_ID}.applyRenameSymbol`,
 	CHECK_TESTS_EXISTS: `${EXTENSION_ID}.checkTestExists`,
 	ADD_CUSTOM_RULE: `${EXTENSION_ID}.addCustomRule`,
+	OPEN_SETTINGS: `${EXTENSION_ID}.openSettings`,
+	OPEN_WALKTHROUGH: `${EXTENSION_ID}.openWalkthrough`,
 };
 
 export const AUTH_SERVER_URL = "https://rome-django-auth.onrender.com";

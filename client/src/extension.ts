@@ -9,10 +9,10 @@ import {
 } from "vscode-languageclient/node";
 
 import { Credentials } from "./common/auth/github";
-import { signInWithGitHub, signOutUser } from "./common/auth/api";
+import { signInWithGitHub } from "./common/auth/api";
 import type { UserSession } from "./common/auth/github";
 
-import { EXTENSION_ID, EXTENSION_NAME, COMMANDS, SESSION_USER, SESSION_TOKEN_KEY } from "./common/constants";
+import { EXTENSION_ID, EXTENSION_DISPLAY_NAME, COMMANDS, SESSION_USER, SESSION_TOKEN_KEY } from "./common/constants";
 
 import {
 	createGitRepository,
@@ -96,7 +96,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	client = new LanguageClient(
 		EXTENSION_ID,
-		EXTENSION_NAME,
+		EXTENSION_DISPLAY_NAME,
 		serverOptions,
 		clientOptions
 	);

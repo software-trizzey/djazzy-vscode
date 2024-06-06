@@ -1,4 +1,3 @@
-
 ```markdown
 # Changelog
 
@@ -22,6 +21,17 @@ All notable changes to this project will be documented in this file.
 ### Removed
 
 - [Removal] Brief description of what was removed.
+
+## [Version 0.0.26] - 2024-06-06
+
+### Changed
+
+- [Update] Instruct LLM to use one of the approved verbs when suggesting function names.
+
+### Fixed
+
+- [Bugfix] First pass at reducing syntax-related errors in rollbar. We simply skip logging the ones we catch and log others to the server console for improved debugging.
+
 
 ## [Version 0.0.25] - 2024-06-05
 

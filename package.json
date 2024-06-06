@@ -35,6 +35,11 @@
 	},
 	"main": "./client/out/extension",
 	"contributes": {
+		"activationEvents": [
+			"onCommand:whenInRome.signIn",
+			"onCommand:whenInRome.addCustomRule",
+			"onCommand:whenInRome.openWalkthrough"
+		],
 		"commands": [
 			{
 				"command": "whenInRome.signIn",
@@ -47,7 +52,67 @@
 			{
 				"command": "whenInRome.renameSymbol",
 				"title": "Rename Symbol (When In Rome)"
-			  }
+			}
+		],
+		"walkthroughs": [
+			{
+				"id": "whenInRome.gettingStarted",
+				"title": "Getting Started with When In Rome",
+				"description": "Learn how to use the key features of When In Rome.",
+				"steps": [
+				{
+					"id": "whenInRome.installExtension",
+					"title": "Install the Extension",
+					"description": "Open VS Code, go to the Extensions view, and search for 'When In Rome'. Click 'Install' and wait for the installation to complete.",
+					"media": {
+					"image": "images/install.png",
+					"altText": "Install When In Rome"
+					}
+				},
+				{
+					"id": "whenInRome.signIn",
+					"title": "Sign In with GitHub",
+					"description": "Open command palette and type in → `When In Rome: Sign In`. Click Yes to notification and you should be signed in via your GitHub account.",
+					"media": {
+					"image": "images/signIn.png",
+					"altText": "Sign In"
+					},
+					"completionEvents": [
+					"onCommand:whenInRome.signIn"
+					]
+				},
+				{
+					"id": "whenInRome.namingConvention",
+					"title": "Naming Convention Enforcement",
+					"description": "Write a function with a poorly named variable. See how the extension highlights it and suggests a better name.",
+					"media": {
+					"image": "images/namingConvention.png",
+					"altText": "Naming Convention"
+					}
+				},
+				{
+					"id": "whenInRome.untestedCode",
+					"title": "Untested API Code Detection",
+					"description": "Introduce a new piece of business logic without a test. Notice the warning from the extension. Add a test file and see how the warning disappears.",
+					"media": {
+					"image": "images/untestedCode.png",
+					"altText": "Untested Code"
+					}
+				},
+				{
+					"id": "whenInRome.addCustomRule",
+					"title": "Add Custom Rule",
+					"description": "Go to the extension settings and click the 'Add Custom Rule' button to express interest in custom rules. This feature is coming soon!",
+					"media": {
+					"image": "images/customRule.png",
+					"altText": "Custom Rule"
+					},
+					"completionEvents": [
+					"onCommand:whenInRome.addCustomRule"
+					]
+				}
+				]
+			}
 		],
 		"menus": {
 			"editor/context": [

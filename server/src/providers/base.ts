@@ -326,9 +326,10 @@ export abstract class LanguageProvider {
 			message.includes("IndentationError") ||
 			message.includes("Unexpected token")
 		) {
-			// @rome-ignore - gracefully catch and log user generated syntax errors
-			LOGGER.debug(error);
+			// @rome-ignore we're not worried about syntax errors triggered by the user's code
+			return;
 		} else {
+			console.log(error);
 			LOGGER.error(error);
 		}
 	}

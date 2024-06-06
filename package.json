@@ -76,7 +76,7 @@
 				{
 					"id": "whenInRome.signIn",
 					"title": "Sign In with GitHub",
-					"description": "Open command palette and type in → `When In Rome: Sign In`. Click Yes to notification and you should be signed in via your GitHub account.",
+					"description": "Open command palette and type in → `When In Rome: Sign In`. Or press the button below: \n[Sign In](command:whenInRome.signIn)\nAccept the notification and you should be signed in via your GitHub account.",
 					"media": {
 					"image": "images/signIn.png",
 					"altText": "Sign In"

@@ -384,6 +384,10 @@ export abstract class LanguageProvider {
 				};
 			}
 		}
+
+
+		// TODO: add rule for determining whether the name is a valid word (e.g. "usr" is not a valid word)
+
 		return { violates: false, reason: "" };
 	}
 

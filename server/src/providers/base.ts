@@ -508,8 +508,8 @@ export abstract class LanguageProvider {
 		const { expressiveNames: { variables } } = this.getConventions();
 		console.log("Variable examples: ", variables.examples);
         if (variables.examples.length === 0) {
-            return message;
-        }
+			return message;
+			}
         const variableExamples = variables.examples.join(', ');
 
 		message += `\n\nHere are some examples of variable naming conventions used in ${this.languageId} projects:\nVariables: ${variableExamples}\n\nConsider these conventions when generating your suggestion.`;
@@ -519,6 +519,7 @@ export abstract class LanguageProvider {
 	generateFunctionMessage(message: string, functionBody: string,  document: TextDocument, diagnostic: Diagnostic) {
         const surroundingCode = this.getSurroundingCode(document, diagnostic.range);
 		message = `${message} Note: align the suggestion with ${this.languageId} naming conventions (e.g., snake_case, camelCase, PascalCase). Here is the function body for context:\n\n${functionBody}\n\nConsider the following surrounding code when generating your suggestion:\n\n${surroundingCode}`;
+		message += `\n\nEnsure the function name begins with a verb from the approved list that best describes the function's purpose: ${actionWordsValues.join(', ')}.`;
 
 		const { expressiveNames: { functions } } = this.getConventions();
 		if (functions.examples.length === 0) {
@@ -527,7 +528,6 @@ export abstract class LanguageProvider {
 		const functionExamples = functions.examples.join(', ');
 
 		message += `\n\nFor additional context, here are examples of naming conventions used in this project:\n\n${functionExamples}`;
-		message += `\n\nFinally, use a verb from the approved list that best describes the function's purpose: ${actionWordsValues.join(', ')}.`;
 		return message;
     }
 

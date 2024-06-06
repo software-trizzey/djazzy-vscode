@@ -51,7 +51,7 @@
 			},
 			{
 				"command": "whenInRome.renameSymbol",
-				"title": "Rename Symbol (When In Rome)"
+				"title": "Fix symbol name (When In Rome)"
 			},
 			{
 				"command": "whenInRome.openSettings",
@@ -69,17 +69,17 @@
 					"title": "Install the Extension",
 					"description": "Open VS Code, go to the Extensions view, and search for 'When In Rome'. Click 'Install' and wait for the installation to complete.",
 					"media": {
-					"image": "images/install.png",
+					"image": "media/install.png",
 					"altText": "Install When In Rome"
 					}
 				},
 				{
 					"id": "whenInRome.signIn",
 					"title": "Sign In with GitHub",
-					"description": "Open command palette and type in → `When In Rome: Sign In`. Or press the button below: \n[Sign In](command:whenInRome.signIn)\nAccept the notification and you should be signed in via your GitHub account.",
+					"description": "Open command palette and type in → ```When In Rome: Sign In```. Or press the button below: \n[Sign In](command:whenInRome.signIn)\nAccept the notification and you should be signed in via your GitHub account.",
 					"media": {
-					"image": "images/signIn.png",
-					"altText": "Sign In"
+						"image": "media/signIn.png",
+						"altText": "Sign In"
 					},
 					"completionEvents": ["onCommand:whenInRome.signIn"]
 				},
@@ -88,8 +88,8 @@
 					"title": "Naming Convention Enforcement",
 					"description": "Write a function with a poorly named variable. See how the extension highlights it and suggests a better name.",
 					"media": {
-					"image": "images/namingConvention.png",
-					"altText": "Naming Convention"
+						"image": "images/namingConvention.png",
+						"altText": "Naming Convention"
 					}
 				},
 				{

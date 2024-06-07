@@ -118,7 +118,7 @@
 			  {
 				"command": "whenInRome.renameSymbol",
 				"when": "editorTextFocus && !editorReadonly",
-				"group": "navigation"
+				"group": "1_modification@1"
 			  }
 			]
 		},

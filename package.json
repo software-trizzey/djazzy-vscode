@@ -69,7 +69,7 @@
 					"title": "Install the Extension",
 					"description": "Open VS Code, go to the Extensions view, and search for 'When In Rome'. Click 'Install' and wait for the installation to complete.",
 					"media": {
-					"image": "media/install.png",
+					"image": "assets/images/walkthrough/install.png",
 					"altText": "Install When In Rome"
 					}
 				},
@@ -78,7 +78,7 @@
 					"title": "Sign In with GitHub",
 					"description": "Open command palette and type in → ```When In Rome: Sign In```. Or press the button below: \n[Sign In](command:whenInRome.signIn)\nAccept the notification and you should be signed in via your GitHub account.",
 					"media": {
-						"image": "media/signIn.png",
+						"image": "assets/images/walkthrough/signIn.png",
 						"altText": "Sign In"
 					},
 					"completionEvents": ["onCommand:whenInRome.signIn"]
@@ -106,7 +106,7 @@
 					"title": "Setup Naming and Testing Rules",
 					"description": "Customize naming conventions and test requirements for your workspace.\n[Customize Rules](command:whenInRome.openSettings)\n\n[Import Conventions](command:whenInRome.addCustomRule)",
 					"media": {
-					  "image": "assets/images/onboarding/rome-settings.png",
+					  "image": "assets/images/walkthrough/settings.png",
 					  "altText": "Setup Rules"
 					}
 				  }

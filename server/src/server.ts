@@ -432,7 +432,7 @@ connection.onRequest(COMMANDS.PROVIDE_RENAME_SUGGESTIONS, async (params) => {
 	const suggestions = await provider.generateNameSuggestions(document, diagnostic);
 	return suggestions.map(suggestion => ({
 		label: suggestion.suggestedName,
-		description: suggestion.justification
+		detail: suggestion.justification
 	}));
 });
 

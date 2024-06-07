@@ -85,20 +85,20 @@
 				},
 				{
 					"id": "whenInRome.namingConvention",
-					"title": "Naming Convention Enforcement",
+					"title": "Align Names with Team Conventions",
 					"description": "Write a function with a poorly named variable. See how the extension highlights it and suggests a better name.",
 					"media": {
-						"image": "images/namingConvention.png",
-						"altText": "Naming Convention"
+						"image": "assets/gifs/rename-demo.gif",
+						"altText": "Rename Symbol Demo"
 					}
 				},
 				{
 					"id": "whenInRome.untestedCode",
 					"title": "Untested API Code Detection",
-					"description": "Introduce a new piece of business logic without a test. Notice the warning from the extension. Add a test file and see how the warning disappears.",
+					"description": "Introduce a new piece of business logic without a test. Notice that When In Rome reminds you to test the changes.",
 					"media": {
-					"image": "images/untestedCode.png",
-					"altText": "Untested Code"
+						"image": "assets/gifs/flag-untested-api-code.gif",
+						"altText": "Untested Code Demo"
 					}
 				},
 				{
@@ -106,7 +106,7 @@
 					"title": "Setup Naming and Testing Rules",
 					"description": "Customize naming conventions and test requirements for your workspace.\n[Customize Rules](command:whenInRome.openSettings)\n\n[Import Conventions](command:whenInRome.addCustomRule)",
 					"media": {
-					  "image": "images/walkthrough/setup-rules.png",
+					  "image": "assets/images/onboarding/rome-settings.png",
 					  "altText": "Setup Rules"
 					}
 				  }

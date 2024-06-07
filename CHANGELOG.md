@@ -22,6 +22,19 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
+## [Version 0.0.28] - 2024-06-06
+
+### Added
+
+- [Feature] Add MVP walkthrough steps for users that have first installed the extension
+- [Enhancement] Streamline client activate function by moving command registration logic to separate file
+
+### Changed
+
+- [Update] Changed name of custom rename symbol from `Rename Symbol (When In Rome)` -> `Align Symbol With Conventions (When In Rome)`
+- [Update] Changed grouping of `Align Symbol With Conventions (When In Rome)` to code modification section of context menu. It's now closer to rename
+
+
 ## [Version 0.0.27] - 2024-06-06
 
 ### Changed

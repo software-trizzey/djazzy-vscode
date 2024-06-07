@@ -36,8 +36,13 @@ export function registerCommands(context: vscode.ExtensionContext, client: Langu
         COMMANDS.ADD_CUSTOM_RULE,
         () => {
 			const storedUser: UserSession = context.globalState.get(SESSION_USER);
-            vscode.window.showInformationMessage('Thanks for your interest in automated rules setup. This feature is coming soon! 🚀');
-            trackUserInterestInCustomRules(storedUser.id);
+            if (storedUser) {
+                trackUserInterestInCustomRules(storedUser.email || storedUser.github_login);
+            } else {
+                const serverHost = vscode.env.machineId;
+                trackUserInterestInCustomRules(serverHost);
+            }
+            vscode.window.showInformationMessage('Thanks for your interest in automated rules setup. This feature is coming soon! 🚀', "Sounds good");
         }
     );
     context.subscriptions.push(addCustomRuleCommand);

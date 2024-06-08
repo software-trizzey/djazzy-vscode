@@ -15,7 +15,6 @@ import type { UserSession } from "./common/auth/github";
 import { EXTENSION_ID, EXTENSION_DISPLAY_NAME, COMMANDS, SESSION_USER, SESSION_TOKEN_KEY } from "./common/constants";
 
 import {
-	createGitRepository,
 	getChangedLines,
 } from "./common/utils/git";
 import { registerCommands } from './common/commands';
@@ -68,16 +67,6 @@ export async function activate(context: vscode.ExtensionContext) {
 		],
 		synchronize: {
 			fileEvents: []
-		},
-		middleware: {
-			executeCommand: async (command, args, next) => {
-				// FIXME: probably won't work. Convert to listener like one for changedLines
-				if (command === COMMANDS.CREATE_REPOSITORY) {
-					createGitRepository();
-					return;
-				}
-				return next(command, args);
-			},
 		},
 	};
 

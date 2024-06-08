@@ -67,14 +67,6 @@ export async function checkAndNotify(uri: vscode.Uri, client: LanguageClient) {
     }
 }
 
-export async function createGitRepository(): Promise<SimpleGit> {
-	const workspaceFolders = vscode.workspace.workspaceFolders;
-	if (!workspaceFolders) {
-		throw new Error("No workspace folder found");
-	}
-	const rootPath = workspaceFolders[0].uri.fsPath;
-	return simpleGit(rootPath);
-}
 
 export async function getChangedLines(repository: SimpleGit, filePath: string) {
 	const diffSummary = await repository.diffSummary(["HEAD", filePath]);

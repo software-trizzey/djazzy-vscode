@@ -17,9 +17,9 @@ import { EXTENSION_ID, EXTENSION_DISPLAY_NAME, COMMANDS, SESSION_USER, SESSION_T
 import {
 	createGitRepository,
 	getChangedLines,
-	checkAndNotify,
 } from "./common/utils/git";
 import { registerCommands } from './common/commands';
+import { setupFileWatchers } from './common/utils/fileWatchers';
 
 async function initializeAuthentication(
 	credentials: Credentials,
@@ -58,20 +58,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			transport: TransportKind.ipc,
 		},
 	};
-
-	const apiFolders = await vscode.workspace.findFiles(
-		"**/{api,views}/*",
-		"{**/node_modules/**,**/*test*/*,**/* (Working Tree)*}"
-	);
-	const apiFolderWatchers = apiFolders.map((uri) => {
-		const watcher = vscode.workspace.createFileSystemWatcher(
-			new vscode.RelativePattern(uri, "**/*")
-		);
-		watcher.onDidChange(() => checkAndNotify(uri, client));
-		watcher.onDidCreate(() => checkAndNotify(uri, client));
-		context.subscriptions.push(watcher);
-		return watcher;
-	});
+	
 
 	const clientOptions: LanguageClientOptions = {
 		documentSelector: [
@@ -80,7 +67,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			{ scheme: "file", language: "python" },
 		],
 		synchronize: {
-			fileEvents: apiFolderWatchers,
+			fileEvents: []
 		},
 		middleware: {
 			executeCommand: async (command, args, next) => {
@@ -105,8 +92,10 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	const authenticated = await initializeAuthentication(credentials, context);
 	if (authenticated) {
-		client.start().then(() => {
+		client.start().then(async () => {
 			client.onRequest(COMMANDS.GET_GIT_DIFF, getChangedLines);
+			const apiFolderWatchers = await setupFileWatchers(client, context);
+			clientOptions.synchronize.fileEvents = apiFolderWatchers;
 		});
 	}
 }

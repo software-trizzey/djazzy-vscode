@@ -22,6 +22,17 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
+## [Version 0.0.29] - 2024-06-08
+
+### Changed
+
+- [Update] Streamline client activate function by moving file watcher setup to `client/src/common/utils/fileWatchers.ts`
+
+### Fixed
+
+- [Bugfix] Newly created view files weren't picked up by the file watcher
+
+
 ## [Version 0.0.28] - 2024-06-06
 
 ### Added

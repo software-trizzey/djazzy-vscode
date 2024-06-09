@@ -57,7 +57,10 @@ export class PythonProvider extends LanguageProvider {
 			return cachedAction;
 		}
 		
-		if (violationMessage.includes(RULE_MESSAGES.VARIABLE_TOO_SHORT.replace("{name}", flaggedName))) {
+		if (
+			violationMessage.includes(RULE_MESSAGES.VARIABLE_TOO_SHORT.replace("{name}", flaggedName)) ||
+			violationMessage.includes(RULE_MESSAGES.OBJECT_KEY_TOO_SHORT.replace("{name}", flaggedName))
+		) {
 			const response = await this.fetchSuggestedNameFromLLM({
 				message: violationMessage,
 				modelType: "groq",
@@ -67,9 +70,15 @@ export class PythonProvider extends LanguageProvider {
 			if (!response) return;
 			const data = JSON.parse(response);
 			suggestedName = data.suggestedName;
-		} else if (violationMessage.includes(RULE_MESSAGES.BOOLEAN_NO_PREFIX.replace("{name}", flaggedName))) {
+		} else if (
+			violationMessage.includes(RULE_MESSAGES.BOOLEAN_NO_PREFIX.replace("{name}", flaggedName)) ||
+			violationMessage.includes(RULE_MESSAGES.OBJECT_KEY_BOOLEAN_NO_PREFIX.replace("{name}", flaggedName))
+		) {
 			suggestedName = `is_${flaggedName}`;
-		} else if (violationMessage.includes(RULE_MESSAGES.BOOLEAN_NEGATIVE_PATTERN.replace("{name}", flaggedName))) {
+		} else if (
+			violationMessage.includes(RULE_MESSAGES.BOOLEAN_NEGATIVE_PATTERN.replace("{name}", flaggedName)) ||
+			violationMessage.includes(RULE_MESSAGES.OBJECT_KEY_BOOLEAN_NEGATIVE_PATTERN.replace("{name}", flaggedName))
+		) {
 			suggestedName = flaggedName
 				.replace(/_not_([^_]+)/i, (_match, p1) => `_${p1}`)
 				.replace(/not_([^_]+)/i, (_match, p1) => `${p1}`)
@@ -383,10 +392,10 @@ export class PythonProvider extends LanguageProvider {
 			if (validationResult.violates) {
 				hasViolatedRule = true;
 				reason = validationResult.reason;
-	
-				const start = Position.create(key_start[0], key_start[1]);
-				const end = Position.create(key_end[0], key_end[1]);
-				const range = Range.create(start, end);
+
+				const keyStartPositionWithoutQuote = Position.create(key_start[0], key_start[1] + 1);
+				const keyEndPositionWithoutQuote = Position.create(key_end[0], key_end[1] - 1);
+				const range = Range.create(keyStartPositionWithoutQuote, keyEndPositionWithoutQuote);
 				const diagnostic: Diagnostic = Diagnostic.create(
 					range,
 					validationResult.reason,

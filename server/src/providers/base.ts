@@ -360,7 +360,7 @@ export abstract class LanguageProvider {
 				reason: RULE_MESSAGES.VARIABLE_TOO_SHORT.replace("{name}", variableName),
 			};
 		}
-	
+		
 		const isExplicitBoolean =
 			typeof variableValue === "boolean" ||
 			/^(true|false)$/i.test(variableValue);
@@ -434,13 +434,13 @@ export abstract class LanguageProvider {
 			) {
 				return {
 					violates: true,
-					reason: RULE_MESSAGES.BOOLEAN_NO_PREFIX.replace("{name}", objectKey),
+					reason: RULE_MESSAGES.OBJECT_KEY_BOOLEAN_NO_PREFIX.replace("{name}", objectKey),
 				};
 			}
 			if (positiveNaming && hasNegativePattern(nameWithoutUnderscorePrefix)) {
 				return {
 					violates: true,
-					reason: RULE_MESSAGES.BOOLEAN_NEGATIVE_PATTERN.replace("{name}", objectKey),
+					reason: RULE_MESSAGES.OBJECT_KEY_BOOLEAN_NEGATIVE_PATTERN.replace("{name}", objectKey),
 				};
 			}
 		}

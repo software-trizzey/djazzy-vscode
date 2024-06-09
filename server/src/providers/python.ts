@@ -227,7 +227,11 @@ export class PythonProvider extends LanguageProvider {
 					result = this.validateClassName(name);
 					break;
 				case "dictionary":
-					result = this.validateDictionary(value);
+					result = this.validateDictionary(symbol);
+
+					if (result.violates && result.diagnostics) {
+						diagnostics.push(...result.diagnostics);
+					}
 					break;
 				case "list":
 					result = this.validateList(value);
@@ -247,7 +251,6 @@ export class PythonProvider extends LanguageProvider {
 			}
 
 			if (result && result.violates) {
-				// TODO: this is basic MVP implementation, need to improve
 				let colOffsetAdjustment = 0;
 				if (symbol.type === "function" && symbol.name) {
 					colOffsetAdjustment = "def ".length;
@@ -360,13 +363,45 @@ export class PythonProvider extends LanguageProvider {
 		}
 	}
 
-	private validateDictionary(value: string): {
+	private validateDictionary(dictionary: any): {
 		violates: boolean;
 		reason: string;
+		diagnostics: Diagnostic[];
 	} {
-		// TODO: Implement your validation logic for dictionaries
-		return { violates: false, reason: "" };
+		let hasViolatedRule = false;
+		let reason = "";
+		const diagnostics: Diagnostic[] = [];
+	
+		for (const pair of dictionary.key_and_value_pairs) {
+			const { key, key_start, key_end, value } = pair;
+			
+			const validationResult = this.validateObjectPropertyName({
+				objectKey: key,
+				objectValue: value,
+			});
+	
+			if (validationResult.violates) {
+				hasViolatedRule = true;
+				reason = validationResult.reason;
+	
+				const start = Position.create(key_start[0], key_start[1]);
+				const end = Position.create(key_end[0], key_end[1]);
+				const range = Range.create(start, end);
+				const diagnostic: Diagnostic = Diagnostic.create(
+					range,
+					validationResult.reason,
+					DiagnosticSeverity.Warning,
+					SOURCE_TYPE,
+					SOURCE_NAME
+				);
+				diagnostics.push(diagnostic);
+			}
+		}
+	
+		return { violates: hasViolatedRule, reason, diagnostics };
 	}
+	
+	
 
 	private validateList(value: string): { violates: boolean; reason: string } {
 		// TODO: Implement your validation logic for lists

@@ -160,6 +160,9 @@ class Analyzer(ast.NodeVisitor):
     def visit_Assign(self, node):
         self.generic_node_visit(node)
 
+        if isinstance(node.value, ast.Dict):
+            self.handle_dictionary(node.value, node)
+
     def visit_Dict(self, node):
         comments = self.get_related_comments(node)
         for parent in ast.walk(node):
@@ -235,6 +238,23 @@ class Analyzer(ast.NodeVisitor):
                     is_reserved=False,
                     value=value_source
                 ))
+                
+    def handle_dictionary(self, node, parent):
+        comments = self.get_related_comments(node)
+        targets = [t.id for t in parent.targets if isinstance(t, ast.Name)]
+        if targets:
+            name = targets[0]
+            self.symbols.append(self._create_symbol_dict(
+                type='dictionary',
+                name=name,
+                comments=comments,
+                line=node.lineno - 1,
+                col_offset=node.col_offset,
+                end_col_offset=node.end_col_offset if hasattr(node, 'end_col_offset') else None,
+                is_reserved=False,
+                value=ast.get_source_segment(self.source_code, node)
+            ))
+    
 
     def parse_code(self):
         try:

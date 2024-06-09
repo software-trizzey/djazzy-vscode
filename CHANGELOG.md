@@ -22,6 +22,12 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
+## [Version 0.0.30] - 2024-06-09
+
+### Added
+
+- [Feature] Add support for validating object key names. Current rules are focused on expressiveness.
+
 ## [Version 0.0.29] - 2024-06-08
 
 ### Changed

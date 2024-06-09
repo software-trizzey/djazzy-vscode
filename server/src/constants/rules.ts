@@ -5,5 +5,8 @@ export const RULE_MESSAGES = {
     FUNCTION_TOO_LONG: "Function \"{name}\" exceeds the maximum length of {limit} lines.",
     VARIABLE_TOO_SHORT: "Variable \"{name}\" is too short and must be more descriptive.",
     BOOLEAN_NO_PREFIX: "Boolean variable \"{name}\" does not start with a conventional prefix.",
-    BOOLEAN_NEGATIVE_PATTERN: "Boolean variable \"{name}\" has a negative naming pattern, which contradicts the positive naming convention."
+    BOOLEAN_NEGATIVE_PATTERN: "Boolean variable \"{name}\" has a negative naming pattern, which contradicts the positive naming convention.",
+    OBJECT_KEY_TOO_SHORT: "Object key \"{name}\" is too short and must be more descriptive.",
+    OBJECT_KEY_BOOLEAN_NO_PREFIX: "Object key \"{name}\" does not start with a conventional boolean prefix.",
+    OBJECT_KEY_BOOLEAN_NEGATIVE_PATTERN: "Object key \"{name}\" has a negative naming pattern, which contradicts the positive naming convention.",
 };

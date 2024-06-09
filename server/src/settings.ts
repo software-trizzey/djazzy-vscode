@@ -66,6 +66,12 @@ export const defaultConventions: ExtensionSettings = {
 					maxCyclomaticComplexity: maxCyclomaticComplexity,
 					examples: [],
 				},
+				objectProperties: {
+					isEnabled: true,
+					avoidShortNames: true,
+					avoidGenericNames: true,
+					examples: [],
+				}
 			},
 			boolean: {
 				positiveNaming: true,
@@ -89,6 +95,12 @@ export const defaultConventions: ExtensionSettings = {
 					maxCyclomaticComplexity: maxCyclomaticComplexity,
 					examples: [],
 				},
+				objectProperties: {
+					isEnabled: true,
+					avoidShortNames: true,
+					avoidGenericNames: true,
+					examples: [],
+				}
 			},
 			boolean: {
 				positiveNaming: true,
@@ -112,6 +124,12 @@ export const defaultConventions: ExtensionSettings = {
 					maxCyclomaticComplexity: maxCyclomaticComplexity,
 					examples: [],
 				},
+				objectProperties: {
+					isEnabled: true,
+					avoidShortNames: true,
+					avoidGenericNames: true,
+					examples: [],
+				}
 			},
 			boolean: {
 				positiveNaming: true,
@@ -167,6 +185,14 @@ export const normalizeLanguageSettings = (
 				maxCyclomaticComplexity:
 					languageSettings.expressiveNames.functions.maxCyclomaticComplexity,
 					examples: languageSettings.expressiveNames.functions.examples,
+			},
+			objectProperties: {
+				isEnabled: languageSettings.expressiveNames.objectProperties.isEnabled,
+				avoidShortNames:
+					languageSettings.expressiveNames.objectProperties.avoidShortNames,
+				avoidGenericNames:
+					languageSettings.expressiveNames.objectProperties.avoidGenericNames,
+					examples: languageSettings.expressiveNames.objectProperties.examples,
 			},
 		},
 		boolean: {

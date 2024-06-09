@@ -371,7 +371,6 @@ export abstract class LanguageProvider {
 				usePrefix &&
 				!prefixes.some((prefix) => nameWithoutUnderscorePrefix.startsWith(prefix))
 			) {
-				const prefixExamples = prefixes.join(", ");
 				return {
 					violates: true,
 					reason: RULE_MESSAGES.BOOLEAN_NO_PREFIX.replace("{name}", variableName),
@@ -390,6 +389,67 @@ export abstract class LanguageProvider {
 
 		return { violates: false, reason: "" };
 	}
+
+	protected validateObjectPropertyName({
+		objectKey,
+		objectValue,
+	}: {
+		objectKey: string;
+		objectValue: any;
+	}): { violates: boolean; reason: string } {
+		if (!objectKey) {
+			console.warn("No key name found.");
+			return { violates: false, reason: "" };
+		}
+
+		const {
+			expressiveNames: { objectProperties },
+			boolean,
+		} = this.getConventions();
+
+		if (!objectProperties.isEnabled) return { violates: false, reason: "" };
+	
+		const nameWithoutUnderscorePrefix = objectKey.startsWith("_") ? objectKey.substring(1) : objectKey;
+	
+		if (
+			nameWithoutUnderscorePrefix.toLowerCase() !== "id" &&
+			objectProperties.avoidShortNames &&
+			nameWithoutUnderscorePrefix.length <= 2
+		) {
+			return {
+				violates: true,
+				reason: RULE_MESSAGES.OBJECT_KEY_TOO_SHORT.replace("{name}", objectKey),
+			};
+		}
+
+		const isExplicitBoolean =
+			typeof objectValue === "boolean" || objectValue?.type === "BooleanLiteral" ||
+			/^(true|false)$/i.test(objectValue);
+		if (boolean && (isLikelyBoolean(nameWithoutUnderscorePrefix) || isExplicitBoolean)) {
+			const prefixes = this.settings.general.prefixes;
+			const { positiveNaming, usePrefix } = boolean;
+			if (
+				usePrefix &&
+				!prefixes.some((prefix) => nameWithoutUnderscorePrefix.startsWith(prefix))
+			) {
+				return {
+					violates: true,
+					reason: RULE_MESSAGES.BOOLEAN_NO_PREFIX.replace("{name}", objectKey),
+				};
+			}
+			if (positiveNaming && hasNegativePattern(nameWithoutUnderscorePrefix)) {
+				return {
+					violates: true,
+					reason: RULE_MESSAGES.BOOLEAN_NEGATIVE_PATTERN.replace("{name}", objectKey),
+				};
+			}
+		}
+	
+		// TODO: add rule for determining whether the name is a valid word (e.g. "usr" is not a valid word)
+	
+		return { violates: false, reason: "" };
+	}
+	
 
 	public isTodoOrFixme(comment: string): boolean {
 		return /^(TODO|FIXME)/i.test(comment.trim());

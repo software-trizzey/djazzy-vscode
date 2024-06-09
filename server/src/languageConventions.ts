@@ -21,6 +21,12 @@ interface ExpressiveFunctionNameRulesSettings
 	maxCyclomaticComplexity: number;
 }
 
+interface ExpressiveObjectPropertyNameRulesSettings
+	extends ExpressiveNamesBaseRulesSettings {
+	// TODO: add support for additional object property conventions
+}
+
+
 interface FileRuleSettings {
 	avoidComponentInNonXSuffix: boolean;
 	avoidIndexJs: boolean;
@@ -33,6 +39,7 @@ export interface LanguageConventions {
 	expressiveNames: {
 		variables: ExpressiveVariableNameRulesSettings;
 		functions: ExpressiveFunctionNameRulesSettings;
+		objectProperties: ExpressiveObjectPropertyNameRulesSettings;
 	};
 	boolean: BooleanRuleSettings;
 	file?: FileRuleSettings; // TODO: add support for file conventions

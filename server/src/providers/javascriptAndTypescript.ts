@@ -11,6 +11,7 @@ import {
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 import * as babelParser from "@babel/parser";
+import { ObjectProperty } from "@babel/types";
 import traverse, { NodePath } from "@babel/traverse";
 
 import { LanguageProvider } from "./base";
@@ -237,6 +238,23 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 						);
 					}
 				},
+				ObjectExpression: ({ node }) => {
+					node.properties.forEach((property) => {
+						if (property.type === "ObjectProperty" && property.key.type === "Identifier") {
+							if (
+								property.loc &&
+								(!this.settings.general.onlyCheckNewCode ||
+									changedLines?.has(property.loc.start.line))
+							) {
+								this.applyObjectPropertyDiagnostics(
+									property,
+									diagnostics,
+									document
+								);
+							}
+						}
+					});
+				},
 			});
 			await Promise.all(diagnosticPromises);
 		} catch (error: any) {
@@ -283,6 +301,45 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 			diagnostics.push(diagnostic);
 		}
 	}
+
+	private applyObjectPropertyDiagnostics(
+		property: ObjectProperty,
+		diagnostics: Diagnostic[],
+		document: TextDocument
+	) {
+		if (
+			property.key &&
+			property.key.type === "Identifier" &&
+			property.key.start  &&
+			property.key.end 
+		) {
+			const objectKey = property.key.name;
+			const objectValue = property.value;
+			console.log("Object key", objectKey);
+			console.log("Object value", objectValue);
+			const validationResult = this.validateObjectPropertyName({
+				objectKey,
+				objectValue,
+			});
+
+			if (validationResult.violates) {
+				const propertyRange = Range.create(
+					document.positionAt(property.key.start),
+					document.positionAt(property.key.end)
+				);
+				const diagnostic: Diagnostic = {
+					range: propertyRange,
+					severity: DiagnosticSeverity.Warning,
+					message: validationResult.reason,
+					code: SOURCE_TYPE,
+					source: SOURCE_NAME,
+				};
+				diagnostics.push(diagnostic);
+			}
+		} else {
+			console.log("Property key is not an Identifier", property);
+		}
+}	
 
 	private async checkFunctionAndAddDiagnostic(
 		name: string,

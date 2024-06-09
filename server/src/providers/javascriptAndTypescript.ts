@@ -315,8 +315,6 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		) {
 			const objectKey = property.key.name;
 			const objectValue = property.value;
-			console.log("Object key", objectKey);
-			console.log("Object value", objectValue);
 			const validationResult = this.validateObjectPropertyName({
 				objectKey,
 				objectValue,

@@ -86,7 +86,8 @@ class Analyzer(ast.NodeVisitor):
             value=None,
             body=None,
             function_start_line=None,
-            function_end_line=None
+            function_end_line=None,
+            key_and_value_pairs=None
         ):
         """
         Creates a dictionary representation of a symbol.
@@ -108,6 +109,8 @@ class Analyzer(ast.NodeVisitor):
             symbol['function_start_line'] = function_start_line
         if function_end_line is not None:
             symbol['function_end_line'] = function_end_line
+        if key_and_value_pairs:
+            symbol['key_and_value_pairs'] = key_and_value_pairs
         return symbol
 
     def generic_node_visit(self, node):
@@ -244,6 +247,25 @@ class Analyzer(ast.NodeVisitor):
         targets = [t.id for t in parent.targets if isinstance(t, ast.Name)]
         if targets:
             name = targets[0]
+            key_and_value_pairs = []
+            for key, value in zip(node.keys, node.values):
+                if isinstance(key, ast.Constant):
+                    key_start = (key.lineno - 1, key.col_offset)
+                    key_end = (key.end_lineno - 1, key.end_col_offset) if hasattr(key, 'end_lineno') else (
+                        key.lineno - 1, key.col_offset + len(str(key.value))
+                    )
+                    value_start = (value.lineno - 1, value.col_offset) if hasattr(value, 'lineno') else None
+                    value_end = (value.end_lineno - 1, value.end_col_offset) if hasattr(value, 'end_lineno') else None
+
+                    key_and_value_pairs.append({
+                        'key': key.value,
+                        'key_start': key_start,
+                        'key_end': key_end,
+                        'value': value.value,
+                        'value_start': value_start,
+                        'value_end': value_end
+                    })
+
             self.symbols.append(self._create_symbol_dict(
                 type='dictionary',
                 name=name,
@@ -252,7 +274,8 @@ class Analyzer(ast.NodeVisitor):
                 col_offset=node.col_offset,
                 end_col_offset=node.end_col_offset if hasattr(node, 'end_col_offset') else None,
                 is_reserved=False,
-                value=ast.get_source_segment(self.source_code, node)
+                value=ast.get_source_segment(self.source_code, node),
+                key_and_value_pairs=key_and_value_pairs
             ))
     
 

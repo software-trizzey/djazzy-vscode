@@ -64,6 +64,8 @@ export async function activate(context: vscode.ExtensionContext) {
 			{ scheme: "file", language: "javascript" },
 			{ scheme: "file", language: "typescript" },
 			{ scheme: "file", language: "python" },
+			{ scheme: "file", language: "javascriptreact" },
+			{ scheme: "file", language: "typescriptreact" },
 		],
 		synchronize: {
 			fileEvents: []

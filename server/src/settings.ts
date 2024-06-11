@@ -31,12 +31,45 @@ export interface ExtensionSettings {
 		javascript: LanguageConventions;
 		typescript: LanguageConventions;
 		python: LanguageConventions;
+		javascriptreact: LanguageConventions;
+		typescriptreact: LanguageConventions;
 	};
 }
 
 export const defaultPrefixes: string[] = ["is", "has", "should", "can", "did"];
 export const defaultFunctionLengthLimit: number = 60;
 export const maxCyclomaticComplexity: number = 10;
+
+
+const defaultLanguageConventions: LanguageConventions = {
+	isEnabled: true,
+	expressiveNames: {
+		variables: {
+			isEnabled: true,
+			avoidShortNames: true,
+			avoidGenericNames: true,
+			examples: [],
+		},
+		functions: {
+			isEnabled: true,
+			avoidShortNames: true,
+			avoidGenericNames: true,
+			functionLengthLimit: defaultFunctionLengthLimit,
+			maxCyclomaticComplexity: maxCyclomaticComplexity,
+			examples: [],
+		},
+		objectProperties: {
+			isEnabled: true,
+			avoidShortNames: true,
+			avoidGenericNames: true,
+			examples: [],
+		}
+	},
+	boolean: {
+		positiveNaming: true,
+		usePrefix: true,
+	},
+};
 
 export const defaultConventions: ExtensionSettings = {
 	general: {
@@ -49,93 +82,11 @@ export const defaultConventions: ExtensionSettings = {
 		flagRedundant: true,
 	},
 	languages: {
-		javascript: {
-			isEnabled: true,
-			expressiveNames: {
-				variables: {
-					isEnabled: true,
-					avoidShortNames: true,
-					avoidGenericNames: true,
-					examples: [],
-				},
-				functions: {
-					isEnabled: true,
-					avoidShortNames: true,
-					avoidGenericNames: true,
-					functionLengthLimit: defaultFunctionLengthLimit,
-					maxCyclomaticComplexity: maxCyclomaticComplexity,
-					examples: [],
-				},
-				objectProperties: {
-					isEnabled: true,
-					avoidShortNames: true,
-					avoidGenericNames: true,
-					examples: [],
-				}
-			},
-			boolean: {
-				positiveNaming: true,
-				usePrefix: true,
-			},
-		},
-		typescript: {
-			isEnabled: true,
-			expressiveNames: {
-				variables: {
-					isEnabled: true,
-					avoidShortNames: true,
-					avoidGenericNames: true,
-					examples: [],
-				},
-				functions: {
-					isEnabled: true,
-					avoidShortNames: true,
-					avoidGenericNames: true,
-					functionLengthLimit: defaultFunctionLengthLimit,
-					maxCyclomaticComplexity: maxCyclomaticComplexity,
-					examples: [],
-				},
-				objectProperties: {
-					isEnabled: true,
-					avoidShortNames: true,
-					avoidGenericNames: true,
-					examples: [],
-				}
-			},
-			boolean: {
-				positiveNaming: true,
-				usePrefix: true,
-			},
-		},
-		python: {
-			isEnabled: true,
-			expressiveNames: {
-				variables: {
-					isEnabled: true,
-					avoidShortNames: true,
-					avoidGenericNames: true,
-					examples: [],
-				},
-				functions: {
-					isEnabled: true,
-					avoidShortNames: true,
-					avoidGenericNames: true,
-					functionLengthLimit: defaultFunctionLengthLimit,
-					maxCyclomaticComplexity: maxCyclomaticComplexity,
-					examples: [],
-				},
-				objectProperties: {
-					isEnabled: true,
-					avoidShortNames: true,
-					avoidGenericNames: true,
-					examples: [],
-				}
-			},
-			boolean: {
-				positiveNaming: true,
-				usePrefix: true,
-			},
-		},
+		javascript: defaultLanguageConventions,
+		typescript: defaultLanguageConventions,
+		javascriptreact: defaultLanguageConventions,
+		typescriptreact: defaultLanguageConventions,
+		python: defaultLanguageConventions,
 	},
 };
 
@@ -154,6 +105,9 @@ export const normalizeClientSettings = (
 		languages: {
 			javascript: normalizeLanguageSettings(settings.languages.javascript),
 			typescript: normalizeLanguageSettings(settings.languages.typescript),
+			// FIXME: for now we just use the same settings for react as for the base language
+			javascriptreact: normalizeLanguageSettings(settings.languages.javascript),
+			typescriptreact: normalizeLanguageSettings(settings.languages.typescript),
 			python: normalizeLanguageSettings(settings.languages.python),
 		},
 	};

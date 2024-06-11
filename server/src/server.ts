@@ -233,6 +233,8 @@ function createLanguageProvider(
 	switch (languageId) {
 		case "javascript":
 		case "typescript":
+		case "javascriptreact":
+		case "typescriptreact":
 			provider = new JavascriptAndTypescriptProvider(
 				languageId,
 				connection,

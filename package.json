@@ -38,7 +38,9 @@
 		"activationEvents": [
 			"onCommand:whenInRome.signIn",
 			"onCommand:whenInRome.addCustomRule",
-			"onCommand:whenInRome.openWalkthrough"
+			"onCommand:whenInRome.openWalkthrough",
+			"onLanguage:javascriptreact",
+			"onLanguage:typescriptreact"
 		],
 		"commands": [
 			{
@@ -140,8 +142,20 @@
 			  "aliases": ["Python", "py"],
 			  "extensions": [".py"],
 			  "configuration": "./language-configuration.json"
+			},
+			{
+				"id": "javascriptreact",
+				"aliases": ["JavaScript React", "jsx"],
+				"extensions": [".jsx"],
+				"configuration": "./language-configuration.json"
+			},
+			{
+				"id": "typescriptreact",
+				"aliases": ["TypeScript React", "tsx"],
+				"extensions": [".tsx"],
+				"configuration": "./language-configuration.json"
 			}
-		  ],
+		],
 		"configuration": {
 			"title": "When In Rome",
 			"properties": {

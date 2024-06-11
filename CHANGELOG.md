@@ -22,6 +22,12 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
+## [Version 0.0.31] - 2024-06-10
+
+### Added
+
+- [Feature] Add support for React files (tsx and jsx)
+
 ## [Version 0.0.30] - 2024-06-09
 
 ### Added

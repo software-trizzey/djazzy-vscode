@@ -87,7 +87,9 @@ class Analyzer(ast.NodeVisitor):
             body=None,
             function_start_line=None,
             function_end_line=None,
-            key_and_value_pairs=None
+            key_and_value_pairs=None,
+            decorators=None,
+            calls=None
         ):
         """
         Creates a dictionary representation of a symbol.
@@ -111,6 +113,10 @@ class Analyzer(ast.NodeVisitor):
             symbol['function_end_line'] = function_end_line
         if key_and_value_pairs:
             symbol['key_and_value_pairs'] = key_and_value_pairs
+        if decorators:
+            symbol['decorators'] = decorators
+        if calls:
+            symbol['calls'] = calls
         return symbol
 
     def generic_node_visit(self, node):
@@ -123,6 +129,8 @@ class Analyzer(ast.NodeVisitor):
         is_reserved = False
         body = None
         value = None
+        decorators = [ast.get_source_segment(self.source_code, decorator) for decorator in getattr(node, 'decorator_list', [])]
+        calls = []
 
         if isinstance(node, ast.FunctionDef):
             col_offset += len('def ')
@@ -130,6 +138,7 @@ class Analyzer(ast.NodeVisitor):
             function_end_line = node.body[-1].end_lineno if hasattr(node.body[-1], 'end_lineno') else node.body[-1].lineno
             is_reserved = DJANGO_IGNORE_FUNCTIONS.get(node.name, False) or self.is_python_reserved(node.name)
             body = ast.get_source_segment(self.source_code, node)
+            self.visit_FunctionBody(node.body, calls)
         elif isinstance(node, ast.ClassDef):
             col_offset += len('class ')
         elif isinstance(node, ast.Assign):
@@ -149,7 +158,9 @@ class Analyzer(ast.NodeVisitor):
             body=body,
             function_start_line=function_start_line,
             function_end_line=function_end_line,
-            value=value
+            value=value,
+            decorators=decorators,
+            calls=calls
         ))
         self.handle_nested_structures(node)
         self.generic_visit(node)
@@ -159,6 +170,13 @@ class Analyzer(ast.NodeVisitor):
 
     def visit_FunctionDef(self, node):
         self.generic_node_visit(node)
+
+    def visit_FunctionBody(self, body, calls):
+        for statement in body:
+            if isinstance(statement, ast.Expr) and isinstance(statement.value, ast.Call):
+                call = ast.get_source_segment(self.source_code, statement)
+                calls.append(call)
+            self.generic_visit(statement)
 
     def visit_Assign(self, node):
         self.generic_node_visit(node)

@@ -353,7 +353,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 			!node.body.loc.start ||
 			!node.body.loc.end
 		) {
-			console.warn("node has no body property");
+			console.warn("node has no body property", node);
 			return;
 		}
 

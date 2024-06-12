@@ -66,7 +66,7 @@ export async function checkAndNotify(uri: vscode.Uri, client: LanguageClient, co
     }
 
 	const repository = await initializeGitRepository();
-	const diff = await repository.diff(["HEAD", relativePath]);
+	const diff = await repository.diff(["HEAD", "--", relativePath]);
 	
 	const untrackedFiles = await repository.raw(['ls-files', '--others', '--exclude-standard']);
 	const isNewFile = untrackedFiles.includes(relativePath);
@@ -96,8 +96,7 @@ export async function checkAndNotify(uri: vscode.Uri, client: LanguageClient, co
     }
 }
 
-
 export async function getChangedLines(repository: SimpleGit, filePath: string) {
-	const diffSummary = await repository.diffSummary(["HEAD", filePath]);
+	const diffSummary = await repository.diffSummary(["HEAD", "--", filePath]);
 	return diffSummary.files;
 }

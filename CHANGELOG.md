@@ -22,6 +22,12 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
+## [Version 0.0.35] - 2024-06-11
+
+### Fixed
+
+- [Bugfix] Address ambigous git error by providing "--" to simplegit command
+
 ## [Version 0.0.34] - 2024-06-11
 
 ### Added

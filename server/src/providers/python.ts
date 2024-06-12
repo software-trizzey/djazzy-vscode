@@ -288,14 +288,9 @@ export class PythonProvider extends LanguageProvider {
 				}
 			}
 
-			const decorators: string[] = symbol.decorators || [];
-			const calls: string[] = symbol.calls || [];
 			if (
-				conventions.celeryTaskDecorator &&
-				symbol.type === "functiondef" &&
-				decorators.some(decorator => decorator.includes("shared_task"))
-			) {
-				const celeryViolations = this.validateCeleryTask(decorators, calls, name, conventions.celeryTaskDecorator);
+				conventions.celeryTaskDecorator && symbol.type === "functiondef") {
+				const celeryViolations = this.validateCeleryTask(symbol, conventions.celeryTaskDecorator);
 				celeryViolations.forEach(violation => {
 					const start = Position.create(line, col_offset);
 					const end = Position.create(line, col_offset + name.length);
@@ -402,6 +397,10 @@ export class PythonProvider extends LanguageProvider {
 		let hasViolatedRule = false;
 		let reason = "";
 		const diagnostics: Diagnostic[] = [];
+
+		if (!dictionary.key_and_value_pairs) {
+			return { violates: false, reason: "", diagnostics };
+		}
 	
 		for (const pair of dictionary.key_and_value_pairs) {
 			const { key, key_start, key_end, value } = pair;
@@ -447,36 +446,50 @@ export class PythonProvider extends LanguageProvider {
 	}
 
 	private validateCeleryTask(
-		decorators: string[],
-		calls: string[],
-		celeryTaskName: string,
+		symbol: any,
 		rule: CeleryTaskDecoratorSettings
 	): string[] {
 		const violations: string[] = [];
 
-		if (!decorators && !calls) {
+		const symbolDecorators: string[] = symbol.decorators || [];
+		const symbolCalls: string[] = symbol.calls || [];
+
+		if (!symbolDecorators && !symbolCalls) {
+			return violations;
+		}
+
+		const celeryDecorators = [
+			'shared_task',
+			'app.task'
+		];
+		
+		const isCeleryTask = symbolDecorators.some(decorator => 
+			celeryDecorators.some(celeryDecorator => decorator.includes(celeryDecorator))
+		);
+	
+		if (!isCeleryTask) {
 			return violations;
 		}
 	
-		const missingDecorators = rule.requiredDecorators.filter(decorator => {
-			const parsedDecorator = decorator.replace(/@/, '').replace(/\(.*\)/, '');
-			return !decorators.some(dec => dec.includes(parsedDecorator));
+		const missingDecorators = rule.requiredDecorators.filter(requiredDecorator => {
+			const parsedDecorator = requiredDecorator.replace(/@/, '').replace(/\(.*\)/, '');
+			return !symbolDecorators.some(decorator => decorator.includes(parsedDecorator));
 		});
 	
 		if (missingDecorators.length > 0) {
 			violations.push(RULE_MESSAGES.CELERY_TASK_MISSING_DECORATORS.replace(
-				"{name}", celeryTaskName
+				"{name}", symbol.name
 			).replace("{decorators}", missingDecorators.join(', ')));
 		}
 	
-		const missingCalls = rule.requiredCalls.filter(call => {
-			const parsedCall = call.replace(/\(.*\)/, '');
-			return !calls.some(c => c.includes(parsedCall));
+		const missingCalls = rule.requiredCalls.filter(requiredCall => {
+			const parsedCall = requiredCall.replace(/\(.*\)/, '');
+			return !symbolCalls.some(symbolCall => symbolCall.includes(parsedCall));
 		});
 	
 		if (missingCalls.length > 0) {
 			violations.push(RULE_MESSAGES.CELERY_TASK_MISSING_CALLS.replace(
-				"{name}", celeryTaskName
+				"{name}", symbol.name
 			).replace("{calls}", missingCalls.join(', '))
 			);
 		}

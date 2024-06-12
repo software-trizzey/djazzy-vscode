@@ -1,4 +1,5 @@
 import { ChatOpenAI } from "@langchain/openai";
+
 import { MAX_TOKENS, systemMessageWithJsonResponse } from "../constants/chat";
 import LOGGER from "../common/logs";
 
@@ -15,7 +16,7 @@ export const openAIModel = new ChatOpenAI({
 	},
 });
 
-export async function chatWithOpenAI(systemMessage: string, developerInput: string) {
+export async function chatWithOpenAI(systemMessage: string, developerInput: string, userToken: string) {
 	try {
 		const response = await openAIModel.invoke([
 			["system", systemMessage || systemMessageWithJsonResponse],
@@ -23,7 +24,7 @@ export async function chatWithOpenAI(systemMessage: string, developerInput: stri
 		]);
 		if (!response || !response.content) {
 			console.log("Error while fetching response from OpenAI", response);
-			throw new Error("Error while fetching response from OpenAI");
+			throw new Error(`Error while fetching response from OpenAI ${response}`);
 		}
 		return response.content;
 	} catch (error: any) {

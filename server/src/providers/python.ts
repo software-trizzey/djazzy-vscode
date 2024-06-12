@@ -45,7 +45,8 @@ export class PythonProvider extends LanguageProvider {
 
 	async generateFixForNamingConventionViolation(
 		document: TextDocument,
-		diagnostic: Diagnostic
+		diagnostic: Diagnostic,
+		userToken: string
 	): Promise<CodeAction | undefined> {
 		const flaggedName = document.getText(diagnostic.range);
 		const violationMessage = diagnostic.message;
@@ -66,6 +67,7 @@ export class PythonProvider extends LanguageProvider {
 				modelType: "groq",
 				document,
 				diagnostic,
+				userToken
 			});
 			if (!response) return;
 			const data = JSON.parse(response);
@@ -102,6 +104,7 @@ export class PythonProvider extends LanguageProvider {
 					modelType: "groq",
 					diagnostic,
 					document,
+					userToken
 				});
 				if (!response) return;
 				const data = JSON.parse(response);

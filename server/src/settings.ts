@@ -5,6 +5,7 @@ import type { CommentConventions } from "./commentConventions";
 
 export let workspaceRoot = '';
 export let settingsVersion: number = 0;
+export let cachedUserToken: string | null = null;
 
 export  function setWorkspaceRoot(workspaceFolders: any): void {
 	if (workspaceFolders && workspaceFolders.length > 0) {
@@ -18,6 +19,11 @@ export  function setWorkspaceRoot(workspaceFolders: any): void {
 export function incrementSettingsVersion() {
 	settingsVersion++;
 }
+
+export function updateCachedUserToken(token: string): void {
+	cachedUserToken = token;
+  }
+  
 
 export interface ExtensionSettings {
 	general: {

@@ -32,6 +32,8 @@ import {
 	normalizeClientSettings,
 	incrementSettingsVersion,
 	setWorkspaceRoot,
+	updateCachedUserToken,
+	cachedUserToken,
 } from "./settings";
 import { checkForTestFile, debounce, getWordRangeAt } from "./utils";
 
@@ -302,13 +304,22 @@ connection.onRequest(COMMANDS.CHECK_TESTS_EXISTS, async (relativePath: string) =
     return { testExists };
 });
 
+connection.onRequest(COMMANDS.UPDATE_CACHED_USER_TOKEN, (token: string) => {
+	updateCachedUserToken(token);
+  });
+
 connection.onCodeAction(async (params) => {
 	const document = documents.get(params.textDocument.uri);
 	if (!document) return;
 	const settings = await getDocumentSettings(document.uri);
 	const languageId = document.languageId;
 	const provider = getOrCreateProvider(languageId, settings);
-	const actions = await provider.provideCodeActions(document);
+
+	if (!cachedUserToken) {
+		throw new Error('User is not authenticated. Token not found.');
+	}
+
+	const actions = await provider.provideCodeActions(document, cachedUserToken);
 	return actions;
 });
 
@@ -402,6 +413,10 @@ connection.onRequest(COMMANDS.APPLY_RENAME_SYMBOL, async (params) => {
 });
 
 connection.onRequest(COMMANDS.PROVIDE_RENAME_SUGGESTIONS, async (params) => {
+	if (!cachedUserToken) {
+		throw new Error('User is not authenticated. Token not found.');
+	}
+
 	const { textDocument, position } = params;
 	const document = documents.get(textDocument.uri);
 	if (!document) return [];
@@ -429,7 +444,7 @@ connection.onRequest(COMMANDS.PROVIDE_RENAME_SUGGESTIONS, async (params) => {
 		provider.setDiagnostic(textDocument.uri, document.version, diagnostics);
 	}
 
-	const suggestions = await provider.generateNameSuggestions(document, diagnostic);
+	const suggestions = await provider.generateNameSuggestions(document, diagnostic, cachedUserToken);
 	return suggestions.map(suggestion => ({
 		label: suggestion.suggestedName,
 		detail: suggestion.justification

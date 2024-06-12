@@ -155,7 +155,8 @@ export abstract class LanguageProvider {
 
 	abstract generateFixForNamingConventionViolation(
 		document: TextDocument,
-		diagnostic: Diagnostic
+		diagnostic: Diagnostic,
+		userToken: string
 	): Promise<CodeAction | undefined>;
 
 	public static readonly providedCodeActionKinds = [
@@ -164,7 +165,8 @@ export abstract class LanguageProvider {
 	];
 
 	public async provideCodeActions(
-		document: TextDocument
+		document: TextDocument,
+		userToken: string
 	): Promise<CodeAction[]> {
 		const diagnostics = document.uri
 			? this.getDiagnostic(document.uri, document.version)
@@ -181,7 +183,7 @@ export abstract class LanguageProvider {
 		});
 		const actionPromises = namingConventionDiagnostics
 			.map((diagnostic) =>
-				this.generateFixForNamingConventionViolation(document, diagnostic)
+				this.generateFixForNamingConventionViolation(document, diagnostic, userToken)
 			)
 			.filter((promise) => promise !== undefined) as Promise<CodeAction>[];
 		return await Promise.all(actionPromises);
@@ -190,6 +192,7 @@ export abstract class LanguageProvider {
 	async generateNameSuggestions(
 		document: TextDocument,
 		diagnostic: Diagnostic,
+		userToken: string,
 		suggestionCount: number = 1
 	): Promise<RenameSuggestion[]> {
 		const flaggedName = document.getText(diagnostic.range);
@@ -204,6 +207,7 @@ export abstract class LanguageProvider {
 					modelType: "groq",
 					document,
 					diagnostic,
+					userToken
 				});
 				if (response) {
 					const data = JSON.parse(response);
@@ -237,6 +241,7 @@ export abstract class LanguageProvider {
 							modelType: "groq",
 							document,
 							diagnostic,
+							userToken
 						});
 						if (response) {
 							const data = JSON.parse(response);
@@ -600,6 +605,7 @@ export abstract class LanguageProvider {
 		message,
 		document,
 		diagnostic,
+		userToken,
 		functionBody,
 		modelType,
 	}: {
@@ -607,6 +613,7 @@ export abstract class LanguageProvider {
 		modelType: "groq" | "openai";
 		document: TextDocument;
 		diagnostic: Diagnostic;
+		userToken: string;
 		functionBody?: string;
 	}): Promise<any> {
 		let requestMessage = message;
@@ -618,9 +625,9 @@ export abstract class LanguageProvider {
 		
 		try {
 			if (modelType === "openai") {
-				return await chatWithOpenAI(this.systemMessage, requestMessage);
+				return await chatWithOpenAI(this.systemMessage, requestMessage, userToken);
 			} else if (modelType === "groq") {
-				return await chatWithGroq(this.systemMessage, requestMessage);
+				return await chatWithGroq(this.systemMessage, requestMessage, userToken);
 			}
 		} catch (error: any) {
 			if (error.error?.type === "invalid_request_error") {

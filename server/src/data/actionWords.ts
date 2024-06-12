@@ -132,6 +132,7 @@ export const actionWordsDictionary: { [key: string]: string } = {
 	bookmark: "bookmark",
 	browse: "browse",
 	broadcast: "broadcast",
+	chat: "chat",
 	cancel: "cancel",
 	capture: "capture",
 	chain: "chain",

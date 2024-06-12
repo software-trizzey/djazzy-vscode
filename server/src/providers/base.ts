@@ -342,7 +342,6 @@ export abstract class LanguageProvider {
 		variableValue: any;
 	}): { violates: boolean; reason: string } {
 		if (!variableName) {
-			console.warn("No variable name found.");
 			return { violates: false, reason: "" };
 		}
 		const {

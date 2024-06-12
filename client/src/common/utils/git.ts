@@ -77,9 +77,9 @@ export async function checkAndNotify(uri: vscode.Uri, client: LanguageClient, co
 			logger.error("User not signed in. Cannot send API alert.");
 			return;
 		} else {
-			logger.info(`User ${storedUser.github_login} API alert sent for ${relativePath}`);
+			logger.info(`[${storedUser.github_login}] API alert sent for ${relativePath}`);
 		}
-		
+
         const response = await client.sendRequest(COMMANDS.CHECK_TESTS_EXISTS, relativePath) as { testExists: boolean };
         if (!response.testExists) {
             vscode.window.showWarningMessage(

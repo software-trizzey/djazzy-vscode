@@ -22,6 +22,12 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
+## [Version 0.0.34] - 2024-06-11
+
+### Added
+
+- [Enhancement] Enforce authentication by prompting anonymous users to sign in. Additionally, we reload the window when a user has signed out to ensure they no longer have access.
+
 ## [Version 0.0.33] - 2024-06-11
 
 ### Added

@@ -33,7 +33,9 @@ async function initializeAuthentication(
 		return true;
 	} else {
 		await signInWithGitHub(credentials, context, deactivate);
-		return true;
+		const newUser: UserSession = context.globalState.get(SESSION_USER);
+		const newToken = context.globalState.get(SESSION_TOKEN_KEY);
+		return !!(newToken && newUser);
 	}
 }
 
@@ -42,6 +44,20 @@ let client: LanguageClient;
 export async function activate(context: vscode.ExtensionContext) {
 	const credentials = new Credentials();
 	await credentials.initialize(context);
+
+	const authenticated = await initializeAuthentication(credentials, context);
+	if (!authenticated) {
+		vscode.window.showErrorMessage(
+			"You need to sign in with GitHub to use this extension. Please sign in and reload the window.",
+			"Sign In"
+		).then(async (selection) => {
+			if (selection === "Sign In") {
+				await signInWithGitHub(credentials, context, deactivate);
+				vscode.commands.executeCommand('workbench.action.reloadWindow');
+			}
+		});
+		return;
+	}
 
 	const serverModule = context.asAbsolutePath(
 		path.join("server", "out", "server.js")
@@ -57,7 +73,6 @@ export async function activate(context: vscode.ExtensionContext) {
 			transport: TransportKind.ipc,
 		},
 	};
-	
 
 	const clientOptions: LanguageClientOptions = {
 		documentSelector: [
@@ -81,14 +96,11 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	registerCommands(context, client, deactivate);
 
-	const authenticated = await initializeAuthentication(credentials, context);
-	if (authenticated) {
-		client.start().then(async () => {
-			client.onRequest(COMMANDS.GET_GIT_DIFF, getChangedLines);
-			const apiFolderWatchers = await setupFileWatchers(client, context);
-			clientOptions.synchronize.fileEvents = apiFolderWatchers;
-		});
-	}
+	client.start().then(async () => {
+		client.onRequest(COMMANDS.GET_GIT_DIFF, getChangedLines);
+		const apiFolderWatchers = await setupFileWatchers(client, context);
+		clientOptions.synchronize.fileEvents = apiFolderWatchers;
+	});
 }
 
 export function deactivate(): Thenable<void> | undefined {

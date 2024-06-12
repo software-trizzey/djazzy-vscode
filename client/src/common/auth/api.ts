@@ -96,4 +96,6 @@ export async function signOutUser(context: vscode.ExtensionContext) {
 
 	await context.globalState.update(SESSION_USER, undefined);
 	await context.globalState.update(SESSION_TOKEN_KEY, undefined);
+
+	vscode.commands.executeCommand('workbench.action.reloadWindow');
 }

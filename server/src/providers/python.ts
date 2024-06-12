@@ -22,7 +22,7 @@ import { PYTHON_DIRECTORY } from "../constants/filepaths";
 import { FIX_NAME } from "../constants/commands";
 import { RULE_MESSAGES } from '../constants/rules';
 import { SOURCE_NAME, SOURCE_TYPE } from "../constants/diagnostics";
-import { LanguageConventions } from "../languageConventions";
+import { LanguageConventions, CeleryTaskDecoratorSettings } from "../languageConventions";
 
 export class PythonProvider extends LanguageProvider {
 	provideDiagnosticsDebounced: (document: TextDocument) => void;
@@ -287,6 +287,28 @@ export class PythonProvider extends LanguageProvider {
 					this.handleComment(comment, symbol, diagnostics);
 				}
 			}
+
+			const decorators: string[] = symbol.decorators || [];
+			const calls: string[] = symbol.calls || [];
+			if (
+				conventions.celeryTaskDecorator &&
+				symbol.type === "functiondef" &&
+				decorators.some(decorator => decorator.includes("shared_task"))
+			) {
+				const celeryViolations = this.validateCeleryTask(decorators, calls, name, conventions.celeryTaskDecorator);
+				celeryViolations.forEach(violation => {
+					const start = Position.create(line, col_offset);
+					const end = Position.create(line, col_offset + name.length);
+					const celeryDiagnostic: Diagnostic = Diagnostic.create(
+						Range.create(start, end),
+						violation,
+						DiagnosticSeverity.Warning,
+						SOURCE_TYPE,
+						SOURCE_NAME
+					);
+					diagnostics.push(celeryDiagnostic);
+				});
+			}
 		}
 	}
 
@@ -410,7 +432,6 @@ export class PythonProvider extends LanguageProvider {
 		return { violates: hasViolatedRule, reason, diagnostics };
 	}
 	
-	
 
 	private validateList(value: string): { violates: boolean; reason: string } {
 		// TODO: Implement your validation logic for lists
@@ -423,5 +444,43 @@ export class PythonProvider extends LanguageProvider {
 	} {
 		// TODO: Implement your validation logic for class names
 		return { violates: false, reason: "" };
+	}
+
+	private validateCeleryTask(
+		decorators: string[],
+		calls: string[],
+		celeryTaskName: string,
+		rule: CeleryTaskDecoratorSettings
+	): string[] {
+		const violations: string[] = [];
+
+		if (!decorators && !calls) {
+			return violations;
+		}
+	
+		const missingDecorators = rule.requiredDecorators.filter(decorator => {
+			const parsedDecorator = decorator.replace(/@/, '').replace(/\(.*\)/, '');
+			return !decorators.some(dec => dec.includes(parsedDecorator));
+		});
+	
+		if (missingDecorators.length > 0) {
+			violations.push(RULE_MESSAGES.CELERY_TASK_MISSING_DECORATORS.replace(
+				"{name}", celeryTaskName
+			).replace("{decorators}", missingDecorators.join(', ')));
+		}
+	
+		const missingCalls = rule.requiredCalls.filter(call => {
+			const parsedCall = call.replace(/\(.*\)/, '');
+			return !calls.some(c => c.includes(parsedCall));
+		});
+	
+		if (missingCalls.length > 0) {
+			violations.push(RULE_MESSAGES.CELERY_TASK_MISSING_CALLS.replace(
+				"{name}", celeryTaskName
+			).replace("{calls}", missingCalls.join(', '))
+			);
+		}
+	
+		return violations;
 	}
 }

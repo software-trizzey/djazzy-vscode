@@ -9,4 +9,6 @@ export const RULE_MESSAGES = {
     OBJECT_KEY_TOO_SHORT: "Object key \"{name}\" is too short and must be more descriptive.",
     OBJECT_KEY_BOOLEAN_NO_PREFIX: "Object key \"{name}\" does not start with a conventional boolean prefix.",
     OBJECT_KEY_BOOLEAN_NEGATIVE_PATTERN: "Object key \"{name}\" has a negative naming pattern, which contradicts the positive naming convention.",
+    CELERY_TASK_MISSING_DECORATORS: "Celery task \"{name}\" is missing required decorator(s): {decorators}.",
+	CELERY_TASK_MISSING_CALLS: "Celery task \"{name}\" is missing required function call(s): {calls}."
 };

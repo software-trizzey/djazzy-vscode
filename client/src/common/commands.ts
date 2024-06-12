@@ -22,7 +22,7 @@ export function registerCommands(context: vscode.ExtensionContext, client: Langu
 
     const signOutCommand = vscode.commands.registerCommand(
         COMMANDS.SIGN_OUT,
-        () => signOutUser(context)
+        () => signOutUser(context, client)
     );
     context.subscriptions.push(signOutCommand);
 

@@ -18,8 +18,9 @@ export const COMMANDS = {
 	ADD_CUSTOM_RULE: `${EXTENSION_ID}.addCustomRule`,
 	OPEN_SETTINGS: `${EXTENSION_ID}.openSettings`,
 	OPEN_WALKTHROUGH: `${EXTENSION_ID}.openWalkthrough`,
+	UPDATE_CACHED_USER_TOKEN: `${EXTENSION_ID}.updateCachedUserToken`,
 };
 
-export const AUTH_SERVER_URL = "https://rome-django-auth.onrender.com";
+// export const AUTH_SERVER_URL = "https://rome-django-auth.onrender.com";
 // TODO: this is jank but NODE_ENV isn't working when the app is packaged and I need to ship
-// export const AUTH_SERVER_URL = "http://127.0.0.1:8000";
+export const AUTH_SERVER_URL = "http://127.0.0.1:8000";

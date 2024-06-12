@@ -3,9 +3,10 @@ import * as vscode from "vscode";
 import { v4 as uuidv4 } from "uuid";
 
 import logger from "../logs";
-import { AUTH_SERVER_URL, SESSION_TOKEN_KEY, SESSION_USER } from "../constants";
+import { AUTH_SERVER_URL, COMMANDS, SESSION_TOKEN_KEY, SESSION_USER } from "../constants";
 
 import { Credentials } from "./github";
+import { LanguageClient } from 'vscode-languageclient/node';
 
 export async function signInWithGitHub(
 	credentials: Credentials,
@@ -64,7 +65,7 @@ export async function signInWithGitHub(
 	}
 }
 
-export async function signOutUser(context: vscode.ExtensionContext) {
+export async function signOutUser(context: vscode.ExtensionContext, client: LanguageClient) {
 	const token = context.globalState.get(SESSION_TOKEN_KEY);
 
 	if (token) {
@@ -96,6 +97,8 @@ export async function signOutUser(context: vscode.ExtensionContext) {
 
 	await context.globalState.update(SESSION_USER, undefined);
 	await context.globalState.update(SESSION_TOKEN_KEY, undefined);
+
+	await client.sendRequest(COMMANDS.UPDATE_CACHED_USER_TOKEN, null);
 
 	vscode.commands.executeCommand('workbench.action.reloadWindow');
 }

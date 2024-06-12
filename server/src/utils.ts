@@ -323,6 +323,11 @@ const getPossibleTestPaths = (sourceUri: string): string[] => {
 };
 
 const getJavaScriptTestPaths = (parsedPath: path.ParsedPath) => {
+	if (/\/(tests|__tests__)\/.*/.test(parsedPath.dir)) {
+		console.log("Already in tests directory", parsedPath);
+		return [];
+	}
+
     const testDirs = [
         parsedPath.dir,
         path.join(parsedPath.dir, '__tests__'),
@@ -343,6 +348,11 @@ const getJavaScriptTestPaths = (parsedPath: path.ParsedPath) => {
 };
 
 const getPythonTestPaths = (parsedPath: path.ParsedPath) => {
+	if (/\/tests\//.test(parsedPath.dir)) {
+		console.log("Already in tests directory", parsedPath);
+        return [];
+    }
+
     const testDirs = [
         parsedPath.dir,
         path.join(parsedPath.dir, 'tests'),

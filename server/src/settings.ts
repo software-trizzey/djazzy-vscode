@@ -86,7 +86,13 @@ export const defaultConventions: ExtensionSettings = {
 		typescript: defaultLanguageConventions,
 		javascriptreact: defaultLanguageConventions,
 		typescriptreact: defaultLanguageConventions,
-		python: defaultLanguageConventions,
+		python: {
+			...defaultLanguageConventions,
+			celeryTaskDecorator: {
+				requiredDecorators: [],
+				requiredCalls: [],
+			}
+		},
 	},
 };
 
@@ -153,6 +159,7 @@ export const normalizeLanguageSettings = (
 			positiveNaming: languageSettings.boolean.positiveNaming,
 			usePrefix: languageSettings.boolean.usePrefix,
 		},
+		celeryTaskDecorator: languageSettings.celeryTaskDecorator,
 	};
 };
 

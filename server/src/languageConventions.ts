@@ -33,6 +33,11 @@ interface FileRuleSettings {
 	avoidExportDefault: boolean;
 }
 
+export interface CeleryTaskDecoratorSettings {
+	requiredDecorators: string[];
+	requiredCalls: string[];
+}
+
 // Server settings
 export interface LanguageConventions {
 	isEnabled: boolean;
@@ -42,5 +47,6 @@ export interface LanguageConventions {
 		objectProperties: ExpressiveObjectPropertyNameRulesSettings;
 	};
 	boolean: BooleanRuleSettings;
+	celeryTaskDecorator?: CeleryTaskDecoratorSettings;
 	file?: FileRuleSettings; // TODO: add support for file conventions
 }

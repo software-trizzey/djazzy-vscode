@@ -477,6 +477,15 @@
 					"description": "Examples of Python dictionary key naming conventions",
 					"order": 41
 				},
+				"whenInRome.languages.python.celeryTaskDecorator": {
+					"type": "object",
+					"default": {
+						"requiredDecorators": [],
+						"requiredCalls": []
+					},
+					"description": "Celery task functions should have the newrelic background_task decorator and call set_custom_newrelic_log.",
+					"order": 42
+				},
 				"whenInRome.languages.javascript.expressiveNames.variables.examples": {
 					"type": "array",
 					"default": [],

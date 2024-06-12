@@ -1,12 +1,15 @@
-import simpleGit, { SimpleGit } from "simple-git";
 import * as vscode from "vscode";
+import { LanguageClient } from 'vscode-languageclient/node';
+import simpleGit, { SimpleGit } from "simple-git";
+
 import {
 	getLastNotifiedTime,
 	getNotificationInterval,
 	updateLastNotifiedTime,
 } from "./notifications";
-import { LanguageClient } from 'vscode-languageclient/node';
-import { COMMANDS } from '../constants';
+import { COMMANDS, SESSION_USER } from '../constants';
+import logger from '../logs';
+import { UserSession } from '../auth/github';
 
 async function initializeGitRepository() {
 	const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -33,7 +36,19 @@ async function initializeGitRepository() {
 	return repository;
 }
 
-export async function checkAndNotify(uri: vscode.Uri, client: LanguageClient) {
+const isTestFile = (filePath: string): boolean => {
+    const testFilePatterns = [
+        /\/tests\//,
+        /\/__tests__\//,
+        /test_.*/,
+        /.*\.test\..*/,
+        /.*\.spec\..*/
+    ];
+
+    return testFilePatterns.some(pattern => pattern.test(filePath));
+};
+
+export async function checkAndNotify(uri: vscode.Uri, client: LanguageClient, context: vscode.ExtensionContext) {
 	const lastNotified = getLastNotifiedTime(uri);
 	const currentTime = new Date().getTime();
 	const notificationInterval = getNotificationInterval();
@@ -44,6 +59,12 @@ export async function checkAndNotify(uri: vscode.Uri, client: LanguageClient) {
 	}
 
 	const relativePath = vscode.workspace.asRelativePath(uri);
+
+	if (isTestFile(relativePath)) {
+        console.log(`File ${relativePath} is a test file.`);
+        return;
+    }
+
 	const repository = await initializeGitRepository();
 	const diff = await repository.diff(["HEAD", relativePath]);
 	
@@ -51,7 +72,15 @@ export async function checkAndNotify(uri: vscode.Uri, client: LanguageClient) {
 	const isNewFile = untrackedFiles.includes(relativePath);
 
 	if (diff.length > 0 || isNewFile) {
-        const response = await client.sendRequest(COMMANDS.CHECK_TESTS_EXISTS, relativePath) as {testExists: boolean};
+		const storedUser: UserSession = context.globalState.get(SESSION_USER);
+		if (!storedUser) {
+			logger.error("User not signed in. Cannot send API alert.");
+			return;
+		} else {
+			logger.info(`User ${storedUser.github_login} API alert sent for ${relativePath}`);
+		}
+		
+        const response = await client.sendRequest(COMMANDS.CHECK_TESTS_EXISTS, relativePath) as { testExists: boolean };
         if (!response.testExists) {
             vscode.window.showWarningMessage(
                 `Test file for "${relativePath}" does not exist. Please add a test file before committing changes.`,

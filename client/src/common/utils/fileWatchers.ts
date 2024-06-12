@@ -26,12 +26,12 @@ export async function setupFileWatchers(
 
 		parentWatcher.onDidCreate((uri) => {
 			console.log(`Parent watcher: New ${folder} folder or file created:`, uri.fsPath);
-			checkAndNotify(uri, client);
+			checkAndNotify(uri, client, context);
 		});
 
 		parentWatcher.onDidChange((uri) => {
 			console.log(`Parent watcher: ${folder} folder or file changed:`, uri.fsPath);
-			checkAndNotify(uri, client);
+			checkAndNotify(uri, client, context);
 		});
 
 		parentWatcher.onDidDelete((uri) => {

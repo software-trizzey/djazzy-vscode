@@ -22,6 +22,12 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
+## [Version 0.0.32] - 2024-06-11
+
+### Added
+
+- [Feature] Add new rule for validating celery tasks in python.
+
 ## [Version 0.0.31] - 2024-06-10
 
 ### Added

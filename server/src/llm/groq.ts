@@ -5,7 +5,7 @@ export async function chatWithGroq(systemMessage: string, developerInput: string
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
-			'Authorization': `Bearer ${userToken}`,
+			'Authorization': `Token ${userToken}`,
 		},
 		body: JSON.stringify({ systemMessage, developerInput }),
 	});

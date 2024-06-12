@@ -22,6 +22,18 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
+## [Version 0.0.33] - 2024-06-11
+
+### Added
+
+- [Enhancement] Log when a given user triggers the test file alert.
+
+### Fixed
+
+- [Bugfix] Fix issue where empty Python dictionaries were crashing the validate dictionary method.
+- [Bugfix] Address edge-case issue where Nimble celery tasks with @app.task weren't picked up by validator.
+- [Bugfix] Fix bug where test files were being flagged as requiring a test.
+
 ## [Version 0.0.32] - 2024-06-11
 
 ### Added

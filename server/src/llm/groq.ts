@@ -1,8 +1,9 @@
+import { API_SERVER_URL } from '../constants/api';
 
 
 export async function chatWithGroq(systemMessage: string, developerInput: string, userToken: string) {
 	try {
-		const response = await fetch('http://localhost:8000/chat/groq/', {
+		const response = await fetch(`${API_SERVER_URL}/chat/groq/`, {
 			method: 'POST',
 			headers: {
 			'Content-Type': 'application/json',

@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 import { v4 as uuidv4 } from "uuid";
 
 import logger from "../logs";
-import { AUTH_SERVER_URL, COMMANDS, SESSION_TOKEN_KEY, SESSION_USER } from "../constants";
+import { API_SERVER_URL, COMMANDS, SESSION_TOKEN_KEY, SESSION_USER } from "../constants";
 
 import { Credentials } from "./github";
 import { LanguageClient } from 'vscode-languageclient/node';
@@ -41,7 +41,7 @@ export async function signInWithGitHub(
 		},
 	};
 
-	const serverResponse: any = await fetch(`${AUTH_SERVER_URL}/auth/users/login/`, {
+	const serverResponse: any = await fetch(`${API_SERVER_URL}/auth/users/login/`, {
 		headers: {
 			"Content-Type": "application/json",
 		},
@@ -70,7 +70,7 @@ export async function signOutUser(context: vscode.ExtensionContext, client: Lang
 
 	if (token) {
 		try {
-			const response = await fetch(`${AUTH_SERVER_URL}/auth/logout/`, {
+			const response = await fetch(`${API_SERVER_URL}/auth/logout/`, {
 				method: "POST",
 				headers: {
 					Authorization: `Token ${token}`,

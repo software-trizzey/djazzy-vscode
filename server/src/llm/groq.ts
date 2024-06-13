@@ -6,8 +6,8 @@ export async function chatWithGroq(systemMessage: string, developerInput: string
 		const response = await fetch(`${API_SERVER_URL}/chat/groq/`, {
 			method: 'POST',
 			headers: {
-			'Content-Type': 'application/json',
-			'Authorization': `Token ${userToken}`,
+				'Content-Type': 'application/json',
+				'Authorization': `Token ${userToken}`,
 			},
 			body: JSON.stringify({ systemMessage, developerInput }),
 		});

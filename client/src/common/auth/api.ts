@@ -58,10 +58,10 @@ export async function signInWithGitHub(
 		);
 	} else {
 		vscode.window.showErrorMessage(
-			`Authentication failed: ${serverResponse.error}`
+			`Authentication failed: ${responseData.detail || responseData.error || responseData.message}`
 		);
-		console.error(serverResponse.error);
-		logger.error(serverResponse.error);
+		console.error(responseData);
+		logger.error(responseData);
 	}
 }
 
@@ -85,7 +85,7 @@ export async function signOutUser(context: vscode.ExtensionContext, client: Lang
 				const responseData = (await response.json()) as any;
 				console.error(responseData.error);
 			}
-		} catch (error) {
+		} catch (error: any) {
 			vscode.window.showErrorMessage("Error signing out from the server.");
 			logger.error(error);
 		}

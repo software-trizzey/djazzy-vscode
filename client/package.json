@@ -15,6 +15,8 @@
 	},
 	"dependencies": {
 		"@octokit/rest": "^20.1.1",
+		"@vscode/extension-telemetry": "^0.9.6",
+		"applicationinsights": "^3.1.0",
 		"rollbar": "^2.26.4",
 		"simple-git": "^3.24.0",
 		"uuid": "^9.0.1",

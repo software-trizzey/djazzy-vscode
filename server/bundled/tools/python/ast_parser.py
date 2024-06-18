@@ -25,6 +25,16 @@ DJANGO_IGNORE_FUNCTIONS = {
     "perform_create": True,
 }
 
+def serialize_file_data(obj):
+    if isinstance(obj, ast.AST):
+        return {k: serialize_file_data(v) for k, v in ast.iter_fields(obj)}
+    elif isinstance(obj, list):
+        return [serialize_file_data(i) for i in obj]
+    elif isinstance(obj, dict):
+        return {k: serialize_file_data(v) for k, v in obj.items()}
+    else:
+        return str(obj)
+
 class Analyzer(ast.NodeVisitor):
     def __init__(self, source_code):
         self.source_code = source_code
@@ -308,7 +318,7 @@ class Analyzer(ast.NodeVisitor):
         except Exception as e:
             # @rome-ignore: we're not worried about runtime errors triggered by the user's code
             pass
-        return json.dumps(self.symbols)
+        return json.dumps(self.symbols, default=serialize_file_data)
 
 def main():
     input_code = sys.stdin.read()

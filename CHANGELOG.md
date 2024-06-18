@@ -22,6 +22,14 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
+## [Version 0.0.36] - 2024-06-18
+
+### Fixed
+
+- [Bugfix] Always use `jsx` babel plugin when parsing javascript and typescript files.
+- [Bugfix] Added custom data serializer to for better handling of python file symbols.
+- [Enhancement] Removed unused database schema files and updated groq error message
+
 ## [Version 0.0.35] - 2024-06-11
 
 ### Fixed

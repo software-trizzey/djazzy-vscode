@@ -136,11 +136,10 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 				"optionalChaining",
 				"nullishCoalescingOperator",
 				"objectRestSpread",
+				"jsx"
 			];
 			if (this.isTypeScript) {
 				pluginOptions.push("typescript");
-			} else if (this.languageId === "javascriptreact" || this.languageId === "typescriptreact") {
-				pluginOptions.push("jsx");
 			}
 
 			const ast = babelParser.parse(text, {

@@ -1,15 +1,26 @@
 import * as vscode from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
 
-import { COMMANDS } from '../constants';
+import { COMMANDS, SESSION_USER } from '../constants';
 
+import { telemetryReporter } from '../telemetry';
+import { UserSession } from '../auth/github';
 
 async function provideRenameSuggestions(client: LanguageClient, params: any) {
 	return client.sendRequest(COMMANDS.PROVIDE_RENAME_SUGGESTIONS, params);
 }
 
 
-export async function renameSymbolWithSuggestions(client: LanguageClient) {
+export async function renameSymbolWithSuggestions(context: vscode.ExtensionContext, client: LanguageClient) {
+	const storedUser: UserSession = context.globalState.get(SESSION_USER);
+	if (!storedUser) {
+		vscode.window.showErrorMessage('Please sign in to use this feature');
+		return;
+	}
+	telemetryReporter.sendTelemetryEvent('renameSymbolEvent', {
+		action: 'start', message: `[${storedUser.github_login}] triggered rename symbol flow.` }
+	);
+
 	const editor = vscode.window.activeTextEditor;
     if (!editor) return;
 
@@ -20,6 +31,7 @@ export async function renameSymbolWithSuggestions(client: LanguageClient) {
       vscode.window.showInformationMessage('No symbol selected');
       return;
     }
+
 
     const params = {
       textDocument: { uri: document.uri.toString() },

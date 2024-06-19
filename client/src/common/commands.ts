@@ -28,7 +28,7 @@ export function registerCommands(context: vscode.ExtensionContext, client: Langu
 
     const renameSymbolCommand = vscode.commands.registerCommand(
         COMMANDS.RENAME_SYMBOL,
-        () => renameSymbolWithSuggestions(client)
+        () => renameSymbolWithSuggestions(context, client)
     );
     context.subscriptions.push(renameSymbolCommand);
 

@@ -10,6 +10,7 @@ import {
 import { COMMANDS, SESSION_USER } from '../constants';
 import logger from '../logs';
 import { UserSession } from '../auth/github';
+import { telemetryReporter } from '../telemetry';
 
 async function initializeGitRepository() {
 	const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -77,7 +78,9 @@ export async function checkAndNotify(uri: vscode.Uri, client: LanguageClient, co
 			logger.error("User not signed in. Cannot send API alert.");
 			return;
 		} else {
-			logger.info(`[${storedUser.github_login}] API alert sent for ${relativePath}`);
+			const message = `[${storedUser.github_login}] API alert sent for ${relativePath}`;
+			logger.info(message);
+			telemetryReporter.sendTelemetryEvent("apiFileWatcherEvent", { message });
 		}
 
         const response = await client.sendRequest(COMMANDS.CHECK_TESTS_EXISTS, relativePath) as { testExists: boolean };

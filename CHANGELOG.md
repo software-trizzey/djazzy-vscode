@@ -22,6 +22,10 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
+## [Version 0.0.37] - 2024-06-18
+
+- [Enhancement] Added telemetry package and began tracking rename symbol and API file watcher events
+
 ## [Version 0.0.36] - 2024-06-18
 
 ### Fixed

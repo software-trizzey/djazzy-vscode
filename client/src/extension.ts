@@ -20,6 +20,7 @@ import {
 } from "./common/utils/git";
 import { registerCommands } from './common/commands';
 import { setupFileWatchers } from './common/utils/fileWatchers';
+import { telemetryReporter } from './common/telemetry';
 
 async function initializeAuthentication(
 	credentials: Credentials,
@@ -40,13 +41,10 @@ async function initializeAuthentication(
 	}
 }
 
-const TELEMETRY_KEY  = "763547ec-0f3f-4121-b53b-45cfb226ebba";
-let reporter;
 let client: LanguageClient;
 
 export async function activate(context: vscode.ExtensionContext) {
-	reporter = new TelemetryReporter(TELEMETRY_KEY);
-	context.subscriptions.push(reporter);
+	context.subscriptions.push(telemetryReporter);
 
 
 	const credentials = new Credentials();

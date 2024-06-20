@@ -21,7 +21,7 @@ import { ExtensionSettings, defaultConventions } from "../settings";
 import { PYTHON_DIRECTORY } from "../constants/filepaths";
 import { FIX_NAME } from "../constants/commands";
 import { RULE_MESSAGES } from '../constants/rules';
-import { SOURCE_NAME, SOURCE_TYPE } from "../constants/diagnostics";
+import { SOURCE_NAME, NAMING_CONVENTION_VIOLATION_SOURCE_TYPE } from "../constants/diagnostics";
 import { LanguageConventions, CeleryTaskDecoratorSettings } from "../languageConventions";
 
 export class PythonProvider extends LanguageProvider {
@@ -279,7 +279,7 @@ export class PythonProvider extends LanguageProvider {
 					range,
 					result.reason,
 					DiagnosticSeverity.Warning,
-					SOURCE_TYPE,
+					NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
 					SOURCE_NAME
 				);
 				diagnostics.push(diagnostic);
@@ -301,7 +301,7 @@ export class PythonProvider extends LanguageProvider {
 						Range.create(start, end),
 						violation,
 						DiagnosticSeverity.Warning,
-						SOURCE_TYPE,
+						NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
 						SOURCE_NAME
 					);
 					diagnostics.push(celeryDiagnostic);
@@ -424,7 +424,7 @@ export class PythonProvider extends LanguageProvider {
 					range,
 					validationResult.reason,
 					DiagnosticSeverity.Warning,
-					SOURCE_TYPE,
+					NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
 					SOURCE_NAME
 				);
 				diagnostics.push(diagnostic);

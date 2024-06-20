@@ -18,11 +18,12 @@ import { LanguageProvider } from "./base";
 
 import {
 	debounce,
+	trackCodeActionRenameEvent,
 	validateJavaScriptAndTypeScriptFunctionName,
 } from "../utils";
 
 import { ExtensionSettings, defaultConventions } from "../settings";
-import { SOURCE_NAME, NAMING_CONVENTION_VIOLATION_SOURCE_TYPE, THEME_SYSTEM_VIOLATION_SOURCE_TYPE } from "../constants/diagnostics";
+import { SOURCE_NAME, NAMING_CONVENTION_VIOLATION_SOURCE_TYPE, THEME_SYSTEM_VIOLATION_SOURCE_TYPE, RENAME_SUGGESTION_PLACEHOLDER } from "../constants/diagnostics";
 import { RULE_MESSAGES } from '../constants/rules';
 import { LanguageConventions } from "../languageConventions";
 
@@ -43,7 +44,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 	) {
 		super(languageId, connection, settings);
 
-		if (languageId === "typescript") {
+		if (languageId === "typescript" || languageId === "typescriptreact") {
 			this.isTypeScript = true;
 		}
 
@@ -70,16 +71,8 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		}
 
 		if (violationMessage.includes(RULE_MESSAGES.VARIABLE_TOO_SHORT.replace("{name}", flaggedName))) {
-			const response = await this.fetchSuggestedNameFromLLM({
-				message: violationMessage,
-				modelType: "groq",
-				document,
-				diagnostic,
-				userToken
-			});
-			if (!response) return;
-			const data = JSON.parse(response);
-			suggestedName = data.suggestedName;
+			trackCodeActionRenameEvent(userToken, flaggedName);
+			suggestedName = RENAME_SUGGESTION_PLACEHOLDER;
 		} else if (violationMessage.includes(RULE_MESSAGES.BOOLEAN_NEGATIVE_PATTERN.replace("{name}", flaggedName))) {
 			suggestedName = flaggedName.replace(/not/i, "");
 		} else if (violationMessage.includes(RULE_MESSAGES.BOOLEAN_NO_PREFIX.replace("{name}", flaggedName))) {
@@ -90,20 +83,8 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 			if (this.settings.general.isDevMode) {
 				suggestedName = `get${flaggedName}`;
 			} else {
-				const functionBodyRange = this.getFunctionBodyRange(document, diagnostic.range);
-				const functionBody = this.extractFunctionBody(document, functionBodyRange);
-				const limitedFunctionBody = this.limitFunctionBodySize(functionBody);
-				const response = await this.fetchSuggestedNameFromLLM({
-					message: violationMessage,
-					functionBody: limitedFunctionBody,
-					modelType: "groq",
-					document,
-					diagnostic,
-					userToken
-				});
-				if (!response) return;
-				const data = JSON.parse(response);
-				suggestedName = data.suggestedName;
+				trackCodeActionRenameEvent(userToken, flaggedName);
+				suggestedName = RENAME_SUGGESTION_PLACEHOLDER;
 			}
 		}
 		const title = `Rename to '${suggestedName}'`;

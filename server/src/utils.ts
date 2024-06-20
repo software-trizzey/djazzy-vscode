@@ -10,6 +10,7 @@ import { RULE_MESSAGES } from './constants/rules';
 import { actionWordsDictionary, commonWords } from "./data";
 import { LanguageConventions } from "./languageConventions";
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import LOGGER from './common/logs';
 
 const cache = new Map<string, boolean>();
 
@@ -391,4 +392,9 @@ export const checkForTestFile = async (uri: string): Promise<boolean> => {
         }
     }
     return false;
+};
+
+
+export const trackCodeActionRenameEvent = (userToken: string, flaggedName: string) => {
+	LOGGER.info(`[USER ${userToken}] Requested suggested name for ${flaggedName}`);
 };

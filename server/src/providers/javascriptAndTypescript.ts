@@ -19,10 +19,11 @@ import { LanguageProvider } from "./base";
 import {
 	debounce,
 	validateJavaScriptAndTypeScriptFunctionName,
+	validateThemeSystemUsage,
 } from "../utils";
 
 import { ExtensionSettings, defaultConventions } from "../settings";
-import { SOURCE_NAME, SOURCE_TYPE } from "../constants/diagnostics";
+import { SOURCE_NAME, NAMING_CONVENTION_VIOLATION_SOURCE_TYPE, THEME_SYSTEM_VIOLATION_SOURCE_TYPE } from "../constants/diagnostics";
 import { RULE_MESSAGES } from '../constants/rules';
 import { LanguageConventions } from "../languageConventions";
 
@@ -136,11 +137,9 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 				"optionalChaining",
 				"nullishCoalescingOperator",
 				"objectRestSpread",
-				"jsx"
+				"jsx",
+				"typescript"
 			];
-			if (this.isTypeScript) {
-				pluginOptions.push("typescript");
-			}
 
 			const ast = babelParser.parse(text, {
 				sourceType: "module",
@@ -299,10 +298,32 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 				range,
 				conventionCheckResult.reason,
 				DiagnosticSeverity.Warning,
-				SOURCE_TYPE,
+				NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
 				SOURCE_NAME
 			);
 			diagnostics.push(diagnostic);
+		}
+
+		if (declaration.init?.type === "Literal" || declaration.init?.type === "TemplateLiteral") {
+			const code = document.getText(Range.create(
+				document.positionAt(declaration.init.start),
+				document.positionAt(declaration.init.end)
+			));
+			const themeViolations = validateThemeSystemUsage(code);
+			themeViolations.forEach(violation => {
+				const violationRange = Range.create(
+					document.positionAt(declaration.init.start + violation.index),
+					document.positionAt(declaration.init.start + violation.index + violation.value.length)
+				);
+				const diagnostic: Diagnostic = Diagnostic.create(
+					violationRange,
+					violation.reason,
+					DiagnosticSeverity.Warning,
+					THEME_SYSTEM_VIOLATION_SOURCE_TYPE,
+					SOURCE_NAME
+				);
+				diagnostics.push(diagnostic);
+			});
 		}
 	}
 
@@ -333,15 +354,41 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 					range: propertyRange,
 					severity: DiagnosticSeverity.Warning,
 					message: validationResult.reason,
-					code: SOURCE_TYPE,
+					code: NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
 					source: SOURCE_NAME,
 				};
 				diagnostics.push(diagnostic);
 			}
+
+			const objectPropertyStartValue = property.value.start;
+			const objectPropertyEndValue = property.value.end;
+
+			if (objectPropertyStartValue && objectPropertyEndValue) {
+				
+				const objectValueCode = document.getText(Range.create(
+					document.positionAt(objectPropertyStartValue),
+					document.positionAt(objectPropertyEndValue)
+				));
+				const themeViolations = validateThemeSystemUsage(objectValueCode);
+				themeViolations.forEach(violation => {
+					const violationRange = Range.create(
+						document.positionAt(objectPropertyStartValue + violation.index),
+						document.positionAt(objectPropertyStartValue + violation.index + violation.value.length)
+					);
+					const diagnostic: Diagnostic = {
+						range: violationRange,
+						severity: DiagnosticSeverity.Warning,
+						message: violation.reason,
+						code: THEME_SYSTEM_VIOLATION_SOURCE_TYPE,
+						source: SOURCE_NAME,
+					};
+					diagnostics.push(diagnostic);
+				});
+			}
 		} else {
 			console.log("Property key is not an Identifier", property);
 		}
-}	
+	}	
 
 	private async checkFunctionAndAddDiagnostic(
 		name: string,
@@ -381,7 +428,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 				diagnosticRange,
 				result.reason,
 				DiagnosticSeverity.Warning,
-				SOURCE_TYPE,
+				NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
 				SOURCE_NAME
 			);
 			diagnostics.push(diagnostic);

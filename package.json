@@ -282,6 +282,18 @@
 					"description": "Enforce boolean variable prefixes.",
 					"order": 16
 				},
+				"whenInRome.languages.javascript.themeSystem.isEnabled": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enforce theme system conventions.",
+					"order": 16
+				},
+				"whenInRome.languages.javascript.themeSystem.shouldFlagHexCodes": {
+					"type": "boolean",
+					"default": true,
+					"description": "Flag code that uses hex codes instead of theme system variables.",
+					"order": 16
+				},
 				"whenInRome.languages.typescript.isEnabled": {
 					"type": "boolean",
 					"default": true,
@@ -364,6 +376,18 @@
 					"type": "boolean",
 					"default": true,
 					"description": "Enforce boolean variable prefixes.",
+					"order": 27
+				},
+				"whenInRome.languages.typescript.themeSystem.isEnabled": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enforce theme system conventions.",
+					"order": 27
+				},
+				"whenInRome.languages.typescript.themeSystem.shouldFlagHexCodes": {
+					"type": "boolean",
+					"default": true,
+					"description": "Flag code that uses hex codes instead of theme system variables.",
 					"order": 27
 				},
 				"whenInRome.languages.python.isEnabled": {

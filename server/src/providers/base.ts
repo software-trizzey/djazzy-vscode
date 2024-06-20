@@ -38,6 +38,14 @@ export interface RenameSuggestion {
 	justification: string;
 }
 
+interface ThemeSystemViolation {
+	reason: string;
+	violates: boolean;
+	index: number;
+	value: string;
+}
+
+
 
 export abstract class LanguageProvider {
 	protected connection: Connection;
@@ -452,6 +460,31 @@ export abstract class LanguageProvider {
 		// TODO: add rule for determining whether the name is a valid word (e.g. "usr" is not a valid word)
 	
 		return { violates: false, reason: "" };
+	}
+
+	protected validateThemeSystemUsage(code: string): ThemeSystemViolation[]{
+		const { themeSystem } = this.getConventions();
+		if (!themeSystem?.isEnabled) {
+			return [];
+		}
+
+		const violations:  ThemeSystemViolation[] = [];
+		const regexHex = /#[0-9a-fA-F]{3,6}\b/g;
+		
+		if (themeSystem.shouldFlagHexCodes) {
+			let match;
+			while ((match = regexHex.exec(code)) !== null) {
+				const foundHexCode = match[0];
+				violations.push({
+					reason: RULE_MESSAGES.THEME_SYSTEM_VIOLATION_HEXCODES.replace("{value}", foundHexCode),
+					violates: true,
+					index: match.index,
+					value: foundHexCode
+				});
+			}
+		}
+	
+		return violations;
 	}
 	
 

@@ -305,32 +305,6 @@ export function getWordRangeAt(document: TextDocument, position: Position) {
 	return Range.create(document.positionAt(start), document.positionAt(end));
 }
 
-interface ThemeSystemViolation {
-	reason: string;
-	violates: boolean;
-	index: number;
-	value: string;
-}
-
-export function validateThemeSystemUsage(code: string): ThemeSystemViolation[]{
-    const violations:  ThemeSystemViolation[] = [];
-    const regexHex = /#[0-9a-fA-F]{3,6}\b/g;
-
-    let match;
-    
-    while ((match = regexHex.exec(code)) !== null) {
-		const foundHexCode = match[0];
-        violations.push({
-            reason: RULE_MESSAGES.THEME_SYSTEM_VIOLATION.replace("{value}", foundHexCode),
-			violates: true,
-            index: match.index,
-            value: foundHexCode
-        });
-    }
-
-    return violations;
-}
-
 
 const getPossibleTestPaths = (sourceUri: string): string[] => {
     const parsedPath = path.parse(sourceUri);

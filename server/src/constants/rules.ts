@@ -11,5 +11,5 @@ export const RULE_MESSAGES = {
     OBJECT_KEY_BOOLEAN_NEGATIVE_PATTERN: "Object key \"{name}\" has a negative naming pattern, which contradicts the positive naming convention.",
     CELERY_TASK_MISSING_DECORATORS: "Celery task \"{name}\" is missing required decorator(s): {decorators}.",
 	CELERY_TASK_MISSING_CALLS: "Celery task \"{name}\" is missing required function call(s): {calls}.",
-    THEME_SYSTEM_VIOLATION: "Found a hardcoded value \"{value}\". Please use the team's theme system for colors and spacing."
+    THEME_SYSTEM_VIOLATION_HEXCODES: "Found a hardcoded hexcode value \"{value}\". Please use the team's theme system for colors and spacing."
 };

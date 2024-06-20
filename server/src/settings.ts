@@ -75,6 +75,10 @@ const defaultLanguageConventions: LanguageConventions = {
 		positiveNaming: true,
 		usePrefix: true,
 	},
+	themeSystem: {
+		isEnabled: true,
+		shouldFlagHexCodes: true,
+	},
 };
 
 export const defaultConventions: ExtensionSettings = {
@@ -94,6 +98,10 @@ export const defaultConventions: ExtensionSettings = {
 		typescriptreact: defaultLanguageConventions,
 		python: {
 			...defaultLanguageConventions,
+			themeSystem: {
+				isEnabled: false,
+				shouldFlagHexCodes: false,
+			},
 			celeryTaskDecorator: {
 				requiredDecorators: [],
 				requiredCalls: [],
@@ -166,6 +174,7 @@ export const normalizeLanguageSettings = (
 			usePrefix: languageSettings.boolean.usePrefix,
 		},
 		celeryTaskDecorator: languageSettings.celeryTaskDecorator,
+		themeSystem: languageSettings.themeSystem,
 	};
 };
 

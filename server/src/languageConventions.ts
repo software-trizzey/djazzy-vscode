@@ -33,6 +33,11 @@ interface FileRuleSettings {
 	avoidExportDefault: boolean;
 }
 
+interface ThemeSystemRuleSettings {
+	isEnabled: boolean;
+	shouldFlagHexCodes: boolean;
+}
+
 export interface CeleryTaskDecoratorSettings {
 	requiredDecorators: string[];
 	requiredCalls: string[];
@@ -47,6 +52,7 @@ export interface LanguageConventions {
 		objectProperties: ExpressiveObjectPropertyNameRulesSettings;
 	};
 	boolean: BooleanRuleSettings;
+	themeSystem?: ThemeSystemRuleSettings;
 	celeryTaskDecorator?: CeleryTaskDecoratorSettings;
 	file?: FileRuleSettings; // TODO: add support for file conventions
 }

@@ -19,7 +19,6 @@ import { LanguageProvider } from "./base";
 import {
 	debounce,
 	validateJavaScriptAndTypeScriptFunctionName,
-	validateThemeSystemUsage,
 } from "../utils";
 
 import { ExtensionSettings, defaultConventions } from "../settings";
@@ -309,7 +308,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 				document.positionAt(declaration.init.start),
 				document.positionAt(declaration.init.end)
 			));
-			const themeViolations = validateThemeSystemUsage(code);
+			const themeViolations = this.validateThemeSystemUsage(code);
 			themeViolations.forEach(violation => {
 				const violationRange = Range.create(
 					document.positionAt(declaration.init.start + violation.index),
@@ -369,7 +368,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 					document.positionAt(objectPropertyStartValue),
 					document.positionAt(objectPropertyEndValue)
 				));
-				const themeViolations = validateThemeSystemUsage(objectValueCode);
+				const themeViolations = this.validateThemeSystemUsage(objectValueCode);
 				themeViolations.forEach(violation => {
 					const violationRange = Range.create(
 						document.positionAt(objectPropertyStartValue + violation.index),

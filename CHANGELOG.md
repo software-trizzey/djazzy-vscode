@@ -22,11 +22,21 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
+## [Version 0.0.39] - 2024-06-20
+
+### Changed
+
+- [Update] Disable the rename code actions to validate usage.
+
 ## [Version 0.0.38] - 2024-06-20
+
+### Added
 
 - [Feature] Add initial support for validating theme style systems.
 
 ## [Version 0.0.37] - 2024-06-18
+
+### Changed
 
 - [Enhancement] Added telemetry package and began tracking rename symbol and API file watcher events
 

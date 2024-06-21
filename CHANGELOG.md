@@ -22,6 +22,16 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
+## [Version 0.0.40] - 2024-06-21
+
+### Fixed
+
+- [Bugfix] Address babel `SyntaxError` spam by catching them earlier
+
+### Removed
+
+- [Removal] Remove quick fix generation log as it was too noisey and didn't track usage.
+
 ## [Version 0.0.39] - 2024-06-20
 
 ### Changed

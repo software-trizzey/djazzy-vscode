@@ -396,5 +396,5 @@ export const checkForTestFile = async (uri: string): Promise<boolean> => {
 
 
 export const trackCodeActionRenameEvent = (userToken: string, flaggedName: string) => {
-	LOGGER.info(`[USER ${userToken}] Requested suggested name for ${flaggedName}`);
+	LOGGER.info(`[USER ${userToken}] Requested suggested name for "${flaggedName}"`);
 };

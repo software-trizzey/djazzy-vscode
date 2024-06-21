@@ -15,7 +15,7 @@ import * as path from "path";
 
 import { LanguageProvider } from "./base";
 
-import { debounce, trackCodeActionRenameEvent, validatePythonFunctionName } from "../utils";
+import { debounce, validatePythonFunctionName } from "../utils";
 
 import { ExtensionSettings, defaultConventions } from "../settings";
 import { PYTHON_DIRECTORY } from "../constants/filepaths";
@@ -62,7 +62,6 @@ export class PythonProvider extends LanguageProvider {
 			violationMessage.includes(RULE_MESSAGES.VARIABLE_TOO_SHORT.replace("{name}", flaggedName)) ||
 			violationMessage.includes(RULE_MESSAGES.OBJECT_KEY_TOO_SHORT.replace("{name}", flaggedName))
 		) {
-			trackCodeActionRenameEvent(userToken, flaggedName);
 			suggestedName = RENAME_SUGGESTION_PLACEHOLDER;
 		} else if (
 			violationMessage.includes(RULE_MESSAGES.BOOLEAN_NO_PREFIX.replace("{name}", flaggedName)) ||
@@ -87,7 +86,6 @@ export class PythonProvider extends LanguageProvider {
 			if (this.settings.general.isDevMode) {
 				suggestedName = `get${flaggedName}`;
 			} else {
-				trackCodeActionRenameEvent(userToken, flaggedName);
 				suggestedName = RENAME_SUGGESTION_PLACEHOLDER;
 			}
 		}

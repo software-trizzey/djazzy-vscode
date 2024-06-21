@@ -18,7 +18,6 @@ import { LanguageProvider } from "./base";
 
 import {
 	debounce,
-	trackCodeActionRenameEvent,
 	validateJavaScriptAndTypeScriptFunctionName,
 } from "../utils";
 
@@ -71,7 +70,6 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		}
 
 		if (violationMessage.includes(RULE_MESSAGES.VARIABLE_TOO_SHORT.replace("{name}", flaggedName))) {
-			trackCodeActionRenameEvent(userToken, flaggedName);
 			suggestedName = RENAME_SUGGESTION_PLACEHOLDER;
 		} else if (violationMessage.includes(RULE_MESSAGES.BOOLEAN_NEGATIVE_PATTERN.replace("{name}", flaggedName))) {
 			suggestedName = flaggedName.replace(/not/i, "");
@@ -83,7 +81,6 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 			if (this.settings.general.isDevMode) {
 				suggestedName = `get${flaggedName}`;
 			} else {
-				trackCodeActionRenameEvent(userToken, flaggedName);
 				suggestedName = RENAME_SUGGESTION_PLACEHOLDER;
 			}
 		}

@@ -118,8 +118,11 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 				"nullishCoalescingOperator",
 				"objectRestSpread",
 				"jsx",
-				"typescript"
 			];
+
+			if (this.isTypeScript) {
+				pluginOptions.push("typescript");
+			}
 
 			const ast = babelParser.parse(text, {
 				sourceType: "module",
@@ -241,7 +244,16 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 			});
 			await Promise.all(diagnosticPromises);
 		} catch (error: any) {
+			if (
+				error.code === "BABEL_PARSE_ERROR" ||
+				error.code === "BABEL_PARSER_SYNTAX_ERROR" ||
+				error.stack.includes("SyntaxError")
+			) {
+				// @rome-ignore: we're not concerned with syntax errors as they're likely triggered by incomplete code
+				console.log("Runtime error detected", error);
+			} else {
 			this.handleError(error);
+			}
 		}
 		return diagnostics;
 	}

@@ -149,6 +149,7 @@ export const actionWordsDictionary: { [key: string]: string } = {
 	detect: "detect",
 	decrement: "decrement",
 	distribute: "distribute",
+	duplicate: "duplicate",
 	erase: "erase",
 	estimate: "estimate",
 	examine: "examine",

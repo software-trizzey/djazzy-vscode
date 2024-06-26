@@ -255,6 +255,29 @@ export class PythonProvider extends LanguageProvider {
 				case "list":
 					result = this.validateList(value);
 					break;
+				case "for_loop":
+					if (symbol.target_positions) {
+						for (const [variableName, line, col_offset] of symbol.target_positions) {
+							const argResult = this.validateVariableName({
+								variableName: variableName,
+								variableValue: null,
+							});
+							if (argResult.violates) {
+								const start = Position.create(line, col_offset);
+								const end = Position.create(line, col_offset + variableName.length);
+								const range = Range.create(start, end);
+								const diagnostic: Diagnostic = Diagnostic.create(
+									range,
+									argResult.reason,
+									DiagnosticSeverity.Warning,
+									NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
+									SOURCE_NAME
+								);
+								diagnostics.push(diagnostic);
+							}
+						}
+					}
+					break;
 				case "django_model":
 					// TODO: Implement model name validation (probably similar to class)
 					break;

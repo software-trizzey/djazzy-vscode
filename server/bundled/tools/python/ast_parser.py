@@ -100,7 +100,8 @@ class Analyzer(ast.NodeVisitor):
             key_and_value_pairs=None,
             decorators=None,
             calls=None,
-            arguments=None
+            arguments=None,
+            target_positions=None
         ):
         """
         Creates a dictionary representation of a symbol.
@@ -130,6 +131,8 @@ class Analyzer(ast.NodeVisitor):
             symbol['calls'] = calls
         if arguments:
             symbol['arguments'] = arguments
+        if target_positions:
+            symbol['target_positions'] = target_positions
         return symbol
 
     def generic_node_visit(self, node):
@@ -164,6 +167,8 @@ class Analyzer(ast.NodeVisitor):
             value = ast.get_source_segment(self.source_code, value_node)
             if isinstance(value_node, ast.Dict):
                 self.handle_dictionary(value_node, node)
+        elif isinstance(node, ast.For):
+            self.visit_For(node)
 
         self.symbols.append(self._create_symbol_dict(
             type=node.__class__.__name__.lower(),
@@ -295,6 +300,39 @@ class Analyzer(ast.NodeVisitor):
                 value=ast.get_source_segment(self.source_code, node.value) if node.value else None
             ))
         self.generic_visit(node)
+
+    def visit_For(self, node):
+        comments = self.get_related_comments(node)
+        target = None
+        target_positions = []
+
+        def add_target_positions(target_node):
+            if isinstance(target_node, ast.Name):
+                return [(target_node.id, target_node.lineno - 1, target_node.col_offset)]
+            elif isinstance(target_node, ast.Tuple):
+                positions = []
+                for elt in target_node.elts:
+                    if isinstance(elt, ast.Name):
+                        positions.append((elt.id, elt.lineno - 1, elt.col_offset))
+                return positions
+            return []
+
+        target_positions.extend(add_target_positions(node.target))
+
+        self.symbols.append(self._create_symbol_dict(
+            type='for_loop',
+            name=target,
+            comments=comments,
+            line=node.lineno - 1,
+            col_offset=node.col_offset,
+            end_col_offset=node.end_col_offset if hasattr(node, 'end_col_offset') else None,
+            is_reserved=False,
+            body=ast.get_source_segment(self.source_code, node),
+            target_positions=target_positions
+        ))
+        self.generic_visit(node)
+
+
 
     def handle_nested_structures(self, node):
         for inner_node in ast.iter_child_nodes(node):

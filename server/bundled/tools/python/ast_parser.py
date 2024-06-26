@@ -99,7 +99,8 @@ class Analyzer(ast.NodeVisitor):
             function_end_line=None,
             key_and_value_pairs=None,
             decorators=None,
-            calls=None
+            calls=None,
+            arguments=None
         ):
         """
         Creates a dictionary representation of a symbol.
@@ -127,6 +128,8 @@ class Analyzer(ast.NodeVisitor):
             symbol['decorators'] = decorators
         if calls:
             symbol['calls'] = calls
+        if arguments:
+            symbol['arguments'] = arguments
         return symbol
 
     def generic_node_visit(self, node):
@@ -141,6 +144,7 @@ class Analyzer(ast.NodeVisitor):
         value = None
         decorators = [ast.get_source_segment(self.source_code, decorator) for decorator in getattr(node, 'decorator_list', [])]
         calls = []
+        arguments = []
 
         if isinstance(node, ast.FunctionDef):
             col_offset += len('def ')
@@ -148,6 +152,7 @@ class Analyzer(ast.NodeVisitor):
             function_end_line = node.body[-1].end_lineno if hasattr(node.body[-1], 'end_lineno') else node.body[-1].lineno
             is_reserved = DJANGO_IGNORE_FUNCTIONS.get(node.name, False) or self.is_python_reserved(node.name)
             body = ast.get_source_segment(self.source_code, node)
+            arguments = self.extract_arguments(node.args)
             self.visit_FunctionBody(node.body, calls)
         elif isinstance(node, ast.ClassDef):
             col_offset += len('class ')
@@ -155,7 +160,10 @@ class Analyzer(ast.NodeVisitor):
             targets = [target.id for target in node.targets if isinstance(target, ast.Name)]
             if targets:
                 name = targets[0]
-            value = ast.get_source_segment(self.source_code, node.value)
+            value_node = node.value
+            value = ast.get_source_segment(self.source_code, value_node)
+            if isinstance(value_node, ast.Dict):
+                self.handle_dictionary(value_node, node)
 
         self.symbols.append(self._create_symbol_dict(
             type=node.__class__.__name__.lower(),
@@ -170,7 +178,8 @@ class Analyzer(ast.NodeVisitor):
             function_end_line=function_end_line,
             value=value,
             decorators=decorators,
-            calls=calls
+            calls=calls,
+            arguments=arguments
         ))
         self.handle_nested_structures(node)
         self.generic_visit(node)
@@ -187,6 +196,46 @@ class Analyzer(ast.NodeVisitor):
                 call = ast.get_source_segment(self.source_code, statement)
                 calls.append(call)
             self.generic_visit(statement)
+
+    def extract_arguments(self, args_node):
+        arguments = []
+        defaults = args_node.defaults
+        num_non_default_args = len(args_node.args) - len(defaults)
+
+        for index, arg in enumerate(args_node.args):
+            default_value = None
+            if index >= num_non_default_args:
+                default_value_node = defaults[index - num_non_default_args]
+                if isinstance(default_value_node, ast.Dict):
+                    # Treat dictionaries as separate symbols for validation
+                    self.handle_dictionary(default_value_node, arg)
+                    default_value = ast.get_source_segment(self.source_code, default_value_node)
+                else:
+                    default_value = ast.get_source_segment(self.source_code, default_value_node)
+            arg_info = {
+                'name': arg.arg,
+                'line': arg.lineno,
+                'col_offset': arg.col_offset,
+                'default': default_value
+            }
+            arguments.append(arg_info)
+
+        if args_node.vararg:
+            arguments.append({
+                'name': args_node.vararg.arg,
+                'line': args_node.vararg.lineno,
+                'col_offset': args_node.vararg.col_offset,
+                'default': None
+            })
+        if args_node.kwarg:
+            arguments.append({
+                'name': args_node.kwarg.arg,
+                'line': args_node.kwarg.lineno,
+                'col_offset': args_node.kwarg.col_offset,
+                'default': None
+            })
+
+        return arguments
 
     def visit_Assign(self, node):
         self.generic_node_visit(node)
@@ -272,40 +321,38 @@ class Analyzer(ast.NodeVisitor):
                 
     def handle_dictionary(self, node, parent):
         comments = self.get_related_comments(node)
-        targets = [t.id for t in parent.targets if isinstance(t, ast.Name)]
-        if targets:
-            name = targets[0]
-            key_and_value_pairs = []
-            for key, value in zip(node.keys, node.values):
-                if isinstance(key, ast.Constant):
-                    key_start = (key.lineno - 1, key.col_offset)
-                    key_end = (key.end_lineno - 1, key.end_col_offset) if hasattr(key, 'end_lineno') else (
-                        key.lineno - 1, key.col_offset + len(str(key.value))
-                    )
-                    value_start = (value.lineno - 1, value.col_offset) if hasattr(value, 'lineno') else None
-                    value_end = (value.end_lineno - 1, value.end_col_offset) if hasattr(value, 'end_lineno') else None
+        key_and_value_pairs = []
+        for key, value in zip(node.keys, node.values):
+            if isinstance(key, ast.Constant):
+                key_start = (key.lineno - 1, key.col_offset)
+                key_end = (key.end_lineno - 1, key.end_col_offset) if hasattr(key, 'end_lineno') else (
+                    key.lineno - 1, key.col_offset + len(str(key.value))
+                )
+                value_start = (value.lineno - 1, value.col_offset) if hasattr(value, 'lineno') else None
+                value_end = (value.end_lineno - 1, value.end_col_offset) if hasattr(value, 'end_lineno') else None
 
-                    key_and_value_pairs.append({
-                        'key': key.value,
-                        'key_start': key_start,
-                        'key_end': key_end,
-                        'value': value.value,
-                        'value_start': value_start,
-                        'value_end': value_end
-                    })
+                key_and_value_pairs.append({
+                    'key': key.value,
+                    'key_start': key_start,
+                    'key_end': key_end,
+                    'value': ast.get_source_segment(self.source_code, value) if not isinstance(value, ast.Constant) else value.value,
+                    'value_start': value_start,
+                    'value_end': value_end
+                })
 
-            self.symbols.append(self._create_symbol_dict(
-                type='dictionary',
-                name=name,
-                comments=comments,
-                line=node.lineno - 1,
-                col_offset=node.col_offset,
-                end_col_offset=node.end_col_offset if hasattr(node, 'end_col_offset') else None,
-                is_reserved=False,
-                value=ast.get_source_segment(self.source_code, node),
-                key_and_value_pairs=key_and_value_pairs
-            ))
-    
+        name = parent.arg if hasattr(parent, 'arg') else parent.targets[0].id if hasattr(parent, 'targets') and isinstance(parent.targets[0], ast.Name) else None
+
+        self.symbols.append(self._create_symbol_dict(
+            type='dictionary',
+            name=name,
+            comments=comments,
+            line=node.lineno - 1,
+            col_offset=node.col_offset,
+            end_col_offset=node.end_col_offset if hasattr(node, 'end_col_offset') else None,
+            is_reserved=False,
+            value=ast.get_source_segment(self.source_code, node),
+            key_and_value_pairs=key_and_value_pairs
+        ))
 
     def parse_code(self):
         try:

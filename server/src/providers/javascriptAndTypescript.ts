@@ -435,8 +435,6 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 				paramStart = param.start;
 				paramEnd = param.end;
 			} else if (param.type === "AssignmentPattern") {
-				console.log("Function param", param);
-
 				if (param.left && param.left.type === "Identifier") {
 					argumentName = param.left.name;
 					paramEnd = param.left.end;
@@ -444,6 +442,11 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 				if (param.right) {
 					argumentValue = param.right.value;
 				}
+			} else if (param.type === "ObjectPattern") {
+				for (const property of param.properties) {
+					this.applyObjectPropertyDiagnostics(property, diagnostics, document);
+				}
+				return;
 			}
 
 			const argumentValidationResult = this.validateFunctionArgument({

@@ -204,6 +204,35 @@ export class PythonProvider extends LanguageProvider {
 						},
 						conventions
 					);
+
+					if (symbol.arguments) {
+						for (const arg of symbol.arguments) {
+							const argumentName = arg.name;
+							const argumentValue: any = arg.default;
+
+							const argumentResult = this.validateVariableName({
+								variableName: argumentName,
+								variableValue: argumentValue,
+							});
+							if (argumentResult.violates) {
+								const start = Position.create(line, arg.col_offset);
+								const end = Position.create(
+									line,
+									arg.col_offset + argumentName.length
+								);
+								const range = Range.create(start, end);
+								const diagnostic: Diagnostic = Diagnostic.create(
+									range,
+									argumentResult.reason,
+									DiagnosticSeverity.Warning,
+									NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
+									SOURCE_NAME
+								);
+								diagnostics.push(diagnostic);
+							}
+						}
+					}
+
 					break;
 				case "variable":
 				case "assignment":

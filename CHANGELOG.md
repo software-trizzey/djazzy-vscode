@@ -22,6 +22,13 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
+## [Version 0.0.41] - 2024-06-26
+
+### Added
+
+- [Feature] Validate function argument names
+- [Feature] Validate Python for loop target argument names
+
 ## [Version 0.0.40] - 2024-06-21
 
 ### Fixed

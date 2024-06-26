@@ -209,7 +209,7 @@ export abstract class LanguageProvider {
 		let currentCount = 0;
 
 		while (currentCount < suggestionCount) {
-			if (violationMessage.includes(RULE_MESSAGES.VARIABLE_TOO_SHORT.replace("{name}", flaggedName))) {
+			if (violationMessage.includes(RULE_MESSAGES.NAME_TOO_SHORT.replace("{name}", flaggedName))) {
 				const response = await this.fetchSuggestedNameFromLLM({
 					message: violationMessage,
 					modelType: "groq",
@@ -369,7 +369,7 @@ export abstract class LanguageProvider {
 		if (variables.avoidShortNames && nameWithoutUnderscorePrefix.length < 3) {
 			return {
 				violates: true,
-				reason: RULE_MESSAGES.VARIABLE_TOO_SHORT.replace("{name}", variableName),
+				reason: RULE_MESSAGES.NAME_TOO_SHORT.replace("{name}", variableName),
 			};
 		}
 		

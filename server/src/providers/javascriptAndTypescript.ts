@@ -69,7 +69,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 			return cachedAction;
 		}
 
-		if (violationMessage.includes(RULE_MESSAGES.VARIABLE_TOO_SHORT.replace("{name}", flaggedName))) {
+		if (violationMessage.includes(RULE_MESSAGES.NAME_TOO_SHORT.replace("{name}", flaggedName))) {
 			suggestedName = RENAME_SUGGESTION_PLACEHOLDER;
 		} else if (violationMessage.includes(RULE_MESSAGES.BOOLEAN_NEGATIVE_PATTERN.replace("{name}", flaggedName))) {
 			suggestedName = flaggedName.replace(/not/i, "");
@@ -399,6 +399,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		const bodyStartLine = node.body.loc.start.line;
 		const bodyEndLine = node.body.loc.end.line;
 		const functionBodyLines = bodyEndLine - bodyStartLine + 1;
+		const functionParams = node.params;
 
 		const result = await this.validateFunctionName(
 			name,
@@ -422,6 +423,49 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 			);
 			diagnostics.push(diagnostic);
 		}
+
+		functionParams.forEach((param: any) => {
+			let argumentName = "";
+			let argumentValue = null;
+			let paramStart =  param.start;
+			let paramEnd = param.end;
+
+			if (param.type === "Identifier") {
+				argumentName = param.name;
+				paramStart = param.start;
+				paramEnd = param.end;
+			} else if (param.type === "AssignmentPattern") {
+				console.log("Function param", param);
+
+				if (param.left && param.left.type === "Identifier") {
+					argumentName = param.left.name;
+					paramEnd = param.left.end;
+				}
+				if (param.right) {
+					argumentValue = param.right.value;
+				}
+			}
+
+			const argumentValidationResult = this.validateFunctionArgument({
+				argumentName,
+				argumentValue,
+			});
+
+			if (argumentValidationResult.violates) {
+				const argumentRange = Range.create(
+					document.positionAt(paramStart),
+					document.positionAt(paramEnd)
+				);
+				const diagnostic: Diagnostic = Diagnostic.create(
+					argumentRange,
+					argumentValidationResult.reason,
+					DiagnosticSeverity.Warning,
+					NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
+					SOURCE_NAME
+				);
+				diagnostics.push(diagnostic);
+			}
+		});
 	}
 
 	private async validateFunctionName(
@@ -437,6 +481,22 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 			functionBodyLines,
 			languageConventions
 		);
+	}
+
+	private validateFunctionArgument({
+		argumentName,
+		argumentValue,
+	}: {
+		argumentName: string;
+		argumentValue: any;
+	}): {
+		violates: boolean;
+		reason: string;
+	} {
+		return this.validateVariableName({
+			variableName: argumentName,
+			variableValue: argumentValue,
+		});
 	}
 
 	private handleComment(

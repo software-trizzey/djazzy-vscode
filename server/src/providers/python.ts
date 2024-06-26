@@ -59,7 +59,7 @@ export class PythonProvider extends LanguageProvider {
 		}
 		
 		if (
-			violationMessage.includes(RULE_MESSAGES.VARIABLE_TOO_SHORT.replace("{name}", flaggedName)) ||
+			violationMessage.includes(RULE_MESSAGES.NAME_TOO_SHORT.replace("{name}", flaggedName)) ||
 			violationMessage.includes(RULE_MESSAGES.OBJECT_KEY_TOO_SHORT.replace("{name}", flaggedName))
 		) {
 			suggestedName = RENAME_SUGGESTION_PLACEHOLDER;

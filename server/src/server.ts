@@ -18,6 +18,7 @@ import {
 	DocumentDiagnosticReportKind,
 	type DocumentDiagnosticReport,
 	DiagnosticSeverity,
+	WorkspaceFolder,
 } from "vscode-languageserver/node";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
@@ -25,6 +26,7 @@ import {
 	LanguageProvider,
 	JavascriptAndTypescriptProvider,
 	PythonProvider,
+	DjangoProvider,
 } from "./providers";
 import {
 	ExtensionSettings,
@@ -35,7 +37,7 @@ import {
 	updateCachedUserToken,
 	cachedUserToken,
 } from "./settings";
-import { checkForTestFile, debounce, getWordRangeAt } from "./utils";
+import { checkForTestFile, debounce, getWordRangeAt, DjangoProjectDetector } from "./utils";
 
 import COMMANDS, { COMMANDS_LIST } from "./constants/commands";
 import { rollbar } from "./common/logs";
@@ -228,7 +230,8 @@ documents.onDidChangeContent(async (change) => {
 
 function createLanguageProvider(
 	languageId: string,
-	settings: ExtensionSettings
+	settings: ExtensionSettings,
+	workspaceFolders: WorkspaceFolder[] | null
 ): LanguageProvider {
 	let provider: LanguageProvider | undefined;
 
@@ -244,7 +247,19 @@ function createLanguageProvider(
 			);
 			break;
 		case "python":
-			provider = new PythonProvider(languageId, connection, settings);
+			if (workspaceFolders) {
+                const isDjangoProject = workspaceFolders.some(folder => 
+                    DjangoProjectDetector.isDjangoProject(folder.uri)
+                );
+                if (isDjangoProject) {
+					console.log("Django project detected");
+                    provider = new DjangoProvider(languageId, connection, settings);
+                } else {
+                    provider = new PythonProvider(languageId, connection, settings);
+                }
+            } else {
+                provider = new PythonProvider(languageId, connection, settings);
+            }
 			break;
 		default:
 			provider = undefined;
@@ -256,10 +271,11 @@ function createLanguageProvider(
 
 function getOrCreateProvider(
 	languageId: string,
-	settings: ExtensionSettings
+	settings: ExtensionSettings,
+	workspaceFolders: WorkspaceFolder[] | null
 ): LanguageProvider {
 	if (!providerCache[languageId]) {
-		providerCache[languageId] = createLanguageProvider(languageId, settings);
+		providerCache[languageId] = createLanguageProvider(languageId, settings, workspaceFolders);
 	}
 	return providerCache[languageId];
 }
@@ -271,7 +287,8 @@ async function validateTextDocument(
 
 	// TODO: we can optimize this later by using cached settings
 	const settings = await getDocumentSettings(textDocument.uri);
-	const provider = getOrCreateProvider(languageId, settings);
+	const workspaceFolders = await connection.workspace.getWorkspaceFolders();
+	const provider = getOrCreateProvider(languageId, settings, workspaceFolders);
 	provider.updateSettings(settings);
 	let diagnostics = await provider.getDiagnostic(
 		textDocument.uri,
@@ -313,7 +330,8 @@ connection.onCodeAction(async (params) => {
 	if (!document) return;
 	const settings = await getDocumentSettings(document.uri);
 	const languageId = document.languageId;
-	const provider = getOrCreateProvider(languageId, settings);
+	const workspaceFolders = await connection.workspace.getWorkspaceFolders();
+	const provider = getOrCreateProvider(languageId, settings, workspaceFolders);
 
 	if (!cachedUserToken) {
 		throw new Error('User is not authenticated. Token not found.');
@@ -423,7 +441,8 @@ connection.onRequest(COMMANDS.PROVIDE_RENAME_SUGGESTIONS, async (params) => {
 
 	const settings = await getDocumentSettings(document.uri);
 	const languageId = document.languageId;
-	const provider = getOrCreateProvider(languageId, settings);
+	const workspaceFolders = await connection.workspace.getWorkspaceFolders();
+	const provider = getOrCreateProvider(languageId, settings, workspaceFolders);
 
 	const wordRange = getWordRangeAt(document, position);
 	const oldName = document.getText(wordRange);

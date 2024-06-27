@@ -161,7 +161,7 @@ export class PythonProvider extends LanguageProvider {
 		}
 	}
 
-	private async validateAndCreateDiagnostics(
+	async validateAndCreateDiagnostics(
 		symbols: any[],
 		diagnostics: Diagnostic[],
 		changedLines: Set<number> | undefined

@@ -378,3 +378,61 @@ export const checkForTestFile = async (uri: string): Promise<boolean> => {
 export const trackCodeActionRenameEvent = (userToken: string, flaggedName: string) => {
 	LOGGER.info(`[USER ${userToken}] Requested suggested name for "${flaggedName}"`);
 };
+
+
+export class DjangoProjectDetector {
+    private static DJANGO_INDICATORS = [
+        'manage.py',
+        'django-admin.py',
+        'settings.py',
+        'urls.py',
+        'wsgi.py',
+        'asgi.py'
+    ];
+
+    private static DJANGO_IMPORT_PATTERNS = [
+        'from django',
+        'import django',
+        'from rest_framework',
+        'import rest_framework'
+    ];
+
+    static isDjangoProject(projectPath: string): boolean {
+        for (const indicator of this.DJANGO_INDICATORS) {
+            if (fs.existsSync(path.join(projectPath, indicator))) {
+                return true;
+            }
+        }
+
+        const pythonFiles = this.getPythonFiles(projectPath);
+        for (const file of pythonFiles) {
+            const content = fs.readFileSync(file, 'utf-8');
+            if (this.DJANGO_IMPORT_PATTERNS.some(pattern => content.includes(pattern))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static getPythonFiles(dir: string): string[] {
+        const files: string[] = [];
+        const entries = fs.readdirSync(dir, { withFileTypes: true });
+
+        for (const entry of entries) {
+            const fullPath = path.join(dir, entry.name);
+            if (entry.isDirectory()) {
+                files.push(...this.getPythonFiles(fullPath));
+            } else if (entry.isFile() && path.extname(entry.name) === '.py') {
+                files.push(fullPath);
+            }
+        }
+
+        return files;
+    }
+
+    static isDjangoPythonFile(filePath: string): boolean {
+        const content = fs.readFileSync(filePath, 'utf-8');
+        return this.DJANGO_IMPORT_PATTERNS.some(pattern => content.includes(pattern));
+    }
+}

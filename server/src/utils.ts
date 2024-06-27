@@ -7,7 +7,7 @@ import { Connection } from "vscode-languageserver/node";
 import { GET_CHANGED_LINES } from "./constants/commands";
 import { RULE_MESSAGES } from './constants/rules';
 
-import { actionWordsDictionary, commonWords } from "./data";
+import { verbDictionary, commonWords } from "./data";
 import { LanguageConventions } from "./languageConventions";
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import LOGGER from './common/logs';
@@ -133,17 +133,17 @@ export async function validateJavaScriptAndTypeScriptFunctionName(
         };
     }
 
-    const actionWord = Object.keys(actionWordsDictionary).find((word) => functionNameWithoutUnderscorePrefix.startsWith(word));
+    const verb = Object.keys(verbDictionary).find((word) => functionNameWithoutUnderscorePrefix.startsWith(word));
 
-    if (!actionWord) {
+    if (!verb) {
         return {
             violates: true,
             reason: RULE_MESSAGES.FUNCTION_NO_ACTION_WORD.replace("{name}", functionName),
         };
     }
 
-    const nameWithoutActionWord = functionNameWithoutUnderscorePrefix.substring(actionWord.length);
-    const words = await findMatchingWords(nameWithoutActionWord);
+    const nameWithoutVerb = functionNameWithoutUnderscorePrefix.substring(verb.length);
+    const words = await findMatchingWords(nameWithoutVerb);
 
     if (words.length === 0) {
         return {
@@ -184,19 +184,19 @@ export async function validatePythonFunctionName(
         };
     }
 
-    const actionWord = Object.keys(actionWordsDictionary).find((word) => 
+    const verb = Object.keys(verbDictionary).find((word) => 
         functionNameWithoutUnderscorePrefix.startsWith(word)
     );
 
-    if (!actionWord) {
+    if (!verb) {
         return {
             violates: true,
             reason: RULE_MESSAGES.FUNCTION_NO_ACTION_WORD.replace("{name}", functionName),
         };
     }
 
-    const nameWithoutActionWord = functionNameWithoutUnderscorePrefix.substring(actionWord.length);
-    const words = await findMatchingWords(nameWithoutActionWord);
+    const nameWithoutVerb = functionNameWithoutUnderscorePrefix.substring(verb.length);
+    const words = await findMatchingWords(nameWithoutVerb);
 
     if (words.length === 0) {
         return {

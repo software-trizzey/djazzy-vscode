@@ -1,6 +1,6 @@
 export const RULE_MESSAGES = {
     FUNCTION_TOO_SHORT: "Function name \"{name}\" is too short and must be more descriptive.",
-    FUNCTION_NO_ACTION_WORD: "Function \"{name}\" does not start with a recognized action word.",
+    FUNCTION_NO_ACTION_WORD: "Function \"{name}\" does not start with a recognized verb.",
     FUNCTION_MIN_TWO_WORDS: "Function \"{name}\" must contain at least two words.",
     FUNCTION_TOO_LONG: "Function \"{name}\" exceeds the maximum length of {limit} lines.",
     NAME_TOO_SHORT: "\"{name}\" is too short and must be more descriptive.",

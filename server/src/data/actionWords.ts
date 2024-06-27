@@ -1,4 +1,4 @@
-export const actionWordsDictionary: { [key: string]: string } = {
+export const verbDictionary: { [key: string]: string } = {
 	add: "add",
 	activate: "activate",
 	remove: "remove",

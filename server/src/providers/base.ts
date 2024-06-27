@@ -28,9 +28,9 @@ import LOGGER from "../common/logs";
 
 import type { LanguageConventions } from "../languageConventions";
 import { RULE_MESSAGES } from '../constants/rules';
-import { actionWordsDictionary } from '../data';
+import { verbDictionary } from '../data';
 
-const actionWordsValues = Object.values(actionWordsDictionary);
+const actionWordsValues = Object.values(verbDictionary);
 
 
 export interface RenameSuggestion {
@@ -237,7 +237,7 @@ export abstract class LanguageProvider {
 					if (this.settings.general.isDevMode) {
 					suggestions.push({
 						suggestedName: `get${flaggedName}`,
-						justification: "Add action word"
+						justification: "Add verb prefix for function name"
 					});
 					} else {
 						const functionBodyRange = this.getFunctionBodyRange(document, diagnostic.range);

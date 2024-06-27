@@ -34,6 +34,30 @@ def serialize_file_data(obj):
         return {k: serialize_file_data(v) for k, v in obj.items()}
     else:
         return str(obj)
+    
+
+class DjangoURLPatternVisitor(ast.NodeVisitor):
+    def __init__(self):
+        self.url_patterns = []
+
+    def visit_Assign(self, node):
+        if isinstance(node.targets[0], ast.Name) and node.targets[0].id == 'urlpatterns':
+            if isinstance(node.value, ast.List):
+                for elt in node.value.elts:
+                    if isinstance(elt, ast.Call) and isinstance(elt.func, ast.Name):
+                        if elt.func.id in ['path', 're_path', 'url']:
+                            pattern = {
+                                'type': elt.func.id,
+                                'args': [],
+                                'line': elt.lineno,
+                                'col': elt.col_offset
+                            }
+                            for arg in elt.args:
+                                if isinstance(arg, ast.Str):
+                                    pattern['args'].append(arg.s)
+                                elif isinstance(arg, ast.Name):
+                                    pattern['args'].append(arg.id)
+                            self.url_patterns.append(pattern)
 
 class Analyzer(ast.NodeVisitor):
     def __init__(self, source_code):
@@ -41,6 +65,7 @@ class Analyzer(ast.NodeVisitor):
         self.symbols = []
         self.comments = []
         self.pending_comments = []
+        self.url_patterns = []
 
     def is_python_reserved(self, name: str) -> bool:
         """
@@ -397,6 +422,23 @@ class Analyzer(ast.NodeVisitor):
             self.get_comments()
             tree = ast.parse(self.source_code)
             self.visit(tree)
+
+            url_visitor = DjangoURLPatternVisitor()
+            url_visitor.visit(tree)
+            self.url_patterns = url_visitor.url_patterns
+
+            for pattern in self.url_patterns:
+                self.symbols.append(self._create_symbol_dict(
+                    type='django_url_pattern',
+                    name=pattern['args'][0] if pattern['args'] else '',
+                    comments=[],
+                    line=pattern['line'] - 1,
+                    col_offset=pattern['col'],
+                    end_col_offset=pattern['col'] + len(pattern['type']),
+                    is_reserved=False,
+                    value=str(pattern)
+                ))
+
         except (SyntaxError, IndentationError) as e:
             # @rome-ignore: we're not worried about syntax errors triggered by the user's code
             pass

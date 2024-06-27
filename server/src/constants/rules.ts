@@ -11,5 +11,9 @@ export const RULE_MESSAGES = {
     OBJECT_KEY_BOOLEAN_NEGATIVE_PATTERN: "Object key \"{name}\" has a negative naming pattern, which contradicts the positive naming convention.",
     CELERY_TASK_MISSING_DECORATORS: "Celery task \"{name}\" is missing required decorator(s): {decorators}.",
 	CELERY_TASK_MISSING_CALLS: "Celery task \"{name}\" is missing required function call(s): {calls}.",
-    THEME_SYSTEM_VIOLATION_HEXCODES: "Found a hardcoded hexcode value \"{value}\". Please use the team's theme system for colors and spacing."
+    THEME_SYSTEM_VIOLATION_HEXCODES: "Found a hardcoded hexcode value \"{value}\". Please use the team's theme system for colors and spacing.",
+    URL_PATTERN_HARDCODED: "Avoid using hardcoded URLs in URL patterns",
+    URL_PATTERN_UNNAMED: "Use named URL patterns for better reversibility",
+    URL_PATTERN_REGEX: "Prefer 'path()' over 're_path()' or 'url()' when possible",
+    URL_PATTERN_INVALID_PARAMETER: "Use angle brackets '<>' for URL parameters",
 };

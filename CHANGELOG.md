@@ -36,7 +36,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- [Enhancement] Extend functino argument validation to JavaScript/TypeScript arrow function expressions.
+- [Enhancement] Extend function argument validation to JavaScript/TypeScript arrow function expressions.
 
 ### Changed
 

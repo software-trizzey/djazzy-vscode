@@ -22,6 +22,12 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
+## [Version 0.0.43] - 2024-06-27
+
+### Fixed
+
+- [Bugfix] Fix duplicate function argument diagnostics
+
 ## [Version 0.0.42] - 2024-06-26
 
 ### Added

@@ -106,6 +106,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		changedLines: Set<number> | undefined
 	): Promise<Diagnostic[]> {
 		const diagnosticPromises: Promise<void>[] = [];
+		const checkedNodes = new Set<any>();
 
 		try {
 			const text = document.getText();
@@ -204,7 +205,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 				 * Validate: const myFunction = () => {} | Ignore: () => {}
 				 */
 				ArrowFunctionExpression: (path) => {
-					this.checkArrowFunction(path, document, diagnostics, diagnosticPromises, changedLines);
+					this.checkArrowFunction(path, document, diagnostics, diagnosticPromises, checkedNodes, changedLines);
 				},
 				ObjectExpression: ({ node }) => {
 					node.properties.forEach((property) => {
@@ -366,142 +367,73 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 
 	private async checkFunctionAndAddDiagnostic(
 		name: string,
-		node: any,
+		node: babelTypes.Node,
 		document: TextDocument,
 		diagnostics: Diagnostic[],
-		parent: any = null
+		parent: babelTypes.Node | null = null
 	) {
+		if (!babelTypes.isFunction(node)) {
+			console.warn("Node is not a function", node);
+			return;
+		}
+
 		if (
 			!node.body ||
 			!node.body.loc ||
 			!node.body.loc.start ||
 			!node.body.loc.end
+		) {
+			console.warn("Node has no body property", node);
+			return;
+		}
+
+		const conventions = this.getConventions();
+		const bodyStartLine = node.body.loc.start.line;
+		const bodyEndLine = node.body.loc.end.line;
+		const functionBodyLines = bodyEndLine - bodyStartLine + 1;
+
+		const result = await this.validateFunctionName(
+			name,
+			functionBodyLines,
+			conventions
+		);
+
+		if (result.violates) {
+			let diagnosticRange: Range;
+
+			if (
+				babelTypes.isArrowFunctionExpression(node) &&
+				parent &&
+				babelTypes.isVariableDeclarator(parent)
 			) {
-				console.warn("node has no body property", node);
-				return;
+				diagnosticRange = Range.create(
+					document.positionAt(parent.id.start!),
+					document.positionAt(parent.id.end!)
+				);
+			} else if (babelTypes.isFunctionDeclaration(node) || babelTypes.isFunctionExpression(node)) {
+				diagnosticRange = Range.create(
+					document.positionAt(node.start!),
+					document.positionAt(node.end!)
+				);
+			} else {
+				const nodeWithStart = node as babelTypes.Node & { start: number };
+				diagnosticRange = Range.create(
+					document.positionAt(nodeWithStart.start),
+					document.positionAt(nodeWithStart.start + name.length)
+				);
 			}
-		
-			const conventions = this.getConventions();
-			const bodyStartLine = node.body.loc.start.line;
-			const bodyEndLine = node.body.loc.end.line;
-			const functionBodyLines = bodyEndLine - bodyStartLine + 1;
-			const functionParams = node.params;
-		
-			const result = await this.validateFunctionName(
-				name,
-				functionBodyLines,
-				conventions
+
+			const diagnostic: Diagnostic = Diagnostic.create(
+				diagnosticRange,
+				result.reason,
+				DiagnosticSeverity.Warning,
+				NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
+				SOURCE_NAME
 			);
-		
-			if (result.violates) {
-				let diagnosticRange: Range;
-			
-				if (
-					node.type === "ArrowFunctionExpression" &&
-					parent &&
-					parent.type === "VariableDeclarator"
-				) {
-					const declarator = parent;
-					diagnosticRange = Range.create(
-						document.positionAt(declarator.id.start),
-						document.positionAt(declarator.id.end)
-					);
-				} else if (node.id) {
-					diagnosticRange = Range.create(
-						document.positionAt(node.id.start),
-						document.positionAt(node.id.end)
-					);
-				} else {
-					diagnosticRange = Range.create(
-						document.positionAt(node.start),
-						document.positionAt(node.start + name.length)
-					);
-				}
-			
-				const diagnostic: Diagnostic = Diagnostic.create(
-					diagnosticRange,
-					result.reason,
-					DiagnosticSeverity.Warning,
-					NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
-					SOURCE_NAME
-				);
-				diagnostics.push(diagnostic);
-			}
+			diagnostics.push(diagnostic);
+		}
 
-		functionParams.forEach((param: any) => {
-			let argumentName = "";
-			let argumentValue = null;
-			let paramStart =  param.start;
-			let paramEnd = param.end;
-
-			if (param.type === "Identifier") {
-				argumentName = param.name;
-				paramStart = param.start;
-				paramEnd = param.end;
-			} else if (param.type === "AssignmentPattern") {
-				if (param.left && param.left.type === "Identifier") {
-					argumentName = param.left.name;
-					paramEnd = param.left.end;
-				}
-				if (param.right) {
-					argumentValue = param.right.value;
-				}
-			} else if (param.type === "ObjectPattern") {
-				for (const property of param.properties) {
-					this.applyObjectPropertyDiagnostics(property, diagnostics, document);
-				}
-				return;
-			} else if (param.type === "ArrowFunctionExpression") {
-				param.params.forEach((arrowParam: any) => {
-					if (arrowParam.type === "Identifier") {
-						argumentName = arrowParam.name;
-						argumentValue = null;
-						paramStart = arrowParam.start;
-						paramEnd = arrowParam.end;
-						
-						const argumentValidationResult = this.validateFunctionArgument({
-							argumentName,
-							argumentValue,
-						});
-				
-						if (argumentValidationResult.violates) {
-							const argumentRange = Range.create(
-								document.positionAt(paramStart),
-								document.positionAt(paramEnd)
-							);
-							const diagnostic: Diagnostic = Diagnostic.create(
-								argumentRange,
-								argumentValidationResult.reason,
-								DiagnosticSeverity.Warning,
-								NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
-								SOURCE_NAME
-							);
-							diagnostics.push(diagnostic);
-						}
-					}
-				});
-			}
-
-			const argumentValidationResult = this.validateFunctionArgument({
-				argumentName,
-				argumentValue,
-			});
-
-			if (argumentValidationResult.violates) {
-				const argumentRange = Range.create(
-					document.positionAt(paramStart),
-					document.positionAt(paramEnd)
-				);
-				const diagnostic: Diagnostic = Diagnostic.create(
-					argumentRange,
-					argumentValidationResult.reason,
-					DiagnosticSeverity.Warning,
-					NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
-					SOURCE_NAME
-				);
-				diagnostics.push(diagnostic);
-			}
-		});
+		this.checkFunctionParameters(node.params, document, diagnostics);
 	}
 
 	private async validateFunctionName(
@@ -567,14 +499,13 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		document: TextDocument, 
 		diagnostics: Diagnostic[], 
 		diagnosticPromises: Promise<void>[],
+		checkedNodes: Set<any>,
 		changedLines?: Set<number>,
-		checkedNodes?: Set<any>
 	) {
-		const actualCheckedNodes = checkedNodes || new Set();
 		const { node, parent } = path;
 	
-		if (!parent || !parent.loc || actualCheckedNodes.has(node)) return;
-		actualCheckedNodes.add(node);
+		if (!parent || !parent.loc || checkedNodes.has(node)) return;
+		checkedNodes.add(node);
 
 		if (
 			babelTypes.isVariableDeclarator(parent) &&
@@ -591,9 +522,9 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 					parent
 				)
 			);
+		} else {
+			this.checkFunctionParameters(node.params, document, diagnostics);
 		}
-	
-		this.checkFunctionParameters(node.params, document, diagnostics);
 	
 		if (babelTypes.isBlockStatement(node.body)) {
 			path.traverse({ 
@@ -603,26 +534,45 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 					document,
 					diagnostics,
 					diagnosticPromises,
+					checkedNodes,
 					changedLines,
-					actualCheckedNodes
 				) 
 			});
-		} else if (babelTypes.isExpression(node.body) && babelTypes.isArrowFunctionExpression(node.body)) {
-			this.checkArrowFunction(
-				path.get('body'),
-				document,
-				diagnostics,
-				diagnosticPromises,
-				changedLines,
-				actualCheckedNodes
-			);
+		} else if (babelTypes.isExpression(node.body)) {
+			if (babelTypes.isArrowFunctionExpression(node.body)) {
+				this.checkArrowFunction(
+					path.get('body') as NodePath<babelTypes.ArrowFunctionExpression>,
+					document,
+					diagnostics,
+					diagnosticPromises,
+					checkedNodes,
+					changedLines,
+				);
+			} else {
+				path.traverse({
+					ArrowFunctionExpression: (nestedPath: any) => 
+					this.checkArrowFunction(
+						nestedPath,
+						document,
+						diagnostics,
+						diagnosticPromises,
+						checkedNodes,
+						changedLines,
+					)
+				});
+			}
 		}
 	}
 
 	private checkFunctionParameters(params: babelTypes.Node[], document: TextDocument, diagnostics: Diagnostic[]) {
-		params.forEach(param => {
+		const validateParameter = (param: babelTypes.Node) => {
 			if (babelTypes.isIdentifier(param)) {
 				this.checkParameterName(param, document, diagnostics);
+			} else if (babelTypes.isAssignmentPattern(param)) {
+				// Handle parameters with default values
+				if (babelTypes.isIdentifier(param.left)) {
+					this.checkParameterName(param.left, document, diagnostics);
+				}
 			} else if (babelTypes.isRestElement(param)) {
 				if (babelTypes.isIdentifier(param.argument)) {
 					this.checkParameterName(param.argument, document, diagnostics);
@@ -632,21 +582,20 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 					if (babelTypes.isObjectProperty(prop) && babelTypes.isIdentifier(prop.key)) {
 						this.checkParameterName(prop.key, document, diagnostics);
 					}
-			});
+				});
 			} else if (babelTypes.isArrayPattern(param)) {
 				param.elements.forEach(element => {
-					if (babelTypes.isIdentifier(element)) {
-						this.checkParameterName(element, document, diagnostics);
-					}
-			});
+					if (element) validateParameter(element);
+				});
 			}
-		});
+		};
+	
+		params.forEach(validateParameter);
 	}
 
 	private checkParameterName(param: babelTypes.Identifier, document: TextDocument, diagnostics: Diagnostic[]) {
-		const paramName = param.name;
 		const paramValidationResult = this.validateFunctionArgument({
-			argumentName: paramName,
+			argumentName: param.name,
 			argumentValue: null,
 		});
 		
@@ -664,5 +613,5 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 			);
 			diagnostics.push(diagnostic);
 		}
-	}
+}
 }

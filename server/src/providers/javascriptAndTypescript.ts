@@ -567,43 +567,54 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		document: TextDocument, 
 		diagnostics: Diagnostic[], 
 		diagnosticPromises: Promise<void>[],
-		changedLines?: Set<number>
+		changedLines?: Set<number>,
+		checkedNodes?: Set<any>
 	) {
+		const actualCheckedNodes = checkedNodes || new Set();
 		const { node, parent } = path;
 	
-		if (!parent || !parent.loc) return;
-	
+		if (!parent || !parent.loc || actualCheckedNodes.has(node)) return;
+		actualCheckedNodes.add(node);
+
 		if (
 			babelTypes.isVariableDeclarator(parent) &&
 			babelTypes.isIdentifier(parent.id) &&
 			(!this.settings.general.onlyCheckNewCode ||
 				changedLines?.has(parent.loc.start.line))
 		) {
-		diagnosticPromises.push(
-			this.checkFunctionAndAddDiagnostic(
-				parent.id.name,
-				node,
-				document,
-				diagnostics,
-				parent
-			)
-		);
+			diagnosticPromises.push(
+				this.checkFunctionAndAddDiagnostic(
+					parent.id.name,
+					node,
+					document,
+					diagnostics,
+					parent
+				)
+			);
 		}
 	
 		this.checkFunctionParameters(node.params, document, diagnostics);
 	
 		if (babelTypes.isBlockStatement(node.body)) {
-		path.traverse({ 
-			ArrowFunctionExpression: (nestedPath: any) => 
-			this.checkArrowFunction(nestedPath, document, diagnostics, diagnosticPromises, changedLines) 
-		});
+			path.traverse({ 
+				ArrowFunctionExpression: (nestedPath: any) => 
+				this.checkArrowFunction(
+					nestedPath,
+					document,
+					diagnostics,
+					diagnosticPromises,
+					changedLines,
+					actualCheckedNodes
+				) 
+			});
 		} else if (babelTypes.isExpression(node.body) && babelTypes.isArrowFunctionExpression(node.body)) {
 			this.checkArrowFunction(
 				path.get('body'),
 				document,
 				diagnostics,
 				diagnosticPromises,
-				changedLines
+				changedLines,
+				actualCheckedNodes
 			);
 		}
 	}

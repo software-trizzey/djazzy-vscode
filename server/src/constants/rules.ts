@@ -16,4 +16,5 @@ export const RULE_MESSAGES = {
     URL_PATTERN_UNNAMED: "Use named URL patterns for better reversibility",
     URL_PATTERN_REGEX: "Prefer 'path()' over 're_path()' or 'url()' when possible",
     URL_PATTERN_INVALID_PARAMETER: "Use angle brackets '<>' for URL parameters",
+    URL_PATTERN_INCONSISTENT_TRAILING_SLASH: "Use consistent trailing slashes in URL patterns"
 };

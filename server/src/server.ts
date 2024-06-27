@@ -247,12 +247,16 @@ function createLanguageProvider(
 			);
 			break;
 		case "python":
-			if (workspaceFolders) {
-                const isDjangoProject = workspaceFolders.some(folder => 
-                    DjangoProjectDetector.isDjangoProject(folder.uri)
-                );
+            if (workspaceFolders) {
+                const isDjangoProject = workspaceFolders.some(folder => {
+                    try {
+                        return DjangoProjectDetector.isDjangoProject(folder.uri);
+                    } catch (error) {
+                        console.error(`Error detecting Django project: ${error}`);
+                        return false;
+                    }
+                });
                 if (isDjangoProject) {
-					console.log("Django project detected");
                     provider = new DjangoProvider(languageId, connection, settings);
                 } else {
                     provider = new PythonProvider(languageId, connection, settings);
@@ -260,7 +264,7 @@ function createLanguageProvider(
             } else {
                 provider = new PythonProvider(languageId, connection, settings);
             }
-			break;
+            break;
 		default:
 			provider = undefined;
 			break;

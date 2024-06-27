@@ -11,6 +11,7 @@ import {
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 import * as babelParser from "@babel/parser";
+import * as babelTypes from '@babel/types';
 import { ObjectProperty } from "@babel/types";
 import traverse, { NodePath } from "@babel/traverse";
 
@@ -202,23 +203,69 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 				/**
 				 * Validate: const myFunction = () => {} | Ignore: () => {}
 				 */
-				ArrowFunctionExpression: ({ parent }) => {
+				ArrowFunctionExpression: (path) => {
+					const { node } = path;
+					const parent = path.parent;
+					
 					if (!parent || !parent.loc) return;
-
+					
 					if (
-						parent.type === "VariableDeclarator" &&
-						parent.id.type === "Identifier" &&
+						babelTypes.isVariableDeclarator(parent) &&
+						babelTypes.isIdentifier(parent.id) &&
 						(!this.settings.general.onlyCheckNewCode ||
-							changedLines?.has(parent.loc.start.line))
+						changedLines?.has(parent.loc.start.line))
 					) {
 						diagnosticPromises.push(
+						this.checkFunctionAndAddDiagnostic(
+							parent.id.name,
+							node,
+							document,
+							diagnostics,
+							parent
+						)
+						);
+					} else {
+						this.checkFunctionParameters(node.params, document, diagnostics);
+					}
+					
+					const checkNestedArrowFunctions = (nestedPath: any) => {
+						const { node: nestedNode, parent: nestedParent } = nestedPath;
+					
+						if (!nestedParent || !nestedParent.loc) return;
+					
+						if (
+						babelTypes.isVariableDeclarator(nestedParent) &&
+						babelTypes.isIdentifier(nestedParent.id) &&
+						(!this.settings.general.onlyCheckNewCode ||
+							changedLines?.has(nestedParent.loc.start.line))
+						) {
+						diagnosticPromises.push(
 							this.checkFunctionAndAddDiagnostic(
-								parent.id.name,
-								parent,
-								document,
-								diagnostics
+							nestedParent.id.name,
+							nestedNode,
+							document,
+							diagnostics,
+							nestedParent
 							)
 						);
+						} else {
+							this.checkFunctionParameters(nestedNode.params, document, diagnostics);
+						}
+					
+						if (babelTypes.isBlockStatement(nestedNode.body)) {
+							nestedPath.traverse({ ArrowFunctionExpression: checkNestedArrowFunctions });
+						} else if (
+							babelTypes.isExpression(nestedNode.body) &&
+							babelTypes.isArrowFunctionExpression(nestedNode.body)
+						) {
+							checkNestedArrowFunctions(nestedPath.get('body'));
+						}
+					};
+					
+					if (babelTypes.isBlockStatement(node.body)) {
+						path.traverse({ ArrowFunctionExpression: checkNestedArrowFunctions });
+					} else if (babelTypes.isExpression(node.body) && babelTypes.isArrowFunctionExpression(node.body)) {
+						checkNestedArrowFunctions(path.get('body'));
 					}
 				},
 				ObjectExpression: ({ node }) => {
@@ -383,46 +430,65 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		name: string,
 		node: any,
 		document: TextDocument,
-		diagnostics: Diagnostic[]
+		diagnostics: Diagnostic[],
+		parent: any = null
 	) {
 		if (
 			!node.body ||
 			!node.body.loc ||
 			!node.body.loc.start ||
 			!node.body.loc.end
-		) {
-			console.warn("node has no body property", node);
-			return;
-		}
-
-		const conventions = this.getConventions();
-		const bodyStartLine = node.body.loc.start.line;
-		const bodyEndLine = node.body.loc.end.line;
-		const functionBodyLines = bodyEndLine - bodyStartLine + 1;
-		const functionParams = node.params;
-
-		const result = await this.validateFunctionName(
-			name,
-			functionBodyLines,
-			conventions
-		);
-
-		if (result.violates) {
-			if (!node.id.start || !node.id.end) return;
-
-			const diagnosticRange = Range.create(
-				document.positionAt(node.id.start),
-				document.positionAt(node.id.start + name.length)
+			) {
+				console.warn("node has no body property", node);
+				return;
+			}
+		
+			const conventions = this.getConventions();
+			const bodyStartLine = node.body.loc.start.line;
+			const bodyEndLine = node.body.loc.end.line;
+			const functionBodyLines = bodyEndLine - bodyStartLine + 1;
+			const functionParams = node.params;
+		
+			const result = await this.validateFunctionName(
+				name,
+				functionBodyLines,
+				conventions
 			);
-			const diagnostic: Diagnostic = Diagnostic.create(
-				diagnosticRange,
-				result.reason,
-				DiagnosticSeverity.Warning,
-				NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
-				SOURCE_NAME
-			);
-			diagnostics.push(diagnostic);
-		}
+		
+			if (result.violates) {
+				let diagnosticRange: Range;
+			
+				if (
+					node.type === "ArrowFunctionExpression" &&
+					parent &&
+					parent.type === "VariableDeclarator"
+				) {
+					const declarator = parent;
+					diagnosticRange = Range.create(
+						document.positionAt(declarator.id.start),
+						document.positionAt(declarator.id.end)
+					);
+				} else if (node.id) {
+					diagnosticRange = Range.create(
+						document.positionAt(node.id.start),
+						document.positionAt(node.id.end)
+					);
+				} else {
+					diagnosticRange = Range.create(
+						document.positionAt(node.start),
+						document.positionAt(node.start + name.length)
+					);
+				}
+			
+				const diagnostic: Diagnostic = Diagnostic.create(
+					diagnosticRange,
+					result.reason,
+					DiagnosticSeverity.Warning,
+					NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
+					SOURCE_NAME
+				);
+				diagnostics.push(diagnostic);
+			}
 
 		functionParams.forEach((param: any) => {
 			let argumentName = "";
@@ -447,6 +513,35 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 					this.applyObjectPropertyDiagnostics(property, diagnostics, document);
 				}
 				return;
+			} else if (param.type === "ArrowFunctionExpression") {
+				param.params.forEach((arrowParam: any) => {
+					if (arrowParam.type === "Identifier") {
+						argumentName = arrowParam.name;
+						argumentValue = null;
+						paramStart = arrowParam.start;
+						paramEnd = arrowParam.end;
+						
+						const argumentValidationResult = this.validateFunctionArgument({
+							argumentName,
+							argumentValue,
+						});
+				
+						if (argumentValidationResult.violates) {
+							const argumentRange = Range.create(
+								document.positionAt(paramStart),
+								document.positionAt(paramEnd)
+							);
+							const diagnostic: Diagnostic = Diagnostic.create(
+								argumentRange,
+								argumentValidationResult.reason,
+								DiagnosticSeverity.Warning,
+								NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
+								SOURCE_NAME
+							);
+							diagnostics.push(diagnostic);
+						}
+					}
+				});
 			}
 
 			const argumentValidationResult = this.validateFunctionArgument({
@@ -527,5 +622,46 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 				)
 			);
 		}
+	}
+
+	private checkFunctionParameters(params: babelTypes.Node[], document: TextDocument, diagnostics: Diagnostic[]) {
+		params.forEach(param => {
+		if (babelTypes.isIdentifier(param)) {
+			const argumentValidationResult = this.validateFunctionArgument({
+				argumentName: param.name,
+				argumentValue: null,
+			});
+	
+			if (argumentValidationResult.violates) {
+				const paramRange = Range.create(
+					document.positionAt(param.start!),
+					document.positionAt(param.end!)
+				);
+				const diagnostic: Diagnostic = Diagnostic.create(
+					paramRange,
+					argumentValidationResult.reason,
+					DiagnosticSeverity.Warning,
+					NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
+					SOURCE_NAME
+				);
+				diagnostics.push(diagnostic);
+			}
+		} else if (babelTypes.isObjectPattern(param)) {
+			this.checkObjectPattern(param, document, diagnostics);
+		} else if (babelTypes.isAssignmentPattern(param)) {
+			if (babelTypes.isIdentifier(param.left)) {
+			this.checkFunctionParameters([param.left], document, diagnostics);
+			}
+		}
+		// TODO: Add more cases as needed for other parameter types
+		});
+	}
+	
+	private checkObjectPattern(param: babelTypes.ObjectPattern, document: TextDocument, diagnostics: Diagnostic[]) {
+		param.properties.forEach(prop => {
+		if (babelTypes.isObjectProperty(prop) && babelTypes.isIdentifier(prop.key)) {
+			this.checkFunctionParameters([prop.key], document, diagnostics);
+		}
+		});
 	}
 }

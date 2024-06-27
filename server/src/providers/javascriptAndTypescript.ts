@@ -224,9 +224,9 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 							parent
 						)
 						);
-					} else {
-						this.checkFunctionParameters(node.params, document, diagnostics);
-					}
+					} 
+					
+					this.checkFunctionParameters(node.params, document, diagnostics);
 					
 					const checkNestedArrowFunctions = (nestedPath: any) => {
 						const { node: nestedNode, parent: nestedParent } = nestedPath;
@@ -234,23 +234,23 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 						if (!nestedParent || !nestedParent.loc) return;
 					
 						if (
-						babelTypes.isVariableDeclarator(nestedParent) &&
-						babelTypes.isIdentifier(nestedParent.id) &&
-						(!this.settings.general.onlyCheckNewCode ||
-							changedLines?.has(nestedParent.loc.start.line))
+							babelTypes.isVariableDeclarator(nestedParent) &&
+							babelTypes.isIdentifier(nestedParent.id) &&
+							(!this.settings.general.onlyCheckNewCode ||
+								changedLines?.has(nestedParent.loc.start.line))
 						) {
-						diagnosticPromises.push(
-							this.checkFunctionAndAddDiagnostic(
-							nestedParent.id.name,
-							nestedNode,
-							document,
-							diagnostics,
-							nestedParent
-							)
-						);
-						} else {
-							this.checkFunctionParameters(nestedNode.params, document, diagnostics);
-						}
+							diagnosticPromises.push(
+								this.checkFunctionAndAddDiagnostic(
+								nestedParent.id.name,
+								nestedNode,
+								document,
+								diagnostics,
+								nestedParent
+								)
+							);
+						} 
+						
+						this.checkFunctionParameters(nestedNode.params, document, diagnostics);
 					
 						if (babelTypes.isBlockStatement(nestedNode.body)) {
 							nestedPath.traverse({ ArrowFunctionExpression: checkNestedArrowFunctions });
@@ -626,42 +626,50 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 
 	private checkFunctionParameters(params: babelTypes.Node[], document: TextDocument, diagnostics: Diagnostic[]) {
 		params.forEach(param => {
-		if (babelTypes.isIdentifier(param)) {
-			const argumentValidationResult = this.validateFunctionArgument({
-				argumentName: param.name,
-				argumentValue: null,
+			console.log(param);
+			if (babelTypes.isIdentifier(param)) {
+				this.checkParameterName(param, document, diagnostics);
+			} else if (babelTypes.isRestElement(param)) {
+				console.log("rest element", param.argument);
+				if (babelTypes.isIdentifier(param.argument)) {
+					this.checkParameterName(param.argument, document, diagnostics);
+				}
+			} else if (babelTypes.isObjectPattern(param)) {
+				param.properties.forEach(prop => {
+					if (babelTypes.isObjectProperty(prop) && babelTypes.isIdentifier(prop.key)) {
+						this.checkParameterName(prop.key, document, diagnostics);
+					}
 			});
-	
-			if (argumentValidationResult.violates) {
-				const paramRange = Range.create(
-					document.positionAt(param.start!),
-					document.positionAt(param.end!)
-				);
-				const diagnostic: Diagnostic = Diagnostic.create(
-					paramRange,
-					argumentValidationResult.reason,
-					DiagnosticSeverity.Warning,
-					NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
-					SOURCE_NAME
-				);
-				diagnostics.push(diagnostic);
+			} else if (babelTypes.isArrayPattern(param)) {
+				param.elements.forEach(element => {
+					if (babelTypes.isIdentifier(element)) {
+						this.checkParameterName(element, document, diagnostics);
+					}
+			});
 			}
-		} else if (babelTypes.isObjectPattern(param)) {
-			this.checkObjectPattern(param, document, diagnostics);
-		} else if (babelTypes.isAssignmentPattern(param)) {
-			if (babelTypes.isIdentifier(param.left)) {
-			this.checkFunctionParameters([param.left], document, diagnostics);
-			}
-		}
-		// TODO: Add more cases as needed for other parameter types
 		});
 	}
-	
-	private checkObjectPattern(param: babelTypes.ObjectPattern, document: TextDocument, diagnostics: Diagnostic[]) {
-		param.properties.forEach(prop => {
-		if (babelTypes.isObjectProperty(prop) && babelTypes.isIdentifier(prop.key)) {
-			this.checkFunctionParameters([prop.key], document, diagnostics);
-		}
+
+	private checkParameterName(param: babelTypes.Identifier, document: TextDocument, diagnostics: Diagnostic[]) {
+		const paramName = param.name;
+		const paramValidationResult = this.validateFunctionArgument({
+			argumentName: paramName,
+			argumentValue: null,
 		});
+		
+		if (paramValidationResult.violates) {
+			const paramRange = Range.create(
+				document.positionAt(param.start!),
+				document.positionAt(param.end!)
+			);
+			const diagnostic: Diagnostic = Diagnostic.create(
+				paramRange,
+				paramValidationResult.reason,
+				DiagnosticSeverity.Warning,
+				NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
+				SOURCE_NAME
+			);
+			diagnostics.push(diagnostic);
+		}
 	}
 }

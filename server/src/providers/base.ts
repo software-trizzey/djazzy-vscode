@@ -354,7 +354,7 @@ export abstract class LanguageProvider {
 		variableName: string;
 		variableValue: any;
 	}): { violates: boolean; reason: string } {
-		if (!variableName) {
+		if (!variableName || variableName.toLowerCase() === "id") {
 			return { violates: false, reason: "" };
 		}
 		const {

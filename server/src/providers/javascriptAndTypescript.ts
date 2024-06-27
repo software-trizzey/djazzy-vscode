@@ -569,7 +569,6 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 			if (babelTypes.isIdentifier(param)) {
 				this.checkParameterName(param, document, diagnostics);
 			} else if (babelTypes.isAssignmentPattern(param)) {
-				// Handle parameters with default values
 				if (babelTypes.isIdentifier(param.left)) {
 					this.checkParameterName(param.left, document, diagnostics);
 				}

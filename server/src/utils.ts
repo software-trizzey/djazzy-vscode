@@ -142,16 +142,6 @@ export async function validateJavaScriptAndTypeScriptFunctionName(
         };
     }
 
-    const nameWithoutVerb = functionNameWithoutUnderscorePrefix.substring(verb.length);
-    const words = await findMatchingWords(nameWithoutVerb);
-
-    if (words.length === 0) {
-        return {
-            violates: true,
-            reason: RULE_MESSAGES.FUNCTION_MIN_TWO_WORDS.replace("{name}", functionName),
-        };
-    }
-
     if (functionBodyLines > functions.functionLengthLimit) {
         return {
             violates: true,
@@ -192,16 +182,6 @@ export async function validatePythonFunctionName(
         return {
             violates: true,
             reason: RULE_MESSAGES.FUNCTION_NO_ACTION_WORD.replace("{name}", functionName),
-        };
-    }
-
-    const nameWithoutVerb = functionNameWithoutUnderscorePrefix.substring(verb.length);
-    const words = await findMatchingWords(nameWithoutVerb);
-
-    if (words.length === 0) {
-        return {
-            violates: true,
-            reason: RULE_MESSAGES.FUNCTION_MIN_TWO_WORDS.replace("{name}", functionName),
         };
     }
 

@@ -28,6 +28,10 @@ All notable changes to this project will be documented in this file.
 
 - [Bugfix] Fix duplicate function argument diagnostics
 
+### Removed
+
+- [Removal] Stop checking the validity of a word in a symbols names. This was triggering too many rate limit errors and was pretty inaccurate.
+
 ## [Version 0.0.42] - 2024-06-26
 
 ### Added

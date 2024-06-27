@@ -22,6 +22,16 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
+## [Version 0.0.42] - 2024-06-26
+
+### Added
+
+- [Enhancement] Extend functino argument validation to JavaScript/TypeScript arrow function expressions.
+
+### Changed
+
+- [Update] Renamed "action word" rule and variables to "verb". Because duh.
+
 ## [Version 0.0.41] - 2024-06-26
 
 ### Added

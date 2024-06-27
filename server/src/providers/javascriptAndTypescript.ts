@@ -204,69 +204,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 				 * Validate: const myFunction = () => {} | Ignore: () => {}
 				 */
 				ArrowFunctionExpression: (path) => {
-					const { node } = path;
-					const parent = path.parent;
-					
-					if (!parent || !parent.loc) return;
-					
-					if (
-						babelTypes.isVariableDeclarator(parent) &&
-						babelTypes.isIdentifier(parent.id) &&
-						(!this.settings.general.onlyCheckNewCode ||
-						changedLines?.has(parent.loc.start.line))
-					) {
-						diagnosticPromises.push(
-						this.checkFunctionAndAddDiagnostic(
-							parent.id.name,
-							node,
-							document,
-							diagnostics,
-							parent
-						)
-						);
-					} 
-					
-					this.checkFunctionParameters(node.params, document, diagnostics);
-					
-					const checkNestedArrowFunctions = (nestedPath: any) => {
-						const { node: nestedNode, parent: nestedParent } = nestedPath;
-					
-						if (!nestedParent || !nestedParent.loc) return;
-					
-						if (
-							babelTypes.isVariableDeclarator(nestedParent) &&
-							babelTypes.isIdentifier(nestedParent.id) &&
-							(!this.settings.general.onlyCheckNewCode ||
-								changedLines?.has(nestedParent.loc.start.line))
-						) {
-							diagnosticPromises.push(
-								this.checkFunctionAndAddDiagnostic(
-								nestedParent.id.name,
-								nestedNode,
-								document,
-								diagnostics,
-								nestedParent
-								)
-							);
-						} 
-						
-						this.checkFunctionParameters(nestedNode.params, document, diagnostics);
-					
-						if (babelTypes.isBlockStatement(nestedNode.body)) {
-							nestedPath.traverse({ ArrowFunctionExpression: checkNestedArrowFunctions });
-						} else if (
-							babelTypes.isExpression(nestedNode.body) &&
-							babelTypes.isArrowFunctionExpression(nestedNode.body)
-						) {
-							checkNestedArrowFunctions(nestedPath.get('body'));
-						}
-					};
-					
-					if (babelTypes.isBlockStatement(node.body)) {
-						path.traverse({ ArrowFunctionExpression: checkNestedArrowFunctions });
-					} else if (babelTypes.isExpression(node.body) && babelTypes.isArrowFunctionExpression(node.body)) {
-						checkNestedArrowFunctions(path.get('body'));
-					}
+					this.checkArrowFunction(path, document, diagnostics, diagnosticPromises, changedLines);
 				},
 				ObjectExpression: ({ node }) => {
 					node.properties.forEach((property) => {
@@ -624,13 +562,57 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 		}
 	}
 
+	private checkArrowFunction(
+		path: any, 
+		document: TextDocument, 
+		diagnostics: Diagnostic[], 
+		diagnosticPromises: Promise<void>[],
+		changedLines?: Set<number>
+	) {
+		const { node, parent } = path;
+	
+		if (!parent || !parent.loc) return;
+	
+		if (
+			babelTypes.isVariableDeclarator(parent) &&
+			babelTypes.isIdentifier(parent.id) &&
+			(!this.settings.general.onlyCheckNewCode ||
+				changedLines?.has(parent.loc.start.line))
+		) {
+		diagnosticPromises.push(
+			this.checkFunctionAndAddDiagnostic(
+				parent.id.name,
+				node,
+				document,
+				diagnostics,
+				parent
+			)
+		);
+		}
+	
+		this.checkFunctionParameters(node.params, document, diagnostics);
+	
+		if (babelTypes.isBlockStatement(node.body)) {
+		path.traverse({ 
+			ArrowFunctionExpression: (nestedPath: any) => 
+			this.checkArrowFunction(nestedPath, document, diagnostics, diagnosticPromises, changedLines) 
+		});
+		} else if (babelTypes.isExpression(node.body) && babelTypes.isArrowFunctionExpression(node.body)) {
+			this.checkArrowFunction(
+				path.get('body'),
+				document,
+				diagnostics,
+				diagnosticPromises,
+				changedLines
+			);
+		}
+	}
+
 	private checkFunctionParameters(params: babelTypes.Node[], document: TextDocument, diagnostics: Diagnostic[]) {
 		params.forEach(param => {
-			console.log(param);
 			if (babelTypes.isIdentifier(param)) {
 				this.checkParameterName(param, document, diagnostics);
 			} else if (babelTypes.isRestElement(param)) {
-				console.log("rest element", param.argument);
 				if (babelTypes.isIdentifier(param.argument)) {
 					this.checkParameterName(param.argument, document, diagnostics);
 				}

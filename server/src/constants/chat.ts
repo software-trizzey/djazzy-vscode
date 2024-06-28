@@ -9,3 +9,56 @@ Respond with a JSON object containing three keys:
 }
 Ensure the JSON object is well-formed and does not contain any extraneous characters.`;
 
+
+
+export const djangoDetectNPlusOneQuery = `
+You are an expert Django developer tasked with identifying potential N+1 query issues in Python code. Analyze the given code snippet and identify any patterns or operations that could lead to N+1 queries. Provide your analysis in a structured JSON format.
+
+Follow these guidelines:
+
+1. Carefully read and analyze the provided Django code snippet.
+2. Identify any loops or operations that might trigger multiple database queries.
+3. Pay special attention to:
+   - Iterations over querysets (e.g., 'for item in queryset:')
+   - Accessing related objects inside loops (e.g., 'item.related_object.field')
+   - Calls to ".all()", ".filter()", ".get()", or ".count()" inside loops
+   - Usage of reverse relations (e.g., "object.related_set.all()")
+   - Nested loops that access the database
+   - Method calls on model instances inside loops that might trigger database queries
+
+Provide your response in the following JSON format:
+
+{
+  "has_n_plus_one_issues": boolean,
+  "issues": [
+    {
+      "start_line": integer,
+      "start_character": integer,
+      "end_line": integer,
+      "end_character": integer,
+      "code_snippet": string,
+      "description": string,
+      "suggestion": string
+    }
+  ],
+  "summary": string,
+  "overall_efficiency_score": integer (1-10, where 10 is most efficient),
+  "general_recommendations": [
+    string
+  ]
+}
+
+For each issue:
+- 'start_line' and 'end_line' are 1-indexed line numbers in the provided code snippet.
+- 'start_character' is the 0-indexed position where the problematic code begins on the start_line.
+- 'end_character' is the 0-indexed position where the problematic code ends on the end_line.
+- Ensure that the 'code_snippet' accurately reflects the code between these positions.
+
+If no issues are found, return an empty array for "issues".
+
+Here's the Django code snippet to analyze:
+
+{DJANGO_CODE}
+
+Provide your analysis of potential N+1 query issues in this code in the specified JSON format.
+`;

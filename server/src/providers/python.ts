@@ -161,6 +161,23 @@ export class PythonProvider extends LanguageProvider {
 		}
 	}
 
+	sanitizeFunctionBody(body: string): string {
+		let lines = body.split('\n');
+		lines = lines.slice(1);
+	
+		const minIndent = lines.reduce((min, line) => {
+			if (line.trim().length === 0) return min;
+			const matches = line.match(/^\s*/);
+			if (!matches) return min;
+			const indent = matches[0].length;
+			return Math.min(min, indent);
+		}, Infinity);
+	
+		lines = lines.map(line => line.slice(minIndent));
+	
+		return lines.join('\n');
+	}
+
 	async validateAndCreateDiagnostics(
 		symbols: any[],
 		diagnostics: Diagnostic[],

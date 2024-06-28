@@ -7,7 +7,7 @@ import {
 } from "vscode-languageserver/node";
 
 import { PythonProvider } from "./python";
-import { SOURCE_NAME, NAMING_CONVENTION_VIOLATION_SOURCE_TYPE } from "../constants/diagnostics";
+import { SOURCE_NAME, DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE } from "../constants/diagnostics";
 import { RULE_MESSAGES } from '../constants/rules';
 import { djangoDetectNPlusOneQuery } from '../constants/chat';
 import { ExtensionSettings, cachedUserToken, defaultConventions } from "../settings";
@@ -41,7 +41,7 @@ export class DjangoProvider extends PythonProvider {
 
 		for (const symbol of symbols) {
             if (METHOD_NAMES.includes(symbol.type)) {
-                this.detectNPlusOneQuery(symbol, diagnostics);
+                await this.detectNPlusOneQuery(symbol, diagnostics);
             }
         }
 	}
@@ -55,7 +55,7 @@ export class DjangoProvider extends PythonProvider {
         const sanitizedFunctionBody = this.sanitizeFunctionBody(functionBody);
 
 		const message = djangoDetectNPlusOneQuery.replace("{DJANGO_CODE}", sanitizedFunctionBody);
-		const response = await chatWithGroq("detect N+1 queries", message, cachedUserToken);
+		const response = await chatWithGroq("Analyze Django code for N+1 query inefficiencies", message, cachedUserToken);
 		try {
 			const llmResult = response as LLMNPlusOneResult;
 			if (llmResult.has_n_plus_one_issues) {
@@ -82,22 +82,25 @@ export class DjangoProvider extends PythonProvider {
 				range,
 				`N+1 Query Issue: ${issue.description}\nSuggestion: ${issue.suggestion}`,
 				DiagnosticSeverity.Warning,
-				NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
+				DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE,
 				SOURCE_NAME
 			);
 	
 			diagnostics.push(diagnostic);
 		});
 	
-		const functionStart = Position.create(symbol.line, symbol.col_offset);
-		const functionEnd = Position.create(symbol.function_end_line, symbol.end_col_offset || 0);
-		const functionRange = Range.create(functionStart, functionEnd);	
+		const defKeywordLength = 'def '.length;
+		const functionNameStartOffset = symbol.col_offset + defKeywordLength;
+	
+		const functionNameStart = Position.create(symbol.line, functionNameStartOffset);
+		const functionNameEnd = Position.create(symbol.line, functionNameStartOffset + symbol.name.length);
+		const functionNameRange = Range.create(functionNameStart, functionNameEnd);
 	
 		const generalDiagnostic: Diagnostic = Diagnostic.create(
-			functionRange,
+			functionNameRange,
 			`This function has N+1 query issues. Overall efficiency score: ${llmResult.overall_efficiency_score}/10\nGeneral recommendations: ${llmResult.general_recommendations.join(", ")}`,
-			DiagnosticSeverity.Information,
-			NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
+			DiagnosticSeverity.Warning,
+			DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE,
 			SOURCE_NAME
 		);
 	

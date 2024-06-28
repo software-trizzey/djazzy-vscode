@@ -5,6 +5,7 @@ import json
 import sys
 import tokenize
 from io import StringIO
+from typing import Dict, Any
 
 DJANGO_IGNORE_FUNCTIONS = {
     "save": True,
@@ -34,7 +35,6 @@ def serialize_file_data(obj):
         return {k: serialize_file_data(v) for k, v in obj.items()}
     else:
         return str(obj)
-    
 
 class DjangoURLPatternVisitor(ast.NodeVisitor):
     def __init__(self):
@@ -48,15 +48,28 @@ class DjangoURLPatternVisitor(ast.NodeVisitor):
                         if elt.func.id in ['path', 're_path', 'url']:
                             pattern = {
                                 'type': elt.func.id,
-                                'args': [],
+                                'route': None,
+                                'view': None,
+                                'name': None,
                                 'line': elt.lineno,
-                                'col': elt.col_offset
+                                'col': elt.col_offset,
+                                'end_line': elt.end_lineno,
+                                'end_col': elt.end_col_offset
                             }
-                            for arg in elt.args:
-                                if isinstance(arg, ast.Str):
-                                    pattern['args'].append(arg.s)
-                                elif isinstance(arg, ast.Name):
-                                    pattern['args'].append(arg.id)
+                            
+                            for currentIndex, arg in enumerate(elt.args):
+                                if currentIndex == 0 and isinstance(arg, ast.Constant):
+                                    pattern['route'] = arg.value
+                                elif currentIndex == 1:
+                                    if isinstance(arg, ast.Name):
+                                        pattern['view'] = arg.id
+                                    elif isinstance(arg, ast.Attribute):
+                                        pattern['view'] = f"{arg.value.id}.{arg.attr}"
+                            
+                            for keyword in elt.keywords:
+                                if keyword.arg == 'name' and isinstance(keyword.value, ast.Constant):
+                                    pattern['name'] = keyword.value.value
+                            
                             self.url_patterns.append(pattern)
 
 class Analyzer(ast.NodeVisitor):
@@ -417,20 +430,18 @@ class Analyzer(ast.NodeVisitor):
             key_and_value_pairs=key_and_value_pairs
         ))
 
-    def parse_code(self):
+    def parse_code(self) -> Dict[str, Any]:
         try:
             self.get_comments()
             tree = ast.parse(self.source_code)
             self.visit(tree)
-
             url_visitor = DjangoURLPatternVisitor()
             url_visitor.visit(tree)
             self.url_patterns = url_visitor.url_patterns
-
             for pattern in self.url_patterns:
                 self.symbols.append(self._create_symbol_dict(
                     type='django_url_pattern',
-                    name=pattern['args'][0] if pattern['args'] else '',
+                    name=pattern['name'] or pattern['route'] or '',
                     comments=[],
                     line=pattern['line'] - 1,
                     col_offset=pattern['col'],

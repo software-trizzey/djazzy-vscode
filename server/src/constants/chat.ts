@@ -44,7 +44,7 @@ For each issue:
 - Provide a clear description of the N+1 query problem.
 - Offer a specific suggestion on how to fix it.
 - Highlight the original code snippet that triggers the issue.
-- Include a code snippet that fixes the issue. The code must be valid and complete Django syntax.
+- Include a code snippet that fixes the issue. The code snippet must be valid complete Django syntax.
 
 List each issue in order of appearance in the code.
 If no issues are found, return an empty array for "issues".

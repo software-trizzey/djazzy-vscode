@@ -11,6 +11,8 @@ export interface NPlusOneIssueFuture {
 export interface NPlusOneIssue {
 	description: string;
 	suggestion: string;
+	original_code_snippet: string;
+	code_snippet_fix: string;
 }
   
   export interface LLMNPlusOneResult {

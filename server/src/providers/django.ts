@@ -72,14 +72,13 @@ export class DjangoProvider extends PythonProvider {
 		const end = Position.create(symbol.function_end_line - 1, symbol.end_col_offset);
 		const range = Range.create(start, end);
 	
-		let diagnosticMessage = `Detected in N+1 queries in function "${symbol.name}".`;
-	
-		diagnosticMessage += "\n\nFlagged Issues:\n\n";
+		let diagnosticMessage = `Detected in N+1 queries in function "${symbol.name}".\n\n`;
 	
 		llmResult.issues.forEach((issue, index) => {
-			diagnosticMessage += `Issue ${index + 1}:\n`;
-			diagnosticMessage += `Description: ${issue.description}\n`;
-			diagnosticMessage += `Suggestion: ${issue.suggestion}\n\n`;
+			diagnosticMessage += `Issue ${index + 1} - ${issue.description}\n`;
+			diagnosticMessage += `Line: ${issue.original_code_snippet}\n`;
+			diagnosticMessage += `Suggestion: ${issue.suggestion}\n`;
+			diagnosticMessage += `Example: ${issue.code_snippet_fix}\n\n`;
 		});
 	
 		const diagnostic: Diagnostic = Diagnostic.create(

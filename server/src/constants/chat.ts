@@ -33,17 +33,20 @@ Provide your response in the following JSON format:
   "issues": [
     {
       "description": string,
-      "suggestion": string
+      "suggestion": string,
+      "original_code_snippet": string
+      "code_snippet_fix": string
     }
   ],
-  "summary": string,
-  "overall_efficiency_score": integer (1-10, where 10 is most efficient),
-  "general_recommendations": [
-    string
-  ]
 }
 
-List each issue in order of appearance in the code, along with a suggestion on how to fix it.
+For each issue:
+- Provide a clear description of the N+1 query problem.
+- Offer a specific suggestion on how to fix it.
+- Highlight the original code snippet that triggers the issue.
+- Include a code snippet that fixes the issue. The snippet must be valid Django syntax.
+
+List each issue in order of appearance in the code.
 If no issues are found, return an empty array for "issues".
 
 Here's the Django code snippet to analyze:

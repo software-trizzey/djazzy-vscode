@@ -1,4 +1,5 @@
-export interface NPlusOneIssue {
+
+export interface NPlusOneIssueFuture {
 	start_line: number;
 	start_character: number;
 	end_line: number;
@@ -7,6 +8,10 @@ export interface NPlusOneIssue {
 	description: string;
 	suggestion: string;
   }
+export interface NPlusOneIssue {
+	description: string;
+	suggestion: string;
+}
   
   export interface LLMNPlusOneResult {
 	has_n_plus_one_issues: boolean;

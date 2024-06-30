@@ -46,14 +46,15 @@ export class DjangoProvider extends PythonProvider {
         }
 	}
 
-    private async detectNPlusOneQuery(symbol: any, diagnostics: Diagnostic[]): Promise<void> {
+	private async detectNPlusOneQuery(symbol: any, diagnostics: Diagnostic[]): Promise<void> {
 		if (!cachedUserToken) {
 			console.error("User must be authenticated to use the N+1 query detection feature. Skipping...");
 			return;
 		}
-        const functionBody = symbol.body;
-        const sanitizedFunctionBody = this.sanitizeFunctionBody(functionBody);
-
+		console.log("symbol: ", symbol);
+		const functionBody = symbol.body;
+		const sanitizedFunctionBody = this.sanitizeFunctionBody(functionBody);
+		
 		const message = djangoDetectNPlusOneQuery.replace("{DJANGO_CODE}", sanitizedFunctionBody);
 		const response = await chatWithGroq("Analyze Django code for N+1 query inefficiencies", message, cachedUserToken);
 		try {
@@ -64,46 +65,31 @@ export class DjangoProvider extends PythonProvider {
 		} catch (error) {
 			console.error("Error during NPlus Query analysis", error);
 		}
-    }
-
-	private createNPlusOneDiagnostics(llmResult: LLMNPlusOneResult, symbol: any, diagnostics: Diagnostic[]): void {
-		const lineOffset = symbol.function_start_line - 1;
-	
-		llmResult.issues.forEach(issue => {
-			const startLine = lineOffset + issue.start_line - 1;
-			const endLine = lineOffset + issue.end_line - 1;
-			
-			const start = Position.create(startLine, issue.start_character);
-			const end = Position.create(endLine, issue.end_character);
-			const range = Range.create(start, end);
+	}
 		
+	private createNPlusOneDiagnostics(llmResult: LLMNPlusOneResult, symbol: any, diagnostics: Diagnostic[]): void {
+		const start = Position.create(symbol.line, symbol.col_offset);
+		const end = Position.create(symbol.function_end_line - 1, symbol.end_col_offset);
+		const range = Range.create(start, end);
 	
-			const diagnostic: Diagnostic = Diagnostic.create(
-				range,
-				`N+1 Query Issue: ${issue.description}\nSuggestion: ${issue.suggestion}`,
-				DiagnosticSeverity.Warning,
-				DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE,
-				SOURCE_NAME
-			);
+		let diagnosticMessage = `Detected in N+1 queries in function "${symbol.name}".`;
 	
-			diagnostics.push(diagnostic);
+		diagnosticMessage += "\n\nFlagged Issues:\n\n";
+	
+		llmResult.issues.forEach((issue, index) => {
+			diagnosticMessage += `Issue ${index + 1}:\n`;
+			diagnosticMessage += `Description: ${issue.description}\n`;
+			diagnosticMessage += `Suggestion: ${issue.suggestion}\n\n`;
 		});
 	
-		const defKeywordLength = 'def '.length;
-		const functionNameStartOffset = symbol.col_offset + defKeywordLength;
-	
-		const functionNameStart = Position.create(symbol.line, functionNameStartOffset);
-		const functionNameEnd = Position.create(symbol.line, functionNameStartOffset + symbol.name.length);
-		const functionNameRange = Range.create(functionNameStart, functionNameEnd);
-	
-		const generalDiagnostic: Diagnostic = Diagnostic.create(
-			functionNameRange,
-			`This function has N+1 query issues. Overall efficiency score: ${llmResult.overall_efficiency_score}/10\nGeneral recommendations: ${llmResult.general_recommendations.join(", ")}`,
+		const diagnostic: Diagnostic = Diagnostic.create(
+			range,
+			diagnosticMessage,
 			DiagnosticSeverity.Warning,
 			DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE,
 			SOURCE_NAME
 		);
 	
-		diagnostics.push(generalDiagnostic);
+		diagnostics.push(diagnostic);
 	}
 }

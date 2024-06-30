@@ -32,11 +32,6 @@ Provide your response in the following JSON format:
   "has_n_plus_one_issues": boolean,
   "issues": [
     {
-      "start_line": integer,
-      "start_character": integer,
-      "end_line": integer,
-      "end_character": integer,
-      "code_snippet": string,
       "description": string,
       "suggestion": string
     }
@@ -48,12 +43,7 @@ Provide your response in the following JSON format:
   ]
 }
 
-For each issue:
-- 'start_line' and 'end_line' are 1-indexed line numbers in the provided code snippet.
-- 'start_character' is the 0-indexed position where the problematic code begins on the start_line.
-- 'end_character' is the 0-indexed position where the problematic code ends on the end_line.
-- Ensure that the 'code_snippet' accurately reflects the code between these positions.
-
+List each issue in order of appearance in the code, along with a suggestion on how to fix it.
 If no issues are found, return an empty array for "issues".
 
 Here's the Django code snippet to analyze:

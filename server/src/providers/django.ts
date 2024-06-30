@@ -51,7 +51,6 @@ export class DjangoProvider extends PythonProvider {
 			console.error("User must be authenticated to use the N+1 query detection feature. Skipping...");
 			return;
 		}
-		console.log("symbol: ", symbol);
 		const functionBody = symbol.body;
 		const sanitizedFunctionBody = this.sanitizeFunctionBody(functionBody);
 		
@@ -72,7 +71,7 @@ export class DjangoProvider extends PythonProvider {
 		const end = Position.create(symbol.function_end_line - 1, symbol.end_col_offset);
 		const range = Range.create(start, end);
 	
-		let diagnosticMessage = `Detected in N+1 queries in function "${symbol.name}".\n\n`;
+		let diagnosticMessage = RULE_MESSAGES.N_PLUS_ONE_QUERY.replace("{name}", symbol.name) + "\n\n";
 	
 		llmResult.issues.forEach((issue, index) => {
 			diagnosticMessage += `Issue ${index + 1} - ${issue.description}\n`;

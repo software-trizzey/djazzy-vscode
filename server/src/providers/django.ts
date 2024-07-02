@@ -13,16 +13,12 @@ import crypto from 'crypto';
 
 import { PythonProvider } from "./python";
 import { SOURCE_NAME, DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE } from "../constants/diagnostics";
-import { RULE_MESSAGES } from '../constants/rules';
-import { djangoDetectNPlusOneQuery } from '../constants/chat';
 import { ExtensionSettings, cachedUserToken, defaultConventions } from "../settings";
 import { chatWithGroq } from '../llm/groq';
-import { chatWithOpenAI } from '../llm/openai';
 import { LLMNPlusOneResult } from '../llm/types';
 import LOGGER from '../common/logs';
 
 const METHOD_NAMES = [
-	"functiondef",
 	"django_model_method",
 	"django_serializer_method",
 	"django_view_method",
@@ -69,6 +65,7 @@ export class DjangoProvider extends PythonProvider {
 			LOGGER.error("User must be authenticated to use the N+1 query detection feature. Skipping...");
 			return;
 		}
+		console.log("symbol", symbol);
 		const functionBody = symbol.body;
 		const sanitizedFunctionBody = this.sanitizeFunctionBody(functionBody);
 		const cacheKey = this.generateCacheKey(symbol, functionBody);
@@ -97,35 +94,32 @@ export class DjangoProvider extends PythonProvider {
 		}
 	}
 	
-	private removeDiagnosticsForSymbol(symbol: any, diagnostics: Diagnostic[]): void {
-		const start = symbol.line;
-		const end = symbol.function_end_line - 1;
-		const index = diagnostics.findIndex(diagnostic => 
-			diagnostic.range.start.line >= start && 
-			diagnostic.range.end.line <= end &&
-			diagnostic.source === SOURCE_NAME
-		);
-		if (index !== -1) {
-			diagnostics.splice(index, 1);
-		}
-	}
-		
-	private createNPlusOneDiagnostics(llmResult: LLMNPlusOneResult, symbol: any, diagnostics: Diagnostic[]): void {
-		const start = Position.create(symbol.line, symbol.col_offset);
-		const end = Position.create(symbol.function_end_line - 1, symbol.end_col_offset);
-		const range = Range.create(start, end);
-	
-		const diagnosticMessage = this.formatDiagnosticMessage(symbol, llmResult);
-		const diagnostic: Diagnostic = Diagnostic.create(
-			range,
-			diagnosticMessage,
-			DiagnosticSeverity.Warning,
-			DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE,
-			SOURCE_NAME
-		);
-	
-		diagnostics.push(diagnostic);
-	}
+    private removeDiagnosticsForSymbol(symbol: any, diagnostics: Diagnostic[]): void {
+        const start = symbol.line;
+        const end = symbol.function_end_line;
+        diagnostics = diagnostics.filter(diagnostic => 
+            !(diagnostic.range.start.line >= start && 
+              diagnostic.range.end.line <= end &&
+              diagnostic.source === SOURCE_NAME)
+        );
+    }
+
+    private createNPlusOneDiagnostics(llmResult: LLMNPlusOneResult, symbol: any, diagnostics: Diagnostic[]): void {
+        const start = Position.create(symbol.line, symbol.col_offset);
+        const end = Position.create(symbol.function_end_line, symbol.end_col_offset || 0);
+        const range = Range.create(start, end);
+
+        const diagnosticMessage = this.formatDiagnosticMessage(symbol, llmResult);
+        const diagnostic: Diagnostic = Diagnostic.create(
+            range,
+            diagnosticMessage,
+            DiagnosticSeverity.Warning,
+            DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE,
+            SOURCE_NAME
+        );
+
+        diagnostics.push(diagnostic);
+    }
 
 	private hashFunctionBody(functionBody: string): string {
 		return crypto.createHash('sha256').update(functionBody).digest('hex');

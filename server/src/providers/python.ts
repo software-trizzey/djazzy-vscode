@@ -178,184 +178,127 @@ export class PythonProvider extends LanguageProvider {
 		return lines.join('\n');
 	}
 
-	async validateAndCreateDiagnostics(
-		symbols: any[],
-		diagnostics: Diagnostic[],
-		changedLines: Set<number> | undefined
-	): Promise<void> {
-		const conventions = this.getConventions();
-		for (const symbol of symbols) {
-			const {
-				type,
-				name,
-				line,
-				col_offset,
-				value,
-				leading_comments,
-				body,
-				function_start_line,
-				function_end_line,
-				is_reserved,
-			} = symbol;
+    async validateAndCreateDiagnostics(
+        symbols: any[],
+        diagnostics: Diagnostic[],
+        changedLines: Set<number> | undefined
+    ): Promise<void> {
+        const conventions = this.getConventions();
+        for (const symbol of symbols) {
+            const {
+                type,
+                name,
+                line,
+                value,
+                leading_comments,
+                body,
+                function_start_line,
+                function_end_line,
+                is_reserved,
+            } = symbol;
 
-			if (is_reserved) {
-				continue; // Skip validation for reserved symbols
-			}
+            if (is_reserved) {
+                continue; // Skip validation for reserved symbols
+            }
 
-			if (changedLines && !changedLines.has(line)) {
-				continue; // Skip validation if line not in changedLines
-			}
+            if (changedLines && !changedLines.has(line)) {
+                continue; // Skip validation if line not in changedLines
+            }
 
-			let result = null;
-			switch (type) {
-				case "functiondef":
-				case "django_model_method":
-				case "django_serializer_method":
-				case "django_view_method":
-				case "django_testcase_method":
-					result = await this.validateFunctionName(
-						name,
-						{
-							content: body,
-							bodyLength: function_end_line - function_start_line + 1,
-						},
-						conventions
-					);
+            let result = null;
+            switch (type) {
+                case "function":
+                case "django_model_method":
+                case "django_serializer_method":
+                case "django_view_method":
+                case "django_testcase_method":
+                    result = await this.validateFunctionName(
+                        name,
+                        {
+                            content: body,
+                            bodyLength: function_end_line - function_start_line + 1,
+                        },
+                        conventions
+                    );
 
-					if (symbol.arguments) {
-						for (const arg of symbol.arguments) {
-							const argumentName = arg.name;
-							const argumentValue: any = arg.default;
+                    if (symbol.arguments) {
+                        for (const arg of symbol.arguments) {
+                            const argumentResult = this.validateVariableName({
+                                variableName: arg.name,
+                                variableValue: arg.default,
+                            });
+                            if (argumentResult.violates) {
+                                const argRange = Range.create(
+                                    Position.create(arg.line - 1, arg.col_offset),
+                                    Position.create(arg.line - 1, arg.col_offset + arg.name.length)
+                                );
+                                diagnostics.push(this.createDiagnostic(
+                                    argRange,
+                                    argumentResult.reason,
+                                    DiagnosticSeverity.Warning
+                                ));
+                            }
+                        }
+                    }
+                    break;
 
-							const argumentResult = this.validateVariableName({
-								variableName: argumentName,
-								variableValue: argumentValue,
-							});
-							if (argumentResult.violates) {
-								const start = Position.create(line, arg.col_offset);
-								const end = Position.create(
-									line,
-									arg.col_offset + argumentName.length
-								);
-								const range = Range.create(start, end);
-								const diagnostic: Diagnostic = Diagnostic.create(
-									range,
-									argumentResult.reason,
-									DiagnosticSeverity.Warning,
-									NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
-									SOURCE_NAME
-								);
-								diagnostics.push(diagnostic);
-							}
-						}
-					}
+                case "assignment":
+                case "variable":
+                    result = this.validateVariableName({
+                        variableName: name,
+                        variableValue: value,
+                    });
+                    break;
 
-					break;
-				case "variable":
-				case "assignment":
-				case "assign":
-					result = this.validateVariableName({
-						variableName: name,
-						variableValue: value,
-					});
-					break;
-				case "classdef":
-					result = this.validateClassName(name);
-					break;
-				case "dictionary":
-					result = this.validateDictionary(symbol);
+                case "class":
+                    result = this.validateClassName(name);
+                    break;
 
-					if (result.violates && result.diagnostics) {
-						diagnostics.push(...result.diagnostics);
-					}
-					break;
-				case "list":
-					result = this.validateList(value);
-					break;
-				case "for_loop":
-					if (symbol.target_positions) {
-						for (const [variableName, line, col_offset] of symbol.target_positions) {
-							const argResult = this.validateVariableName({
-								variableName: variableName,
-								variableValue: null,
-							});
-							if (argResult.violates) {
-								const start = Position.create(line, col_offset);
-								const end = Position.create(line, col_offset + variableName.length);
-								const range = Range.create(start, end);
-								const diagnostic: Diagnostic = Diagnostic.create(
-									range,
-									argResult.reason,
-									DiagnosticSeverity.Warning,
-									NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
-									SOURCE_NAME
-								);
-								diagnostics.push(diagnostic);
-							}
-						}
-					}
-					break;
-				case "django_model":
-					// TODO: Implement model name validation (probably similar to class)
-					break;
-				case "django_model_field":
-					result = this.validateVariableName({
-						variableName: name,
-						variableValue: this.extractDjangoFieldValue(value),
-					});
-					break;
-				case "django_serializer_field":
-					// TODO: Handle serializer field validation if different from standard fields
-					break;
-			}
+                case "dictionary":
+                    result = this.validateDictionary(symbol);
+                    if (result.violates && result.diagnostics) {
+                        diagnostics.push(...result.diagnostics);
+                    }
+                    continue; // Skip the general diagnostic creation for dictionaries
+
+                case "list":
+                    result = this.validateList(value);
+                    break;
+
+                case "for_loop":
+                    this.handleForLoopTargets(symbol, diagnostics);
+                    continue; // Skip the general diagnostic creation for for loops
+
+                case "django_model":
+                    // TODO: Implement model name validation
+                    break;
+
+                case "django_model_field":
+                case "django_serializer_field":
+                    result = this.validateVariableName({
+                        variableName: name,
+                        variableValue: this.extractDjangoFieldValue(value),
+                    });
+                    break;
+            }
 
 			if (result && result.violates) {
-				let colOffsetAdjustment = 0;
-				if (symbol.type === "function" && symbol.name) {
-					colOffsetAdjustment = "def ".length;
-				} else if (symbol.type === "class" && symbol.name) {
-					colOffsetAdjustment = "class ".length;
-				}
-				const start = Position.create(line, col_offset + colOffsetAdjustment);
-				const end = Position.create(
-					line,
-					col_offset + colOffsetAdjustment + symbol.name.length
-				);
-				const range = Range.create(start, end);
-				const diagnostic: Diagnostic = Diagnostic.create(
-					range,
-					result.reason,
-					DiagnosticSeverity.Warning,
-					NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
-					SOURCE_NAME
-				);
-				diagnostics.push(diagnostic);
-			}
+                const { start, end } = this.adjustColumnOffsets(symbol);
+                const range = Range.create(
+                    Position.create(symbol.line, start),
+                    Position.create(symbol.line, end)
+                );
+                diagnostics.push(this.createDiagnostic(
+                    range,
+                    result.reason,
+                    DiagnosticSeverity.Warning
+                ));
+            }
 
-			if (this.settings.comments.flagRedundant && leading_comments) {
-				for (const comment of leading_comments) {
-					this.handleComment(comment, symbol, diagnostics);
-				}
-			}
-
-			if (
-				conventions.celeryTaskDecorator && symbol.type === "functiondef") {
-				const celeryViolations = this.validateCeleryTask(symbol, conventions.celeryTaskDecorator);
-				celeryViolations.forEach(violation => {
-					const start = Position.create(line, col_offset);
-					const end = Position.create(line, col_offset + name.length);
-					const celeryDiagnostic: Diagnostic = Diagnostic.create(
-						Range.create(start, end),
-						violation,
-						DiagnosticSeverity.Warning,
-						NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
-						SOURCE_NAME
-					);
-					diagnostics.push(celeryDiagnostic);
-				});
-			}
-		}
-	}
+            this.handleComments(leading_comments, symbol, diagnostics);
+            this.handleCeleryTask(symbol, conventions, diagnostics);
+        }
+    }
 
 	private getParserFilePath(text: string): string {
 		let parserFilePath = "";
@@ -418,26 +361,74 @@ export class PythonProvider extends LanguageProvider {
 		);
 	}
 
-	private handleComment(
-		comment: any,
-		currentSymbol: any,
-		diagnostics: Diagnostic[]
-	) {
-		const result = this.isCommentRedundant(comment.value, currentSymbol);
-		if (result.violates) {
-			const start = Position.create(comment.line, comment.col_offset);
-			const end = Position.create(comment.line, comment.end_col_offset);
-			diagnostics.push(
-				Diagnostic.create(
-					Range.create(start, end),
-					result.reason,
-					DiagnosticSeverity.Warning,
-					undefined,
-					SOURCE_NAME
-				)
-			);
-		}
-	}
+	private handleForLoopTargets(symbol: any, diagnostics: Diagnostic[]): void {
+        if (symbol.target_positions) {
+            for (const [variableName, line, col_offset] of symbol.target_positions) {
+                const result = this.validateVariableName({
+                    variableName: variableName,
+                    variableValue: null,
+                });
+                if (result.violates) {
+                    const range = Range.create(
+                        Position.create(line, col_offset),
+                        Position.create(line, col_offset + variableName.length)
+                    );
+                    diagnostics.push(this.createDiagnostic(
+                        range,
+                        result.reason,
+                        DiagnosticSeverity.Warning
+                    ));
+                }
+            }
+        }
+    }
+
+    private handleComments(comments: any[], symbol: any, diagnostics: Diagnostic[]): void {
+        if (this.settings.comments.flagRedundant && comments) {
+            for (const comment of comments) {
+                const result = this.isCommentRedundant(comment.value, symbol);
+                if (result.violates) {
+                    const range = Range.create(
+                        Position.create(comment.line, comment.col_offset),
+                        Position.create(comment.line, comment.end_col_offset)
+                    );
+                    diagnostics.push(this.createDiagnostic(
+                        range,
+                        result.reason,
+                        DiagnosticSeverity.Warning
+                    ));
+                }
+            }
+        }
+    }
+
+    private handleCeleryTask(symbol: any, conventions: LanguageConventions, diagnostics: Diagnostic[]): void {
+        if (conventions.celeryTaskDecorator && symbol.type === "function") {
+            const celeryViolations = this.validateCeleryTask(symbol, conventions.celeryTaskDecorator);
+            for (const violation of celeryViolations) {
+                const { start, end } = this.adjustColumnOffsets(symbol);
+                const range = Range.create(
+                    Position.create(symbol.line, start),
+                    Position.create(symbol.line, end)
+                );
+                diagnostics.push(this.createDiagnostic(
+                    range,
+                    violation,
+                    DiagnosticSeverity.Warning
+                ));
+            }
+        }
+    }
+
+    private createDiagnostic(range: Range, message: string, severity: DiagnosticSeverity): Diagnostic {
+        return Diagnostic.create(
+            range,
+            message,
+            severity,
+            NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
+            SOURCE_NAME
+        );
+    }
 
 	private validateDictionary(dictionary: any): {
 		violates: boolean;
@@ -480,7 +471,6 @@ export class PythonProvider extends LanguageProvider {
 	
 		return { violates: hasViolatedRule, reason, diagnostics };
 	}
-	
 
 	private validateList(value: string): { violates: boolean; reason: string } {
 		// TODO: Implement your validation logic for lists
@@ -546,4 +536,19 @@ export class PythonProvider extends LanguageProvider {
 	
 		return violations;
 	}
+
+	private adjustColumnOffsets(symbol: any): { start: number, end: number } {
+        let start = symbol.col_offset;
+        let end = symbol.end_col_offset || symbol.col_offset + symbol.name.length;
+
+        if (symbol.type === "function" || symbol.type.startsWith("django_") && symbol.type.endsWith("_method")) {
+            start += "def ".length;
+            end = start + symbol.name.length;
+        } else if (symbol.type === "class" || symbol.type === "django_model") {
+            start += "class ".length;
+            end = start + symbol.name.length;
+        }
+
+        return { start, end };
+    }
 }

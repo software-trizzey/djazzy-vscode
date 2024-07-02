@@ -50,7 +50,6 @@ export async function chatWithGroq(systemMessage: string, developerInput: string
 		return responseData;
 	} catch (error: any) {
 		console.error(error.message);
-		throw new Error(error.message);
 	}
   }
   

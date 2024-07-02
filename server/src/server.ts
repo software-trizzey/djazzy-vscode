@@ -224,7 +224,7 @@ connection.languages.diagnostics.on(async (params) => {
 	} satisfies DocumentDiagnosticReport;
 });
 
-documents.onDidChangeContent(async (change) => {
+documents.onDidChangeContent((change) => {
 	debouncedValidateTextDocument(change.document);
 });
 
@@ -310,6 +310,7 @@ async function validateTextDocument(
 
 		diagnostics = await provider.provideDiagnostics(textDocument);
 	}
+	console.info("sending diagnostics", diagnostics);
 	return diagnostics;
 }
 

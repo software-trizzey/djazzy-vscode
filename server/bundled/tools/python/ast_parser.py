@@ -122,55 +122,36 @@ class Analyzer(ast.NodeVisitor):
                 related_comments.append(comment)
         return related_comments
 
-    def _create_symbol_dict(
-            self,
-            type,
-            name,
-            comments,
-            line,
-            col_offset,
-            end_col_offset,
-            is_reserved,
-            value=None,
-            body=None,
-            function_start_line=None,
-            function_end_line=None,
-            key_and_value_pairs=None,
-            decorators=None,
-            calls=None,
-            arguments=None,
-            target_positions=None
-        ):
-        """
-        Creates a dictionary representation of a symbol.
-        """
+    def _create_symbol_dict(self, **kwargs):
         symbol = {
-            'type': type,
-            'name': name,
-            'leading_comments': comments,
-            'line': line,
-            'col_offset': col_offset,
-            'end_col_offset': end_col_offset,
-            'is_reserved': is_reserved,
+            'type': kwargs.get('type'),
+            'name': kwargs.get('name'),
+            'leading_comments': kwargs.get('comments', []),
+            'line': kwargs.get('line'),
+            'col_offset': kwargs.get('col_offset'),
+            'end_col_offset': kwargs.get('end_col_offset'),
+            'is_reserved': kwargs.get('is_reserved', False),
         }
-        if value:
-            symbol['value'] = value
-        if body:
-            symbol['body'] = body
-        if function_start_line is not None:
-            symbol['function_start_line'] = function_start_line
-        if function_end_line is not None:
-            symbol['function_end_line'] = function_end_line
-        if key_and_value_pairs:
-            symbol['key_and_value_pairs'] = key_and_value_pairs
-        if decorators:
-            symbol['decorators'] = decorators
-        if calls:
-            symbol['calls'] = calls
-        if arguments:
-            symbol['arguments'] = arguments
-        if target_positions:
-            symbol['target_positions'] = target_positions
+        
+        if 'value' in kwargs:
+            symbol['value'] = kwargs['value']
+        if kwargs.get('body'):
+            symbol['body'] = kwargs['body']
+        if kwargs.get('function_start_line') is not None:
+            symbol['function_start_line'] = kwargs['function_start_line']
+        if kwargs.get('function_end_line') is not None:
+            symbol['function_end_line'] = kwargs['function_end_line']
+        if kwargs.get('function_start_col') is not None:
+            symbol['function_start_col'] = kwargs['function_start_col']
+        if kwargs.get('function_end_col') is not None:
+            symbol['function_end_col'] = kwargs['function_end_col']
+        if kwargs.get('decorators'):
+            symbol['decorators'] = kwargs['decorators']
+        if kwargs.get('calls'):
+            symbol['calls'] = kwargs['calls']
+        if kwargs.get('arguments'):
+            symbol['arguments'] = kwargs['arguments']
+        
         return symbol
 
     def generic_node_visit(self, node):
@@ -187,15 +168,7 @@ class Analyzer(ast.NodeVisitor):
         calls = []
         arguments = []
 
-        if isinstance(node, ast.FunctionDef):
-            col_offset += len('def ')
-            function_start_line = node.body[0].lineno
-            function_end_line = node.body[-1].end_lineno if hasattr(node.body[-1], 'end_lineno') else node.body[-1].lineno
-            is_reserved = DJANGO_IGNORE_FUNCTIONS.get(node.name, False) or self.is_python_reserved(node.name)
-            body = ast.get_source_segment(self.source_code, node)
-            arguments = self.extract_arguments(node.args)
-            self.visit_FunctionBody(node.body, calls)
-        elif isinstance(node, ast.ClassDef):
+        if isinstance(node, ast.ClassDef):
             col_offset += len('class ')
         elif isinstance(node, ast.Assign):
             targets = [target.id for target in node.targets if isinstance(target, ast.Name)]
@@ -231,7 +204,46 @@ class Analyzer(ast.NodeVisitor):
         self.generic_node_visit(node)
 
     def visit_FunctionDef(self, node):
-        self.generic_node_visit(node)
+        comments = self.get_related_comments(node)
+        zero_based_line = node.lineno - 1
+        function_start_line = zero_based_line
+        function_start_col = node.col_offset
+        
+        # Find the last non-empty line in the function body
+        function_end_line = node.body[-1].end_lineno - 1 if hasattr(node.body[-1], 'end_lineno') else node.body[-1].lineno - 1
+        function_end_col = node.body[-1].end_col_offset if hasattr(node.body[-1], 'end_col_offset') else len(self.source_code.splitlines()[function_end_line])
+        
+        if not node.body:
+            function_end_line = function_start_line
+            function_end_col = function_start_col + len('def ' + node.name + '():')
+
+        is_reserved = DJANGO_IGNORE_FUNCTIONS.get(node.name, False) or self.is_python_reserved(node.name)
+        body = self.get_function_body(node)
+        decorators = [ast.get_source_segment(self.source_code, decorator) for decorator in node.decorator_list]
+        calls = []
+        arguments = self.extract_arguments(node.args)
+        
+        self.visit_FunctionBody(node.body, calls)
+
+        self.symbols.append(self._create_symbol_dict(
+            type='function',
+            name=node.name,
+            comments=comments,
+            line=function_start_line,
+            col_offset=function_start_col,
+            end_col_offset=function_end_col,
+            is_reserved=is_reserved,
+            body=body,
+            function_start_line=function_start_line,
+            function_end_line=function_end_line,
+            function_start_col=function_start_col,
+            function_end_col=function_end_col,
+            decorators=decorators,
+            calls=calls,
+            arguments=arguments
+        ))
+
+        self.generic_visit(node)
 
     def visit_FunctionBody(self, body, calls):
         for statement in body:
@@ -239,6 +251,12 @@ class Analyzer(ast.NodeVisitor):
                 call = ast.get_source_segment(self.source_code, statement)
                 calls.append(call)
             self.generic_visit(statement)
+
+    def get_function_body(self, node):
+        source_lines = self.source_code.splitlines()
+        start_line = node.body[0].lineno - 1 if node.body else node.lineno - 1
+        end_line = node.body[-1].end_lineno - 1 if node.body and hasattr(node.body[-1], 'end_lineno') else node.body[-1].lineno - 1 if node.body else start_line
+        return '\n'.join(source_lines[start_line:end_line + 1])
 
     def extract_arguments(self, args_node):
         arguments = []

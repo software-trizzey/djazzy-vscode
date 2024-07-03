@@ -79,6 +79,8 @@ class Analyzer(ast.NodeVisitor):
         self.comments = []
         self.pending_comments = []
         self.url_patterns = []
+        self.current_class_type = None
+        self.in_class = False
 
     def is_python_reserved(self, name: str) -> bool:
         """
@@ -201,23 +203,24 @@ class Analyzer(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_ClassDef(self, node):
+        self.in_class = True
         self.generic_node_visit(node)
+        self.in_class = False
+        self.current_class_type = None
 
     def visit_FunctionDef(self, node):
         comments = self.get_related_comments(node)
-        zero_based_line = node.lineno - 1
-        function_start_line = zero_based_line
+        is_reserved = DJANGO_IGNORE_FUNCTIONS.get(node.name, False) or self.is_python_reserved(node.name)
+        function_start_line = node.lineno
         function_start_col = node.col_offset
         
-        # Find the last non-empty line in the function body
-        function_end_line = node.body[-1].end_lineno - 1 if hasattr(node.body[-1], 'end_lineno') else node.body[-1].lineno - 1
-        function_end_col = node.body[-1].end_col_offset if hasattr(node.body[-1], 'end_col_offset') else len(self.source_code.splitlines()[function_end_line])
+        function_end_line = node.body[-1].end_lineno if hasattr(node.body[-1], 'end_lineno') else node.body[-1].lineno
+        function_end_col = node.body[-1].end_col_offset if hasattr(node.body[-1], 'end_col_offset') else len(self.source_code.splitlines()[function_end_line - 1])
         
         if not node.body:
             function_end_line = function_start_line
             function_end_col = function_start_col + len('def ' + node.name + '():')
 
-        is_reserved = DJANGO_IGNORE_FUNCTIONS.get(node.name, False) or self.is_python_reserved(node.name)
         body = self.get_function_body(node)
         decorators = [ast.get_source_segment(self.source_code, decorator) for decorator in node.decorator_list]
         calls = []
@@ -225,8 +228,12 @@ class Analyzer(ast.NodeVisitor):
         
         self.visit_FunctionBody(node.body, calls)
 
+        symbol_type = 'function'
+        if self.in_class and self.current_class_type:
+            symbol_type = f'{self.current_class_type}_method'
+
         self.symbols.append(self._create_symbol_dict(
-            type='function',
+            type=symbol_type,
             name=node.name,
             comments=comments,
             line=function_start_line,
@@ -299,10 +306,27 @@ class Analyzer(ast.NodeVisitor):
         return arguments
 
     def visit_Assign(self, node):
-        self.generic_node_visit(node)
-
-        if isinstance(node.value, ast.Dict):
-            self.handle_dictionary(node.value, node)
+        for target in node.targets:
+            if isinstance(target, ast.Name):
+                value_source = ast.get_source_segment(self.source_code, node.value)
+                comments = self.get_related_comments(node)
+                
+                symbol_type = 'assignment'
+                if self.in_class and self.current_class_type:
+                    symbol_type = f'{self.current_class_type}_field'
+                
+                self.symbols.append(self._create_symbol_dict(
+                    type=symbol_type,
+                    name=target.id,
+                    comments=comments,
+                    line=node.lineno,
+                    col_offset=target.col_offset,
+                    end_col_offset=target.col_offset + len(target.id),
+                    is_reserved=False,
+                    value=value_source
+                ))
+        
+        self.generic_visit(node)
 
     def visit_Dict(self, node):
         comments = self.get_related_comments(node)

@@ -310,7 +310,6 @@ async function validateTextDocument(
 
 		diagnostics = await provider.provideDiagnostics(textDocument);
 	}
-	console.info("sending diagnostics", diagnostics);
 	return diagnostics;
 }
 

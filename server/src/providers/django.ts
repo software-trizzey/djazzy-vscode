@@ -3,7 +3,6 @@ import {
     DiagnosticSeverity,
     Range,
     Connection,
-	Position,
 } from "vscode-languageserver/node";
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
@@ -106,43 +105,47 @@ export class DjangoProvider extends PythonProvider {
         );
     }
 
-	private createNPlusOneDiagnostics(llmResult: LLMNPlusOneResult, symbol: any, diagnostics: Diagnostic[], document: TextDocument): void {
-		const documentText = document.getText();
-		const symbolText = documentText.substring(
-			document.offsetAt(Position.create(symbol.line - 1, 0)), 
-			document.offsetAt(Position.create(symbol.function_end_line, 0))
-		);
-	
-		llmResult.issues.forEach((issue, index) => {
-			const problematicCode = issue.problematic_code.trim();
-			const problematicCodeIndex = symbolText.indexOf(problematicCode);
-			
-			if (problematicCodeIndex === -1) {
-				return;
-			}
-	
-			const symbolStartOffset = document.offsetAt(Position.create(symbol.line - 1, 0));
-			const startOffset = symbolStartOffset + problematicCodeIndex;
-			const endOffset = startOffset + problematicCode.length;
-	
-			const startPosition = document.positionAt(startOffset);
-			const endPosition = document.positionAt(endOffset);
-	
-			const symbolRange: Range = {
-				start: startPosition,
-				end: endPosition,
-			};
-	
-			const diagnosticMessage = this.formatIssueDiagnosticMessage(issue, index + 1);
-			const diagnostic: Diagnostic = this.createDiagnostic(
-				symbolRange,
+    private createNPlusOneDiagnostics(llmResult: LLMNPlusOneResult, symbol: any, diagnostics: Diagnostic[], document: TextDocument): void {
+        const symbolStartOffset = document.offsetAt({ line: symbol.line - 1, character: 0 });
+        const symbolEndOffset = document.offsetAt({ line: symbol.function_end_line, character: 0 });
+        const symbolText = document.getText({ start: document.positionAt(symbolStartOffset), end: document.positionAt(symbolEndOffset) });
+
+        let issueIndex = 0;
+        let searchStartIndex = 0;
+
+        while (issueIndex < llmResult.issues.length) {
+            const issue = llmResult.issues[issueIndex];
+            const problematicCode = issue.problematic_code.trim();
+
+            const relativeIndex = symbolText.indexOf(problematicCode, searchStartIndex);
+			const notFound = -1;
+
+            if (relativeIndex === notFound) {
+                issueIndex++;
+                searchStartIndex = 0;
+                continue;
+            }
+
+            const absoluteStartOffset = symbolStartOffset + relativeIndex;
+            const absoluteEndOffset = absoluteStartOffset + problematicCode.length;
+
+            const range: Range = {
+                start: document.positionAt(absoluteStartOffset),
+                end: document.positionAt(absoluteEndOffset)
+            };
+
+            const diagnosticMessage = this.formatIssueDiagnosticMessage(issue, issueIndex + 1);
+            const diagnostic: Diagnostic = this.createDiagnostic(
+				range,
 				diagnosticMessage,
 				DiagnosticSeverity.Warning,
 				DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE
 			);
-			diagnostics.push(diagnostic);
-		});
-	}
+
+            diagnostics.push(diagnostic);
+            searchStartIndex = relativeIndex + problematicCode.length;
+        }
+    }
 
 	private hashFunctionBody(functionBody: string): string {
 		return crypto.createHash('sha256').update(functionBody).digest('hex');

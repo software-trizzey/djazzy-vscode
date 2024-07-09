@@ -7,6 +7,7 @@ import {
 	MessageType,
 	ShowMessageRequestParams,
 	Range as LspRange,
+	DiagnosticSeverity,
 } from "vscode-languageserver/node";
 
 import { TextDocument, Range } from "vscode-languageserver-textdocument";
@@ -29,6 +30,7 @@ import LOGGER from "../common/logs";
 import type { LanguageConventions } from "../languageConventions";
 import { RULE_MESSAGES } from '../constants/rules';
 import { verbDictionary } from '../data';
+import { NAMING_CONVENTION_VIOLATION_SOURCE_TYPE, SOURCE_NAME } from '../constants/diagnostics';
 
 const actionWordsValues = Object.values(verbDictionary);
 
@@ -671,6 +673,21 @@ export abstract class LanguageProvider {
 			return null;
 		}
 	}
+
+    createDiagnostic(
+		range: Range,
+		message: string,
+		severity: DiagnosticSeverity,
+		sourceType = NAMING_CONVENTION_VIOLATION_SOURCE_TYPE
+	): Diagnostic {
+        return Diagnostic.create(
+            range,
+            message,
+            severity,
+            sourceType,
+            SOURCE_NAME
+        );
+    }
 
 	private sendNotSupportedMessage(languageId: string): void {
 		const messageParams: ShowMessageRequestParams = {

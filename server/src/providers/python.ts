@@ -140,7 +140,8 @@ export class PythonProvider extends LanguageProvider {
 						await this.validateAndCreateDiagnostics(
 							symbols,
 							diagnostics,
-							changedLines
+							changedLines,
+							document
 						);
 
 						resolve(diagnostics);
@@ -181,7 +182,8 @@ export class PythonProvider extends LanguageProvider {
     async validateAndCreateDiagnostics(
         symbols: any[],
         diagnostics: Diagnostic[],
-        changedLines: Set<number> | undefined
+        changedLines: Set<number> | undefined,
+		document: TextDocument
     ): Promise<void> {
         const conventions = this.getConventions();
         for (const symbol of symbols) {
@@ -418,16 +420,6 @@ export class PythonProvider extends LanguageProvider {
                 ));
             }
         }
-    }
-
-    private createDiagnostic(range: Range, message: string, severity: DiagnosticSeverity): Diagnostic {
-        return Diagnostic.create(
-            range,
-            message,
-            severity,
-            NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
-            SOURCE_NAME
-        );
     }
 
 	private validateDictionary(dictionary: any): {

@@ -8,11 +8,11 @@ export interface NPlusOneIssueFuture {
 	description: string;
 	suggestion: string;
   }
+
 export interface NPlusOneIssue {
 	description: string;
 	suggestion: string;
-	original_code_snippet: string;
-	code_snippet_fix: string;
+	problematic_code: string;
 }
   
   export interface LLMNPlusOneResult {

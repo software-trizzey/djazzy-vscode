@@ -1,12 +1,10 @@
-import { EOL } from 'os';
-
 import {
     Diagnostic,
     DiagnosticSeverity,
     Range,
-	Position,
     Connection,
 } from "vscode-languageserver/node";
+import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import { LRUCache } from 'lru-cache';
 import crypto from 'crypto';
@@ -19,6 +17,7 @@ import { LLMNPlusOneResult } from '../llm/types';
 import LOGGER from '../common/logs';
 
 const METHOD_NAMES = [
+	"function",
 	"django_model_method",
 	"django_serializer_method",
 	"django_view_method",
@@ -31,6 +30,7 @@ const CACHE_DURATION_1_HOUR = 1000 * 60 * 60;
 
 export class DjangoProvider extends PythonProvider {
 
+	private symbols: any = [];
 	private nplusoneCache: LRUCache<string, LLMNPlusOneResult>;
 	private cacheOptions = {
 		max: MAX_NUMBER_OF_CACHED_ITEMS,
@@ -49,32 +49,33 @@ export class DjangoProvider extends PythonProvider {
     async validateAndCreateDiagnostics(
         symbols: any[],
         diagnostics: Diagnostic[],
-        changedLines: Set<number> | undefined
+        changedLines: Set<number> | undefined,
+		document: TextDocument
     ): Promise<void> {
-        await super.validateAndCreateDiagnostics(symbols, diagnostics, changedLines);
+        await super.validateAndCreateDiagnostics(symbols, diagnostics, changedLines, document);
+
+		this.symbols = symbols;
 
 		for (const symbol of symbols) {
             if (METHOD_NAMES.includes(symbol.type)) {
-                await this.detectNPlusOneQuery(symbol, diagnostics);
+                await this.detectNPlusOneQuery(symbol, diagnostics, document);
             }
         }
 	}
 
-	private async detectNPlusOneQuery(symbol: any, diagnostics: Diagnostic[]): Promise<void> {
+	private async detectNPlusOneQuery(symbol: any, diagnostics: Diagnostic[], document: TextDocument): Promise<void> {
 		if (!cachedUserToken) {
 			LOGGER.error("User must be authenticated to use the N+1 query detection feature. Skipping...");
 			return;
 		}
-		console.log("symbol", symbol);
 		const functionBody = symbol.body;
-		const sanitizedFunctionBody = this.sanitizeFunctionBody(functionBody);
 		const cacheKey = this.generateCacheKey(symbol, functionBody);
 		let llmResult = this.nplusoneCache.get(cacheKey);
 	
 		if (!llmResult) {
 			const response = await chatWithGroq(
 				"Analyze Django code for N+1 query inefficiencies",
-				sanitizedFunctionBody,
+				functionBody,
 				cachedUserToken
 			);
 			try {
@@ -88,7 +89,7 @@ export class DjangoProvider extends PythonProvider {
 	
 		if (llmResult.has_n_plus_one_issues) {
 			console.log(`[USER ${cachedUserToken}] Found issues for ${symbol.name}`);
-			this.createNPlusOneDiagnostics(llmResult, symbol, diagnostics);
+			this.createNPlusOneDiagnostics(llmResult, symbol, diagnostics, document);
 		} else {
 			this.removeDiagnosticsForSymbol(symbol, diagnostics);
 		}
@@ -104,21 +105,30 @@ export class DjangoProvider extends PythonProvider {
         );
     }
 
-    private createNPlusOneDiagnostics(llmResult: LLMNPlusOneResult, symbol: any, diagnostics: Diagnostic[]): void {
-        const start = Position.create(symbol.line, symbol.col_offset);
-        const end = Position.create(symbol.function_end_line, symbol.end_col_offset || 0);
-        const range = Range.create(start, end);
+    private createNPlusOneDiagnostics(llmResult: LLMNPlusOneResult, symbol: any, diagnostics: Diagnostic[], document: TextDocument): void {
+        llmResult.issues.forEach((issue, index) => {
+			const problematicCode = issue.problematic_code;
+			const problematicCodeIndex = document.getText().indexOf(problematicCode);
+			const problematicCodeLine = document.positionAt(problematicCodeIndex).line;
+			const problematicCodeCol = document.positionAt(problematicCodeIndex).character;
+			const startLine = problematicCodeLine;
+			const startCol = problematicCodeCol;
+			const endLine = problematicCodeLine;
+			const endCol = problematicCodeCol + problematicCode.length;
+			const symbolRange: Range = {
+				start: { line: startLine, character: startCol },
+				end: { line: endLine, character: endCol },
+			};
 
-        const diagnosticMessage = this.formatDiagnosticMessage(symbol, llmResult);
-        const diagnostic: Diagnostic = Diagnostic.create(
-            range,
-            diagnosticMessage,
-            DiagnosticSeverity.Warning,
-            DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE,
-            SOURCE_NAME
-        );
-
-        diagnostics.push(diagnostic);
+			const diagnosticMessage = this.formatIssueDiagnosticMessage(issue, index + 1);
+			const diagnostic: Diagnostic = this.createDiagnostic(
+				symbolRange,
+				diagnosticMessage,
+				DiagnosticSeverity.Warning,
+				DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE
+			);
+			diagnostics.push(diagnostic);
+        });
     }
 
 	private hashFunctionBody(functionBody: string): string {
@@ -135,32 +145,10 @@ export class DjangoProvider extends PythonProvider {
 	}
 
 	formatDiagnosticMessage(symbol: any, llmResult: any): string {
-		const headerLine = '='.repeat(50);
-		const subHeaderLine = '-'.repeat(40);
-	
-		let diagnosticMessage = `${headerLine}${EOL}`;
-		diagnosticMessage += `N+1 QUERY ISSUES DETECTED IN: ${symbol.name}${EOL}`;
-		diagnosticMessage += `${headerLine}${EOL}${EOL}`;
-	
-		llmResult.issues.forEach((issue: any, index: number) => {
-			diagnosticMessage += `ISSUE ${index + 1}:${EOL}`;
-			diagnosticMessage += `${subHeaderLine}${EOL}`;
-			
-			diagnosticMessage += `Description:${EOL}${issue.description}${EOL}${EOL}`;
-			
-			diagnosticMessage += `Problematic Code:${EOL}`;
-			diagnosticMessage += `${issue.original_code_snippet.split(EOL).map((line: string) => '    ' + line).join(EOL)}${EOL}${EOL}`;
-			
-			diagnosticMessage += `Suggestion:${EOL}${issue.suggestion}${EOL}${EOL}`;
-			
-			diagnosticMessage += `Proposed Fix:${EOL}`;
-			diagnosticMessage += `${issue.code_snippet_fix.split(EOL).map((line: string) => '    ' + line).join(EOL)}${EOL}${EOL}`;
-		});
-	
-		diagnosticMessage += `${headerLine}${EOL}`;
-		diagnosticMessage += `Total Issues Found: ${llmResult.issues.length}${EOL}`;
-		diagnosticMessage += `${headerLine}${EOL}`;
-	
-		return diagnosticMessage;
+		return `N+1 QUERY ISSUES DETECTED IN: ${symbol.name}\n\nTotal Issues Found: ${llmResult.issues.length}\n\nHover over underlined code for details.`;
+	}
+
+	private formatIssueDiagnosticMessage(issue: any, issueNumber: number): string {
+		return `N+1 Query Issue ${issueNumber}: ${issue.description}\n\nSuggestion: ${issue.suggestion}`;
 	}
 }

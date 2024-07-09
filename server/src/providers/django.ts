@@ -3,6 +3,7 @@ import {
     DiagnosticSeverity,
     Range,
     Connection,
+	Position,
 } from "vscode-languageserver/node";
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
@@ -105,21 +106,33 @@ export class DjangoProvider extends PythonProvider {
         );
     }
 
-    private createNPlusOneDiagnostics(llmResult: LLMNPlusOneResult, symbol: any, diagnostics: Diagnostic[], document: TextDocument): void {
-        llmResult.issues.forEach((issue, index) => {
-			const problematicCode = issue.problematic_code;
-			const problematicCodeIndex = document.getText().indexOf(problematicCode);
-			const problematicCodeLine = document.positionAt(problematicCodeIndex).line;
-			const problematicCodeCol = document.positionAt(problematicCodeIndex).character;
-			const startLine = problematicCodeLine;
-			const startCol = problematicCodeCol;
-			const endLine = problematicCodeLine;
-			const endCol = problematicCodeCol + problematicCode.length;
+	private createNPlusOneDiagnostics(llmResult: LLMNPlusOneResult, symbol: any, diagnostics: Diagnostic[], document: TextDocument): void {
+		const documentText = document.getText();
+		const symbolText = documentText.substring(
+			document.offsetAt(Position.create(symbol.line - 1, 0)), 
+			document.offsetAt(Position.create(symbol.function_end_line, 0))
+		);
+	
+		llmResult.issues.forEach((issue, index) => {
+			const problematicCode = issue.problematic_code.trim();
+			const problematicCodeIndex = symbolText.indexOf(problematicCode);
+			
+			if (problematicCodeIndex === -1) {
+				return;
+			}
+	
+			const symbolStartOffset = document.offsetAt(Position.create(symbol.line - 1, 0));
+			const startOffset = symbolStartOffset + problematicCodeIndex;
+			const endOffset = startOffset + problematicCode.length;
+	
+			const startPosition = document.positionAt(startOffset);
+			const endPosition = document.positionAt(endOffset);
+	
 			const symbolRange: Range = {
-				start: { line: startLine, character: startCol },
-				end: { line: endLine, character: endCol },
+				start: startPosition,
+				end: endPosition,
 			};
-
+	
 			const diagnosticMessage = this.formatIssueDiagnosticMessage(issue, index + 1);
 			const diagnostic: Diagnostic = this.createDiagnostic(
 				symbolRange,
@@ -128,8 +141,8 @@ export class DjangoProvider extends PythonProvider {
 				DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE
 			);
 			diagnostics.push(diagnostic);
-        });
-    }
+		});
+	}
 
 	private hashFunctionBody(functionBody: string): string {
 		return crypto.createHash('sha256').update(functionBody).digest('hex');

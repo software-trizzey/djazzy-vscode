@@ -22,6 +22,12 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
+## [Version 0.0.44] - 2024-07-17
+
+### Fixed
+
+- [Bugfix] Addressed a bug where the diagnostics for certain JavaScript/TypeScript functions would highlight the entire function instead of just the name.
+
 ## [Version 0.0.43] - 2024-06-27
 
 ### Fixed

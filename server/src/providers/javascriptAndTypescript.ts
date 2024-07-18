@@ -376,44 +376,31 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 			console.warn("Node is not a function", node);
 			return;
 		}
-
-		if (
-			!node.body ||
-			!node.body.loc ||
-			!node.body.loc.start ||
-			!node.body.loc.end
-		) {
+	
+		if (!node.body || !node.body.loc || !node.body.loc.start || !node.body.loc.end) {
 			console.warn("Node has no body property", node);
 			return;
 		}
-
+	
 		const conventions = this.getConventions();
 		const bodyStartLine = node.body.loc.start.line;
 		const bodyEndLine = node.body.loc.end.line;
 		const functionBodyLines = bodyEndLine - bodyStartLine + 1;
-
-		const result = await this.validateFunctionName(
-			name,
-			functionBodyLines,
-			conventions
-		);
-
+	
+		const result = await this.validateFunctionName(name, functionBodyLines, conventions);
+	
 		if (result.violates) {
 			let diagnosticRange: Range;
-
-			if (
-				babelTypes.isArrowFunctionExpression(node) &&
-				parent &&
-				babelTypes.isVariableDeclarator(parent)
-			) {
+	
+			if (babelTypes.isArrowFunctionExpression(node) && parent && babelTypes.isVariableDeclarator(parent)) {
 				diagnosticRange = Range.create(
 					document.positionAt(parent.id.start!),
 					document.positionAt(parent.id.end!)
 				);
 			} else if (babelTypes.isFunctionDeclaration(node) || babelTypes.isFunctionExpression(node)) {
 				diagnosticRange = Range.create(
-					document.positionAt(node.start!),
-					document.positionAt(node.end!)
+					document.positionAt(node.id ? node.id.start! : node.start!),
+					document.positionAt(node.id ? node.id.end! : node.start! + name.length)
 				);
 			} else {
 				const nodeWithStart = node as babelTypes.Node & { start: number };
@@ -422,7 +409,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 					document.positionAt(nodeWithStart.start + name.length)
 				);
 			}
-
+	
 			const diagnostic: Diagnostic = Diagnostic.create(
 				diagnosticRange,
 				result.reason,
@@ -432,7 +419,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 			);
 			diagnostics.push(diagnostic);
 		}
-
+	
 		this.checkFunctionParameters(node.params, document, diagnostics);
 	}
 

@@ -89,7 +89,7 @@ export class DjangoProvider extends PythonProvider {
 	
 		if (llmResult.has_n_plus_one_issues) {
 			console.log(`[USER ${cachedUserToken}] Found issues for ${symbol.name}`);
-			this.createNPlusOneDiagnostics(llmResult, symbol, diagnostics, document);
+			this.createNPlusOneDiagnostics(llmResult, diagnostics);
 		} else {
 			this.removeDiagnosticsForSymbol(symbol, diagnostics);
 		}
@@ -105,47 +105,65 @@ export class DjangoProvider extends PythonProvider {
         );
     }
 
-    private createNPlusOneDiagnostics(llmResult: LLMNPlusOneResult, symbol: any, diagnostics: Diagnostic[], document: TextDocument): void {
-        const symbolStartOffset = document.offsetAt({ line: symbol.line - 1, character: 0 });
-        const symbolEndOffset = document.offsetAt({ line: symbol.function_end_line, character: 0 });
-        const symbolText = document.getText({ start: document.positionAt(symbolStartOffset), end: document.positionAt(symbolEndOffset) });
+	private createNPlusOneDiagnostics(llmResult: LLMNPlusOneResult, diagnostics: Diagnostic[]): void {
+		const processedIssues = new Set<string>();
+		let issueIndex = 0;
+	
+		while (issueIndex < llmResult.issues.length) {
+			const issue = llmResult.issues[issueIndex];
+			if (!issue.problematic_code) {
+				issueIndex++;
+				continue;
+			}
+	
+			const problematicCode = this.normalizeWhitespace(issue.problematic_code);
+			if (processedIssues.has(problematicCode)) {
+				issueIndex++;
+				continue;
+			}
+	
+			let innermostSymbol: any = null;
+	
+			this.symbols.forEach((symbol: any) => {
+				if (symbol.type === "for_loop") {
+					const forLoopBody = this.normalizeWhitespace(symbol.body);
+					if (forLoopBody.includes(problematicCode)) {
+						if (!innermostSymbol || this.isInnerLoop(symbol, innermostSymbol)) {
+							innermostSymbol = symbol;
+						}
+					}
+				}
+			});
+	
+			if (innermostSymbol) {
+				this.addDiagnosticForIssue(innermostSymbol, diagnostics, issue, issueIndex);
+				processedIssues.add(problematicCode);
+			}
+	
+			issueIndex++;
+		}
+	}
 
-        let issueIndex = 0;
-        let searchStartIndex = 0;
-
-        while (issueIndex < llmResult.issues.length) {
-            const issue = llmResult.issues[issueIndex];
-            const problematicCode = issue.problematic_code.trim();
-
-            const relativeIndex = symbolText.indexOf(problematicCode, searchStartIndex);
-			const notFound = -1;
-
-            if (relativeIndex === notFound) {
-                issueIndex++;
-                searchStartIndex = 0;
-                continue;
-            }
-
-            const absoluteStartOffset = symbolStartOffset + relativeIndex;
-            const absoluteEndOffset = absoluteStartOffset + problematicCode.length;
-
-            const range: Range = {
-                start: document.positionAt(absoluteStartOffset),
-                end: document.positionAt(absoluteEndOffset)
-            };
-
-            const diagnosticMessage = this.formatIssueDiagnosticMessage(issue, issueIndex + 1);
-            const diagnostic: Diagnostic = this.createDiagnostic(
-				range,
-				diagnosticMessage,
-				DiagnosticSeverity.Warning,
-				DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE
-			);
-
-            diagnostics.push(diagnostic);
-            searchStartIndex = relativeIndex + problematicCode.length;
-        }
-    }
+	private addDiagnosticForIssue(symbol: any, diagnostics: Diagnostic[], issue: any, issueIndex: number): void {
+		const startLine = symbol.line;
+		const startCharacter = symbol.col_offset;
+		const endLine = startLine + (symbol.body.match(/\n/g) || []).length;
+		const endCharacter = symbol.end_col_offset;
+	
+		const range: Range = {
+			start: { line: startLine, character: startCharacter },
+			end: { line: endLine, character: endCharacter }
+		};
+	
+		const diagnosticMessage = this.formatIssueDiagnosticMessage(issue, issueIndex + 1);
+		const diagnostic: Diagnostic = this.createDiagnostic(
+			range,
+			diagnosticMessage,
+			DiagnosticSeverity.Warning,
+			DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE
+		);
+		diagnostics.push(diagnostic);
+	}
 
 	private hashFunctionBody(functionBody: string): string {
 		return crypto.createHash('sha256').update(functionBody).digest('hex');
@@ -166,5 +184,13 @@ export class DjangoProvider extends PythonProvider {
 
 	private formatIssueDiagnosticMessage(issue: any, issueNumber: number): string {
 		return `N+1 Query Issue ${issueNumber}: ${issue.description}\n\nSuggestion: ${issue.suggestion}`;
+	}
+
+	private normalizeWhitespace(text: string): string {
+		return text.replace(/\s+/g, ' ').trim();
+	}
+
+	private isInnerLoop(inner: any, outer: any): boolean {
+		return inner.line > outer.line && inner.function_end_line < outer.function_end_line;
 	}
 }

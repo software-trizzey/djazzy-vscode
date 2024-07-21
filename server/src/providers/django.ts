@@ -13,6 +13,7 @@ import { PythonProvider } from "./python";
 import { SOURCE_NAME, DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE } from "../constants/diagnostics";
 import { ExtensionSettings, cachedUserToken, defaultConventions } from "../settings";
 import { chatWithGroq } from '../llm/groq';
+import { chatWithOpenAI } from '../llm/openai';
 import { LLMNPlusOneResult } from '../llm/types';
 import LOGGER from '../common/logs';
 
@@ -26,7 +27,6 @@ const METHOD_NAMES = [
 
 const MAX_NUMBER_OF_CACHED_ITEMS = 100;
 const CACHE_DURATION_1_HOUR = 1000 * 60 * 60;
-
 
 export class DjangoProvider extends PythonProvider {
 
@@ -75,7 +75,7 @@ export class DjangoProvider extends PythonProvider {
 		let llmResult = this.nplusoneCache.get(cacheKey);
 	
 		if (!llmResult) {
-			const response = await chatWithGroq(
+			const response = await chatWithOpenAI(
 				"Analyze Django code for N+1 query inefficiencies",
 				functionBody,
 				cachedUserToken
@@ -93,7 +93,7 @@ export class DjangoProvider extends PythonProvider {
 			console.log(`[USER ${cachedUserToken}] Found issues ${llmResult.issues.length} for ${symbol.name}`);
 			this.createNPlusOneDiagnostics(llmResult, diagnostics);
 		} else {
-			console.log("No N+1 issues found for... removing diagnostics", symbol.name);
+			console.log(`No N+1 issues found for ${symbol.name}. Removing diagnostics`);
 			this.removeDiagnosticsForSymbol(symbol, diagnostics);
 		}
 	}
@@ -112,7 +112,7 @@ export class DjangoProvider extends PythonProvider {
 		const processedIssues = new Set<string>();
 		let issueIndex = 0;
 		console.log("llmResult", llmResult);
-
+	
 		while (issueIndex < llmResult.issues.length) {
 			const issue = llmResult.issues[issueIndex];
 			if (!issue.problematic_code) {
@@ -146,7 +146,7 @@ export class DjangoProvider extends PythonProvider {
 	
 			issueIndex++;
 		}
-	}
+	}	
 
 	private addDiagnosticForIssue(symbol: any, diagnostics: Diagnostic[], issue: any, issueIndex: number): void {
 		const startLine = symbol.line;

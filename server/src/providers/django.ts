@@ -55,15 +55,17 @@ export class DjangoProvider extends PythonProvider {
         await super.validateAndCreateDiagnostics(symbols, diagnostics, changedLines, document);
 
 		this.symbols = symbols;
+		const highPrioritySymbols = symbols.filter(symbol => symbol.high_priority);
+		console.log("highPrioritySymbols", highPrioritySymbols);
 
-		for (const symbol of symbols) {
+		for (const symbol of highPrioritySymbols) {
             if (METHOD_NAMES.includes(symbol.type)) {
-                await this.detectNPlusOneQuery(symbol, diagnostics, document);
+                await this.detectNPlusOneQuery(symbol, diagnostics);
             }
         }
 	}
 
-	private async detectNPlusOneQuery(symbol: any, diagnostics: Diagnostic[], document: TextDocument): Promise<void> {
+	private async detectNPlusOneQuery(symbol: any, diagnostics: Diagnostic[]): Promise<void> {
 		if (!cachedUserToken) {
 			LOGGER.error("User must be authenticated to use the N+1 query detection feature. Skipping...");
 			return;
@@ -87,10 +89,11 @@ export class DjangoProvider extends PythonProvider {
 			}
 		}
 	
-		if (llmResult.has_n_plus_one_issues) {
-			console.log(`[USER ${cachedUserToken}] Found issues for ${symbol.name}`);
+		if (llmResult?.has_n_plus_one_issues) {
+			console.log(`[USER ${cachedUserToken}] Found issues ${llmResult.issues.length} for ${symbol.name}`);
 			this.createNPlusOneDiagnostics(llmResult, diagnostics);
 		} else {
+			console.log("No N+1 issues found for... removing diagnostics", symbol.name);
 			this.removeDiagnosticsForSymbol(symbol, diagnostics);
 		}
 	}
@@ -108,7 +111,8 @@ export class DjangoProvider extends PythonProvider {
 	private createNPlusOneDiagnostics(llmResult: LLMNPlusOneResult, diagnostics: Diagnostic[]): void {
 		const processedIssues = new Set<string>();
 		let issueIndex = 0;
-	
+		console.log("llmResult", llmResult);
+
 		while (issueIndex < llmResult.issues.length) {
 			const issue = llmResult.issues[issueIndex];
 			if (!issue.problematic_code) {

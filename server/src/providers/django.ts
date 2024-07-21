@@ -75,6 +75,7 @@ export class DjangoProvider extends PythonProvider {
 		let llmResult = this.nplusoneCache.get(cacheKey);
 	
 		if (!llmResult) {
+			console.log(`Cache miss for N+1 query detection on symbol ${symbol.name}. Fetching from LLM API...`);
 			const response = await chatWithOpenAI(
 				"Analyze Django code for N+1 query inefficiencies",
 				functionBody,
@@ -93,7 +94,7 @@ export class DjangoProvider extends PythonProvider {
 			console.log(`[USER ${cachedUserToken}] Found issues ${llmResult.issues.length} for ${symbol.name}`);
 			this.createNPlusOneDiagnostics(llmResult, diagnostics);
 		} else {
-			console.log(`No N+1 issues found for ${symbol.name}. Removing diagnostics`);
+			console.log(`No N+1 issues found for ${symbol.name}. Removing DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE diagnostics`);
 			this.removeDiagnosticsForSymbol(symbol, diagnostics);
 		}
 	}
@@ -102,9 +103,12 @@ export class DjangoProvider extends PythonProvider {
         const start = symbol.line;
         const end = symbol.function_end_line;
         diagnostics = diagnostics.filter(diagnostic => 
-            !(diagnostic.range.start.line >= start && 
-              diagnostic.range.end.line <= end &&
-              diagnostic.source === SOURCE_NAME)
+            !(
+				diagnostic.range.start.line >= start && 
+				diagnostic.range.end.line <= end &&
+				diagnostic.source === SOURCE_NAME &&
+				diagnostic.code === DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE
+			)
         );
     }
 

@@ -10,7 +10,7 @@ import { LRUCache } from 'lru-cache';
 import crypto from 'crypto';
 
 import { PythonProvider } from "./python";
-import { SOURCE_NAME, DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE } from "../constants/diagnostics";
+import { SOURCE_NAME, DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE, DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE } from "../constants/diagnostics";
 import { ExtensionSettings, cachedUserToken, defaultConventions } from "../settings";
 import { chatWithLLM } from '../llm/helpers';
 import { LLMNPlusOneResult } from '../llm/types';
@@ -22,6 +22,15 @@ const METHOD_NAMES = [
 	"django_serializer_method",
 	"django_view_method",
 	"django_testcase_method",
+];
+
+const QUERY_METHODS = [
+    "all",
+    "filter",
+    "get",
+    "count",
+    "exists",
+    "aggregate",
 ];
 
 const MAX_NUMBER_OF_CACHED_ITEMS = 100;
@@ -59,7 +68,7 @@ export class DjangoProvider extends PythonProvider {
 
 		for (const symbol of highPrioritySymbols) {
             if (METHOD_NAMES.includes(symbol.type)) {
-                await this.detectNPlusOneQuery(symbol, diagnostics);
+                this.detectNPlusOneQueryV2(symbol, diagnostics);
             }
         }
 	}
@@ -94,6 +103,57 @@ export class DjangoProvider extends PythonProvider {
 			this.createNPlusOneDiagnostics(llmResult, diagnostics);
 		}
 	}
+
+    private detectNPlusOneQueryV2(symbol: any, diagnostics: Diagnostic[]): void {
+        const functionBody = symbol.body;
+        const lines = functionBody.split('\n');
+        let isInLoop = false;
+        let loopStartLine = 0;
+
+        for (let index = 0; index < lines.length; index++) {
+            const line = lines[index].trim();
+
+            if (line.startsWith('for ') || line.startsWith('while ')) {
+                isInLoop = true;
+                loopStartLine = index;
+            }
+
+            if (isInLoop) {
+                for (const method of QUERY_METHODS) {
+                    if (line.includes(`.${method}(`)) {
+                        this.addNPlusOneDiagnosticv2(symbol, diagnostics, loopStartLine, index);
+                        break;
+                    }
+                }
+            }
+
+            if (line === '' || line.startsWith('}')) {
+                isInLoop = false;
+            }
+        }
+    }
+
+    private addNPlusOneDiagnosticv2(symbol: any, diagnostics: Diagnostic[], loopStartLine: number, queryLine: number): void {
+        const range: Range = {
+            start: { line: symbol.line + loopStartLine, character: 0 },
+            end: { line: symbol.line + queryLine, character: Number.MAX_SAFE_INTEGER }
+        };
+
+		const diagnosticMessage = `Potential N+1 query detected in function ${symbol.name}. Consider optimizing the database queries.`;
+
+        const diagnostic: Diagnostic = {
+            range,
+            message: diagnosticMessage,
+            severity: DiagnosticSeverity.Warning,
+            source: SOURCE_NAME,
+            code: DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE,
+			codeDescription: {
+				href: 'https://scoutapm.com/blog/django-and-the-n1-queries-problem'
+			}
+        };
+
+        diagnostics.push(diagnostic);
+    }
 	
     private removeDiagnosticsForSymbol(symbol: any, diagnostics: Diagnostic[]): void {
         const start = symbol.line;
@@ -103,7 +163,7 @@ export class DjangoProvider extends PythonProvider {
 				diagnostic.range.start.line >= start && 
 				diagnostic.range.end.line <= end &&
 				diagnostic.source === SOURCE_NAME &&
-				diagnostic.code === DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE
+				diagnostic.code === DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE
 			)
         );
     }

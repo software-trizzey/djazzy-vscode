@@ -1,7 +1,8 @@
 import { API_SERVER_URL } from '../constants/api';
+import { handleErrorResponse, validateResponse } from './helpers';
+import { ChatAPIResponse } from './types';
 
-
-export async function chatWithGroq(systemMessage: string, developerInput: string, userToken: string) {
+export async function chatWithGroq(systemMessage: string, developerInput: string, userToken: string): Promise<ChatAPIResponse>  {
 	try {
 		const response = await fetch(`${API_SERVER_URL}/chat/groq/`, {
 			method: 'POST',
@@ -13,43 +14,16 @@ export async function chatWithGroq(systemMessage: string, developerInput: string
 		});
 
 		if (!response.ok) {
-			let errorMessage = `Error: ${response.statusText}`;
-			try {
-				const errorData = await response.json();
-				if (errorData.error) {
-					errorMessage = `Error: ${errorData.error}`;
-				}
-			} catch (jsonError) {
-				console.error('Error parsing JSON error response:', jsonError);
-			}
-			
-			switch (response.status) {
-			case 400:
-				errorMessage = errorMessage || 'Invalid input. Please check your input and try again.';
-				break;
-			case 401:
-				errorMessage = errorMessage || 'Unauthorized request. Please log in again.';
-				break;
-			case 500:
-				errorMessage = errorMessage || 'Internal server error. Please try again later.';
-				break;
-			default:
-				errorMessage = errorMessage || `Unexpected error: ${response.statusText}`;
-			}
-			console.error(`HTTP error ${response.status}: ${errorMessage}`);
-			throw new Error(errorMessage);
+			await handleErrorResponse(response);
 		}
 
-		const responseData = await response.json();
+		const responseData: ChatAPIResponse = await response.json();
 
-		if (responseData.error) {
-			console.error('Error while fetching response from server', responseData.error);
-			throw new Error(`Error while fetching response from server: ${responseData.error}`);
-		}
+		validateResponse(responseData, developerInput);
 
 		return responseData;
 	} catch (error: any) {
 		console.error(error.message);
+		throw new Error(error.message);
 	}
-  }
-  
+}

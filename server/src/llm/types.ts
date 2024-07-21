@@ -22,3 +22,12 @@ export interface NPlusOneIssue {
 	overall_efficiency_score: number;
 	general_recommendations: string[];
   }
+
+  export interface ChatAPIResponse {
+	has_n_plus_one_issues: boolean;
+	issues: Array<{
+		description: string;
+		suggestion: string;
+		problematic_code: string;
+	}>;
+}

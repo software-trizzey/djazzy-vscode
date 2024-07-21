@@ -1,3 +1,5 @@
+import { NPlusOneIssue, ChatAPIResponse } from './types';
+
 export async function handleErrorResponse(response: Response): Promise<void> {
 	let errorMessage = `Error: ${response.statusText}`;
 	try {
@@ -26,13 +28,13 @@ export async function handleErrorResponse(response: Response): Promise<void> {
 	throw new Error(errorMessage);
 }
 
-export function validateResponse(responseData: any, originalInput: string): void {
+export function validateResponse(responseData: ChatAPIResponse, originalInput: string): void {
 	if (typeof responseData.has_n_plus_one_issues !== 'boolean' || !Array.isArray(responseData.issues)) {
 		console.error('Unexpected response structure:', responseData);
 		throw new Error('Unexpected response structure from server');
 	}
 
-	const validatedIssues = responseData.issues.filter((issue: any) =>
+	const validatedIssues = responseData.issues.filter((issue: NPlusOneIssue) =>
 		originalInput.includes(issue.problematic_code)
 	);
 

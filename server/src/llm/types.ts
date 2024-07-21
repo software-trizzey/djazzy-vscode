@@ -25,9 +25,5 @@ export interface NPlusOneIssue {
 
   export interface ChatAPIResponse {
 	has_n_plus_one_issues: boolean;
-	issues: Array<{
-		description: string;
-		suggestion: string;
-		problematic_code: string;
-	}>;
+	issues: NPlusOneIssue[];
 }

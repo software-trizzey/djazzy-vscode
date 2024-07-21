@@ -12,7 +12,6 @@ import crypto from 'crypto';
 import { PythonProvider } from "./python";
 import { SOURCE_NAME, DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE, DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE } from "../constants/diagnostics";
 import { ExtensionSettings, cachedUserToken, defaultConventions } from "../settings";
-import { chatWithLLM } from '../llm/helpers';
 import { LLMNPlusOneResult } from '../llm/types';
 import LOGGER from '../common/logs';
 
@@ -31,7 +30,29 @@ const QUERY_METHODS = [
     "count",
     "exists",
     "aggregate",
+    "annotate",
+    "values",
+    "values_list",
+    "first",
+    "last",
 ];
+
+const REVERSE_FOREIGN_KEY_PATTERN = /\.[\w]+_set\./;
+const FOREIGN_KEY_OR_ONE_TO_ONE_PATTERN = /\.[\w]+\./;
+
+const RELATED_FIELD_PATTERNS = [
+    REVERSE_FOREIGN_KEY_PATTERN,
+    FOREIGN_KEY_OR_ONE_TO_ONE_PATTERN
+];
+
+const AGGREGATE_METHODS = [
+    "Count",
+    "Sum",
+    "Avg",
+    "Max",
+    "Min",
+];
+
 
 const MAX_NUMBER_OF_CACHED_ITEMS = 100;
 const CACHE_DURATION_1_HOUR = 1000 * 60 * 60;
@@ -68,47 +89,22 @@ export class DjangoProvider extends PythonProvider {
 
 		for (const symbol of highPrioritySymbols) {
             if (METHOD_NAMES.includes(symbol.type)) {
-                this.detectNPlusOneQueryV2(symbol, diagnostics);
+                this.detectNPlusOneQuery(symbol, diagnostics);
             }
         }
 	}
 
-	private async detectNPlusOneQuery(symbol: any, diagnostics: Diagnostic[]): Promise<void> {
+    private detectNPlusOneQuery(symbol: any, diagnostics: Diagnostic[]): void {
 		if (!cachedUserToken) {
-			LOGGER.error("User must be authenticated to use the N+1 query detection feature. Skipping...");
+			LOGGER.warn("Only authenticated users can use the N+1 query detection feature.");
 			return;
 		}
-		const functionBody = symbol.body;
-		const cacheKey = this.generateCacheKey(symbol, functionBody);
-		let llmResult = this.nplusoneCache.get(cacheKey);
-	
-		if (!llmResult) {
-			console.log(`Cache miss for N+1 query detection on symbol ${symbol.name}. Fetching from LLM API...`);
-			const response = await chatWithLLM(
-				"Analyze Django code for N+1 query inefficiencies",
-				functionBody,
-				cachedUserToken
-			);
-			try {
-				llmResult = response as LLMNPlusOneResult;
-				this.nplusoneCache.set(cacheKey, llmResult);
-			} catch (error: any) {
-				LOGGER.error("Error during NPlus Query analysis", error.message);
-				return;
-			}
-		}
-	
-		if (llmResult?.has_n_plus_one_issues) {
-			console.log(`[USER ${cachedUserToken}] Found issues ${llmResult.issues.length} for ${symbol.name}`);
-			this.createNPlusOneDiagnostics(llmResult, diagnostics);
-		}
-	}
 
-    private detectNPlusOneQueryV2(symbol: any, diagnostics: Diagnostic[]): void {
         const functionBody = symbol.body;
         const lines = functionBody.split('\n');
         let isInLoop = false;
         let loopStartLine = 0;
+        let potentialIssues: Array<{line: number, issue: string}> = [];
 
         for (let index = 0; index < lines.length; index++) {
             const line = lines[index].trim();
@@ -118,28 +114,63 @@ export class DjangoProvider extends PythonProvider {
                 loopStartLine = index;
             }
 
-            if (isInLoop) {
+            for (const method of QUERY_METHODS) {
+                if (line.includes(`.${method}(`)) {
+                    if (isInLoop) {
+                        this.addNPlusOneDiagnostic(symbol, diagnostics, loopStartLine, index, `Query method '${method}' inside a loop`);
+                    } else {
+                        potentialIssues.push({line: index, issue: `Query method '${method}' potentially used in a loop context`});
+                    }
+                }
+            }
+
+            for (const pattern of RELATED_FIELD_PATTERNS) {
+                if (pattern.test(line)) {
+                    if (isInLoop) {
+                        this.addNPlusOneDiagnostic(symbol, diagnostics, loopStartLine, index, `Related field access inside a loop`);
+                    } else {
+                        potentialIssues.push({line: index, issue: `Related field access potentially used in a loop context`});
+                    }
+                }
+            }
+
+            for (const method of AGGREGATE_METHODS) {
+                if (line.includes(`${method}(`)) {
+                    if (isInLoop) {
+                        this.addNPlusOneDiagnostic(symbol, diagnostics, loopStartLine, index, `Aggregation method '${method}' inside a loop`);
+                    } else {
+                        potentialIssues.push({line: index, issue: `Aggregation method '${method}' potentially used in a loop context`});
+                    }
+                }
+            }
+
+            if (line.includes('[') && line.includes('for') && line.includes('in')) {
                 for (const method of QUERY_METHODS) {
                     if (line.includes(`.${method}(`)) {
-                        this.addNPlusOneDiagnosticv2(symbol, diagnostics, loopStartLine, index);
-                        break;
+                        this.addNPlusOneDiagnostic(symbol, diagnostics, index, index, `Query method '${method}' in a list comprehension`);
                     }
                 }
             }
 
             if (line === '' || line.startsWith('}')) {
                 isInLoop = false;
+                if (potentialIssues.length > 1) {
+                    for (const issue of potentialIssues) {
+                        this.addNPlusOneDiagnostic(symbol, diagnostics, issue.line, issue.line, issue.issue);
+                    }
+                }
+                potentialIssues = [];
             }
         }
     }
 
-    private addNPlusOneDiagnosticv2(symbol: any, diagnostics: Diagnostic[], loopStartLine: number, queryLine: number): void {
+    private addNPlusOneDiagnostic(symbol: any, diagnostics: Diagnostic[], startLine: number, endLine: number, message: string): void {
         const range: Range = {
-            start: { line: symbol.line + loopStartLine, character: 0 },
-            end: { line: symbol.line + queryLine, character: Number.MAX_SAFE_INTEGER }
+            start: { line: symbol.line + startLine, character: 0 },
+            end: { line: symbol.line + endLine, character: Number.MAX_SAFE_INTEGER }
         };
 
-		const diagnosticMessage = `Potential N+1 query detected in function ${symbol.name}. Consider optimizing the database queries.`;
+        const diagnosticMessage = `Potential N+1 query detected in function ${symbol.name}: ${message}. Consider optimizing the database queries.`;
 
         const diagnostic: Diagnostic = {
             range,
@@ -147,25 +178,12 @@ export class DjangoProvider extends PythonProvider {
             severity: DiagnosticSeverity.Warning,
             source: SOURCE_NAME,
             code: DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE,
-			codeDescription: {
-				href: 'https://scoutapm.com/blog/django-and-the-n1-queries-problem'
-			}
+            codeDescription: {
+                href: 'https://docs.djangoproject.com/en/stable/topics/db/optimization/'
+            }
         };
 
         diagnostics.push(diagnostic);
-    }
-	
-    private removeDiagnosticsForSymbol(symbol: any, diagnostics: Diagnostic[]): void {
-        const start = symbol.line;
-        const end = symbol.function_end_line;
-        diagnostics = diagnostics.filter(diagnostic => 
-            !(
-				diagnostic.range.start.line >= start && 
-				diagnostic.range.end.line <= end &&
-				diagnostic.source === SOURCE_NAME &&
-				diagnostic.code === DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE
-			)
-        );
     }
 
 	private createNPlusOneDiagnostics(llmResult: LLMNPlusOneResult, diagnostics: Diagnostic[]): void {

@@ -19,6 +19,8 @@ import {
 	type DocumentDiagnosticReport,
 	DiagnosticSeverity,
 	WorkspaceFolder,
+	ShowMessageNotification,
+	MessageType,
 } from "vscode-languageserver/node";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
@@ -387,7 +389,10 @@ connection.onExecuteCommand(async (params) => {
                 const workspaceFolders = await connection.workspace.getWorkspaceFolders();
                 const provider = getOrCreateProvider(document.languageId, settings, workspaceFolders);
 				provider.reportFalsePositive(document, diagnostic);
-				await connection.sendNotification('showMessage', 'Thank you for reporting this false positive. Our team will review it.');
+				connection.sendNotification(ShowMessageNotification.type, {
+                    type: MessageType.Info,
+                    message: 'Thank you for reporting this false positive. Our team will review it.'
+                });
             }
         }
         return;

@@ -27,12 +27,9 @@ DJANGO_IGNORE_FUNCTIONS = {
     "delete": True,
 }
 
+QUERY_METHODS = {"filter", "all", "get", "exclude", "iterator", "values", "values_list"}
+
 class DjangoAnalyzer(Analyzer):
-    """
-    Custom AST Analyzer for Django files.
-    Identifies Django-specific components and methods.
-    """
-    
     def __init__(self, source_code):
         super().__init__(source_code)
         self.current_django_class_type = None
@@ -85,6 +82,11 @@ class DjangoAnalyzer(Analyzer):
         else:
             symbol_type = 'function'
 
+        # TODO: might be useful to include these fields in the dictionary
+        contains_query_method = any(self.contains_query_method(call) for call in node.body)
+        contains_loop = any(isinstance(child, (ast.For, ast.While)) for child in node.body)
+        high_priority = contains_query_method and contains_loop
+
         self.symbols.append(self._create_symbol_dict(
             type=symbol_type,
             name=node.name,
@@ -100,7 +102,8 @@ class DjangoAnalyzer(Analyzer):
             function_end_col=function_end_col,
             decorators=decorators,
             calls=calls,
-            arguments=arguments
+            arguments=arguments,
+            high_priority=high_priority
         ))
 
         self.generic_visit(node)
@@ -130,9 +133,6 @@ class DjangoAnalyzer(Analyzer):
         self.generic_visit(node)
 
     def _get_django_class_type(self, bases):
-        """
-        Determines the type of Django component based on base classes.
-        """
         for base in bases:
             if isinstance(base, ast.Name) and self._is_django_component(base.id):
                 return self._get_component_type(base.id)
@@ -144,14 +144,16 @@ class DjangoAnalyzer(Analyzer):
         return any(name in components for components in DJANGO_COMPONENTS.values())
 
     def _get_component_type(self, name):
-        """
-        Returns the type of Django component (model, serializer, etc.).
-        """
         for component, names in DJANGO_COMPONENTS.items():
             if name in names:
                 return f'django_{component}'
         return None
 
+    def contains_query_method(self, node):
+        if isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Attribute):
+                return node.func.attr in QUERY_METHODS
+        return any(self.contains_query_method(child) for child in ast.iter_child_nodes(node))
 
 def main():
     input_code = sys.stdin.read()

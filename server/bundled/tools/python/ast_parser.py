@@ -153,6 +153,8 @@ class Analyzer(ast.NodeVisitor):
             symbol['calls'] = kwargs['calls']
         if kwargs.get('arguments'):
             symbol['arguments'] = kwargs['arguments']
+        if kwargs.get('high_priority'):
+            symbol['high_priority'] = kwargs['high_priority']
         
         return symbol
 

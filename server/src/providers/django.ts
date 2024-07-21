@@ -182,7 +182,7 @@ export class DjangoProvider extends PythonProvider {
             end: { line: symbol.line + endLine, character: Number.MAX_SAFE_INTEGER }
         };
 
-        const diagnosticMessage = `Potential N+1 query detected in function ${symbol.name}: ${message}. Consider optimizing the database queries.`;
+        const diagnosticMessage = `Potential N+1 query detected in function "${symbol.name}":\n${message}. Consider optimizing the database queries.`;
 
         const diagnostic: Diagnostic = {
             range,

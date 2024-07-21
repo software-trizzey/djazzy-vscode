@@ -1,3 +1,8 @@
+export enum Models {
+	GROQ = 'GROQ',
+	OPEN_AI = 'OPEN_AI'
+
+}
 
 export interface NPlusOneIssueFuture {
 	start_line: number;

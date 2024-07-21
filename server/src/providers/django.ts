@@ -12,8 +12,7 @@ import crypto from 'crypto';
 import { PythonProvider } from "./python";
 import { SOURCE_NAME, DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE } from "../constants/diagnostics";
 import { ExtensionSettings, cachedUserToken, defaultConventions } from "../settings";
-import { chatWithGroq } from '../llm/groq';
-import { chatWithOpenAI } from '../llm/openai';
+import { chatWithLLM } from '../llm/helpers';
 import { LLMNPlusOneResult } from '../llm/types';
 import LOGGER from '../common/logs';
 
@@ -76,7 +75,7 @@ export class DjangoProvider extends PythonProvider {
 	
 		if (!llmResult) {
 			console.log(`Cache miss for N+1 query detection on symbol ${symbol.name}. Fetching from LLM API...`);
-			const response = await chatWithOpenAI(
+			const response = await chatWithLLM(
 				"Analyze Django code for N+1 query inefficiencies",
 				functionBody,
 				cachedUserToken

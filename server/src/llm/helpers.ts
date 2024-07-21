@@ -1,4 +1,7 @@
-import { NPlusOneIssue, ChatAPIResponse } from './types';
+import LOGGER from '../common/logs';
+import { chatWithGroq } from './groq';
+import { chatWithOpenAI } from './openai';
+import { NPlusOneIssue, ChatAPIResponse, LLMNPlusOneResult, Models } from './types';
 
 export async function handleErrorResponse(response: Response): Promise<void> {
 	let errorMessage = `Error: ${response.statusText}`;
@@ -41,3 +44,23 @@ export function validateResponse(responseData: ChatAPIResponse, originalInput: s
 	responseData.has_n_plus_one_issues = validatedIssues.length > 0;
 	responseData.issues = validatedIssues;
 }
+
+export const chatWithLLM = async (
+	systemMessage: string,
+	developerInput: string,
+	userToken: string,
+	modelId: Models = Models.GROQ
+): Promise<LLMNPlusOneResult> => {
+	try {
+		let response = null;
+		if (modelId === Models.GROQ) {
+			response = await chatWithGroq(systemMessage, developerInput, userToken);
+		} else if (modelId === Models.OPEN_AI) {
+			response = await chatWithOpenAI(systemMessage, developerInput, userToken);
+		}
+		return response as LLMNPlusOneResult;
+	} catch (error: any) {
+		LOGGER.error(error.message);
+		throw new Error(error.message);
+	}
+};

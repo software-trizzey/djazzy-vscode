@@ -332,6 +332,7 @@ connection.onRequest(COMMANDS.UPDATE_CACHED_USER_TOKEN, (token: string) => {
 connection.onCodeAction(async (params) => {
 	const document = documents.get(params.textDocument.uri);
 	if (!document) return;
+	
 	const settings = await getDocumentSettings(document.uri);
 	const languageId = document.languageId;
 	const workspaceFolders = await connection.workspace.getWorkspaceFolders();
@@ -376,36 +377,49 @@ connection.onCompletionResolve((item: CompletionItem): CompletionItem => {
 	return item;
 });
 
-connection.onExecuteCommand((params) => {
-	if (params.command !== COMMANDS.FIX_NAME || params.arguments === undefined) {
-		return;
-	}
+connection.onExecuteCommand(async (params) => {
+    if (params.command === COMMANDS.REPORT_FALSE_POSITIVE) {
+        const [uri, diagnostic] = params.arguments || [];
+        if (uri && diagnostic) {
+            const document = documents.get(uri);
+            if (document) {
+                const settings = await getDocumentSettings(uri);
+                const workspaceFolders = await connection.workspace.getWorkspaceFolders();
+                const provider = getOrCreateProvider(document.languageId, settings, workspaceFolders);
+				provider.reportFalsePositive(document, diagnostic);
+				await connection.sendNotification('showMessage', 'Thank you for reporting this false positive. Our team will review it.');
+            }
+        }
+        return;
+    }
 
-	const textDocument = documents.get(params.arguments[0]);
-	const newName = params.arguments[1];
-	const range = params.arguments[2];
-	if (
-		textDocument === undefined ||
-		newName === undefined ||
-		range === undefined
-	) {
-		console.error(
-			"Invalid arguments! Expected PARAMS = URI, NAME, Range",
-			textDocument,
-			newName,
-			range
-		);
-		return;
-	}
+	if (params.command === COMMANDS.FIX_NAME && params.arguments !== undefined) {
+		const textDocument = documents.get(params.arguments[0]);
+		const newName = params.arguments[1];
+		const range = params.arguments[2];
+		if (
+			textDocument === undefined ||
+			newName === undefined ||
+			range === undefined
+		) {
+			console.error(
+				"Invalid arguments! Expected PARAMS = URI, NAME, Range",
+				textDocument,
+				newName,
+				range
+			);
+			return;
+		}
 
-	connection.workspace.applyEdit({
-		documentChanges: [
-			TextDocumentEdit.create(
-				{ uri: textDocument.uri, version: textDocument.version },
-				[TextEdit.replace(range, newName)]
-			),
-		],
-	});
+		connection.workspace.applyEdit({
+			documentChanges: [
+				TextDocumentEdit.create(
+					{ uri: textDocument.uri, version: textDocument.version },
+					[TextEdit.replace(range, newName)]
+				),
+			],
+		});
+	}
 });
 
 connection.onRequest(COMMANDS.APPLY_RENAME_SYMBOL, async (params) => {

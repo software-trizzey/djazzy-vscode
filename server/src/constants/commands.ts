@@ -7,6 +7,7 @@ export const PROVIDE_RENAME_SUGGESTIONS = `${EXTENSION_ID}.provideRenameSuggesti
 export const APPLY_RENAME_SYMBOL = `${EXTENSION_ID}.applyRenameSymbol`;
 export const CHECK_TESTS_EXISTS = `${EXTENSION_ID}.checkTestExists`;
 export const UPDATE_CACHED_USER_TOKEN = `${EXTENSION_ID}.updateCachedUserToken`;
+export const REPORT_FALSE_POSITIVE = `${EXTENSION_ID}.reportFalsePositive`;
 
 const COMMANDS = { 
 	FIX_NAME,
@@ -15,7 +16,8 @@ const COMMANDS = {
 	PROVIDE_RENAME_SUGGESTIONS,
 	APPLY_RENAME_SYMBOL,
 	CHECK_TESTS_EXISTS,
-	UPDATE_CACHED_USER_TOKEN
+	UPDATE_CACHED_USER_TOKEN,
+	REPORT_FALSE_POSITIVE
 };
 
 export const COMMANDS_LIST = Object.values(COMMANDS);

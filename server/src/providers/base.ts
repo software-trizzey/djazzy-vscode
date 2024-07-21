@@ -22,6 +22,7 @@ import {
 } from "../utils";
 import {
 	ExtensionSettings,
+	cachedUserToken,
 	defaultConventions,
 	settingsVersion,
 } from "../settings";
@@ -703,4 +704,14 @@ export abstract class LanguageProvider {
 				}
 			});
 	}
+
+	public reportFalsePositive(document: TextDocument, diagnostic: Diagnostic): void {
+        const diagnosticId = (diagnostic.data as { id: string }).id;
+        LOGGER.info(`False positive reported`, {
+            userId: cachedUserToken,
+            diagnosticId: diagnosticId,
+            timestamp: new Date().toISOString()
+        });
+        // TODO: Additional logic for handling false positive reports
+    }
 }

@@ -3,13 +3,18 @@ import {
     DiagnosticSeverity,
     Range,
     Connection,
+	CodeAction,
+	CodeActionKind,
 } from "vscode-languageserver/node";
 import { TextDocument } from 'vscode-languageserver-textdocument';
+
+import { v4 as uuidv4 } from 'uuid';
 
 import { PythonProvider } from "./python";
 import { SOURCE_NAME, DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE } from "../constants/diagnostics";
 import { ExtensionSettings, cachedUserToken, defaultConventions } from "../settings";
 import LOGGER from '../common/logs';
+import COMMANDS from '../constants/commands';
 
 const METHOD_NAMES = [
 	"function",
@@ -75,6 +80,42 @@ export class DjangoProvider extends PythonProvider {
                 this.detectNPlusOneQuery(symbol, diagnostics);
             }
         }
+	}
+
+	public async provideCodeActions(document: TextDocument, userToken: string): Promise<CodeAction[]> {
+		const diagnostics = document.uri
+			? this.getDiagnostic(document.uri, document.version)
+			: [];
+		if (!diagnostics) return [];
+
+		return diagnostics.flatMap(diagnostic => {
+			if (diagnostic.code === DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE) {
+				return this.getNPlusOneDiagnosticActions(document, diagnostic);
+			}
+			return [];
+		});
+	}
+
+	protected getNPlusOneDiagnosticActions(document: TextDocument, diagnostic: Diagnostic): CodeAction[] {
+		const actions: CodeAction[] = [];
+
+		if (diagnostic.code === DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE) {
+			const title = 'Report as false positive';
+			const reportAction = CodeAction.create(
+				title,
+				{
+					title: title,
+					command: COMMANDS.REPORT_FALSE_POSITIVE,
+					arguments: [document.uri, diagnostic]
+				},
+				CodeActionKind.QuickFix
+			);
+			reportAction.diagnostics = [diagnostic];
+			reportAction.isPreferred = true;
+			actions.push(reportAction);
+		}
+
+		return actions;
 	}
 
     private detectNPlusOneQuery(symbol: any, diagnostics: Diagnostic[]): void {
@@ -179,7 +220,8 @@ export class DjangoProvider extends PythonProvider {
             code: DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE,
             codeDescription: {
                 href: 'https://docs.djangoproject.com/en/stable/topics/db/optimization/'
-            }
+            },
+			data: { id: uuidv4() } // Track diagnostic instances
         };
 
         diagnostics.push(diagnostic);

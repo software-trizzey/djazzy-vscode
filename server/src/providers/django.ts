@@ -55,7 +55,7 @@ export class DjangoProvider extends PythonProvider {
 
 		this.symbols = symbols;
 		const highPrioritySymbols = symbols.filter(symbol => symbol.high_priority);
-		console.log("highPrioritySymbols", highPrioritySymbols);
+		console.log("highPrioritySymbols", highPrioritySymbols.length);
 
 		for (const symbol of highPrioritySymbols) {
             if (METHOD_NAMES.includes(symbol.type)) {
@@ -92,9 +92,6 @@ export class DjangoProvider extends PythonProvider {
 		if (llmResult?.has_n_plus_one_issues) {
 			console.log(`[USER ${cachedUserToken}] Found issues ${llmResult.issues.length} for ${symbol.name}`);
 			this.createNPlusOneDiagnostics(llmResult, diagnostics);
-		} else {
-			console.log(`No N+1 issues found for ${symbol.name}. Removing DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE diagnostics`);
-			this.removeDiagnosticsForSymbol(symbol, diagnostics);
 		}
 	}
 	
@@ -114,7 +111,6 @@ export class DjangoProvider extends PythonProvider {
 	private createNPlusOneDiagnostics(llmResult: LLMNPlusOneResult, diagnostics: Diagnostic[]): void {
 		const processedIssues = new Set<string>();
 		let issueIndex = 0;
-		console.log("llmResult", llmResult);
 	
 		while (issueIndex < llmResult.issues.length) {
 			const issue = llmResult.issues[issueIndex];

@@ -85,7 +85,7 @@ export class DjangoProvider extends PythonProvider {
 
 		this.symbols = symbols;
 		const highPrioritySymbols = symbols.filter(symbol => symbol.high_priority);
-		console.log("highPrioritySymbols", highPrioritySymbols.length);
+		console.log(`Found ${highPrioritySymbols.length} highPrioritySymbols for review`);
 
 		for (const symbol of highPrioritySymbols) {
             if (METHOD_NAMES.includes(symbol.type)) {
@@ -105,9 +105,18 @@ export class DjangoProvider extends PythonProvider {
         let isInLoop = false;
         let loopStartLine = 0;
         let potentialIssues: Array<{line: number, issue: string}> = [];
+		let hasSelectRelated = false;
+        let hasPrefetchRelated = false;
 
         for (let index = 0; index < lines.length; index++) {
             const line = lines[index].trim();
+
+			if (line.includes('.select_related(')) {
+                hasSelectRelated = true;
+            }
+            if (line.includes('.prefetch_related(')) {
+                hasPrefetchRelated = true;
+            }
 
             if (line.startsWith('for ') || line.startsWith('while ')) {
                 isInLoop = true;
@@ -126,12 +135,15 @@ export class DjangoProvider extends PythonProvider {
 
             for (const pattern of RELATED_FIELD_PATTERNS) {
                 if (pattern.test(line)) {
-                    if (isInLoop) {
-                        this.addNPlusOneDiagnostic(symbol, diagnostics, loopStartLine, index, `Related field access inside a loop`);
-                    } else {
-                        potentialIssues.push({line: index, issue: `Related field access potentially used in a loop context`});
+                    if (isInLoop && !hasSelectRelated && !hasPrefetchRelated) {
+                        this.addNPlusOneDiagnostic(symbol, diagnostics, loopStartLine, index, `Related field access inside a loop without select_related or prefetch_related`);
                     }
                 }
+            }
+
+			if (line.includes('.exists(')) {
+                // Don't flag this as an issue, as it's often more efficient than count()
+                continue;
             }
 
             for (const method of AGGREGATE_METHODS) {

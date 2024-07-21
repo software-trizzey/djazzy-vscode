@@ -6,13 +6,9 @@ import {
 } from "vscode-languageserver/node";
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
-import { LRUCache } from 'lru-cache';
-import crypto from 'crypto';
-
 import { PythonProvider } from "./python";
-import { SOURCE_NAME, DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE, DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE } from "../constants/diagnostics";
+import { SOURCE_NAME, DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE } from "../constants/diagnostics";
 import { ExtensionSettings, cachedUserToken, defaultConventions } from "../settings";
-import { LLMNPlusOneResult } from '../llm/types';
 import LOGGER from '../common/logs';
 
 const METHOD_NAMES = [
@@ -53,18 +49,7 @@ const AGGREGATE_METHODS = [
     "Min",
 ];
 
-
-const MAX_NUMBER_OF_CACHED_ITEMS = 100;
-const CACHE_DURATION_1_HOUR = 1000 * 60 * 60;
-
 export class DjangoProvider extends PythonProvider {
-
-	private symbols: any = [];
-	private nplusoneCache: LRUCache<string, LLMNPlusOneResult>;
-	private cacheOptions = {
-		max: MAX_NUMBER_OF_CACHED_ITEMS,
-		ttl: CACHE_DURATION_1_HOUR,
-	};
 
     constructor(
         languageId: keyof typeof defaultConventions.languages,
@@ -72,7 +57,6 @@ export class DjangoProvider extends PythonProvider {
         settings: ExtensionSettings
     ) {
         super(languageId, connection, settings);
-		this.nplusoneCache = new LRUCache(this.cacheOptions);
     }
 
     async validateAndCreateDiagnostics(
@@ -83,7 +67,6 @@ export class DjangoProvider extends PythonProvider {
     ): Promise<void> {
         await super.validateAndCreateDiagnostics(symbols, diagnostics, changedLines, document);
 
-		this.symbols = symbols;
 		const highPrioritySymbols = symbols.filter(symbol => symbol.high_priority);
 		console.log(`Found ${highPrioritySymbols.length} highPrioritySymbols for review`);
 
@@ -99,6 +82,8 @@ export class DjangoProvider extends PythonProvider {
 			LOGGER.warn("Only authenticated users can use the N+1 query detection feature.");
 			return;
 		}
+
+		this.logUsageStatistics(symbol);
 
         const functionBody = symbol.body;
         const lines = functionBody.split('\n');
@@ -174,6 +159,8 @@ export class DjangoProvider extends PythonProvider {
                 potentialIssues = [];
             }
         }
+
+		this.logDetectionResults(diagnostics.length);
     }
 
     private addNPlusOneDiagnostic(symbol: any, diagnostics: Diagnostic[], startLine: number, endLine: number, message: string): void {
@@ -198,92 +185,52 @@ export class DjangoProvider extends PythonProvider {
         diagnostics.push(diagnostic);
     }
 
-	private createNPlusOneDiagnostics(llmResult: LLMNPlusOneResult, diagnostics: Diagnostic[]): void {
-		const processedIssues = new Set<string>();
-		let issueIndex = 0;
-	
-		while (issueIndex < llmResult.issues.length) {
-			const issue = llmResult.issues[issueIndex];
-			if (!issue.problematic_code) {
-				issueIndex++;
-				continue;
-			}
-	
-			const problematicCode = this.normalizeWhitespace(issue.problematic_code);
-			if (processedIssues.has(problematicCode)) {
-				issueIndex++;
-				continue;
-			}
-	
-			let innermostSymbol: any = null;
-	
-			this.symbols.forEach((symbol: any) => {
-				if (symbol.type === "for_loop") {
-					const forLoopBody = this.normalizeWhitespace(symbol.body);
-					if (forLoopBody.includes(problematicCode)) {
-						if (!innermostSymbol || this.isInnerLoop(symbol, innermostSymbol)) {
-							innermostSymbol = symbol;
-						}
-					}
-				}
-			});
-	
-			if (innermostSymbol) {
-				this.addDiagnosticForIssue(innermostSymbol, diagnostics, issue, issueIndex);
-				processedIssues.add(problematicCode);
-			}
-	
-			issueIndex++;
-		}
-	}	
-
-	private addDiagnosticForIssue(symbol: any, diagnostics: Diagnostic[], issue: any, issueIndex: number): void {
-		const startLine = symbol.line;
-		const startCharacter = symbol.col_offset;
-		const endLine = startLine + (symbol.body.match(/\n/g) || []).length;
-		const endCharacter = symbol.end_col_offset;
-	
-		const range: Range = {
-			start: { line: startLine, character: startCharacter },
-			end: { line: endLine, character: endCharacter }
-		};
-	
-		const diagnosticMessage = this.formatIssueDiagnosticMessage(issue, issueIndex + 1);
-		const diagnostic: Diagnostic = this.createDiagnostic(
-			range,
-			diagnosticMessage,
-			DiagnosticSeverity.Warning,
-			DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE
-		);
-		diagnostics.push(diagnostic);
-	}
-
-	private hashFunctionBody(functionBody: string): string {
-		return crypto.createHash('sha256').update(functionBody).digest('hex');
-	}
-
-	private generateCacheKey(symbol: any, functionBody: string): string {
-		const bodyHash = this.hashFunctionBody(functionBody);
-		return `${symbol.name}_${symbol.line}_${symbol.col_offset}_${symbol.function_end_line}_${symbol.end_col_offset}_${bodyHash}`;
-	}
-	
-	public clearNPlusOneCache(): void {
-		this.nplusoneCache.clear();
-	}
-
 	formatDiagnosticMessage(symbol: any, llmResult: any): string {
 		return `N+1 QUERY ISSUES DETECTED IN: ${symbol.name}\n\nTotal Issues Found: ${llmResult.issues.length}\n\nHover over underlined code for details.`;
 	}
 
-	private formatIssueDiagnosticMessage(issue: any, issueNumber: number): string {
-		return `N+1 Query Issue ${issueNumber}: ${issue.description}\n\nSuggestion: ${issue.suggestion}`;
+	logUsageStatistics(symbol: any): void {
+		LOGGER.info(`N+1 detection run for function: ${symbol.name}`, {
+			userId: cachedUserToken,
+			functionName: symbol.name,
+			functionType: symbol.type,
+			fileType: this.languageId,
+			timestamp: new Date().toISOString()
+		});
+	}
+	
+	logPerformanceMetrics(startTime: number, endTime: number, linesOfCode: number): void {
+		const duration = endTime - startTime;
+		LOGGER.info(`N+1 detection performance`, {
+			userId: cachedUserToken,
+			duration: duration,
+			linesOfCode: linesOfCode,
+			linesPerSecond: linesOfCode / (duration / 1000)
+		});
 	}
 
-	private normalizeWhitespace(text: string): string {
-		return text.replace(/\s+/g, ' ').trim();
+	logDetectionResults(issues: number): void {
+		LOGGER.info(`N+1 detection results`, {
+			userId: cachedUserToken,
+			issuesDetected: issues,
+			timestamp: new Date().toISOString()
+		});
 	}
 
-	private isInnerLoop(inner: any, outer: any): boolean {
-		return inner.line > outer.line && inner.function_end_line < outer.function_end_line;
+	public logFalsePositiveFeedback(diagnosticId: string): void {
+		LOGGER.info(`False positive reported`, {
+			userId: cachedUserToken,
+			diagnosticId: diagnosticId,
+			timestamp: new Date().toISOString()
+		});
+	}
+
+	private logError(error: Error, context: string): void {
+		LOGGER.error(`Error in N+1 detection: ${context}`, {
+			userId: cachedUserToken,
+			errorMessage: error.message,
+			errorStack: error.stack,
+			timestamp: new Date().toISOString()
+		});
 	}
 }

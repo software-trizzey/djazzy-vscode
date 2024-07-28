@@ -148,47 +148,20 @@ export class DjangoProvider extends PythonProvider {
                 loopStartLine = index;
             }
     
-            // Commented out other rules
-            /*
-            // Query methods inside loops
-            for (const method of QUERY_METHODS) {
-                if (line.includes(`.${method}(`)) {
-                    if (isInLoop) {
-                        this.addNPlusOneDiagnostic(symbol, diagnostics, loopStartLine, index, `Query method '${method}' inside a loop`);
-                    }
-                }
-            }
-            */
-    
-            // Related field access inside loops without select_related or prefetch_related
             for (const pattern of RELATED_FIELD_PATTERNS) {
                 if (pattern.test(line)) {
                     if (isInLoop && !hasSelectRelated && !hasPrefetchRelated) {
-                        this.addNPlusOneDiagnostic(symbol, diagnostics, loopStartLine, index, `Related field access inside a loop without select_related or prefetch_related`);
+                        this.addNPlusOneDiagnostic(
+                            symbol,
+                            diagnostics,
+                            loopStartLine,
+                            index,
+                            `Related field access inside a loop without select_related or prefetch_related`
+                        );
                     }
                 }
             }
-    
-            /*
-            // Aggregation methods inside loops
-            for (const method of AGGREGATE_METHODS) {
-                if (line.includes(`${method}(`)) {
-                    if (isInLoop) {
-                        this.addNPlusOneDiagnostic(symbol, diagnostics, loopStartLine, index, `Aggregation method '${method}' inside a loop`);
-                    }
-                }
-            }
-    
-            // Query methods in list comprehensions
-            if (line.includes('[') && line.includes('for') && line.includes('in')) {
-                for (const method of QUERY_METHODS) {
-                    if (line.includes(`.${method}(`)) {
-                        this.addNPlusOneDiagnostic(symbol, diagnostics, index, index, `Query method '${method}' in a list comprehension`);
-                    }
-                }
-            }
-            */
-    
+
             if (line === '' || line.startsWith('}')) {
                 isInLoop = false;
                 hasSelectRelated = false;

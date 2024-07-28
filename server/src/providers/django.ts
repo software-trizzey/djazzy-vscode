@@ -119,46 +119,48 @@ export class DjangoProvider extends PythonProvider {
 	}
 
     private detectNPlusOneQuery(symbol: any, diagnostics: Diagnostic[]): void {
-		if (!cachedUserToken) {
-			LOGGER.warn("Only authenticated users can use the N+1 query detection feature.");
-			return;
-		}
-
-		this.logUsageStatistics(symbol);
-
+        if (!cachedUserToken) {
+            LOGGER.warn("Only authenticated users can use the N+1 query detection feature.");
+            return;
+        }
+    
+        this.logUsageStatistics(symbol);
+    
         const functionBody = symbol.body;
         const lines = functionBody.split('\n');
         let isInLoop = false;
         let loopStartLine = 0;
-        let potentialIssues: Array<{line: number, issue: string}> = [];
-		let hasSelectRelated = false;
+        let hasSelectRelated = false;
         let hasPrefetchRelated = false;
-
+    
         for (let index = 0; index < lines.length; index++) {
             const line = lines[index].trim();
-
-			if (line.includes('.select_related(')) {
+    
+            if (line.includes('.select_related(')) {
                 hasSelectRelated = true;
             }
             if (line.includes('.prefetch_related(')) {
                 hasPrefetchRelated = true;
             }
-
+    
             if (line.startsWith('for ') || line.startsWith('while ')) {
                 isInLoop = true;
                 loopStartLine = index;
             }
-
+    
+            // Commented out other rules
+            /*
+            // Query methods inside loops
             for (const method of QUERY_METHODS) {
                 if (line.includes(`.${method}(`)) {
                     if (isInLoop) {
                         this.addNPlusOneDiagnostic(symbol, diagnostics, loopStartLine, index, `Query method '${method}' inside a loop`);
-                    } else {
-                        potentialIssues.push({line: index, issue: `Query method '${method}' potentially used in a loop context`});
                     }
                 }
             }
-
+            */
+    
+            // Related field access inside loops without select_related or prefetch_related
             for (const pattern of RELATED_FIELD_PATTERNS) {
                 if (pattern.test(line)) {
                     if (isInLoop && !hasSelectRelated && !hasPrefetchRelated) {
@@ -166,22 +168,18 @@ export class DjangoProvider extends PythonProvider {
                     }
                 }
             }
-
-			if (line.includes('.exists(')) {
-                // Don't flag this as an issue, as it's often more efficient than count()
-                continue;
-            }
-
+    
+            /*
+            // Aggregation methods inside loops
             for (const method of AGGREGATE_METHODS) {
                 if (line.includes(`${method}(`)) {
                     if (isInLoop) {
                         this.addNPlusOneDiagnostic(symbol, diagnostics, loopStartLine, index, `Aggregation method '${method}' inside a loop`);
-                    } else {
-                        potentialIssues.push({line: index, issue: `Aggregation method '${method}' potentially used in a loop context`});
                     }
                 }
             }
-
+    
+            // Query methods in list comprehensions
             if (line.includes('[') && line.includes('for') && line.includes('in')) {
                 for (const method of QUERY_METHODS) {
                     if (line.includes(`.${method}(`)) {
@@ -189,19 +187,16 @@ export class DjangoProvider extends PythonProvider {
                     }
                 }
             }
-
+            */
+    
             if (line === '' || line.startsWith('}')) {
                 isInLoop = false;
-                if (potentialIssues.length > 1) {
-                    for (const issue of potentialIssues) {
-                        this.addNPlusOneDiagnostic(symbol, diagnostics, issue.line, issue.line, issue.issue);
-                    }
-                }
-                potentialIssues = [];
+                hasSelectRelated = false;
+                hasPrefetchRelated = false;
             }
         }
-
-		this.logDetectionResults(diagnostics.length);
+    
+        this.logDetectionResults(diagnostics.length);
     }
 
     private addNPlusOneDiagnostic(symbol: any, diagnostics: Diagnostic[], startLine: number, endLine: number, message: string): void {

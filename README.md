@@ -19,6 +19,7 @@ When In Rome is a code stylist that helps teams enforce their coding conventions
 - **Redundant Comment Detection**: Automatically flags comments that do not contribute additional information or context to the code below them, helping to keep your codebase clean and efficient. Comments marked with '@rome-ignore', 'TODO', or 'FIXME' are intelligently ignored to preserve necessary notes.
 - **Test Suite Conventions**: Notify developers to add or update test files when changes are detected in API views. *MVP: Triggers for files within "api" or "views" folders.*
 - **Supports Multiple Languages**: Initial support for Python, JavaScript, and TypeScript, with plans to expand to more languages.
+- **Django N+1 Query Detection**: Automatically identifies potential N+1 query issues in Django projects. The extension flags instances where related field access occurs within loops without proper optimization techniques like select_related() or prefetch_related().
 
 ## Planned Features 🧭
 
@@ -55,6 +56,27 @@ These settings can be accessed by going to `Preferences → Settings → Extensi
 3. **Quick Fixes**: Offers actionable recommendations for quick corrections, streamlining your coding process.
 4. **Automatic Suggestions**: AI-driven suggestions help maintain consistency across your team's codebase.
 5. **Test Suite Enforcement**: Alerts you to update or create tests following changes in designated "api" or "views" directories, ensuring code changes are adequately tested.
+6. **Django N+1 Query Detection**
+
+The extension analyzes your Django code to identify potential N+1 query issues.
+It focuses on detecting related field access within loops that aren't optimized with select_related() or prefetch_related().
+When a potential N+1 query is detected, the extension will highlight the problematic code and provide a diagnostic message.
+Use the quick fix suggestions to review and optimize your database queries, improving your Django application's performance.
+
+Example of a flagged N+1 query:
+```python
+# This code will be flagged as a potential N+1 query
+for item in items:
+    print(item.related_object.name)  # Accessing a related object inside a loop
+```
+
+Optimized version:
+```python
+# Using select_related to optimize the query
+items = items.select_related('related_object')
+for item in items:
+    print(item.related_object.name)  # No additional queries
+```
 
 ## Pricing 🤑
 
@@ -68,6 +90,9 @@ We would love to hear your feedback! Please reach out to [support@rome.dev](mail
 
 - **Initial Language Support**: Currently, only Python, JavaScript, and TypeScript are supported.
 - **False Positives**: As an MVP undergoing rapid development, When In Rome may generate inaccurate diagnostics and recommendations. If you encounter any issues, please report them to [support@rome.dev](mailto:support@rome.dev).
+- **Django N+1 Query Detection**: The current implementation focuses on simple loop structures and may not catch all complex scenarios.
+It may produce some false positives in cases where optimizations are applied outside the immediate function scope.
+The detection is based on static analysis and may not account for dynamic query optimizations.
 
 ## Contribution Guidelines 👯‍♀️
 

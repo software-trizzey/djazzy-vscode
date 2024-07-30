@@ -194,6 +194,7 @@ export class DjangoProvider extends PythonProvider {
                             diagnostics,
                             startLine,
                             endLine,
+                            issue.issue_id,
                             issue.description,
                             issue.suggestion
                         );
@@ -207,7 +208,15 @@ export class DjangoProvider extends PythonProvider {
         }
     }
 
-    private addNPlusOneDiagnostic(symbol: any, diagnostics: Diagnostic[], startLine: number, endLine: number, description: string, suggestion: string): void {
+    private addNPlusOneDiagnostic(
+        symbol: any,
+        diagnostics: Diagnostic[],
+        startLine: number,
+        endLine: number,
+        issueId: string,
+        description: string,
+        suggestion: string
+    ): void {
         const functionBodyLines = symbol.body.split('\n');
         const functionStartLine = symbol.function_start_line - 1;
         const functionEndLine = symbol.function_end_line - 1;
@@ -237,7 +246,7 @@ export class DjangoProvider extends PythonProvider {
             codeDescription: {
                 href: 'https://docs.djangoproject.com/en/stable/topics/db/optimization/'
             },
-            data: { id: uuidv4() } // Track diagnostic instances
+            data: { id: issueId}
         };
         diagnostics.push(diagnostic);
     }

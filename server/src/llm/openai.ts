@@ -1,5 +1,5 @@
 import { API_SERVER_URL } from '../constants/api';
-import { handleErrorResponse, validateResponse } from './helpers';
+import { handleErrorResponse } from './helpers';
 import { ChatAPIResponse } from './types';
 
 export async function chatWithOpenAI(systemMessage: string, developerInput: string, userToken: string): Promise<ChatAPIResponse> {
@@ -18,9 +18,6 @@ export async function chatWithOpenAI(systemMessage: string, developerInput: stri
 		}
 
 		const responseData: ChatAPIResponse = await response.json();
-
-		validateResponse(responseData, developerInput);
-
 		return responseData;
 	} catch (error: any) {
 		console.error(error.message);

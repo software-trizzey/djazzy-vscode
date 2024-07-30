@@ -283,12 +283,13 @@ export class PythonProvider extends LanguageProvider {
                     });
                     break;
             }
+			console.log("symbol", symbol);
 
 			if (result && result.violates) {
-                const { start, end } = this.adjustColumnOffsets(symbol);
+                const { line, start, end } = this.adjustColumnOffsets(symbol);
                 const range = Range.create(
-                    Position.create(symbol.line, start),
-                    Position.create(symbol.line, end)
+                    Position.create(line, start),
+                    Position.create(line, end)
                 );
                 diagnostics.push(this.createDiagnostic(
                     range,
@@ -529,18 +530,22 @@ export class PythonProvider extends LanguageProvider {
 		return violations;
 	}
 
-	private adjustColumnOffsets(symbol: any): { start: number, end: number } {
-        let start = symbol.col_offset;
-        let end = symbol.end_col_offset || symbol.col_offset + symbol.name.length;
-
-        if (symbol.type === "function" || symbol.type.startsWith("django_") && symbol.type.endsWith("_method")) {
-            start += "def ".length;
+	private adjustColumnOffsets(symbol: any): { line: number, start: number, end: number } {
+		const line = symbol.line - 1;
+		let start = symbol.col_offset;
+		let end = symbol.end_col_offset || (start + symbol.name.length);
+	
+		if (symbol.type === "function" || symbol.type.startsWith("django_") && symbol.type.endsWith("_method")) {
+			start += "def ".length;
             end = start + symbol.name.length;
-        } else if (symbol.type === "class" || symbol.type === "django_model") {
-            start += "class ".length;
-            end = start + symbol.name.length;
-        }
-
-        return { start, end };
-    }
+		} else if (symbol.type === "class" || symbol.type.startsWith("django_")) {
+			start += "class ".length;
+			end = symbol.end_col_offset || (start + symbol.name.length);
+		}
+	
+		start = Math.max(0, start);
+		end = Math.max(start, end);
+	
+		return { line, start, end };
+	}
 }

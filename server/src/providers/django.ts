@@ -200,8 +200,7 @@ export class DjangoProvider extends PythonProvider {
                         );
                     }
                 }
-    
-                this.logDetectionResults(llmResult.issues.length);
+
             } catch (error) {
                 this.logError(error as Error, 'N+1 detection');
             }

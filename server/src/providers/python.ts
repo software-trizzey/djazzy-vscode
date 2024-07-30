@@ -283,7 +283,6 @@ export class PythonProvider extends LanguageProvider {
                     });
                     break;
             }
-			console.log("symbol", symbol);
 
 			if (result && result.violates) {
                 const { line, start, end } = this.adjustColumnOffsets(symbol);

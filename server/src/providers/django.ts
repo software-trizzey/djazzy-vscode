@@ -235,7 +235,7 @@ export class DjangoProvider extends PythonProvider {
             }
         };    
     
-        const diagnosticMessage = `Potential N+1 query detected in function "${symbol.name}":\n${description}\n\nSuggestion: ${suggestion}`;
+        const diagnosticMessage = `Potential N+1 query detected in function "${symbol.name}":\n${description}\n\nSuggestion:\n ${suggestion}`;
     
         const diagnostic: Diagnostic = {
             range,

@@ -168,8 +168,6 @@ export class DjangoProvider extends PythonProvider {
                 hasPrefetchRelated = false;
             }
         }
-    
-        this.logDetectionResults(diagnostics.length);
     }
 
     private addNPlusOneDiagnostic(symbol: any, diagnostics: Diagnostic[], startLine: number, endLine: number, message: string): void {

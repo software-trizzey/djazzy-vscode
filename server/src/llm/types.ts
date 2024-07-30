@@ -14,18 +14,21 @@ export interface NPlusOneIssueFuture {
 	suggestion: string;
   }
 
-export interface NPlusOneIssue {
-	description: string;
-	suggestion: string;
-	problematic_code: string;
+  export interface NPlusOneIssue {
+	issue_id: string;
+    description: string;
+    suggestion: string;
+    problematic_code: string;
+    start_line?: number;
+    end_line?: number;
 }
   
   export interface LLMNPlusOneResult {
 	has_n_plus_one_issues: boolean;
 	issues: NPlusOneIssue[];
-	summary: string;
-	overall_efficiency_score: number;
-	general_recommendations: string[];
+	summary?: string;
+	overall_efficiency_score?: number;
+	general_recommendations?: string[];
   }
 
   export interface ChatAPIResponse {

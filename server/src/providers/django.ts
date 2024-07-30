@@ -15,6 +15,15 @@ import { SOURCE_NAME, DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE } from "../constants
 import { ExtensionSettings, cachedUserToken, defaultConventions } from "../settings";
 import LOGGER from '../common/logs';
 import COMMANDS from '../constants/commands';
+import { chatWithLLM } from '../llm/helpers';
+import { LLMNPlusOneResult } from '../llm/types';
+
+type PossibleIssue = { 
+    id: string; 
+    startLine: number; 
+    endLine: number; 
+    message: string;
+};
 
 const METHOD_NAMES = [
 	"function",
@@ -77,7 +86,7 @@ export class DjangoProvider extends PythonProvider {
 
 		for (const symbol of highPrioritySymbols) {
             if (METHOD_NAMES.includes(symbol.type)) {
-                this.detectNPlusOneQuery(symbol, diagnostics);
+                await this.detectNPlusOneQuery(symbol, diagnostics);
             }
         }
 	}
@@ -118,7 +127,7 @@ export class DjangoProvider extends PythonProvider {
 		return actions;
 	}
 
-    private detectNPlusOneQuery(symbol: any, diagnostics: Diagnostic[]): void {
+    private async detectNPlusOneQuery(symbol: any, diagnostics: Diagnostic[]): Promise<void> {
         if (!cachedUserToken) {
             LOGGER.warn("Only authenticated users can use the N+1 query detection feature.");
             return;
@@ -132,6 +141,9 @@ export class DjangoProvider extends PythonProvider {
         let loopStartLine = 0;
         let hasSelectRelated = false;
         let hasPrefetchRelated = false;
+        const potentialIssues: Array<PossibleIssue> = [];
+    
+        const functionStartLine = symbol.function_start_line - 1;
     
         for (let index = 0; index < lines.length; index++) {
             const line = lines[index].trim();
@@ -151,33 +163,71 @@ export class DjangoProvider extends PythonProvider {
             for (const pattern of RELATED_FIELD_PATTERNS) {
                 if (pattern.test(line)) {
                     if (isInLoop && !hasSelectRelated && !hasPrefetchRelated) {
-                        this.addNPlusOneDiagnostic(
-                            symbol,
-                            diagnostics,
-                            loopStartLine,
-                            index,
-                            `Related field access inside a loop without select_related or prefetch_related`
-                        );
+                        potentialIssues.push({
+                            id: uuidv4(),
+                            startLine: functionStartLine + loopStartLine,
+                            endLine: functionStartLine + index,
+                            message: `Related field access inside a loop without select_related or prefetch_related`
+                        });
                     }
                 }
             }
-
+    
             if (line === '' || line.startsWith('}')) {
                 isInLoop = false;
                 hasSelectRelated = false;
                 hasPrefetchRelated = false;
             }
         }
+    
+        if (potentialIssues.length > 0) {
+            try {
+                const llmResult = await this.validateNPlusOneWithLLM(symbol, potentialIssues);
+                
+                if (llmResult.has_n_plus_one_issues) {
+                    for (const issue of llmResult.issues) {
+                        const startLine = issue.start_line ?? functionStartLine;
+                        const endLine = issue.end_line ?? (functionStartLine + lines.length - 1);
+    
+                        this.addNPlusOneDiagnostic(
+                            symbol,
+                            diagnostics,
+                            startLine,
+                            endLine,
+                            issue.description,
+                            issue.suggestion
+                        );
+                    }
+                }
+    
+                this.logDetectionResults(llmResult.issues.length);
+            } catch (error) {
+                this.logError(error as Error, 'N+1 detection');
+            }
+        }
     }
 
-    private addNPlusOneDiagnostic(symbol: any, diagnostics: Diagnostic[], startLine: number, endLine: number, message: string): void {
+    private addNPlusOneDiagnostic(symbol: any, diagnostics: Diagnostic[], startLine: number, endLine: number, description: string, suggestion: string): void {
+        const functionBodyLines = symbol.body.split('\n');
+        const functionStartLine = symbol.function_start_line - 1;
+        const functionEndLine = symbol.function_end_line - 1;
+    
+        const safeStartLine = Math.max(functionStartLine, Math.min(startLine, functionEndLine));
+        const safeEndLine = Math.max(safeStartLine, Math.min(endLine, functionEndLine));
+    
         const range: Range = {
-            start: { line: symbol.line + startLine, character: 0 },
-            end: { line: symbol.line + endLine, character: Number.MAX_SAFE_INTEGER }
-        };
-
-        const diagnosticMessage = `Potential N+1 query detected in function "${symbol.name}":\n${message}. Consider optimizing the database queries.`;
-
+            start: { 
+                line: safeStartLine,
+                character: safeStartLine === functionStartLine ? symbol.function_start_col : 0
+            },
+            end: { 
+                line: safeEndLine,
+                character: safeEndLine === functionEndLine ? symbol.function_end_col : functionBodyLines[safeEndLine - functionStartLine].length
+            }
+        };    
+    
+        const diagnosticMessage = `Potential N+1 query detected in function "${symbol.name}":\n${description}\n\nSuggestion: ${suggestion}`;
+    
         const diagnostic: Diagnostic = {
             range,
             message: diagnosticMessage,
@@ -187,10 +237,55 @@ export class DjangoProvider extends PythonProvider {
             codeDescription: {
                 href: 'https://docs.djangoproject.com/en/stable/topics/db/optimization/'
             },
-			data: { id: uuidv4() } // Track diagnostic instances
+            data: { id: uuidv4() } // Track diagnostic instances
         };
-
         diagnostics.push(diagnostic);
+    }
+
+    private async validateNPlusOneWithLLM(symbol: any, potentialIssues: Array<PossibleIssue>): Promise<LLMNPlusOneResult> {
+        if (!cachedUserToken) {
+            LOGGER.warn("Only authenticated users can use the N+1 query detection feature.");
+            return {
+                has_n_plus_one_issues: false,
+                issues: []
+            };
+        }
+    
+        const systemMessage = `You are an expert Django developer. Your task is to analyze the following Python code for potential N+1 query issues. 
+        Confirm if the identified issues are valid N+1 problems. If they are valid, suggest optimizations. If they are false positives, explain why. 
+        For each issue you confirm, include the 'issue_id' in your response.`;
+    
+        const developerInput = `
+        Function name: ${symbol.name}
+        Function body:
+        ${symbol.body}
+    
+        Potential N+1 issues:
+        ${potentialIssues.map(issue => `- Issue ID: ${issue.id}, Lines ${issue.startLine}-${issue.endLine}: ${issue.message}`).join('\n')}
+        `;
+    
+        try {
+            const llmResult = await chatWithLLM(systemMessage, developerInput, cachedUserToken);
+            
+            const processedResult: LLMNPlusOneResult = {
+                has_n_plus_one_issues: llmResult.has_n_plus_one_issues,
+                issues: llmResult.issues.map(issue => {
+                    const matchingPotentialIssue = potentialIssues.find(
+                        potentialIssue => potentialIssue.id === issue.issue_id
+                    );
+                    return {
+                        ...issue,
+                        start_line: matchingPotentialIssue?.startLine,
+                        end_line: matchingPotentialIssue?.endLine
+                    };
+                })
+            };
+            
+            return processedResult;
+        } catch (error) {
+            this.logError(error as Error, 'LLM validation');
+            throw error;
+        }
     }
 
 	formatDiagnosticMessage(symbol: any, llmResult: any): string {

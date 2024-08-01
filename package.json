@@ -1,7 +1,7 @@
 {
-	"name": "when-in-rome",
-	"displayName": "When In Rome",
-	"description": "Enforce team coding standards seamlessly, reduce review cycles, and elevate code quality effortlessly. After all, when in rome you should code as the Romans do.",
+	"name": "djangoly",
+	"displayName": "Djangoly",
+	"description": "Enforce team coding standards seamlessly, reduce review cycles, and elevate code quality effortlessly. After all, Djangoly you should code as the Romans do.",
 	"author": "Tristan Deane",
 	"version": "0.0.44",
 	"publisher": "alchemized",
@@ -36,57 +36,57 @@
 	"main": "./client/out/extension",
 	"contributes": {
 		"activationEvents": [
-			"onCommand:whenInRome.signIn",
-			"onCommand:whenInRome.addCustomRule",
-			"onCommand:whenInRome.openWalkthrough",
+			"onCommand:djangoly.signIn",
+			"onCommand:djangoly.addCustomRule",
+			"onCommand:djangoly.openWalkthrough",
 			"onLanguage:javascriptreact",
 			"onLanguage:typescriptreact"
 		],
 		"commands": [
 			{
-				"command": "whenInRome.signIn",
-				"title": "When In Rome: Sign In"
+				"command": "djangoly.signIn",
+				"title": "Djangoly: Sign In"
 			},
 			{
-				"command": "whenInRome.signOut",
-				"title": "When In Rome: Sign Out"
+				"command": "djangoly.signOut",
+				"title": "Djangoly: Sign Out"
 			},
 			{
-				"command": "whenInRome.renameSymbol",
-				"title": "Align Symbol With Conventions (When In Rome)"
+				"command": "djangoly.renameSymbol",
+				"title": "Align Symbol With Conventions (Djangoly)"
 			},
 			{
-				"command": "whenInRome.openSettings",
-				"title": "When In Rome: Open Settings"
+				"command": "djangoly.openSettings",
+				"title": "Djangoly: Open Settings"
 			}
 		],
 		"walkthroughs": [
 			{
-				"id": "whenInRome.gettingStarted",
-				"title": "Getting Started with When In Rome",
-				"description": "Learn how to use the key features of When In Rome.",
+				"id": "djangoly.gettingStarted",
+				"title": "Getting Started with Djangoly",
+				"description": "Learn how to use the key features of Djangoly.",
 				"steps": [
 				{
-					"id": "whenInRome.installExtension",
+					"id": "djangoly.installExtension",
 					"title": "Install the Extension",
-					"description": "Open VS Code, go to the Extensions view, and search for 'When In Rome'. Click 'Install' and wait for the installation to complete.",
+					"description": "Open VS Code, go to the Extensions view, and search for 'Djangoly'. Click 'Install' and wait for the installation to complete.",
 					"media": {
 					"image": "assets/images/walkthrough/install.png",
-					"altText": "Install When In Rome"
+					"altText": "Install Djangoly"
 					}
 				},
 				{
-					"id": "whenInRome.signIn",
+					"id": "djangoly.signIn",
 					"title": "Sign In with GitHub",
-					"description": "Open command palette and type in → ```When In Rome: Sign In```. Or press the button below: \n[Sign In](command:whenInRome.signIn)\nAccept the notification and you should be signed in via your GitHub account.",
+					"description": "Open command palette and type in → ```Djangoly: Sign In```. Or press the button below: \n[Sign In](command:djangoly.signIn)\nAccept the notification and you should be signed in via your GitHub account.",
 					"media": {
 						"image": "assets/images/walkthrough/signIn.png",
 						"altText": "Sign In"
 					},
-					"completionEvents": ["onCommand:whenInRome.signIn"]
+					"completionEvents": ["onCommand:djangoly.signIn"]
 				},
 				{
-					"id": "whenInRome.namingConvention",
+					"id": "djangoly.namingConvention",
 					"title": "Align Names with Team Conventions",
 					"description": "Write a function with a poorly named variable. See how the extension highlights it and suggests a better name.",
 					"media": {
@@ -95,18 +95,18 @@
 					}
 				},
 				{
-					"id": "whenInRome.untestedCode",
+					"id": "djangoly.untestedCode",
 					"title": "Untested API Code Detection",
-					"description": "Introduce a new piece of business logic without a test. Notice that When In Rome reminds you to test the changes.",
+					"description": "Introduce a new piece of business logic without a test. Notice that Djangoly reminds you to test the changes.",
 					"media": {
 						"image": "assets/gifs/flag-untested-api-code.gif",
 						"altText": "Untested Code Demo"
 					}
 				},
 				{
-					"id": "whenInRome.setupRules",
+					"id": "djangoly.setupRules",
 					"title": "Setup Naming and Testing Rules",
-					"description": "Customize naming conventions and test requirements for your workspace.\n[Customize Rules](command:whenInRome.openSettings)\n\n[Import Conventions](command:whenInRome.addCustomRule)",
+					"description": "Customize naming conventions and test requirements for your workspace.\n[Customize Rules](command:djangoly.openSettings)\n\n[Import Conventions](command:djangoly.addCustomRule)",
 					"media": {
 					  "image": "assets/images/walkthrough/settings.png",
 					  "altText": "Setup Rules"
@@ -118,7 +118,7 @@
 		"menus": {
 			"editor/context": [
 			  {
-				"command": "whenInRome.renameSymbol",
+				"command": "djangoly.renameSymbol",
 				"when": "editorTextFocus && !editorReadonly",
 				"group": "1_modification"
 			  }
@@ -157,27 +157,27 @@
 			}
 		],
 		"configuration": {
-			"title": "When In Rome",
+			"title": "Djangoly",
 			"properties": {
-				"whenInRome.general.onlyCheckNewCode": {
+				"djangoly.general.onlyCheckNewCode": {
 					"type": "boolean",
 					"default": false,
 					"description": "Check only new or modified code.",
 					"order": 1
 				},
-				"whenInRome.general.isDevMode": {
+				"djangoly.general.isDevMode": {
 					"type": "boolean",
 					"default": false,
 					"description": "Toggle development mode for additional logging and diagnostics.",
 					"order": 2
 				},
-				"whenInRome.general.notificationInterval": {
+				"djangoly.general.notificationInterval": {
 					"type": "number",
 					"default": 45,
 					"description": "Interval in minutes to control the frequency of notifications.",
 					"order": 3
 				},
-				"whenInRome.general.prefixes": {
+				"djangoly.general.prefixes": {
 					"type": "array",
 					"default": [
 						"is",
@@ -192,289 +192,289 @@
 					"description": "Prefixes to use for boolean variables.",
 					"order": 4
 				},
-				"whenInRome.comments.flagRedundant": {
+				"djangoly.comments.flagRedundant": {
 					"type": "boolean",
 					"default": true,
-					"description": "Enable to identify and flag comments that are unnecessary because the code is self-explanatory. To bypass this check for specific comments, include '@rome-ignore', 'TODO', or 'FIXME' in the comment text.",
+					"description": "Enable to identify and flag comments that are unnecessary because the code is self-explanatory. To bypass this check for specific comments, include 'djangoly-ignore', 'TODO', or 'FIXME' in the comment text.",
 					"order": 5
 				},
-				"whenInRome.languages.javascript.isEnabled": {
+				"djangoly.languages.javascript.isEnabled": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enable/disable features specifically.",
 					"order": 6
 				},
-				"whenInRome.languages.javascript.expressiveNames.variables.isEnabled": {
+				"djangoly.languages.javascript.expressiveNames.variables.isEnabled": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enforce expressive variable names.",
 					"order": 7
 				},
-				"whenInRome.languages.javascript.expressiveNames.variables.avoidShortNames": {
+				"djangoly.languages.javascript.expressiveNames.variables.avoidShortNames": {
 					"type": "boolean",
 					"default": true,
 					"description": "Avoid using short variable names.",
 					"order": 8
 				},
-				"whenInRome.languages.javascript.expressiveNames.variables.avoidGenericNames": {
+				"djangoly.languages.javascript.expressiveNames.variables.avoidGenericNames": {
 					"type": "boolean",
 					"default": true,
 					"description": "Avoid using generic variable names.",
 					"order": 9
 				},
-				"whenInRome.languages.javascript.expressiveNames.functions.isEnabled": {
+				"djangoly.languages.javascript.expressiveNames.functions.isEnabled": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enforce expressive function names.",
 					"order": 10
 				},
-				"whenInRome.languages.javascript.expressiveNames.functions.avoidShortNames": {
+				"djangoly.languages.javascript.expressiveNames.functions.avoidShortNames": {
 					"type": "boolean",
 					"default": true,
 					"description": "Avoid using short function names.",
 					"order": 11
 				},
-				"whenInRome.languages.javascript.expressiveNames.functions.avoidGenericNames": {
+				"djangoly.languages.javascript.expressiveNames.functions.avoidGenericNames": {
 					"type": "boolean",
 					"default": true,
 					"description": "Avoid using generic function names.",
 					"order": 12
 				},
-				"whenInRome.languages.javascript.expressiveNames.functions.functionLengthLimit": {
+				"djangoly.languages.javascript.expressiveNames.functions.functionLengthLimit": {
 					"type": "number",
 					"default": 60,
 					"description": "Set the maximum length for functions.",
 					"order": 13
 				},
-				"whenInRome.languages.javascript.expressiveNames.functions.maxCyclomaticComplexity": {
+				"djangoly.languages.javascript.expressiveNames.functions.maxCyclomaticComplexity": {
 					"type": "number",
 					"default": 10,
 					"description": "Set the maximum cyclomatic complexity for functions.",
 					"order": 14
 				},
-				"whenInRome.languages.javascript.expressiveNames.objectProperties.isEnabled": {
+				"djangoly.languages.javascript.expressiveNames.objectProperties.isEnabled": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enforce expressive object property names.",
 					"order": 14
 				},
-				"whenInRome.languages.javascript.expressiveNames.objectProperties.avoidShortNames": {
+				"djangoly.languages.javascript.expressiveNames.objectProperties.avoidShortNames": {
 					"type": "boolean",
 					"default": true,
 					"description": "Avoid using short object property names.",
 					"order": 14
 				},
-				"whenInRome.languages.javascript.expressiveNames.objectProperties.avoidGenericNames": {
+				"djangoly.languages.javascript.expressiveNames.objectProperties.avoidGenericNames": {
 					"type": "boolean",
 					"default": true,
 					"description": "Avoid using generic object property names.",
 					"order": 14
 				},
-				"whenInRome.languages.javascript.boolean.positiveNaming": {
+				"djangoly.languages.javascript.boolean.positiveNaming": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enforce positive naming conventions.",
 					"order": 15
 				},
-				"whenInRome.languages.javascript.boolean.usePrefix": {
+				"djangoly.languages.javascript.boolean.usePrefix": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enforce boolean variable prefixes.",
 					"order": 16
 				},
-				"whenInRome.languages.javascript.themeSystem.isEnabled": {
+				"djangoly.languages.javascript.themeSystem.isEnabled": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enforce theme system conventions.",
 					"order": 16
 				},
-				"whenInRome.languages.javascript.themeSystem.shouldFlagHexCodes": {
+				"djangoly.languages.javascript.themeSystem.shouldFlagHexCodes": {
 					"type": "boolean",
 					"default": true,
 					"description": "Flag code that uses hex codes instead of theme system variables.",
 					"order": 16
 				},
-				"whenInRome.languages.typescript.isEnabled": {
+				"djangoly.languages.typescript.isEnabled": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enable/disable features specifically.",
 					"order": 17
 				},
-				"whenInRome.languages.typescript.expressiveNames.variables.isEnabled": {
+				"djangoly.languages.typescript.expressiveNames.variables.isEnabled": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enforce expressive variable names.",
 					"order": 18
 				},
-				"whenInRome.languages.typescript.expressiveNames.variables.avoidShortNames": {
+				"djangoly.languages.typescript.expressiveNames.variables.avoidShortNames": {
 					"type": "boolean",
 					"default": true,
 					"description": "Avoid using short variable names.",
 					"order": 19
 				},
-				"whenInRome.languages.typescript.expressiveNames.variables.avoidGenericNames": {
+				"djangoly.languages.typescript.expressiveNames.variables.avoidGenericNames": {
 					"type": "boolean",
 					"default": true,
 					"description": "Avoid using generic variable names.",
 					"order": 20
 				},
-				"whenInRome.languages.typescript.expressiveNames.functions.isEnabled": {
+				"djangoly.languages.typescript.expressiveNames.functions.isEnabled": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enforce expressive function names.",
 					"order": 21
 				},
-				"whenInRome.languages.typescript.expressiveNames.functions.avoidShortNames": {
+				"djangoly.languages.typescript.expressiveNames.functions.avoidShortNames": {
 					"type": "boolean",
 					"default": true,
 					"description": "Avoid using short function names.",
 					"order": 22
 				},
-				"whenInRome.languages.typescript.expressiveNames.functions.avoidGenericNames": {
+				"djangoly.languages.typescript.expressiveNames.functions.avoidGenericNames": {
 					"type": "boolean",
 					"default": true,
 					"description": "Avoid using generic function names.",
 					"order": 23
 				},
-				"whenInRome.languages.typescript.expressiveNames.functions.functionLengthLimit": {
+				"djangoly.languages.typescript.expressiveNames.functions.functionLengthLimit": {
 					"type": "number",
 					"default": 60,
 					"description": "Set the maximum length for functions.",
 					"order": 24
 				},
-				"whenInRome.languages.typescript.expressiveNames.functions.maxCyclomaticComplexity": {
+				"djangoly.languages.typescript.expressiveNames.functions.maxCyclomaticComplexity": {
 					"type": "number",
 					"default": 10,
 					"description": "Set the maximum cyclomatic complexity for functions.",
 					"order": 25
 				},
-				"whenInRome.languages.typescript.expressiveNames.objectProperties.isEnabled": {
+				"djangoly.languages.typescript.expressiveNames.objectProperties.isEnabled": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enforce expressive object property names.",
 					"order": 25
 				},
-				"whenInRome.languages.typescript.expressiveNames.objectProperties.avoidShortNames": {
+				"djangoly.languages.typescript.expressiveNames.objectProperties.avoidShortNames": {
 					"type": "boolean",
 					"default": true,
 					"description": "Avoid using short object property names.",
 					"order": 25
 				},
-				"whenInRome.languages.typescript.expressiveNames.objectProperties.avoidGenericNames": {
+				"djangoly.languages.typescript.expressiveNames.objectProperties.avoidGenericNames": {
 					"type": "boolean",
 					"default": true,
 					"description": "Avoid using generic object property names.",
 					"order": 25
 				},
-				"whenInRome.languages.typescript.boolean.positiveNaming": {
+				"djangoly.languages.typescript.boolean.positiveNaming": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enforce positive naming conventions.",
 					"order": 26
 				},
-				"whenInRome.languages.typescript.boolean.usePrefix": {
+				"djangoly.languages.typescript.boolean.usePrefix": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enforce boolean variable prefixes.",
 					"order": 27
 				},
-				"whenInRome.languages.typescript.themeSystem.isEnabled": {
+				"djangoly.languages.typescript.themeSystem.isEnabled": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enforce theme system conventions.",
 					"order": 27
 				},
-				"whenInRome.languages.typescript.themeSystem.shouldFlagHexCodes": {
+				"djangoly.languages.typescript.themeSystem.shouldFlagHexCodes": {
 					"type": "boolean",
 					"default": true,
 					"description": "Flag code that uses hex codes instead of theme system variables.",
 					"order": 27
 				},
-				"whenInRome.languages.python.isEnabled": {
+				"djangoly.languages.python.isEnabled": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enable/disable features specifically.",
 					"order": 28
 				},
-				"whenInRome.languages.python.expressiveNames.variables.isEnabled": {
+				"djangoly.languages.python.expressiveNames.variables.isEnabled": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enforce expressive variable names.",
 					"order": 29
 				},
-				"whenInRome.languages.python.expressiveNames.variables.avoidShortNames": {
+				"djangoly.languages.python.expressiveNames.variables.avoidShortNames": {
 					"type": "boolean",
 					"default": true,
 					"description": "Avoid using short variable names.",
 					"order": 30
 				},
-				"whenInRome.languages.python.expressiveNames.variables.avoidGenericNames": {
+				"djangoly.languages.python.expressiveNames.variables.avoidGenericNames": {
 					"type": "boolean",
 					"default": true,
 					"description": "Avoid using generic variable names.",
 					"order": 31
 				},
-				"whenInRome.languages.python.expressiveNames.functions.isEnabled": {
+				"djangoly.languages.python.expressiveNames.functions.isEnabled": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enforce expressive function names.",
 					"order": 32
 				},
-				"whenInRome.languages.python.expressiveNames.functions.avoidShortNames": {
+				"djangoly.languages.python.expressiveNames.functions.avoidShortNames": {
 					"type": "boolean",
 					"default": true,
 					"description": "Avoid using short function names.",
 					"order": 33
 				},
-				"whenInRome.languages.python.expressiveNames.functions.avoidGenericNames": {
+				"djangoly.languages.python.expressiveNames.functions.avoidGenericNames": {
 					"type": "boolean",
 					"default": true,
 					"description": "Avoid using generic function names.",
 					"order": 34
 				},
-				"whenInRome.languages.python.expressiveNames.functions.functionLengthLimit": {
+				"djangoly.languages.python.expressiveNames.functions.functionLengthLimit": {
 					"type": "number",
 					"default": 60,
 					"description": "Set the maximum length for functions.",
 					"order": 35
 				},
-				"whenInRome.languages.python.expressiveNames.functions.maxCyclomaticComplexity": {
+				"djangoly.languages.python.expressiveNames.functions.maxCyclomaticComplexity": {
 					"type": "number",
 					"default": 10,
 					"description": "Set the maximum cyclomatic complexity for functions.",
 					"order": 36
 				},
-				"whenInRome.languages.python.expressiveNames.objectProperties.isEnabled": {
+				"djangoly.languages.python.expressiveNames.objectProperties.isEnabled": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enforce expressive object property names.",
 					"order": 36
 				},
-				"whenInRome.languages.python.expressiveNames.objectProperties.avoidShortNames": {
+				"djangoly.languages.python.expressiveNames.objectProperties.avoidShortNames": {
 					"type": "boolean",
 					"default": true,
 					"description": "Avoid using short object property names.",
 					"order": 36
 				},
-				"whenInRome.languages.python.expressiveNames.objectProperties.avoidGenericNames": {
+				"djangoly.languages.python.expressiveNames.objectProperties.avoidGenericNames": {
 					"type": "boolean",
 					"default": true,
 					"description": "Avoid using generic object property names.",
 					"order": 36
 				},
-				"whenInRome.languages.python.boolean.positiveNaming": {
+				"djangoly.languages.python.boolean.positiveNaming": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enforce positive naming conventions.",
 					"order": 37
 				},
-				"whenInRome.languages.python.boolean.usePrefix": {
+				"djangoly.languages.python.boolean.usePrefix": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enforce boolean variable prefixes.",
 					"order": 38
 				},
-				"whenInRome.languages.python.expressiveNames.variables.examples": {
+				"djangoly.languages.python.expressiveNames.variables.examples": {
 					"type": "array",
 					"default": [],
 					"items": {
@@ -483,7 +483,7 @@
 					"description": "Examples of Python variable naming conventions",
 					"order": 39
 				},
-				"whenInRome.languages.python.expressiveNames.functions.examples": {
+				"djangoly.languages.python.expressiveNames.functions.examples": {
 					"type": "array",
 					"default": [],
 					"items": {
@@ -492,7 +492,7 @@
 					"description": "Examples of Python function naming conventions",
 					"order": 40
 				},
-				"whenInRome.languages.python.expressiveNames.objectProperties.examples": {
+				"djangoly.languages.python.expressiveNames.objectProperties.examples": {
 					"type": "array",
 					"default": [],
 					"items": {
@@ -501,7 +501,7 @@
 					"description": "Examples of Python dictionary key naming conventions",
 					"order": 41
 				},
-				"whenInRome.languages.python.celeryTaskDecorator": {
+				"djangoly.languages.python.celeryTaskDecorator": {
 					"type": "object",
 					"default": {
 						"requiredDecorators": [],
@@ -510,7 +510,7 @@
 					"description": "Celery task functions should have the newrelic background_task decorator and call set_custom_newrelic_log.",
 					"order": 42
 				},
-				"whenInRome.languages.javascript.expressiveNames.variables.examples": {
+				"djangoly.languages.javascript.expressiveNames.variables.examples": {
 					"type": "array",
 					"default": [],
 					"items": {
@@ -519,7 +519,7 @@
 					"description": "Examples of JavaScript variable naming conventions",
 					"order": 42
 				},
-				"whenInRome.languages.javascript.expressiveNames.functions.examples": {
+				"djangoly.languages.javascript.expressiveNames.functions.examples": {
 					"type": "array",
 					"default": [],
 					"items": {
@@ -528,7 +528,7 @@
 					"description": "Examples of JavaScript function naming conventions",
 					"order": 43
 				},
-				"whenInRome.languages.javascript.expressiveNames.objectProperties.examples": {
+				"djangoly.languages.javascript.expressiveNames.objectProperties.examples": {
 					"type": "array",
 					"default": [],
 					"items": {
@@ -537,7 +537,7 @@
 					"description": "Examples of JavaScript object key naming conventions",
 					"order": 44
 				},
-				"whenInRome.languages.typescript.expressiveNames.variables.examples": {
+				"djangoly.languages.typescript.expressiveNames.variables.examples": {
 					"type": "array",
 					"default": [],
 					"items": {
@@ -546,7 +546,7 @@
 					"description": "Examples of TypeScript variable naming conventions",
 					"order": 45
 				},
-				"whenInRome.languages.typescript.expressiveNames.functions.examples": {
+				"djangoly.languages.typescript.expressiveNames.functions.examples": {
 					"type": "array",
 					"default": [],
 					"items": {
@@ -555,7 +555,7 @@
 					"description": "Examples of TypeScript function naming conventions",
 					"order": 46
 				},
-				"whenInRome.languages.typescript.expressiveNames.objectProperties.examples": {
+				"djangoly.languages.typescript.expressiveNames.objectProperties.examples": {
 					"type": "array",
 					"default": [],
 					"items": {
@@ -574,7 +574,7 @@
 		"package": "vsce package",
 		"dev:package": "npm run package --pre-release",
 		"publish": "vsce publish --allow-missing-repository",
-		"dev-publish": "npm run dev:package && code --install-extension when-in-rome-0.0.44.vsix",
+		"dev-publish": "npm run dev:package && code --install-extension djangoly-0.0.44.vsix",
 		"watch": "tsc -b -w",
 		"lint": "eslint ./client/src ./server/src --ext .ts,.tsx",
 		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",

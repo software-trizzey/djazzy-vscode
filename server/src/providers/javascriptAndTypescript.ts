@@ -232,7 +232,7 @@ export class JavascriptAndTypescriptProvider extends LanguageProvider {
 				error.code === "BABEL_PARSER_SYNTAX_ERROR" ||
 				error.stack.includes("SyntaxError")
 			) {
-				// @rome-ignore: we're not concerned with syntax errors as they're likely triggered by incomplete code
+				// djangoly-ignore: we're not concerned with syntax errors as they're likely triggered by incomplete code
 				console.log("Runtime error detected", error);
 			} else {
 			this.handleError(error);

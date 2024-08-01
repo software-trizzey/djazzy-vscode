@@ -1,6 +1,6 @@
 {
-	"name": "when-in-rome-client",
-	"description": "VS Code Client for WhenInRome Language Server",
+	"name": "djangoly-client",
+	"description": "VS Code Client for djangoly Language Server",
 	"author": "Tristan Deane",
 	"license": "UNLICENSED",
 	"version": "0.0.1",

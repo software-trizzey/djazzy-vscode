@@ -1,6 +1,6 @@
 {
-	"name": "when-in-rome-language-server",
-	"description": "Node.js Language Server for WhenInRome",
+	"name": "djangoly-language-server",
+	"description": "Node.js Language Server for djangoly",
 	"version": "0.0.1",
 	"publisher": "alchemized",
 	"license": "UNLICENSED",

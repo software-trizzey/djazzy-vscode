@@ -153,8 +153,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- [Update] Changed name of custom rename symbol from `Rename Symbol (When In Rome)` -> `Align Symbol With Conventions (When In Rome)`
-- [Update] Changed grouping of `Align Symbol With Conventions (When In Rome)` to code modification section of context menu. It's now closer to rename
+- [Update] Changed name of custom rename symbol from `Rename Symbol (Djangoly)` -> `Align Symbol With Conventions (Djangoly)`
+- [Update] Changed grouping of `Align Symbol With Conventions (Djangoly)` to code modification section of context menu. It's now closer to rename
 
 
 ## [Version 0.0.27] - 2024-06-06

@@ -1,4 +1,4 @@
-const EXTENSION_ID = "whenInRome";
+const EXTENSION_ID = "djangoly";
 
 export const FIX_NAME = `${EXTENSION_ID}.fixNamingConvention`;
 export const GET_CHANGED_LINES = `${EXTENSION_ID}.getGitDiff`;

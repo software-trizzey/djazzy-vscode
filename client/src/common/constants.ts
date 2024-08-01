@@ -1,6 +1,6 @@
-export const EXTENSION_NAME = "when-in-rome";
-export const EXTENSION_DISPLAY_NAME = "When In Rome";
-export const EXTENSION_ID = "whenInRome";
+export const EXTENSION_NAME = "djangoly";
+export const EXTENSION_DISPLAY_NAME = "Djangoly";
+export const EXTENSION_ID = "djangoly";
 export const PUBLISHER = "alchemized";
 
 export const SESSION_USER = `${EXTENSION_ID}User`;

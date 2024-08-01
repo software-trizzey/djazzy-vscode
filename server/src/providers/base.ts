@@ -342,7 +342,7 @@ export abstract class LanguageProvider {
 			message.includes("IndentationError") ||
 			message.includes("Unexpected token")
 		) {
-			// @rome-ignore we're not worried about syntax errors triggered by the user's code
+			// djangoly-ignore we're not worried about syntax errors triggered by the user's code
 			return;
 		} else {
 			console.log(error);
@@ -496,7 +496,7 @@ export abstract class LanguageProvider {
 	}
 
 	public isIgnoreComment(comment: string): boolean {
-		return /^@ROME-IGNORE/i.test(comment.trim());
+		return /^djangoly-IGNORE/i.test(comment.trim());
 	}
 
 	public isCommentRedundant(
@@ -541,7 +541,7 @@ export abstract class LanguageProvider {
 		} else if (this.isIgnoreComment(comment)) {
 			return {
 				violates: false,
-				reason: "@rome-ignore detected for this comment.",
+				reason: "djangoly-ignore detected for this comment.",
 			};
 		} else if (languageIdentifiers.includes(currentNode.type)) {
 			// TODO: What do we consider a simple expression?
@@ -693,7 +693,7 @@ export abstract class LanguageProvider {
 	private sendNotSupportedMessage(languageId: string): void {
 		const messageParams: ShowMessageRequestParams = {
 			type: MessageType.Warning,
-			message: `The language ${languageId} is not currently supported by When In Rome extension.`,
+			message: `The language ${languageId} is not currently supported by Djangoly extension.`,
 			actions: [{ title: "Dismiss" }],
 		};
 		this.connection

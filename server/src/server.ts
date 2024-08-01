@@ -172,7 +172,7 @@ connection.onDidChangeConfiguration(async (change) => {
 		);
 	} else {
 		globalSettings = <ExtensionSettings>(
-			(change.settings.whenInRome || defaultConventions)
+			(change.settings.djangoly || defaultConventions)
 		);
 	}
 	console.log("Settings have changed. Refreshing diagnostics...");
@@ -196,7 +196,7 @@ function getDocumentSettings(resource: string): Thenable<ExtensionSettings> {
 		settingsResult = connection.workspace
 			.getConfiguration({
 				scopeUri: resource,
-				section: "whenInRome",
+				section: "djangoly",
 			})
 			.then((settings) => normalizeClientSettings(settings));
 		documentSettings.set(resource, settingsResult);

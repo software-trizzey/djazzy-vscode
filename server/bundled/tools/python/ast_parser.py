@@ -495,10 +495,10 @@ class Analyzer(ast.NodeVisitor):
                 ))
 
         except (SyntaxError, IndentationError) as e:
-            # @rome-ignore: we're not worried about syntax errors triggered by the user's code
+            # djangoly-ignore: we're not worried about syntax errors triggered by the user's code
             pass
         except Exception as e:
-            # @rome-ignore: we're not worried about runtime errors triggered by the user's code
+            # djangoly-ignore: we're not worried about runtime errors triggered by the user's code
             pass
         return json.dumps(self.symbols, default=serialize_file_data)
 

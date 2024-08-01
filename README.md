@@ -1,22 +1,22 @@
-# When In Rome: Your Django Best Practices Companion
+# Djangoly: Your Django Best Practices Companion
 
 > **🚀 Beta Release Notice**
 > 
-> When In Rome is currently in **free Beta mode**. During this phase, you can use all features at no cost. Please note:
+> Djangoly is currently in **free Beta mode**. During this phase, you can use all features at no cost. Please note:
 > 
 > - The extension is under active development and subject to changes.
 > - You may encounter bugs or unexpected behavior.
 > - We greatly appreciate your feedback to help improve the extension.
 > 
-> Thank you for being an early adopter and helping us shape When In Rome!
+> Thank you for being an early adopter and helping us shape Djangoly!
 
-![When In Rome Logo](https://raw.githubusercontent.com/software-trizzey/images/main/assets/images/quick-fix-demo.gif)
+![Djangoly Logo](https://raw.githubusercontent.com/software-trizzey/images/main/assets/images/quick-fix-demo.gif)
 
-*When In Rome highlights Django best practice violations and offers immediate, actionable recommendations for fixing them, streamlining your development process.*
+*Djangoly highlights Django best practice violations and offers immediate, actionable recommendations for fixing them, streamlining your development process.*
 
 ## What's this thing do?
 
-When In Rome is a powerful VS Code extension designed to help teams enforce Django best practices and coding conventions. Our tool ensures that your Django projects adhere to established best practices and team-defined conventions, reducing review cycles and improving code quality.
+Djangoly is a powerful VS Code extension designed to help teams enforce Django best practices and coding conventions. Our tool ensures that your Django projects adhere to established best practices and team-defined conventions, reducing review cycles and improving code quality.
 
 ## Features ✨
 
@@ -31,7 +31,7 @@ When In Rome is a powerful VS Code extension designed to help teams enforce Djan
 
 ## Quick Start 🏃‍♂️💨
 
-1. **Install the Extension**: [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Alchemized.when-in-rome)
+1. **Install the Extension**: [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Alchemized.djangoly)
 2. **Set Up Your Django Project**: If you haven't already, set up a Django project in your workspace.
 3. **Configure Django Settings**: Open the extension settings in VS Code and configure your Django-specific settings.
 4. **Start Coding**: Begin developing your Django project. The extension will automatically start analyzing your code.
@@ -81,7 +81,7 @@ users = User.objects.filter(is_active=True).order_by('-last_login').select_relat
 - **Notification Interval**: Set how frequently you receive reminders to review suggestions for testing business logic.
 - **Language-Specific Settings**: Adjust settings for JavaScript and TypeScript support.
 
-Access these settings by going to `Preferences → Settings → Extensions → When In Rome`.
+Access these settings by going to `Preferences → Settings → Extensions → Djangoly`.
 
 ## Usage 📖
 
@@ -89,11 +89,11 @@ Access these settings by going to `Preferences → Settings → Extensions → W
 2. **Quick Fixes for Django Issues**: Offers actionable recommendations for quick corrections of Django-specific issues.
 3. **Django N+1 Query Detection**: The extension analyzes your Django code to identify potential N+1 query issues.
 4. **Test Suite Enforcement**: Alerts you to update or create tests following changes in Django views or models.
-5. **JavaScript/TypeScript Support**: Continues to provide linting and best practice suggestions for JS/TS files in your Django project.
+5. **JavaScript/TypeScript Support**: Provide linting and best practice suggestions for JS/TS files in your Django project.
 
 ## Pricing 🤑
 
-When In Rome is currently available for free as part of our Beta program. During this period, all features are accessible to all users at no cost. We greatly appreciate your feedback and participation in helping us improve the extension.
+Djangoly is currently available for free as part of our Beta program. During this period, all features are accessible to all users at no cost. We greatly appreciate your feedback and participation in helping us improve the extension.
 
 As we move towards a full release, we plan to introduce a paid subscription model. Beta users will be given advance notice of any changes to our pricing structure and may be eligible for special offers.
 
@@ -101,9 +101,9 @@ As we move towards a full release, we plan to introduce a paid subscription mode
 
 Your feedback is crucial during this Beta phase! We're eager to hear about your experience, suggestions, and any issues you encounter. Here's how you can help:
 
-- **General Feedback**, **Report Bugs**, **Feature Requests**: If you encounter any issues, have an idea for a new feature, or any other feedback, please email us at [support@rome.dev](mailto:support@rome.dev).
+- **General Feedback**, **Report Bugs**, **Feature Requests**: If you encounter any issues, have an idea for a new feature, or any other feedback, please email us at [support@alchemizedsoftware.com](mailto:support@alchemizedsoftware.com).
 
-Your input directly influences the development of When In Rome. Thank you for helping us create a better tool for the Django community!
+Your input directly influences the development of Djangoly. Thank you for helping us create a better tool for the Django community!
 
 ## Roadmap 🗺️
 
@@ -119,20 +119,20 @@ We're always open to suggestions for our roadmap. Feel free to contribute your i
 ## Known Issues & Limitations 🐞
 
 - **Initial Language Support**: Currently, Python (Django), JavaScript, and TypeScript are supported.
-- **False Positives**: As an MVP undergoing rapid development, When In Rome may generate inaccurate diagnostics and recommendations. If you encounter any issues, please report them to [support@rome.dev](mailto:support@rome.dev).
+- **False Positives**: As an MVP undergoing rapid development, Djangoly may generate inaccurate diagnostics and recommendations. If you encounter any issues, please report them to [support@alchemizedsoftware.com](mailto:support@alchemizedsoftware.com).
 - **Django N+1 Query Detection**: The current implementation focuses on simple loop structures and may not catch all complex scenarios. It may produce some false positives in cases where optimizations are applied outside the immediate function scope. The detection is based on static analysis and may not account for dynamic query optimizations.
 
 ## Contribution Guidelines 👯‍♀️
 
-Interested in contributing to When In Rome? Please reach out to [hello@rome.dev](mailto:hello@rome.dev).
+Interested in contributing to Djangoly? Please reach out to [support@alchemizedsoftware.com](mailto:support@alchemizedsoftware.com).
 
 ## License 👮‍♂️
 
-When In Rome is proprietary software. Use of this software is subject to the terms and conditions of the license agreement provided with the software. The software is available for purchase, and its use is limited to the licensed terms agreed upon purchasing or subscribing.
+Djangoly is proprietary software. Use of this software is subject to the terms and conditions of the license agreement provided with the software. The software is available for purchase, and its use is limited to the licensed terms agreed upon purchasing or subscribing.
 
 ### Usage
 
-Purchasing a license to When In Rome grants you a non-exclusive, non-transferable right to use and incorporate the extension as per the license terms and conditions specified in the agreement. Unauthorized copying, sharing, distribution, or reproduction of any part of this software is strictly prohibited and constitutes a violation of applicable copyright laws.
+Purchasing a license to Djangoly grants you a non-exclusive, non-transferable right to use and incorporate the extension as per the license terms and conditions specified in the agreement. Unauthorized copying, sharing, distribution, or reproduction of any part of this software is strictly prohibited and constitutes a violation of applicable copyright laws.
 
 ### Restrictions
 
@@ -142,8 +142,8 @@ Purchasing a license to When In Rome grants you a non-exclusive, non-transferabl
 
 ### Trial Version
 
-When In Rome may offer a trial version with limited features which can be used prior to purchasing a full license. This trial is provided for evaluation purposes only, subject to the terms of the trial agreement.
+Djangoly may offer a trial version with limited features which can be used prior to purchasing a full license. This trial is provided for evaluation purposes only, subject to the terms of the trial agreement.
 
-For full license details and rights, please refer to the license agreement provided upon purchase or installation, or contact our support team at [support@rome.dev](mailto:support@rome.dev).
+For full license details and rights, please refer to the license agreement provided upon purchase or installation, or contact our support team at [support@alchemizedsoftware.com](mailto:support@alchemizedsoftware.com).
 
 **Note:** This software uses software components from other open source software which are licensed under their own respective open-source licenses. Please refer to the documentation for further information on licensing for these components.

@@ -15,7 +15,7 @@ export async function signInWithGitHub(
 ) {
 	const action = "Sign in with GitHub";
 	const response = await vscode.window.showInformationMessage(
-		"Sign in to continue using When In Rome. By using this extension you agree to our Terms of Service and Privacy Policy.",
+		"Sign in to continue using Djangoly. By using this extension you agree to our Terms of Service and Privacy Policy.",
 		action,
 		"Cancel"
 	);
@@ -23,7 +23,7 @@ export async function signInWithGitHub(
 		console.log("User cancelled sign in.");
 		deactivate();
 		vscode.window.showInformationMessage(
-			"When In Rome extension has been disabled. Vale! 👋"
+			"Djangoly extension has been disabled. Vale! 👋"
 		);
 		return;
 	}
@@ -31,7 +31,7 @@ export async function signInWithGitHub(
 	const userInfo = await octokit.users.getAuthenticated();
 
 	const userPayload = {
-		email: userInfo.data.email || null, // @rome-ignore: some users might not have public emails
+		email: userInfo.data.email || null, // djangoly-ignore: some users might not have public emails
 		password: uuidv4(),
 		github_login: userInfo.data.login,
 		has_agreed_to_terms: true,
@@ -79,7 +79,7 @@ export async function signOutUser(context: vscode.ExtensionContext, client: Lang
 
 			if (response.ok) {
 				vscode.window.showInformationMessage(
-					"Signed out of When In Rome. Vale! 👋"
+					"Signed out of Djangoly. Vale! 👋"
 				);
 			} else {
 				const responseData = (await response.json()) as any;

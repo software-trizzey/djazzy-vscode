@@ -10,12 +10,6 @@
 **/webpack.config.js
 **/*.test.*
 **/tests/**
-.env
-.env.example**
-server/.env
-server/.env.example
-client/.env
-client/.env.example
 client/testFixture/**
 examples/**
 client/src/**
@@ -36,8 +30,6 @@ node_modules/**
 !server/node_modules/@babel/parser
 !server/node_modules/@babel/traverse
 !server/node_modules/decamelize
-!server/node_modules/@langchain/**
-!server/node_modules/dotenv
 !server/node_modules/rollbar
 !server/node_modules/vscode-jsonrpc/**
 !server/node_modules/vscode-languageserver

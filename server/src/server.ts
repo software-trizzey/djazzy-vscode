@@ -66,8 +66,6 @@ connection.onInitialize((params: InitializeParams) => {
 
 	const capabilities = params.capabilities;
 
-	// Does the client support the `workspace/configuration` request?
-	// If not, we fall back using global settings.
 	hasConfigurationCapability = !!(
 		capabilities.workspace && !!capabilities.workspace.configuration
 	);
@@ -83,9 +81,6 @@ connection.onInitialize((params: InitializeParams) => {
 	const result: InitializeResult = {
 		capabilities: {
 			textDocumentSync: TextDocumentSyncKind.Incremental,
-			completionProvider: {
-				resolveProvider: true,
-			},
 			diagnosticProvider: {
 				interFileDependencies: false,
 				workspaceDiagnostics: false,

@@ -63,7 +63,17 @@ const AGGREGATE_METHODS = [
     "Min",
 ];
 
+interface CachedResult {
+    result: LLMNPlusOneResult;
+    timestamp: number;
+}
+
+const FIVE_MINUTES = 5 * 60 * 1000;
+
 export class DjangoProvider extends PythonProvider {
+
+    private nPlusOnecache: Map<string, CachedResult> = new Map();
+    private cacheTTL: number = FIVE_MINUTES;
 
     constructor(
         languageId: keyof typeof defaultConventions.languages,
@@ -86,7 +96,7 @@ export class DjangoProvider extends PythonProvider {
 
 		for (const symbol of highPrioritySymbols) {
             if (METHOD_NAMES.includes(symbol.type)) {
-                await this.detectNPlusOneQuery(symbol, diagnostics);
+                await this.detectNPlusOneQuery(symbol, diagnostics, document);
             }
         }
 	}
@@ -127,21 +137,47 @@ export class DjangoProvider extends PythonProvider {
 		return actions;
 	}
 
-    private async detectNPlusOneQuery(symbol: any, diagnostics: Diagnostic[]): Promise<void> {
+    private async detectNPlusOneQuery(symbol: any, diagnostics: Diagnostic[], document: TextDocument): Promise<void> {
         if (!cachedUserToken) {
             LOGGER.warn("Only authenticated users can use the N+1 query detection feature.");
             return;
         }
-    
+
         this.logUsageStatistics(symbol);
-    
+
         const functionBody = symbol.body;
         const lines = functionBody.split('\n');
+        const potentialIssues = this.analyzeFunctionForPotentialIssues(lines, symbol);
+
+        if (potentialIssues.length > 0) {
+            try {
+                const cacheKey = this.generateCacheKey(symbol, document);
+                const cachedResult = this.getCachedResult(cacheKey);
+
+                let llmResult: LLMNPlusOneResult;
+                if (cachedResult) {
+                    llmResult = cachedResult;
+                    console.log(`Using cached result for ${cacheKey}`);
+                } else {
+                    llmResult = await this.validateNPlusOneWithLLM(symbol, potentialIssues);
+                    this.setCachedResult(cacheKey, llmResult);
+                }
+
+                if (llmResult.has_n_plus_one_issues) {
+                    this.addNPlusOneDiagnostics(symbol, diagnostics, llmResult.issues);
+                }
+            } catch (error) {
+                this.logError(error as Error, 'N+1 detection');
+            }
+        }
+    }
+
+    private analyzeFunctionForPotentialIssues(lines: string[], symbol: any): Array<PossibleIssue> {
+        const potentialIssues: Array<PossibleIssue> = [];
         let isInLoop = false;
         let loopStartLine = 0;
         let hasSelectRelated = false;
         let hasPrefetchRelated = false;
-        const potentialIssues: Array<PossibleIssue> = [];
     
         const functionStartLine = symbol.function_start_line - 1;
     
@@ -173,6 +209,30 @@ export class DjangoProvider extends PythonProvider {
                 }
             }
     
+            for (const method of QUERY_METHODS) {
+                if (line.includes(`.${method}(`)) {
+                    if (isInLoop) {
+                        potentialIssues.push({
+                            id: uuidv4(),
+                            startLine: functionStartLine + index,
+                            endLine: functionStartLine + index,
+                            message: `Database query method '${method}' used inside a loop`
+                        });
+                    }
+                }
+            }
+    
+            for (const method of AGGREGATE_METHODS) {
+                if (line.includes(method)) {
+                    potentialIssues.push({
+                        id: uuidv4(),
+                        startLine: functionStartLine + index,
+                        endLine: functionStartLine + index,
+                        message: `Potential inefficient use of '${method}' aggregate method`
+                    });
+                }
+            }
+    
             if (line === '' || line.startsWith('}')) {
                 isInLoop = false;
                 hasSelectRelated = false;
@@ -180,74 +240,40 @@ export class DjangoProvider extends PythonProvider {
             }
         }
     
-        if (potentialIssues.length > 0) {
-            try {
-                const llmResult = await this.validateNPlusOneWithLLM(symbol, potentialIssues);
-                
-                if (llmResult.has_n_plus_one_issues) {
-                    for (const issue of llmResult.issues) {
-                        const startLine = issue.start_line ?? functionStartLine;
-                        const endLine = issue.end_line ?? (functionStartLine + lines.length - 1);
-    
-                        this.addNPlusOneDiagnostic(
-                            symbol,
-                            diagnostics,
-                            startLine,
-                            endLine,
-                            issue.issue_id,
-                            issue.description,
-                            issue.suggestion
-                        );
-                    }
-                }
-
-            } catch (error) {
-                this.logError(error as Error, 'N+1 detection');
-            }
-        }
+        return potentialIssues;
     }
 
-    private addNPlusOneDiagnostic(
-        symbol: any,
-        diagnostics: Diagnostic[],
-        startLine: number,
-        endLine: number,
-        issueId: string,
-        description: string,
-        suggestion: string
-    ): void {
-        const functionBodyLines = symbol.body.split('\n');
-        const functionStartLine = symbol.function_start_line - 1;
-        const functionEndLine = symbol.function_end_line - 1;
-    
-        const safeStartLine = Math.max(functionStartLine, Math.min(startLine, functionEndLine));
-        const safeEndLine = Math.max(safeStartLine, Math.min(endLine, functionEndLine));
-    
-        const range: Range = {
-            start: { 
-                line: safeStartLine,
-                character: safeStartLine === functionStartLine ? symbol.function_start_col : 0
-            },
-            end: { 
-                line: safeEndLine,
-                character: safeEndLine === functionEndLine ? symbol.function_end_col : functionBodyLines[safeEndLine - functionStartLine].length
-            }
-        };    
-    
-        const diagnosticMessage = `Potential N+1 query detected in function "${symbol.name}":\n${description}\n\nSuggestion:\n ${suggestion}`;
-    
-        const diagnostic: Diagnostic = {
-            range,
-            message: diagnosticMessage,
-            severity: DiagnosticSeverity.Warning,
-            source: SOURCE_NAME,
-            code: DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE,
-            codeDescription: {
-                href: 'https://docs.djangoproject.com/en/stable/topics/db/optimization/'
-            },
-            data: { id: issueId}
-        };
-        diagnostics.push(diagnostic);
+    private addNPlusOneDiagnostics(symbol: any, diagnostics: Diagnostic[], issues: any[]): void {
+        for (const issue of issues) {
+            const startLine = issue.start_line ?? symbol.function_start_line - 1;
+            const endLine = issue.end_line ?? (symbol.function_end_line - 1);
+
+            const range: Range = {
+                start: { 
+                    line: startLine,
+                    character: startLine === symbol.function_start_line - 1 ? symbol.function_start_col : 0
+                },
+                end: { 
+                    line: endLine,
+                    character: endLine === symbol.function_end_line - 1 ? symbol.function_end_col : Number.MAX_VALUE
+                }
+            };
+
+            const diagnosticMessage = `Potential N+1 query detected: ${issue.description}\n\nSuggestion: ${issue.suggestion}`;
+
+            const diagnostic: Diagnostic = {
+                range,
+                message: diagnosticMessage,
+                severity: DiagnosticSeverity.Warning,
+                source: SOURCE_NAME,
+                code: DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE,
+                codeDescription: {
+                    href: 'https://docs.djangoproject.com/en/stable/topics/db/optimization/'
+                },
+                data: { id: issue.issue_id }
+            };
+            diagnostics.push(diagnostic);
+        }
     }
 
     private async validateNPlusOneWithLLM(symbol: any, potentialIssues: Array<PossibleIssue>): Promise<LLMNPlusOneResult> {
@@ -294,6 +320,22 @@ export class DjangoProvider extends PythonProvider {
             this.logError(error as Error, 'LLM validation');
             throw error;
         }
+    }
+
+    private generateCacheKey(symbol: any, document: TextDocument): string {
+        return `${document.uri}:${symbol.name}:${symbol.body}`;
+    }
+
+    private getCachedResult(key: string): LLMNPlusOneResult | null {
+        const cached = this.nPlusOnecache.get(key);
+        if (cached && Date.now() - cached.timestamp < this.cacheTTL) {
+            return cached.result;
+        }
+        return null;
+    }
+
+    private setCachedResult(key: string, result: LLMNPlusOneResult): void {
+        this.nPlusOnecache.set(key, { result, timestamp: Date.now() });
     }
 
 	formatDiagnosticMessage(symbol: any, llmResult: any): string {

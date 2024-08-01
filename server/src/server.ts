@@ -8,16 +8,12 @@ import {
 	InitializeParams,
 	DidChangeConfigurationNotification,
 	CodeActionKind,
-	CompletionItem,
-	CompletionItemKind,
 	TextEdit,
-	TextDocumentPositionParams,
 	TextDocumentSyncKind,
 	TextDocumentEdit,
 	InitializeResult,
 	DocumentDiagnosticReportKind,
 	type DocumentDiagnosticReport,
-	DiagnosticSeverity,
 	WorkspaceFolder,
 	ShowMessageNotification,
 	MessageType,
@@ -26,7 +22,6 @@ import {
 import { TextDocument } from "vscode-languageserver-textdocument";
 import {
 	LanguageProvider,
-	JavascriptAndTypescriptProvider,
 	PythonProvider,
 	DjangoProvider,
 } from "./providers";
@@ -39,7 +34,7 @@ import {
 	updateCachedUserToken,
 	cachedUserToken,
 } from "./settings";
-import { checkForTestFile, debounce, getWordRangeAt, DjangoProjectDetector } from "./utils";
+import { debounce, DjangoProjectDetector } from "./utils";
 
 import COMMANDS, { COMMANDS_LIST } from "./constants/commands";
 import { rollbar } from "./common/logs";
@@ -98,7 +93,6 @@ connection.onInitialize((params: InitializeParams) => {
 			codeActionProvider: {
 				codeActionKinds: [CodeActionKind.QuickFix],
 			},
-			renameProvider: true,
 			executeCommandProvider: {
 				commands: COMMANDS_LIST,
 			},
@@ -196,7 +190,7 @@ function getDocumentSettings(resource: string): Thenable<ExtensionSettings> {
 		settingsResult = connection.workspace
 			.getConfiguration({
 				scopeUri: resource,
-				section: "djangoly",
+				section: SOURCE_NAME,
 			})
 			.then((settings) => normalizeClientSettings(settings));
 		documentSettings.set(resource, settingsResult);
@@ -238,16 +232,6 @@ function createLanguageProvider(
 	let provider: LanguageProvider | undefined;
 
 	switch (languageId) {
-		case "javascript":
-		case "typescript":
-		case "javascriptreact":
-		case "typescriptreact":
-			provider = new JavascriptAndTypescriptProvider(
-				languageId,
-				connection,
-				settings
-			);
-			break;
 		case "python":
             if (workspaceFolders) {
                 const isDjangoProject = workspaceFolders.some(folder => {
@@ -322,11 +306,6 @@ const debouncedValidateTextDocument = debounce(
 	2000
 );
 
-connection.onRequest(COMMANDS.CHECK_TESTS_EXISTS, async (relativePath: string) => {
-    const testExists = await checkForTestFile(relativePath);
-    return { testExists };
-});
-
 connection.onRequest(COMMANDS.UPDATE_CACHED_USER_TOKEN, (token: string) => {
 	updateCachedUserToken(token);
   });
@@ -348,36 +327,6 @@ connection.onCodeAction(async (params) => {
 	return actions;
 });
 
-connection.onCompletion(
-	(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
-		// The pass parameter contains the position of the text document in
-		// which code complete got requested. For the example we ignore this
-		// info and always provide the same completion items.
-		return [
-			{
-				label: "TypeScript",
-				kind: CompletionItemKind.Text,
-				data: 1,
-			},
-			{
-				label: "JavaScript",
-				kind: CompletionItemKind.Text,
-				data: 2,
-			},
-		];
-	}
-);
-
-connection.onCompletionResolve((item: CompletionItem): CompletionItem => {
-	if (item.data === 1) {
-		item.detail = "TypeScript details";
-		item.documentation = "TypeScript documentation";
-	} else if (item.data === 2) {
-		item.detail = "JavaScript details";
-		item.documentation = "JavaScript documentation";
-	}
-	return item;
-});
 
 connection.onExecuteCommand(async (params) => {
     if (params.command === COMMANDS.REPORT_FALSE_POSITIVE) {
@@ -427,71 +376,6 @@ connection.onExecuteCommand(async (params) => {
 	}
 });
 
-connection.onRequest(COMMANDS.APPLY_RENAME_SYMBOL, async (params) => {
-	const { textDocument, newName, references } = params;
-	const document = documents.get(textDocument.uri);
-	if (!document) return;
-
-	const changes = [];
-
-	for (const ref of references) {
-		const refDocument = documents.get(ref.uri);
-		if (!refDocument) continue;
-		const refWordRange = getWordRangeAt(refDocument, ref.range.start);
-		changes.push(TextEdit.replace(refWordRange, newName));
-	}
-
-	const edit = {
-		documentChanges: [
-		TextDocumentEdit.create(
-			{ uri: textDocument.uri, version: document.version },
-			changes
-		),
-		],
-	};
-
-	return edit;
-});
-
-connection.onRequest(COMMANDS.PROVIDE_RENAME_SUGGESTIONS, async (params) => {
-	if (!cachedUserToken) {
-		throw new Error('User is not authenticated. Token not found.');
-	}
-
-	const { textDocument, position } = params;
-	const document = documents.get(textDocument.uri);
-	if (!document) return [];
-
-	const settings = await getDocumentSettings(document.uri);
-	const languageId = document.languageId;
-	const workspaceFolders = await connection.workspace.getWorkspaceFolders();
-	const provider = getOrCreateProvider(languageId, settings, workspaceFolders);
-
-	const wordRange = getWordRangeAt(document, position);
-	const oldName = document.getText(wordRange);
-
-	let diagnostics = provider.getDiagnostic(textDocument.uri, document.version);
-	let diagnostic = diagnostics?.find(diag => diag.range.start.line === wordRange.start.line && diag.range.start.character === wordRange.start.character);
-
-	if (!diagnostic) {
-		diagnostic = {
-		range: wordRange,
-		message: `The symbol "${oldName}" does not follow naming conventions.`,
-		severity: DiagnosticSeverity.Warning,
-		source: SOURCE_NAME,
-		};
-
-		diagnostics = diagnostics || [];
-		diagnostics.push(diagnostic);
-		provider.setDiagnostic(textDocument.uri, document.version, diagnostics);
-	}
-
-	const suggestions = await provider.generateNameSuggestions(document, diagnostic, cachedUserToken);
-	return suggestions.map(suggestion => ({
-		label: suggestion.suggestedName,
-		detail: suggestion.justification
-	}));
-});
 
 documents.listen(connection);
 connection.listen();

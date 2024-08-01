@@ -3,7 +3,6 @@ import { LanguageClient } from "vscode-languageclient/node";
 import { Credentials, UserSession } from "./auth/github";
 import { signInWithGitHub, signOutUser } from "./auth/api";
 import { COMMANDS, EXTENSION_ID, EXTENSION_NAME, PUBLISHER, SESSION_USER } from "./constants";
-import { renameSymbolWithSuggestions } from './utils/rename';
 import { trackUserInterestInCustomRules } from "./logs";
 
 const WORKBENCH_ACTIONS = {
@@ -25,12 +24,6 @@ export function registerCommands(context: vscode.ExtensionContext, client: Langu
         () => signOutUser(context, client)
     );
     context.subscriptions.push(signOutCommand);
-
-    const renameSymbolCommand = vscode.commands.registerCommand(
-        COMMANDS.RENAME_SYMBOL,
-        () => renameSymbolWithSuggestions(context, client)
-    );
-    context.subscriptions.push(renameSymbolCommand);
 
     const addCustomRuleCommand = vscode.commands.registerCommand(
         COMMANDS.ADD_CUSTOM_RULE,

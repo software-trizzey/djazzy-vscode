@@ -38,9 +38,7 @@
 		"activationEvents": [
 			"onCommand:djangoly.signIn",
 			"onCommand:djangoly.addCustomRule",
-			"onCommand:djangoly.openWalkthrough",
-			"onLanguage:javascriptreact",
-			"onLanguage:typescriptreact"
+			"onCommand:djangoly.openWalkthrough"
 		],
 		"commands": [
 			{
@@ -50,10 +48,6 @@
 			{
 				"command": "djangoly.signOut",
 				"title": "Djangoly: Sign Out"
-			},
-			{
-				"command": "djangoly.renameSymbol",
-				"title": "Align Symbol With Conventions (Djangoly)"
 			},
 			{
 				"command": "djangoly.openSettings",
@@ -86,15 +80,6 @@
 					"completionEvents": ["onCommand:djangoly.signIn"]
 				},
 				{
-					"id": "djangoly.namingConvention",
-					"title": "Align Names with Team Conventions",
-					"description": "Write a function with a poorly named variable. See how the extension highlights it and suggests a better name.",
-					"media": {
-						"image": "assets/gifs/rename-demo.gif",
-						"altText": "Rename Symbol Demo"
-					}
-				},
-				{
 					"id": "djangoly.untestedCode",
 					"title": "Untested API Code Detection",
 					"description": "Introduce a new piece of business logic without a test. Notice that Djangoly reminds you to test the changes.",
@@ -115,45 +100,12 @@
 				]
 			}
 		],
-		"menus": {
-			"editor/context": [
-			  {
-				"command": "djangoly.renameSymbol",
-				"when": "editorTextFocus && !editorReadonly",
-				"group": "1_modification"
-			  }
-			]
-		},
 		"languages": [
-			{
-			  "id": "javascript",
-			  "aliases": ["JavaScript", "js"],
-			  "extensions": [".js"],
-			  "configuration": "./language-configuration.json"
-			},
-			{
-			  "id": "typescript",
-			  "aliases": ["TypeScript", "ts"],
-			  "extensions": [".ts"],
-			  "configuration": "./language-configuration.json"
-			},
 			{
 			  "id": "python",
 			  "aliases": ["Python", "py"],
 			  "extensions": [".py"],
 			  "configuration": "./language-configuration.json"
-			},
-			{
-				"id": "javascriptreact",
-				"aliases": ["JavaScript React", "jsx"],
-				"extensions": [".jsx"],
-				"configuration": "./language-configuration.json"
-			},
-			{
-				"id": "typescriptreact",
-				"aliases": ["TypeScript React", "tsx"],
-				"extensions": [".tsx"],
-				"configuration": "./language-configuration.json"
 			}
 		],
 		"configuration": {
@@ -198,281 +150,89 @@
 					"description": "Enable to identify and flag comments that are unnecessary because the code is self-explanatory. To bypass this check for specific comments, include 'djangoly-ignore', 'TODO', or 'FIXME' in the comment text.",
 					"order": 5
 				},
-				"djangoly.languages.javascript.isEnabled": {
+				"djangoly.languages.python.isEnabled": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enable/disable features specifically.",
 					"order": 6
 				},
-				"djangoly.languages.javascript.expressiveNames.variables.isEnabled": {
+				"djangoly.languages.python.expressiveNames.variables.isEnabled": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enforce expressive variable names.",
 					"order": 7
 				},
-				"djangoly.languages.javascript.expressiveNames.variables.avoidShortNames": {
+				"djangoly.languages.python.expressiveNames.variables.avoidShortNames": {
 					"type": "boolean",
 					"default": true,
 					"description": "Avoid using short variable names.",
 					"order": 8
 				},
-				"djangoly.languages.javascript.expressiveNames.variables.avoidGenericNames": {
+				"djangoly.languages.python.expressiveNames.variables.avoidGenericNames": {
 					"type": "boolean",
 					"default": true,
 					"description": "Avoid using generic variable names.",
 					"order": 9
 				},
-				"djangoly.languages.javascript.expressiveNames.functions.isEnabled": {
+				"djangoly.languages.python.expressiveNames.functions.isEnabled": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enforce expressive function names.",
 					"order": 10
 				},
-				"djangoly.languages.javascript.expressiveNames.functions.avoidShortNames": {
+				"djangoly.languages.python.expressiveNames.functions.avoidShortNames": {
 					"type": "boolean",
 					"default": true,
 					"description": "Avoid using short function names.",
 					"order": 11
 				},
-				"djangoly.languages.javascript.expressiveNames.functions.avoidGenericNames": {
+				"djangoly.languages.python.expressiveNames.functions.avoidGenericNames": {
 					"type": "boolean",
 					"default": true,
 					"description": "Avoid using generic function names.",
 					"order": 12
 				},
-				"djangoly.languages.javascript.expressiveNames.functions.functionLengthLimit": {
+				"djangoly.languages.python.expressiveNames.functions.functionLengthLimit": {
 					"type": "number",
 					"default": 60,
 					"description": "Set the maximum length for functions.",
 					"order": 13
 				},
-				"djangoly.languages.javascript.expressiveNames.functions.maxCyclomaticComplexity": {
-					"type": "number",
-					"default": 10,
-					"description": "Set the maximum cyclomatic complexity for functions.",
-					"order": 14
-				},
-				"djangoly.languages.javascript.expressiveNames.objectProperties.isEnabled": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enforce expressive object property names.",
-					"order": 14
-				},
-				"djangoly.languages.javascript.expressiveNames.objectProperties.avoidShortNames": {
-					"type": "boolean",
-					"default": true,
-					"description": "Avoid using short object property names.",
-					"order": 14
-				},
-				"djangoly.languages.javascript.expressiveNames.objectProperties.avoidGenericNames": {
-					"type": "boolean",
-					"default": true,
-					"description": "Avoid using generic object property names.",
-					"order": 14
-				},
-				"djangoly.languages.javascript.boolean.positiveNaming": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enforce positive naming conventions.",
-					"order": 15
-				},
-				"djangoly.languages.javascript.boolean.usePrefix": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enforce boolean variable prefixes.",
-					"order": 16
-				},
-				"djangoly.languages.javascript.themeSystem.isEnabled": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enforce theme system conventions.",
-					"order": 16
-				},
-				"djangoly.languages.javascript.themeSystem.shouldFlagHexCodes": {
-					"type": "boolean",
-					"default": true,
-					"description": "Flag code that uses hex codes instead of theme system variables.",
-					"order": 16
-				},
-				"djangoly.languages.typescript.isEnabled": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enable/disable features specifically.",
-					"order": 17
-				},
-				"djangoly.languages.typescript.expressiveNames.variables.isEnabled": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enforce expressive variable names.",
-					"order": 18
-				},
-				"djangoly.languages.typescript.expressiveNames.variables.avoidShortNames": {
-					"type": "boolean",
-					"default": true,
-					"description": "Avoid using short variable names.",
-					"order": 19
-				},
-				"djangoly.languages.typescript.expressiveNames.variables.avoidGenericNames": {
-					"type": "boolean",
-					"default": true,
-					"description": "Avoid using generic variable names.",
-					"order": 20
-				},
-				"djangoly.languages.typescript.expressiveNames.functions.isEnabled": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enforce expressive function names.",
-					"order": 21
-				},
-				"djangoly.languages.typescript.expressiveNames.functions.avoidShortNames": {
-					"type": "boolean",
-					"default": true,
-					"description": "Avoid using short function names.",
-					"order": 22
-				},
-				"djangoly.languages.typescript.expressiveNames.functions.avoidGenericNames": {
-					"type": "boolean",
-					"default": true,
-					"description": "Avoid using generic function names.",
-					"order": 23
-				},
-				"djangoly.languages.typescript.expressiveNames.functions.functionLengthLimit": {
-					"type": "number",
-					"default": 60,
-					"description": "Set the maximum length for functions.",
-					"order": 24
-				},
-				"djangoly.languages.typescript.expressiveNames.functions.maxCyclomaticComplexity": {
-					"type": "number",
-					"default": 10,
-					"description": "Set the maximum cyclomatic complexity for functions.",
-					"order": 25
-				},
-				"djangoly.languages.typescript.expressiveNames.objectProperties.isEnabled": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enforce expressive object property names.",
-					"order": 25
-				},
-				"djangoly.languages.typescript.expressiveNames.objectProperties.avoidShortNames": {
-					"type": "boolean",
-					"default": true,
-					"description": "Avoid using short object property names.",
-					"order": 25
-				},
-				"djangoly.languages.typescript.expressiveNames.objectProperties.avoidGenericNames": {
-					"type": "boolean",
-					"default": true,
-					"description": "Avoid using generic object property names.",
-					"order": 25
-				},
-				"djangoly.languages.typescript.boolean.positiveNaming": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enforce positive naming conventions.",
-					"order": 26
-				},
-				"djangoly.languages.typescript.boolean.usePrefix": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enforce boolean variable prefixes.",
-					"order": 27
-				},
-				"djangoly.languages.typescript.themeSystem.isEnabled": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enforce theme system conventions.",
-					"order": 27
-				},
-				"djangoly.languages.typescript.themeSystem.shouldFlagHexCodes": {
-					"type": "boolean",
-					"default": true,
-					"description": "Flag code that uses hex codes instead of theme system variables.",
-					"order": 27
-				},
-				"djangoly.languages.python.isEnabled": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enable/disable features specifically.",
-					"order": 28
-				},
-				"djangoly.languages.python.expressiveNames.variables.isEnabled": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enforce expressive variable names.",
-					"order": 29
-				},
-				"djangoly.languages.python.expressiveNames.variables.avoidShortNames": {
-					"type": "boolean",
-					"default": true,
-					"description": "Avoid using short variable names.",
-					"order": 30
-				},
-				"djangoly.languages.python.expressiveNames.variables.avoidGenericNames": {
-					"type": "boolean",
-					"default": true,
-					"description": "Avoid using generic variable names.",
-					"order": 31
-				},
-				"djangoly.languages.python.expressiveNames.functions.isEnabled": {
-					"type": "boolean",
-					"default": true,
-					"description": "Enforce expressive function names.",
-					"order": 32
-				},
-				"djangoly.languages.python.expressiveNames.functions.avoidShortNames": {
-					"type": "boolean",
-					"default": true,
-					"description": "Avoid using short function names.",
-					"order": 33
-				},
-				"djangoly.languages.python.expressiveNames.functions.avoidGenericNames": {
-					"type": "boolean",
-					"default": true,
-					"description": "Avoid using generic function names.",
-					"order": 34
-				},
-				"djangoly.languages.python.expressiveNames.functions.functionLengthLimit": {
-					"type": "number",
-					"default": 60,
-					"description": "Set the maximum length for functions.",
-					"order": 35
-				},
 				"djangoly.languages.python.expressiveNames.functions.maxCyclomaticComplexity": {
 					"type": "number",
 					"default": 10,
 					"description": "Set the maximum cyclomatic complexity for functions.",
-					"order": 36
+					"order": 14
 				},
 				"djangoly.languages.python.expressiveNames.objectProperties.isEnabled": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enforce expressive object property names.",
-					"order": 36
+					"order": 15
 				},
 				"djangoly.languages.python.expressiveNames.objectProperties.avoidShortNames": {
 					"type": "boolean",
 					"default": true,
 					"description": "Avoid using short object property names.",
-					"order": 36
+					"order": 16
 				},
 				"djangoly.languages.python.expressiveNames.objectProperties.avoidGenericNames": {
 					"type": "boolean",
 					"default": true,
 					"description": "Avoid using generic object property names.",
-					"order": 36
+					"order": 17
 				},
 				"djangoly.languages.python.boolean.positiveNaming": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enforce positive naming conventions.",
-					"order": 37
+					"order": 18
 				},
 				"djangoly.languages.python.boolean.usePrefix": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enforce boolean variable prefixes.",
-					"order": 38
+					"order": 19
 				},
 				"djangoly.languages.python.expressiveNames.variables.examples": {
 					"type": "array",
@@ -481,7 +241,7 @@
 						"type": "string"
 					},
 					"description": "Examples of Python variable naming conventions",
-					"order": 39
+					"order": 20
 				},
 				"djangoly.languages.python.expressiveNames.functions.examples": {
 					"type": "array",
@@ -490,7 +250,7 @@
 						"type": "string"
 					},
 					"description": "Examples of Python function naming conventions",
-					"order": 40
+					"order": 21
 				},
 				"djangoly.languages.python.expressiveNames.objectProperties.examples": {
 					"type": "array",
@@ -499,7 +259,7 @@
 						"type": "string"
 					},
 					"description": "Examples of Python dictionary key naming conventions",
-					"order": 41
+					"order": 22
 				},
 				"djangoly.languages.python.celeryTaskDecorator": {
 					"type": "object",
@@ -508,61 +268,7 @@
 						"requiredCalls": []
 					},
 					"description": "Celery task functions should have the newrelic background_task decorator and call set_custom_newrelic_log.",
-					"order": 42
-				},
-				"djangoly.languages.javascript.expressiveNames.variables.examples": {
-					"type": "array",
-					"default": [],
-					"items": {
-						"type": "string"
-					},
-					"description": "Examples of JavaScript variable naming conventions",
-					"order": 42
-				},
-				"djangoly.languages.javascript.expressiveNames.functions.examples": {
-					"type": "array",
-					"default": [],
-					"items": {
-						"type": "string"
-					},
-					"description": "Examples of JavaScript function naming conventions",
-					"order": 43
-				},
-				"djangoly.languages.javascript.expressiveNames.objectProperties.examples": {
-					"type": "array",
-					"default": [],
-					"items": {
-						"type": "string"
-					},
-					"description": "Examples of JavaScript object key naming conventions",
-					"order": 44
-				},
-				"djangoly.languages.typescript.expressiveNames.variables.examples": {
-					"type": "array",
-					"default": [],
-					"items": {
-						"type": "string"
-					},
-					"description": "Examples of TypeScript variable naming conventions",
-					"order": 45
-				},
-				"djangoly.languages.typescript.expressiveNames.functions.examples": {
-					"type": "array",
-					"default": [],
-					"items": {
-						"type": "string"
-					},
-					"description": "Examples of TypeScript function naming conventions",
-					"order": 46
-				},
-				"djangoly.languages.typescript.expressiveNames.objectProperties.examples": {
-					"type": "array",
-					"default": [],
-					"items": {
-						"type": "string"
-					},
-					"description": "Examples of TypeScript object key naming conventions",
-					"order": 47
+					"order": 23
 				}
 			}
 		}

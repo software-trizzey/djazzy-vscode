@@ -9,7 +9,7 @@ export let cachedUserToken: string | null = null;
 
 export  function setWorkspaceRoot(workspaceFolders: any): void {
 	if (workspaceFolders && workspaceFolders.length > 0) {
-        workspaceRoot = uriToPath(workspaceFolders[0].uri);
+        workspaceRoot = convertUriToPath(workspaceFolders[0].uri);
 	} else {
 		console.warn("No workspace folders found");
 		workspaceRoot = '';
@@ -34,11 +34,7 @@ export interface ExtensionSettings {
 	};
 	comments: CommentConventions;
 	languages: {
-		javascript: LanguageConventions;
-		typescript: LanguageConventions;
 		python: LanguageConventions;
-		javascriptreact: LanguageConventions;
-		typescriptreact: LanguageConventions;
 	};
 }
 
@@ -92,10 +88,6 @@ export const defaultConventions: ExtensionSettings = {
 		flagRedundant: true,
 	},
 	languages: {
-		javascript: defaultLanguageConventions,
-		typescript: defaultLanguageConventions,
-		javascriptreact: defaultLanguageConventions,
-		typescriptreact: defaultLanguageConventions,
 		python: {
 			...defaultLanguageConventions,
 			themeSystem: {
@@ -123,11 +115,6 @@ export const normalizeClientSettings = (
 		},
 		comments: settings.comments,
 		languages: {
-			javascript: normalizeLanguageSettings(settings.languages.javascript),
-			typescript: normalizeLanguageSettings(settings.languages.typescript),
-			// FIXME: for now we just use the same settings for react as for the base language
-			javascriptreact: normalizeLanguageSettings(settings.languages.javascript),
-			typescriptreact: normalizeLanguageSettings(settings.languages.typescript),
 			python: normalizeLanguageSettings(settings.languages.python),
 		},
 	};
@@ -179,7 +166,7 @@ export const normalizeLanguageSettings = (
 };
 
 
-function uriToPath(uri: string): string {
+function convertUriToPath(uri: string): string {
 	const parsedUri = URI.parse(uri);
     const filePath = parsedUri.fsPath;
 	return filePath;

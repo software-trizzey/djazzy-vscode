@@ -8,9 +8,8 @@ export async function chatWithGroq(systemMessage: string, developerInput: string
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
-				'Authorization': `Token ${userToken}`,
 			},
-			body: JSON.stringify({ systemMessage, developerInput }),
+			body: JSON.stringify({ systemMessage, developerInput, apiKey: userToken }),
 		});
 
 		if (!response.ok) {

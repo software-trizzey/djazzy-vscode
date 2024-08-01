@@ -16,6 +16,9 @@ export const COMMANDS = {
 	OPEN_SETTINGS: `${EXTENSION_ID}.openSettings`,
 	OPEN_WALKTHROUGH: `${EXTENSION_ID}.openWalkthrough`,
 	UPDATE_CACHED_USER_TOKEN: `${EXTENSION_ID}.updateCachedUserToken`,
+	USER_API_KEY: `${EXTENSION_ID}.apiKey`,
+	REMOVE_API_KEY: `${EXTENSION_ID}.removeApiKey`,
+	GET_API_KEY: `${EXTENSION_ID}.getApiKey`,
 };
 
 

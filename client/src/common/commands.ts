@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { LanguageClient } from "vscode-languageclient/node";
-import { Credentials, UserSession } from "./auth/github";
-import { signInWithGitHub, signOutUser } from "./auth/api";
+import { UserSession } from "./auth/github";
+import { authenticateUser,  removeApiKey } from "./auth/api";
 import { COMMANDS, EXTENSION_ID, EXTENSION_NAME, PUBLISHER, SESSION_USER } from "./constants";
 import { trackUserInterestInCustomRules } from "./logs";
 
@@ -10,18 +10,21 @@ const WORKBENCH_ACTIONS = {
 	OPEN_SETTINGS: 'workbench.action.openSettings'
 };
 
-export function registerCommands(context: vscode.ExtensionContext, client: LanguageClient, deactivate: () => void){
-    const credentials = new Credentials();
-
-    const signInWithGitHubCommand = vscode.commands.registerCommand(
+export function registerCommands(
+    context: vscode.ExtensionContext,
+    client: LanguageClient,
+    activate: (context: vscode.ExtensionContext) => Promise<void>,
+    deactivate: () => Thenable<void> | undefined
+){
+    const signIn = vscode.commands.registerCommand(
         COMMANDS.SIGN_IN,
-        () => signInWithGitHub(credentials, context, deactivate)
+        () => authenticateUser(context, activate)
     );
-    context.subscriptions.push(signInWithGitHubCommand);
+    context.subscriptions.push(signIn);
 
     const signOutCommand = vscode.commands.registerCommand(
         COMMANDS.SIGN_OUT,
-        () => signOutUser(context, client)
+        () => removeApiKey(context, client, deactivate)
     );
     context.subscriptions.push(signOutCommand);
 

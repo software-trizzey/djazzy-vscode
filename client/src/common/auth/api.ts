@@ -102,3 +102,75 @@ export async function signOutUser(context: vscode.ExtensionContext, client: Lang
 
 	vscode.commands.executeCommand('workbench.action.reloadWindow');
 }
+
+
+export async function validateApiKey(apiKey: string): Promise<boolean> {
+    try {
+        const response = await fetch(`${API_SERVER_URL}/auth/validate-api-key/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ api_key: apiKey }),
+        });
+
+        if (!response.ok) {
+			throw new Error(`Failed to validate API key: ${response.statusText}`);
+		}
+
+		const data: any = await response.json();
+		return data.is_valid;
+    } catch (error) {
+        logger.error('Error validating API key:', error);
+        return false;
+    }
+}
+
+export async function removeApiKey(
+	context: vscode.ExtensionContext,
+	client: LanguageClient,
+	deactivate: () => Thenable<void> | undefined
+): Promise<void> {
+	await context.globalState.update(COMMANDS.USER_API_KEY, undefined);
+	await client.sendRequest(COMMANDS.UPDATE_CACHED_USER_TOKEN, null);
+	vscode.window.showInformationMessage("You have deactivated Djangoly. See ya! 👋");
+	deactivate();
+}
+
+export const authenticateUser = async (context, activate): Promise<boolean> => {
+    const apiKey = context.globalState.get(COMMANDS.USER_API_KEY);
+    if (!apiKey) {
+        const inputApiKey = await vscode.window.showInputBox({
+            prompt: "Please enter your Djangoly API key",
+            placeHolder: "API Key",
+            ignoreFocusOut: true
+        });
+
+		const RETRY = "Retry login";
+
+        if (!inputApiKey) {
+            const action = await vscode.window.showErrorMessage("A valid API key is required to use Djangoly. Please try again or contact support.", RETRY);
+			if (action === RETRY) {
+				return activate(context);
+			}
+            return false;
+        }
+
+        const isValidApiKey = await validateApiKey(inputApiKey);
+        if (!isValidApiKey) {
+            const action = await vscode.window.showErrorMessage("Invalid API key. Please try again or contact support.", RETRY);
+			if (action === RETRY) {
+				return activate(context);
+			}
+            return false;
+        }
+
+        await context.globalState.update(COMMANDS.USER_API_KEY, inputApiKey);
+
+		vscode.window.showInformationMessage(
+			`Welcome to Djangoly (Beta)! 👋`
+		);
+	}
+
+	return true;
+};

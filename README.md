@@ -18,16 +18,12 @@
 
 Djangoly is a powerful VS Code extension designed to help teams enforce Django best practices and coding conventions. Our tool ensures that your Django projects adhere to established best practices and team-defined conventions, reducing review cycles and improving code quality.
 
-## Features ✨
+## Features (MVP) ✨
 
 - **Django-Specific Linting**: Automatically check your Django code against best practices and common pitfalls.
 - **Django N+1 Query Detection**: Identifies potential N+1 query issues in Django projects, flagging instances where related field access occurs within loops without proper optimization.
-- **Quick Fix Suggestions**: Receive suggestions to fix Django-related issues directly in your IDE, with options to apply changes immediately or review them first.
 - **Test Suite Conventions**: Notify developers to add or update test files when changes are detected in Django views or models.
-- **AI-Driven Name Recommendations**: Ensure consistency and readability in your Django codebase with AI-powered naming suggestions.
 - **Redundant Comment Detection**: Automatically flags comments that do not contribute additional information or context to the code.
-- **Configurable Rules**: Customize naming and style guidelines to match your team's standards directly within the extension settings panel.
-- **JavaScript/TypeScript Support**: While focusing on Django, the extension still supports linting and best practices for JavaScript and TypeScript files commonly used in modern Django projects.
 
 ## Quick Start 🏃‍♂️💨
 

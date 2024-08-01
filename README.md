@@ -1,5 +1,8 @@
 # Djangoly: Your Django Best Practices Companion
 
+> **🔑 API Key Required**
+> Access to Djangoly currently requires an API key. To obtain an API key and participate in our beta program, please email [hello@alchemizedsoftware.com](mailto:hello@alchemizedsoftware.com). We appreciate your interest and look forward to having you on board!
+
 > **🚀 Beta Release Notice**
 > 
 > Djangoly is currently in **free Beta mode**. During this phase, you can use all features at no cost. Please note:
@@ -27,6 +30,7 @@ Djangoly is a powerful VS Code extension designed to help teams enforce Django b
 
 ## Quick Start 🏃‍♂️💨
 
+1. **Get an API Key**: Email [hello@alchemizedsoftware.com](mailto:hello@alchemizedsoftware.com) to request an API key.
 1. **Install the Extension**: [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Alchemized.djangoly)
 2. **Set Up Your Django Project**: If you haven't already, set up a Django project in your workspace.
 3. **Configure Django Settings**: Open the extension settings in VS Code and configure your Django-specific settings.

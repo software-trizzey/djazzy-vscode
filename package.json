@@ -1,11 +1,11 @@
 {
 	"name": "djangoly",
 	"displayName": "Djangoly",
-	"description": "Enforce team coding standards seamlessly, reduce review cycles, and elevate code quality effortlessly. After all, Djangoly you should code as the Romans do.",
+	"description": "Enforce team coding standards seamlessly, reduce review cycles, and elevate code quality effortlessly.",
 	"author": "Tristan Deane",
 	"version": "0.0.44",
 	"publisher": "alchemized",
-	"homepage": "https://www.rome.dev",
+	"homepage": "https://www.djangoly.com",
 	"preview": true,
 	"icon": "assets/images/logo-v1.png",
 	"galleryBanner": {

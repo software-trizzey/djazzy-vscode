@@ -23,7 +23,7 @@ export async function signInWithGitHub(
 		console.log("User cancelled sign in.");
 		deactivate();
 		vscode.window.showInformationMessage(
-			"Djangoly extension has been disabled. Vale! 👋"
+			"Djangoly extension has been disabled. Bye! 👋"
 		);
 		return;
 	}
@@ -54,7 +54,7 @@ export async function signInWithGitHub(
 		await context.globalState.update(SESSION_TOKEN_KEY, responseData.token);
 		await context.globalState.update(SESSION_USER, responseData.user);
 		vscode.window.showInformationMessage(
-			`Welcome to Rome, ${responseData.user.github_login || responseData.user.email}! 🏛️🫡`
+			`Welcome to Djangoly, ${responseData.user.github_login || responseData.user.email}! 🏛️🫡`
 		);
 	} else {
 		vscode.window.showErrorMessage(
@@ -79,7 +79,7 @@ export async function signOutUser(context: vscode.ExtensionContext, client: Lang
 
 			if (response.ok) {
 				vscode.window.showInformationMessage(
-					"Signed out of Djangoly. Vale! 👋"
+					"Signed out of Djangoly. Bye! 👋"
 				);
 			} else {
 				const responseData = (await response.json()) as any;

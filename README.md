@@ -54,17 +54,69 @@ for book in books:
     print(book.author.name)  # No additional queries
 ```
 
-### Django ORM Best Practices
+## Understanding N+1 Query Scores 📊
 
-Suggests optimizations for your ORM usage:
+Djangoly uses a scoring system to help you prioritize and address potential N+1 query issues in your Django project. Here's what you need to know:
+
+### What do the scores mean?
+
+- **Score Range**: 0-100
+- **Severity Levels**:
+  - 0-30: Hint (Low priority)
+  - 31-60: Information (Medium-low priority)
+  - 61-90: Warning (Medium-high priority)
+  - 91-100: Error (High priority)
+
+The higher the score, the more likely the issue is to cause performance problems in your application.
+
+### How are scores calculated?
+
+Scores are based on several factors:
+
+1. **Query in a loop**: Highest weight. Performing database queries inside loops is a common cause of N+1 problems.
+2. **Use of query methods**: Moderate weight. Certain query methods (like `filter`, `get`, etc.) used inefficiently can lead to N+1 issues.
+3. **Related field access**: Lower weight. Accessing related fields without proper optimization can cause extra queries.
+4. **Use of aggregate methods**: Lowest weight. While not always problematic, inefficient use of aggregate methods can contribute to N+1 issues.
+
+### How to address N+1 query issues
+
+1. **For high-scoring issues (Warning/Error)**:
+   - Review the flagged code carefully.
+   - Consider using `select_related()` or `prefetch_related()` to optimize queries.
+   - Restructure loops to avoid repeated database calls.
+
+2. **For medium-scoring issues (Information)**:
+   - Evaluate the context of the query. Is it in a performance-critical part of your application?
+   - Look for opportunities to optimize, but balance with code readability.
+
+3. **For low-scoring issues (Hint)**:
+   - These are often suggestions for potential optimizations.
+   - Address them if you're working on optimizing that specific area of code.
+
+### Example and Fix
 
 ```python
-# This query will be flagged
-users = User.objects.filter(is_active=True).order_by('-last_login')[:10]
+# High-score issue (Error):
+for book in books:
+    print(book.author.name)  # Accessing a related object inside a loop
 
-# Suggested optimization
-users = User.objects.filter(is_active=True).order_by('-last_login').select_related('profile')[:10]
+# Fix:
+books = books.select_related('author')
+for book in books:
+    print(book.author.name)  # No additional queries
 ```
+
+### Best Practices
+
+- Always test performance improvements with real data.
+- Use Django's `prefetch_related()` for many-to-many relationships.
+- Consider using `django-debug-toolbar` to identify N+1 queries in development.
+- For complex scenarios, batch processing or custom SQL might be necessary.
+
+Remember, while addressing N+1 queries is important for performance, it's also crucial to maintain code readability and maintainability. Always consider the trade-offs when optimizing.
+
+For more detailed guidance on optimizing Django queries, check out the [Django documentation on database optimization](https://docs.djangoproject.com/en/stable/topics/db/optimization/).
+
 
 ## Configuration 🧪
 

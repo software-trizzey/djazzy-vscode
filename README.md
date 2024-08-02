@@ -62,10 +62,10 @@ Djangoly uses a scoring system to help you prioritize and address potential N+1 
 
 - **Score Range**: 0-100
 - **Severity Levels**:
-  - 0-30: Hint (Low priority)
-  - 31-60: Information (Medium-low priority)
-  - 61-90: Warning (Medium-high priority)
-  - 91-100: Error (High priority)
+  - 0-30:   💡 Hint (Low priority)
+  - 31-60:  ℹ️ Information (Medium-low priority)
+  - 61-89:  🔶 Warning (Medium-high priority)
+  - 90-100: 🛑 Error (High priority)
 
 The higher the score, the more likely the issue is to cause performance problems in your application.
 

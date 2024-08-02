@@ -29,6 +29,8 @@ export interface Issue {
 	suggestion: string;
 	start_line: number;
 	end_line: number;
+	start_col: number;
+	end_col: number;
 	score: number;
 	severity: string;
 }
@@ -38,15 +40,26 @@ export interface LLMNPlusOneResult {
     issues: Issue[];
 }
 
-  export interface DeveloperInput {
-	functionName: string;
-	functionBody: string;
-	potentialIssues: Array<{
-		id: string;
-		startLine: number;
-		endLine: number;
-		message: string;
-	}>;
+export interface PossibleIssue {
+    id: string;
+    startLine: number;
+    endLine: number;
+    startCol: number;
+    endCol: number;
+    message: string;
+}
+
+export interface DeveloperInput {
+    functionName: string;
+    functionBody: string;
+    potentialIssues: Array<{
+        id: string;
+        startLine: number;
+        endLine: number;
+        startCol: number;
+        endCol: number;
+        message: string;
+    }>;
 }
 
   export interface ChatAPIResponse {

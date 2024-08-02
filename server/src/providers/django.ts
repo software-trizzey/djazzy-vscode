@@ -16,14 +16,8 @@ import { ExtensionSettings, cachedUserToken, defaultConventions } from "../setti
 import LOGGER from '../common/logs';
 import COMMANDS from '../constants/commands';
 import { chatWithLLM } from '../llm/helpers';
-import { DeveloperInput, LLMNPlusOneResult } from '../llm/types';
+import { DeveloperInput, LLMNPlusOneResult, PossibleIssue } from '../llm/types';
 
-type PossibleIssue = { 
-    id: string; 
-    startLine: number; 
-    endLine: number; 
-    message: string;
-};
 
 const METHOD_NAMES = [
 	"function",
@@ -93,7 +87,6 @@ export class DjangoProvider extends PythonProvider {
 
 		const highPrioritySymbols = symbols.filter(symbol => symbol.high_priority);
 		console.log(`Found ${highPrioritySymbols.length} highPrioritySymbols for review`);
-        console.log(highPrioritySymbols);
 
 		for (const symbol of highPrioritySymbols) {
             if (METHOD_NAMES.includes(symbol.type)) {
@@ -144,9 +137,8 @@ export class DjangoProvider extends PythonProvider {
             return;
         }
 
-        const functionBody = symbol.body;
-        const lines = functionBody.split('\n');
-        const potentialIssues = this.analyzeFunctionForPotentialIssues(lines, symbol);
+        const functionBodyWithLines = symbol.body_with_lines;
+        const potentialIssues = this.analyzeFunctionForPotentialIssues(functionBodyWithLines, symbol);
 
         if (potentialIssues.length > 0) {
             try {
@@ -171,91 +163,92 @@ export class DjangoProvider extends PythonProvider {
         }
     }
 
-    private analyzeFunctionForPotentialIssues(lines: string[], symbol: any): Array<PossibleIssue> {
-        const potentialIssues: Array<PossibleIssue> = [];
+    private analyzeFunctionForPotentialIssues(bodyWithLines: any[], symbol: any): PossibleIssue[] {
+        const potentialIssues: PossibleIssue[] = [];
         let isInLoop = false;
         let loopStartLine = 0;
         let hasSelectRelated = false;
         let hasPrefetchRelated = false;
-    
-        const functionStartLine = symbol.function_start_line - 1;
-    
-        for (let index = 0; index < lines.length; index++) {
-            const line = lines[index].trim();
-    
+
+        for (const lineInfo of bodyWithLines) {
+            const line = lineInfo.content.trim();
+            const lineNumber = lineInfo.line_number;
+
             if (line.includes('.select_related(')) {
                 hasSelectRelated = true;
             }
             if (line.includes('.prefetch_related(')) {
                 hasPrefetchRelated = true;
             }
-    
+
             if (line.startsWith('for ') || line.startsWith('while ')) {
                 isInLoop = true;
-                loopStartLine = index;
+                loopStartLine = lineNumber;
             }
-    
+
             for (const pattern of RELATED_FIELD_PATTERNS) {
                 if (pattern.test(line)) {
                     if (isInLoop && !hasSelectRelated && !hasPrefetchRelated) {
                         potentialIssues.push({
                             id: uuidv4(),
-                            startLine: functionStartLine + loopStartLine,
-                            endLine: functionStartLine + index,
+                            startLine: loopStartLine,
+                            endLine: lineNumber,
+                            startCol: bodyWithLines[loopStartLine - symbol.function_start_line].start_col,
+                            endCol: lineInfo.end_col,
                             message: `Related field access inside a loop without select_related or prefetch_related`
                         });
                     }
                 }
             }
-    
+
             for (const method of QUERY_METHODS) {
                 if (line.includes(`.${method}(`)) {
                     if (isInLoop) {
                         potentialIssues.push({
                             id: uuidv4(),
-                            startLine: functionStartLine + index,
-                            endLine: functionStartLine + index,
+                            startLine: lineNumber,
+                            endLine: lineNumber,
+                            startCol: lineInfo.start_col,
+                            endCol: lineInfo.end_col,
                             message: `Database query method '${method}' used inside a loop`
                         });
                     }
                 }
             }
-    
+
             for (const method of AGGREGATE_METHODS) {
                 if (line.includes(method)) {
                     potentialIssues.push({
                         id: uuidv4(),
-                        startLine: functionStartLine + index,
-                        endLine: functionStartLine + index,
+                        startLine: lineNumber,
+                        endLine: lineNumber,
+                        startCol: lineInfo.start_col,
+                        endCol: lineInfo.end_col,
                         message: `Potential inefficient use of '${method}' aggregate method`
                     });
                 }
             }
-    
+
             if (line === '' || line.startsWith('}')) {
                 isInLoop = false;
                 hasSelectRelated = false;
                 hasPrefetchRelated = false;
             }
         }
-    
+
         return potentialIssues;
     }
 
     private addNPlusOneDiagnostics(symbol: any, diagnostics: Diagnostic[], issues: any[]): void {
         for (const issue of issues) {
-            const startLine = issue.start_line ?? symbol.function_start_line - 1;
-            const endLine = issue.end_line ?? (symbol.function_end_line - 1);
+            const startLine = issue.start_line ?? symbol.function_start_line;
+            const endLine = issue.end_line ?? symbol.function_end_line;
+            const startCol = issue.start_col ?? (startLine === symbol.function_start_line ? symbol.function_start_col : 0);
+            const endCol = issue.end_col ?? (endLine === symbol.function_end_line ? symbol.function_end_col : Number.MAX_VALUE);
 
             const range: Range = {
-                start: { 
-                    line: startLine,
-                    character: startLine === symbol.function_start_line - 1 ? symbol.function_start_col : 0
-                },
-                end: { 
-                    line: endLine,
-                    character: endLine === symbol.function_end_line - 1 ? symbol.function_end_col : Number.MAX_VALUE
-                }
+                start: { line: startLine - 1, character: startCol },
+                end: { line: endLine - 1, character: endCol }
             };
 
             const severity = this.mapSeverity(issue.severity);
@@ -296,7 +289,7 @@ export class DjangoProvider extends PythonProvider {
         }
     }
 
-    private async validateNPlusOneWithLLM(symbol: any, potentialIssues: Array<PossibleIssue>): Promise<LLMNPlusOneResult> {
+    private async validateNPlusOneWithLLM(symbol: any, potentialIssues: PossibleIssue[]): Promise<LLMNPlusOneResult> {
         if (!cachedUserToken) {
             LOGGER.warn("Only authenticated users can use the N+1 query detection feature.");
             return {
@@ -312,6 +305,8 @@ export class DjangoProvider extends PythonProvider {
                 id: issue.id,
                 startLine: issue.startLine,
                 endLine: issue.endLine,
+                startCol: issue.startCol,
+                endCol: issue.endCol,
                 message: issue.message
             }))
         };
@@ -326,6 +321,8 @@ export class DjangoProvider extends PythonProvider {
                     suggestion: issue.suggestion,
                     start_line: issue.start_line,
                     end_line: issue.end_line,
+                    start_col: issue.start_col,
+                    end_col: issue.end_col,
                     score: issue.score,
                     severity: issue.severity
                 }))

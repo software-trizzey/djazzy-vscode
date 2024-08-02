@@ -34,7 +34,7 @@ import {
 	updateCachedUserToken,
 	cachedUserToken,
 } from "./settings";
-import { debounce, DjangoProjectDetector } from "./utils";
+import { checkForTestFile, debounce, DjangoProjectDetector } from "./utils";
 
 import COMMANDS, { COMMANDS_LIST } from "./constants/commands";
 import { rollbar } from "./common/logs";
@@ -300,6 +300,11 @@ const debouncedValidateTextDocument = debounce(
 	},
 	2000
 );
+
+connection.onRequest(COMMANDS.CHECK_TESTS_EXISTS, async (relativePath: string) => {
+    const testExists = await checkForTestFile(relativePath);
+    return { testExists };
+});
 
 connection.onRequest(COMMANDS.UPDATE_CACHED_USER_TOKEN, (token: string) => {
 	updateCachedUserToken(token);

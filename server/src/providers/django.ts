@@ -257,8 +257,14 @@ export class DjangoProvider extends PythonProvider {
                 }
             };
 
-            const diagnosticMessage = `Potential N+1 query detected (Score: ${issue.score}): ${issue.description}\n\nSuggestion: ${issue.suggestion}`;
+            const severity = this.mapSeverity(issue.severity);
+            const severityIndicator = this.getSeverityIndicator(severity);
 
+            const diagnosticMessage = `${severityIndicator} N+1 Query (Score: ${issue.score})
+            \nIssue: ${issue.description}
+            \nSuggestion: ${issue.suggestion}
+            `;
+            
             const diagnostic: Diagnostic = {
                 range,
                 message: diagnosticMessage,
@@ -350,6 +356,21 @@ export class DjangoProvider extends PythonProvider {
 	formatDiagnosticMessage(symbol: any, llmResult: any): string {
 		return `N+1 QUERY ISSUES DETECTED IN: ${symbol.name}\n\nTotal Issues Found: ${llmResult.issues.length}\n\nHover over underlined code for details.`;
 	}
+
+    private getSeverityIndicator(severity: DiagnosticSeverity): string {
+        switch (severity) {
+            case DiagnosticSeverity.Error:
+                return '🛑';
+            case DiagnosticSeverity.Warning:
+                return '🔶';
+            case DiagnosticSeverity.Information:
+                return 'ℹ️';
+            case DiagnosticSeverity.Hint:
+                return '💡';
+            default:
+                return '•';
+        }
+    }
 
 	public logFalsePositiveFeedback(diagnosticId: string): void {
 		LOGGER.info(`False positive reported`, {

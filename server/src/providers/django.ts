@@ -143,8 +143,6 @@ export class DjangoProvider extends PythonProvider {
             return;
         }
 
-        this.logUsageStatistics(symbol);
-
         const functionBody = symbol.body;
         const lines = functionBody.split('\n');
         const potentialIssues = this.analyzeFunctionForPotentialIssues(lines, symbol);
@@ -351,34 +349,6 @@ export class DjangoProvider extends PythonProvider {
 
 	formatDiagnosticMessage(symbol: any, llmResult: any): string {
 		return `N+1 QUERY ISSUES DETECTED IN: ${symbol.name}\n\nTotal Issues Found: ${llmResult.issues.length}\n\nHover over underlined code for details.`;
-	}
-
-	logUsageStatistics(symbol: any): void {
-		LOGGER.info(`N+1 detection run for function: ${symbol.name}`, {
-			userId: cachedUserToken,
-			functionName: symbol.name,
-			functionType: symbol.type,
-			fileType: this.languageId,
-			timestamp: new Date().toISOString()
-		});
-	}
-	
-	logPerformanceMetrics(startTime: number, endTime: number, linesOfCode: number): void {
-		const duration = endTime - startTime;
-		LOGGER.info(`N+1 detection performance`, {
-			userId: cachedUserToken,
-			duration: duration,
-			linesOfCode: linesOfCode,
-			linesPerSecond: linesOfCode / (duration / 1000)
-		});
-	}
-
-	logDetectionResults(issues: number): void {
-		LOGGER.info(`N+1 detection results`, {
-			userId: cachedUserToken,
-			issuesDetected: issues,
-			timestamp: new Date().toISOString()
-		});
 	}
 
 	public logFalsePositiveFeedback(diagnosticId: string): void {

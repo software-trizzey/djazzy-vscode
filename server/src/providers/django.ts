@@ -93,6 +93,7 @@ export class DjangoProvider extends PythonProvider {
 
 		const highPrioritySymbols = symbols.filter(symbol => symbol.high_priority);
 		console.log(`Found ${highPrioritySymbols.length} highPrioritySymbols for review`);
+        console.log(highPrioritySymbols);
 
 		for (const symbol of highPrioritySymbols) {
             if (METHOD_NAMES.includes(symbol.type)) {

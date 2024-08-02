@@ -71,8 +71,7 @@ class DjangoAnalyzer(Analyzer):
         if not node.body:
             function_end_line = function_start_line
             function_end_col = function_start_col + len('def ' + node.name + '():')
-
-        body = self.get_function_body(node)
+        body_with_lines, body = self.get_function_body(node)
         decorators = [ast.get_source_segment(self.source_code, decorator) for decorator in node.decorator_list]
         calls = []
         arguments = self.extract_arguments(node.args)
@@ -84,7 +83,6 @@ class DjangoAnalyzer(Analyzer):
         else:
             symbol_type = 'function'
 
-        # TODO: might be useful to include these fields in the dictionary
         contains_query_method = any(self.contains_query_method(call) for call in node.body)
         contains_loop = any(isinstance(child, (ast.For, ast.While)) for child in node.body)
         high_priority = contains_query_method and contains_loop
@@ -98,6 +96,7 @@ class DjangoAnalyzer(Analyzer):
             end_col_offset=function_end_col,
             is_reserved=is_reserved,
             body=body,
+            body_with_lines=body_with_lines,
             function_start_line=function_start_line,
             function_end_line=function_end_line,
             function_start_col=function_start_col,

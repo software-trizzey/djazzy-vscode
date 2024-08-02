@@ -137,6 +137,8 @@ class Analyzer(ast.NodeVisitor):
         
         if 'value' in kwargs:
             symbol['value'] = kwargs['value']
+        if kwargs.get('body_with_lines'):
+            symbol['body_with_lines'] = kwargs['body_with_lines']
         if kwargs.get('body'):
             symbol['body'] = kwargs['body']
         if kwargs.get('function_start_line') is not None:
@@ -223,7 +225,7 @@ class Analyzer(ast.NodeVisitor):
             function_end_line = function_start_line
             function_end_col = function_start_col + len('def ' + node.name + '():')
 
-        body = self.get_function_body(node)
+        body_with_lines, body = self.get_function_body(node)
         decorators = [ast.get_source_segment(self.source_code, decorator) for decorator in node.decorator_list]
         calls = []
         arguments = self.extract_arguments(node.args)
@@ -243,6 +245,7 @@ class Analyzer(ast.NodeVisitor):
             end_col_offset=function_end_col,
             is_reserved=is_reserved,
             body=body,
+            body_with_lines=body_with_lines,
             function_start_line=function_start_line,
             function_end_line=function_end_line,
             function_start_col=function_start_col,
@@ -254,18 +257,49 @@ class Analyzer(ast.NodeVisitor):
 
         self.generic_visit(node)
 
+    def get_function_body(self, node):
+        source_lines = self.source_code.splitlines()
+        if not node.body:
+            return [], ""
+        
+        start_line = node.body[0].lineno - 1
+        end_line = (node.body[-1].end_lineno if hasattr(node.body[-1], 'end_lineno') else node.body[-1].lineno) - 1
+        
+        body_with_lines = []
+        raw_body_lines = []
+        
+        for line_index, line in enumerate(source_lines[start_line:end_line + 1], start=start_line + 1):
+            if line_index == start_line + 1:
+                first_node = node.body[0]
+                start_col = first_node.col_offset
+            else:
+                start_col = len(line) - len(line.lstrip())
+            
+            if line_index == end_line + 1:
+                end_col = (node.body[-1].end_col_offset 
+                        if hasattr(node.body[-1], 'end_col_offset') 
+                        else len(line.rstrip()))
+            else:
+                end_col = len(line.rstrip())
+            
+            body_with_lines.append({
+                'line_number': line_index,
+                'start_col': start_col,
+                'end_col': end_col,
+                'content': line,
+            })
+            raw_body_lines.append(line)
+        
+        raw_body = '\n'.join(raw_body_lines)
+        
+        return body_with_lines, raw_body
+
     def visit_FunctionBody(self, body, calls):
         for statement in body:
             if isinstance(statement, ast.Expr) and isinstance(statement.value, ast.Call):
                 call = ast.get_source_segment(self.source_code, statement)
                 calls.append(call)
             self.generic_visit(statement)
-
-    def get_function_body(self, node):
-        source_lines = self.source_code.splitlines()
-        start_line = node.body[0].lineno - 1 if node.body else node.lineno - 1
-        end_line = node.body[-1].end_lineno - 1 if node.body and hasattr(node.body[-1], 'end_lineno') else node.body[-1].lineno - 1 if node.body else start_line
-        return '\n'.join(source_lines[start_line:end_line + 1])
 
     def extract_arguments(self, args_node):
         arguments = []

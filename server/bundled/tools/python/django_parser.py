@@ -1,6 +1,8 @@
 import ast
 import sys
-from ast_parser import Analyzer
+import json
+
+from ast_parser import Analyzer, serialize_file_data
 
 DJANGO_COMPONENTS = {
     'model': ['Model', 'BaseModel'],
@@ -158,7 +160,8 @@ class DjangoAnalyzer(Analyzer):
 def main():
     input_code = sys.stdin.read()
     analyzer = DjangoAnalyzer(input_code)
-    print(analyzer.parse_code())
+    parsed_symbols = analyzer.parse_code()
+    print(json.dumps(parsed_symbols, default=serialize_file_data))
 
 if __name__ == "__main__":
     main()

@@ -500,12 +500,13 @@ class Analyzer(ast.NodeVisitor):
         except Exception as e:
             # djangoly-ignore: we're not worried about runtime errors triggered by the user's code
             pass
-        return json.dumps(self.symbols, default=serialize_file_data)
+        return self.symbols
 
 def main():
     input_code = sys.stdin.read()
     analyzer = Analyzer(input_code)
-    print(analyzer.parse_code())
+    parsed_symbols = analyzer.parse_code()
+    print(json.dumps(parsed_symbols, default=serialize_file_data))
 
 if __name__ == "__main__":
     main()

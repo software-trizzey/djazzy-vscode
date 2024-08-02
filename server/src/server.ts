@@ -298,7 +298,7 @@ const debouncedValidateTextDocument = debounce(
 	async (document: TextDocument) => {
 		return await validateTextDocument(document);
 	},
-	2000
+	1000
 );
 
 connection.onRequest(COMMANDS.CHECK_TESTS_EXISTS, async (relativePath: string) => {

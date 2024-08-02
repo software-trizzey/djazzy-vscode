@@ -1,7 +1,7 @@
 import LOGGER from '../common/logs';
 import { chatWithGroq } from './groq';
 import { chatWithOpenAI } from './openai';
-import { NPlusOneIssue, ChatAPIResponse, LLMNPlusOneResult, Models } from './types';
+import { NPlusOneIssue, ChatAPIResponse, LLMNPlusOneResult, Models, DeveloperInput } from './types';
 
 export async function handleErrorResponse(response: Response): Promise<void> {
 	let errorMessage = `Error: ${response.statusText}`;
@@ -47,7 +47,7 @@ export function validateResponse(responseData: ChatAPIResponse, originalInput: s
 
 export const chatWithLLM = async (
 	systemMessage: string,
-	developerInput: string,
+	developerInput: DeveloperInput,
 	userToken: string,
 	modelId: Models = Models.GROQ
 ): Promise<LLMNPlusOneResult> => {

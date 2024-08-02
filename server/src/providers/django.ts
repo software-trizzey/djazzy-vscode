@@ -16,7 +16,7 @@ import { ExtensionSettings, cachedUserToken, defaultConventions } from "../setti
 import LOGGER from '../common/logs';
 import COMMANDS from '../constants/commands';
 import { chatWithLLM } from '../llm/helpers';
-import { LLMNPlusOneResult } from '../llm/types';
+import { DeveloperInput, LLMNPlusOneResult } from '../llm/types';
 
 type PossibleIssue = { 
     id: string; 
@@ -259,20 +259,35 @@ export class DjangoProvider extends PythonProvider {
                 }
             };
 
-            const diagnosticMessage = `Potential N+1 query detected: ${issue.description}\n\nSuggestion: ${issue.suggestion}`;
+            const diagnosticMessage = `Potential N+1 query detected (Score: ${issue.score}): ${issue.description}\n\nSuggestion: ${issue.suggestion}`;
 
             const diagnostic: Diagnostic = {
                 range,
                 message: diagnosticMessage,
-                severity: DiagnosticSeverity.Warning,
+                severity: this.mapSeverity(issue.severity),
                 source: SOURCE_NAME,
                 code: DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE,
                 codeDescription: {
                     href: 'https://docs.djangoproject.com/en/stable/topics/db/optimization/'
                 },
-                data: { id: issue.issue_id }
+                data: { id: issue.issue_id, score: issue.score }
             };
             diagnostics.push(diagnostic);
+        }
+    }
+
+    private mapSeverity(severity: string): DiagnosticSeverity {
+        switch (severity) {
+            case 'Error':
+                return DiagnosticSeverity.Error;
+            case 'Warning':
+                return DiagnosticSeverity.Warning;
+            case 'Information':
+                return DiagnosticSeverity.Information;
+            case 'Hint':
+                return DiagnosticSeverity.Hint;
+            default:
+                return DiagnosticSeverity.Warning;
         }
     }
 
@@ -285,34 +300,27 @@ export class DjangoProvider extends PythonProvider {
             };
         }
     
-        const systemMessage = `You are an expert Django developer. Your task is to analyze the following Python code for potential N+1 query issues. 
-        Confirm if the identified issues are valid N+1 problems. If they are valid, suggest optimizations. If they are false positives, explain why. 
-        For each issue you confirm, include the 'issue_id' in your response.`;
-    
-        const developerInput = `
-        Function name: ${symbol.name}
-        Function body:
-        ${symbol.body}
-    
-        Potential N+1 issues:
-        ${potentialIssues.map(issue => `- Issue ID: ${issue.id}, Lines ${issue.startLine}-${issue.endLine}: ${issue.message}`).join('\n')}
-        `;
+        const developerInput: DeveloperInput = {
+            functionName: symbol.name,
+            functionBody: symbol.body,
+            potentialIssues: potentialIssues.map(issue => ({
+                id: issue.id,
+                startLine: issue.startLine,
+                endLine: issue.endLine,
+                message: issue.message
+            }))
+        };
     
         try {
-            const llmResult = await chatWithLLM(systemMessage, developerInput, cachedUserToken);
+            const llmResult = await chatWithLLM("Analyze the provided input for N+1 queries.", developerInput, cachedUserToken);
             
             const processedResult: LLMNPlusOneResult = {
                 has_n_plus_one_issues: llmResult.has_n_plus_one_issues,
-                issues: llmResult.issues.map(issue => {
-                    const matchingPotentialIssue = potentialIssues.find(
-                        potentialIssue => potentialIssue.id === issue.issue_id
-                    );
-                    return {
-                        ...issue,
-                        start_line: matchingPotentialIssue?.startLine,
-                        end_line: matchingPotentialIssue?.endLine
-                    };
-                })
+                issues: llmResult.issues.map(issue => ({
+                    ...issue,
+                    start_line: issue.start_line,
+                    end_line: issue.end_line
+                }))
             };
             
             return processedResult;

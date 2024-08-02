@@ -1,8 +1,10 @@
 import { API_SERVER_URL } from '../constants/api';
 import { handleErrorResponse } from './helpers';
-import { ChatAPIResponse } from './types';
+import { ChatAPIResponse, DeveloperInput } from './types';
 
-export async function chatWithOpenAI(systemMessage: string, developerInput: string, userToken: string): Promise<ChatAPIResponse> {
+export async function chatWithOpenAI(
+	systemMessage: string, developerInput: DeveloperInput | string, userToken: string
+): Promise<ChatAPIResponse> {
 	try {
 		const response = await fetch(`${API_SERVER_URL}/chat/openai/`, {
 			method: 'POST',

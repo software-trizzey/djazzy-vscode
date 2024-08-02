@@ -205,6 +205,7 @@ export const verbDictionary: { [key: string]: string } = {
 	revert: "revert",
 	rotate: "rotate",
 	schedule: "schedule",
+	score: "score",
 	search: "search",
 	select: "select",
 	settle: "settle",

@@ -31,6 +31,17 @@ export interface NPlusOneIssueFuture {
 	general_recommendations?: string[];
   }
 
+  export interface DeveloperInput {
+	functionName: string;
+	functionBody: string;
+	potentialIssues: Array<{
+		id: string;
+		startLine: number;
+		endLine: number;
+		message: string;
+	}>;
+}
+
   export interface ChatAPIResponse {
 	has_n_plus_one_issues: boolean;
 	issues: NPlusOneIssue[];

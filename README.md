@@ -23,8 +23,8 @@ Djangoly is a powerful VS Code extension designed to help teams enforce Django b
 
 ## Features (MVP) ✨
 
-- **Django-Specific Linting**: Automatically check your Django code against best practices and common pitfalls.
 - **Django N+1 Query Detection**: Identifies potential N+1 query issues in Django projects, flagging instances where related field access occurs within loops without proper optimization.
+- **Django-Specific Linting**: Automatically check your Django code against best practices and common pitfalls.
 - **Test Suite Conventions**: Notify developers to add or update test files when changes are detected in Django views or models.
 - **Redundant Comment Detection**: Automatically flags comments that do not contribute additional information or context to the code.
 

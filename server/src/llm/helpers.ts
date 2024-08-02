@@ -58,7 +58,7 @@ export const chatWithLLM = async (
 		} else if (modelId === Models.OPEN_AI) {
 			response = await chatWithOpenAI(systemMessage, developerInput, userToken);
 		}
-		return response as LLMNPlusOneResult;
+		return response as unknown as LLMNPlusOneResult;
 	} catch (error: any) {
 		LOGGER.error(error.message);
 		throw new Error(error.message);

@@ -22,14 +22,21 @@ export interface NPlusOneIssueFuture {
     start_line?: number;
     end_line?: number;
 }
+
+export interface Issue {
+	issue_id: string;
+	description: string;
+	suggestion: string;
+	start_line: number;
+	end_line: number;
+	score: number;
+	severity: string;
+}
   
-  export interface LLMNPlusOneResult {
-	has_n_plus_one_issues: boolean;
-	issues: NPlusOneIssue[];
-	summary?: string;
-	overall_efficiency_score?: number;
-	general_recommendations?: string[];
-  }
+export interface LLMNPlusOneResult {
+    has_n_plus_one_issues: boolean;
+    issues: Issue[];
+}
 
   export interface DeveloperInput {
 	functionName: string;

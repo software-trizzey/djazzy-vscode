@@ -313,13 +313,16 @@ export class DjangoProvider extends PythonProvider {
     
         try {
             const llmResult = await chatWithLLM("Analyze the provided input for N+1 queries.", developerInput, cachedUserToken);
-            
             const processedResult: LLMNPlusOneResult = {
                 has_n_plus_one_issues: llmResult.has_n_plus_one_issues,
                 issues: llmResult.issues.map(issue => ({
-                    ...issue,
+                    issue_id: issue.issue_id,
+                    description: issue.description,
+                    suggestion: issue.suggestion,
                     start_line: issue.start_line,
-                    end_line: issue.end_line
+                    end_line: issue.end_line,
+                    score: issue.score,
+                    severity: issue.severity
                 }))
             };
             

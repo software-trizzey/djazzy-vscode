@@ -283,7 +283,8 @@ class Analyzer(ast.NodeVisitor):
                 end_col = len(line.rstrip())
             
             body_with_lines.append({
-                'line_number': line_index,
+                'relative_line_number': line_index - start_line,
+                'absolute_line_number': line_index,
                 'start_col': start_col,
                 'end_col': end_col,
                 'content': line,

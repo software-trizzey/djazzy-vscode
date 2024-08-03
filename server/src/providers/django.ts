@@ -169,45 +169,48 @@ export class DjangoProvider extends PythonProvider {
         let loopStartLine = 0;
         let hasSelectRelated = false;
         let hasPrefetchRelated = false;
-
+    
+        const functionStartLine = symbol.function_start_line;
+    
         for (const lineInfo of bodyWithLines) {
             const line = lineInfo.content.trim();
-            const lineNumber = lineInfo.line_number;
-
+            const absoluteLineNumber = lineInfo.absolute_line_number;
+            const relativeLineNumber = absoluteLineNumber - functionStartLine + 1;
+    
             if (line.includes('.select_related(')) {
                 hasSelectRelated = true;
             }
             if (line.includes('.prefetch_related(')) {
                 hasPrefetchRelated = true;
             }
-
+    
             if (line.startsWith('for ') || line.startsWith('while ')) {
                 isInLoop = true;
-                loopStartLine = lineNumber;
+                loopStartLine = relativeLineNumber;
             }
-
+    
             for (const pattern of RELATED_FIELD_PATTERNS) {
                 if (pattern.test(line)) {
                     if (isInLoop && !hasSelectRelated && !hasPrefetchRelated) {
                         potentialIssues.push({
                             id: uuidv4(),
                             startLine: loopStartLine,
-                            endLine: lineNumber,
-                            startCol: bodyWithLines[loopStartLine - symbol.function_start_line].start_col,
+                            endLine: relativeLineNumber,
+                            startCol: bodyWithLines.find(currentLine => currentLine.absolute_line_number === (loopStartLine + functionStartLine - 1)).start_col,
                             endCol: lineInfo.end_col,
                             message: `Related field access inside a loop without select_related or prefetch_related`
                         });
                     }
                 }
             }
-
+    
             for (const method of QUERY_METHODS) {
                 if (line.includes(`.${method}(`)) {
                     if (isInLoop) {
                         potentialIssues.push({
                             id: uuidv4(),
-                            startLine: lineNumber,
-                            endLine: lineNumber,
+                            startLine: relativeLineNumber,
+                            endLine: relativeLineNumber,
                             startCol: lineInfo.start_col,
                             endCol: lineInfo.end_col,
                             message: `Database query method '${method}' used inside a loop`
@@ -215,49 +218,51 @@ export class DjangoProvider extends PythonProvider {
                     }
                 }
             }
-
+    
             for (const method of AGGREGATE_METHODS) {
                 if (line.includes(method)) {
                     potentialIssues.push({
                         id: uuidv4(),
-                        startLine: lineNumber,
-                        endLine: lineNumber,
+                        startLine: relativeLineNumber,
+                        endLine: relativeLineNumber,
                         startCol: lineInfo.start_col,
                         endCol: lineInfo.end_col,
                         message: `Potential inefficient use of '${method}' aggregate method`
                     });
                 }
             }
-
+    
             if (line === '' || line.startsWith('}')) {
                 isInLoop = false;
                 hasSelectRelated = false;
                 hasPrefetchRelated = false;
             }
         }
-
+    
         return potentialIssues;
     }
 
     private addNPlusOneDiagnostics(symbol: any, diagnostics: Diagnostic[], issues: any[]): void {
+        const functionStartLine = symbol.function_start_line;
+    
         for (const issue of issues) {
-            const startLine = (issue.start_line ?? 0) + symbol.function_start_line - 1;
-            const endLine = (issue.end_line ?? 0) + symbol.function_start_line - 1;
-            const startCol = issue.start_col ?? (startLine === symbol.function_start_line ? symbol.function_start_col : 0);
-            const endCol = issue.end_col ?? (endLine === symbol.function_end_line ? symbol.function_end_col : Number.MAX_VALUE);
-
+            const startLine = (issue.start_line ?? 1) + functionStartLine - 1;
+            const endLine = (issue.end_line ?? 1) + functionStartLine - 1;
+            const startCol = issue.start_col ?? 0;
+            const endCol = issue.end_col ?? Number.MAX_VALUE;
+    
             const range: Range = {
                 start: { line: startLine - 1, character: startCol },
                 end: { line: endLine - 1, character: endCol }
             };
-
+    
             const severity = this.mapSeverity(issue.severity);
             const diagnosticMessage = this.createStructuredDiagnosticMessage(issue, severity);
             
             const diagnostic: Diagnostic = {
                 range,
                 message: diagnosticMessage,
-                severity: this.mapSeverity(issue.severity),
+                severity: severity,
                 source: SOURCE_NAME,
                 code: DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE,
                 codeDescription: {

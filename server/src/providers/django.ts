@@ -383,7 +383,7 @@ export class DjangoProvider extends PythonProvider {
         const severityIndicator = this.getSeverityIndicator(severity);
         const location = issue.start_line === issue.end_line ? `line ${issue.start_line}` : `lines ${issue.start_line}-${issue.end_line}`;
         
-        return `${severityIndicator} N+1 Query (Score: ${issue.score}) issue at ${location}
+        return `${severityIndicator} N+1 Query (Score: ${issue.score}) issue on ${location}
         \nCode: ${issue.problematic_code.trim()}
         \nReason: ${issue.description.trim()}
         \nSuggestion: ${issue.suggestion.trim()}

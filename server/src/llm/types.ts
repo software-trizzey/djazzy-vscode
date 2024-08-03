@@ -53,7 +53,9 @@ export interface DeveloperInput {
     }>;
 }
 
-  export interface ChatAPIResponse {
-	has_n_plus_one_issues: boolean;
-	issues: NPlusOneIssue[];
+export interface ChatAPIResponse {
+    has_n_plus_one_issues: boolean;
+    issues: NPlusOneIssue[];
+    error?: string;
+    status?: number;
 }

@@ -12,8 +12,7 @@ import {
 
 import { TextDocument, Range } from "vscode-languageserver-textdocument";
 
-import { chatWithGroq } from "../llm/groq";
-import { chatWithOpenAI } from "../llm/openai";
+import { chatWithOpenAI, chatWithGroq } from "../llm/chat";
 
 import {
 	isLikelyBoolean,

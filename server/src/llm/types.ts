@@ -4,16 +4,6 @@ export enum Models {
 
 }
 
-export interface NPlusOneIssueFuture {
-	start_line: number;
-	start_character: number;
-	end_line: number;
-	end_character: number;
-	code_snippet: string;
-	description: string;
-	suggestion: string;
-  }
-
   export interface NPlusOneIssue {
 	issue_id: string;
     description: string;
@@ -26,6 +16,7 @@ export interface NPlusOneIssueFuture {
 export interface Issue {
 	issue_id: string;
 	description: string;
+    problematic_code: string;
 	suggestion: string;
 	start_line: number;
 	end_line: number;

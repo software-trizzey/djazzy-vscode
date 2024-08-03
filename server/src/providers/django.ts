@@ -252,12 +252,7 @@ export class DjangoProvider extends PythonProvider {
             };
 
             const severity = this.mapSeverity(issue.severity);
-            const severityIndicator = this.getSeverityIndicator(severity);
-
-            const diagnosticMessage = `${severityIndicator} N+1 Query (Score: ${issue.score})
-            \nIssue: ${issue.description}
-            \nSuggestion: ${issue.suggestion}
-            `;
+            const diagnosticMessage = this.createStructuredDiagnosticMessage(issue, severity);
             
             const diagnostic: Diagnostic = {
                 range,
@@ -318,6 +313,7 @@ export class DjangoProvider extends PythonProvider {
                 issues: llmResult.issues.map(issue => ({
                     issue_id: issue.issue_id,
                     description: issue.description,
+                    problematic_code: issue.problematic_code,
                     suggestion: issue.suggestion,
                     start_line: issue.start_line,
                     end_line: issue.end_line,
@@ -351,10 +347,6 @@ export class DjangoProvider extends PythonProvider {
         this.nPlusOnecache.set(key, { result, timestamp: Date.now() });
     }
 
-	formatDiagnosticMessage(symbol: any, llmResult: any): string {
-		return `N+1 QUERY ISSUES DETECTED IN: ${symbol.name}\n\nTotal Issues Found: ${llmResult.issues.length}\n\nHover over underlined code for details.`;
-	}
-
     private getSeverityIndicator(severity: DiagnosticSeverity): string {
         switch (severity) {
             case DiagnosticSeverity.Error:
@@ -386,4 +378,15 @@ export class DjangoProvider extends PythonProvider {
 			timestamp: new Date().toISOString()
 		});
 	}
+
+    private createStructuredDiagnosticMessage(issue: any, severity: DiagnosticSeverity): string {
+        const severityIndicator = this.getSeverityIndicator(severity);
+        const location = issue.start_line === issue.end_line ? `line ${issue.start_line}` : `lines ${issue.start_line}-${issue.end_line}`;
+        
+        return `${severityIndicator} N+1 Query (Score: ${issue.score}) issue at ${location}
+        \nCode: ${issue.problematic_code.trim()}
+        \nReason: ${issue.description.trim()}
+        \nSuggestion: ${issue.suggestion.trim()}
+        `;
+    }
 }

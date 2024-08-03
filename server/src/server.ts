@@ -40,11 +40,35 @@ import COMMANDS, { COMMANDS_LIST } from "./constants/commands";
 import { rollbar } from "./common/logs";
 import { SOURCE_NAME } from './constants/diagnostics';
 
+class DiagnosticQueue {
+	private queues: Map<string, Promise<Diagnostic[]>> = new Map();
+  
+	async queueDiagnosticRequest(
+		document: TextDocument,
+		diagnosticFunction: (document: TextDocument) => Promise<Diagnostic[]>
+	): Promise<Diagnostic[]> {
+		const uri = document.uri;
+
+		const diagnosticPromise = (async () => {
+			await this.queues.get(uri);
+			return await diagnosticFunction(document);
+		})();
+
+		// Replace any existing promise in the queue with this new one
+		this.queues.set(uri, diagnosticPromise);
+		return await diagnosticPromise;
+	}
+
+	clearQueue(uri: string) {
+		this.queues.delete(uri);
+	}
+}
 
 const connection = createConnection(ProposedFeatures.all);
 const providerCache: Record<string, LanguageProvider> = {};
-
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
+const diagnosticQueue = new DiagnosticQueue();
+
 
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
@@ -188,7 +212,12 @@ function getDocumentSettings(resource: string): Thenable<ExtensionSettings> {
 	return settingsResult;
 }
 
+documents.onDidChangeContent((change) => {
+	debouncedValidateTextDocument(change.document);
+});
+
 documents.onDidClose((e) => {
+	diagnosticQueue.clearQueue(e.document.uri);
 	const documentUri = e.document.uri;
 	const provider = providerCache[e.document.languageId];
 	documentSettings.delete(documentUri);
@@ -210,9 +239,6 @@ connection.languages.diagnostics.on(async (params) => {
 	} satisfies DocumentDiagnosticReport;
 });
 
-documents.onDidChangeContent((change) => {
-	debouncedValidateTextDocument(change.document);
-});
 
 function createLanguageProvider(
 	languageId: string,
@@ -260,33 +286,32 @@ function getOrCreateProvider(
 	return providerCache[languageId];
 }
 
-async function validateTextDocument(
-	textDocument: TextDocument
-): Promise<Diagnostic[]> {
-	const languageId = textDocument.languageId;
+async function validateTextDocument(textDocument: TextDocument): Promise<Diagnostic[]> {
+	return await diagnosticQueue.queueDiagnosticRequest(textDocument, async (document) => {
+		const languageId = document.languageId;
+		const settings = await getDocumentSettings(document.uri);
+		const workspaceFolders = await connection.workspace.getWorkspaceFolders();
+		const provider = getOrCreateProvider(languageId, settings, workspaceFolders);
+		provider.updateSettings(settings);
 
-	// TODO: we can optimize this later by using cached settings
-	const settings = await getDocumentSettings(textDocument.uri);
-	const workspaceFolders = await connection.workspace.getWorkspaceFolders();
-	const provider = getOrCreateProvider(languageId, settings, workspaceFolders);
-	provider.updateSettings(settings);
-	let diagnostics = await provider.getDiagnostic(
-		textDocument.uri,
-		textDocument.version
-	) || [];
+		let diagnostics = await provider.getDiagnostic(
+			document.uri,
+			document.version
+		) || [];
 
-	console.info(`Validating file: ${textDocument.uri}`, {
-		context: "server#validateTextDocument",
+		console.info(`Validating file: ${document.uri}`, {
+			context: "server#validateTextDocument",
+		});
+
+		const diagnosticsOutdated = !diagnostics || provider.isDiagnosticsOutdated(document);
+		if (diagnosticsOutdated) {
+			provider.deleteDiagnostic(document.uri);
+			provider.clearDiagnostics(document.uri);
+
+			diagnostics = await provider.provideDiagnostics(document);
+		}
+		return diagnostics;
 	});
-
-	const diagnosticsOutdated = !diagnostics || provider.isDiagnosticsOutdated(textDocument);
-	if (diagnosticsOutdated) {
-		provider.deleteDiagnostic(textDocument.uri);
-        provider.clearDiagnostics(textDocument.uri);
-
-		diagnostics = await provider.provideDiagnostics(textDocument);
-	}
-	return diagnostics;
 }
 
 const debouncedValidateTextDocument = debounce(

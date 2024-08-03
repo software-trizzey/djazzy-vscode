@@ -40,8 +40,7 @@ import COMMANDS, { COMMANDS_LIST } from "./constants/commands";
 import { rollbar } from "./common/logs";
 import { SOURCE_NAME } from './constants/diagnostics';
 
-// Create a connection for the server, using Node's IPC as a transport.
-// Also include all preview / proposed LSP features.
+
 const connection = createConnection(ProposedFeatures.all);
 const providerCache: Record<string, LanguageProvider> = {};
 
@@ -55,13 +54,8 @@ connection.onInitialize((params: InitializeParams) => {
 	const extensionNameMessage = `Extension Name: ${projectPackageJson.name}`;
 	const extensionVersionMessage = `Extension Version: ${projectPackageJson.version}`;
 
-	if (process.env.NODE_ENV !== "production") {
-		console.log(extensionNameMessage);
-		console.log(extensionVersionMessage);
-	} else {
-		rollbar.info(extensionNameMessage);
-		rollbar.info(extensionVersionMessage);
-	}
+	console.log(extensionNameMessage);
+	console.log(extensionVersionMessage);
 	console.log(`Running Node.js version: ${process.version}`);
 
 	const capabilities = params.capabilities;
@@ -104,23 +98,24 @@ connection.onInitialize((params: InitializeParams) => {
 });
 
 connection.onInitialized(async () => {
-	const settings = await getDocumentSettings("N/A");
 	const routeId = "server#index";
 	const workspaceFolders = await connection.workspace.getWorkspaceFolders();
 	setWorkspaceRoot(workspaceFolders);
 
-	if (!settings.general.isDevMode || process.env.NODE_ENV === "production") {
+	const logContext = {
+		routeId,
+		extensionVersion: projectPackageJson.version,
+	};
+
+	if (process.env.NODE_ENV !== "development") {
 		rollbar.configure({
 			logLevel: "warning",
-			payload: {
-				environment: "production",
-				context: routeId,
-			},
+			payload: { environment: "production", context: logContext },
 		});
 	} else {
 		rollbar.configure({
 			logLevel: "debug",
-			payload: { environment: "development", context: routeId },
+			payload: { environment: "development", context: logContext },
 		});
 	}
 

@@ -390,6 +390,6 @@ export class DjangoProvider extends PythonProvider {
         return `${severityIndicator} N+1 Query Detected (Score: ${issue.score})
         \n[Code]\n${issue.problematic_code.trim()}
         \n[Issue]\n${issue.description.trim()}
-        \n[Suggestion]\n${issue.suggestion.trim()}`;
+        \n[Suggestion]\n${issue.suggestion.trim()}\n`;
     }
 }

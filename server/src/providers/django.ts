@@ -241,8 +241,8 @@ export class DjangoProvider extends PythonProvider {
 
     private addNPlusOneDiagnostics(symbol: any, diagnostics: Diagnostic[], issues: any[]): void {
         for (const issue of issues) {
-            const startLine = issue.start_line ?? symbol.function_start_line;
-            const endLine = issue.end_line ?? symbol.function_end_line;
+            const startLine = (issue.start_line ?? 0) + symbol.function_start_line - 1;
+            const endLine = (issue.end_line ?? 0) + symbol.function_start_line - 1;
             const startCol = issue.start_col ?? (startLine === symbol.function_start_line ? symbol.function_start_col : 0);
             const endCol = issue.end_col ?? (endLine === symbol.function_end_line ? symbol.function_end_col : Number.MAX_VALUE);
 
@@ -381,12 +381,10 @@ export class DjangoProvider extends PythonProvider {
 
     private createStructuredDiagnosticMessage(issue: any, severity: DiagnosticSeverity): string {
         const severityIndicator = this.getSeverityIndicator(severity);
-        const location = issue.start_line === issue.end_line ? `line ${issue.start_line}` : `lines ${issue.start_line}-${issue.end_line}`;
         
-        return `${severityIndicator} N+1 Query (Score: ${issue.score}) issue on ${location}
-        \nCode: ${issue.problematic_code.trim()}
-        \nReason: ${issue.description.trim()}
-        \nSuggestion: ${issue.suggestion.trim()}
-        `;
+        return `${severityIndicator} N+1 Query Detected (Score: ${issue.score})
+        \n[Code]\n${issue.problematic_code.trim()}
+        \n[Issue]\n${issue.description.trim()}
+        \n[Suggestion]\n${issue.suggestion.trim()}`;
     }
 }

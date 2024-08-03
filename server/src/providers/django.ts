@@ -16,7 +16,7 @@ import { ExtensionSettings, cachedUserToken, defaultConventions } from "../setti
 import LOGGER from '../common/logs';
 import COMMANDS from '../constants/commands';
 import { chatWithLLM } from '../llm/helpers';
-import { DeveloperInput, LLMNPlusOneResult, PossibleIssue } from '../llm/types';
+import { DeveloperInput, LLMNPlusOneResult, Models, PossibleIssue } from '../llm/types';
 
 
 const METHOD_NAMES = [
@@ -312,7 +312,12 @@ export class DjangoProvider extends PythonProvider {
         };
     
         try {
-            const llmResult = await chatWithLLM("Analyze the provided input for N+1 queries.", developerInput, cachedUserToken);
+            const llmResult = await chatWithLLM(
+                "Analyze the provided input for N+1 queries.",
+                developerInput,
+                cachedUserToken,
+                Models.OPEN_AI
+            );
             const processedResult: LLMNPlusOneResult = {
                 has_n_plus_one_issues: llmResult.has_n_plus_one_issues,
                 issues: llmResult.issues.map(issue => ({

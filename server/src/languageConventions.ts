@@ -18,7 +18,6 @@ interface ExpressiveVariableNameRulesSettings
 interface ExpressiveFunctionNameRulesSettings
 	extends ExpressiveNamesBaseRulesSettings {
 	functionLengthLimit: number;
-	maxCyclomaticComplexity: number;
 }
 
 interface ExpressiveObjectPropertyNameRulesSettings

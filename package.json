@@ -5,7 +5,7 @@
 	"author": "Tristan Deane",
 	"version": "0.1.0",
 	"publisher": "alchemized",
-	"homepage": "https://www.djangoly.com",
+	"homepage": "",
 	"preview": true,
 	"icon": "assets/images/logo-v1.png",
 	"galleryBanner": {
@@ -198,41 +198,35 @@
 					"description": "Set the maximum length for functions.",
 					"order": 13
 				},
-				"djangoly.languages.python.expressiveNames.functions.maxCyclomaticComplexity": {
-					"type": "number",
-					"default": 10,
-					"description": "Set the maximum cyclomatic complexity for functions.",
-					"order": 14
-				},
 				"djangoly.languages.python.expressiveNames.objectProperties.isEnabled": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enforce expressive object property names.",
-					"order": 15
+					"order": 14
 				},
 				"djangoly.languages.python.expressiveNames.objectProperties.avoidShortNames": {
 					"type": "boolean",
 					"default": true,
 					"description": "Avoid using short object property names.",
-					"order": 16
+					"order": 15
 				},
 				"djangoly.languages.python.expressiveNames.objectProperties.avoidGenericNames": {
 					"type": "boolean",
 					"default": true,
 					"description": "Avoid using generic object property names.",
-					"order": 17
+					"order": 16
 				},
 				"djangoly.languages.python.boolean.positiveNaming": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enforce positive naming conventions.",
-					"order": 18
+					"order": 17
 				},
 				"djangoly.languages.python.boolean.usePrefix": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enforce boolean variable prefixes.",
-					"order": 19
+					"order": 18
 				},
 				"djangoly.languages.python.expressiveNames.variables.examples": {
 					"type": "array",
@@ -241,7 +235,7 @@
 						"type": "string"
 					},
 					"description": "Examples of Python variable naming conventions",
-					"order": 20
+					"order": 19
 				},
 				"djangoly.languages.python.expressiveNames.functions.examples": {
 					"type": "array",
@@ -250,7 +244,7 @@
 						"type": "string"
 					},
 					"description": "Examples of Python function naming conventions",
-					"order": 21
+					"order": 20
 				},
 				"djangoly.languages.python.expressiveNames.objectProperties.examples": {
 					"type": "array",
@@ -259,7 +253,7 @@
 						"type": "string"
 					},
 					"description": "Examples of Python dictionary key naming conventions",
-					"order": 22
+					"order": 21
 				},
 				"djangoly.languages.python.celeryTaskDecorator": {
 					"type": "object",
@@ -268,7 +262,7 @@
 						"requiredCalls": []
 					},
 					"description": "Celery task functions should have the newrelic background_task decorator and call set_custom_newrelic_log.",
-					"order": 23
+					"order": 22
 				}
 			}
 		}

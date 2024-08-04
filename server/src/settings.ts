@@ -40,7 +40,6 @@ export interface ExtensionSettings {
 
 export const defaultPrefixes: string[] = ["is", "has", "should", "can", "did"];
 export const defaultFunctionLengthLimit: number = 60;
-export const maxCyclomaticComplexity: number = 10;
 
 
 const defaultLanguageConventions: LanguageConventions = {
@@ -57,7 +56,6 @@ const defaultLanguageConventions: LanguageConventions = {
 			avoidShortNames: true,
 			avoidGenericNames: true,
 			functionLengthLimit: defaultFunctionLengthLimit,
-			maxCyclomaticComplexity: maxCyclomaticComplexity,
 			examples: [],
 		},
 		objectProperties: {
@@ -143,8 +141,6 @@ export const normalizeLanguageSettings = (
 					languageSettings.expressiveNames.functions.avoidGenericNames,
 				functionLengthLimit:
 					languageSettings.expressiveNames.functions.functionLengthLimit,
-				maxCyclomaticComplexity:
-					languageSettings.expressiveNames.functions.maxCyclomaticComplexity,
 					examples: languageSettings.expressiveNames.functions.examples,
 			},
 			objectProperties: {

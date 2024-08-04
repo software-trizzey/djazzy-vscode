@@ -10,7 +10,7 @@ import {
 
 import { Credentials } from "./common/auth/github";
 
-import { EXTENSION_ID, EXTENSION_DISPLAY_NAME, COMMANDS } from "./common/constants";
+import { EXTENSION_ID, EXTENSION_DISPLAY_NAME, COMMANDS, RATE_LIMIT_NOTIFICATION_ID, ACCESS_FORBIDDEN_NOTIFICATION_ID } from "./common/constants";
 
 import {
 	getChangedLines,
@@ -63,6 +63,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	registerCommands(context, client, activate, deactivate);
 
 	client.start().then(async () => {
+		activateClientNotifications(client);
+
 		client.onRequest(COMMANDS.GET_GIT_DIFF, getChangedLines);
 
 		const token = context.globalState.get(COMMANDS.USER_API_KEY);
@@ -80,4 +82,15 @@ export function deactivate(): Thenable<void> | undefined {
 		return undefined;
 	}
 	return client.stop();
+}
+
+
+export function activateClientNotifications(client: LanguageClient) {
+    client.onNotification(RATE_LIMIT_NOTIFICATION_ID, (params: { message: string }) => {
+        vscode.window.showWarningMessage(params.message, "Okay");
+    });
+
+    client.onNotification(ACCESS_FORBIDDEN_NOTIFICATION_ID, (params: { message: string }) => {
+        vscode.window.showErrorMessage(params.message);
+    });
 }

@@ -7,6 +7,9 @@ export const CHECK_TESTS_EXISTS = `${EXTENSION_ID}.checkTestExists`;
 export const UPDATE_CACHED_USER_TOKEN = `${EXTENSION_ID}.updateCachedUserToken`;
 export const REPORT_FALSE_POSITIVE = `${EXTENSION_ID}.reportFalsePositive`;
 
+export const RATE_LIMIT_NOTIFICATION_ID = `${EXTENSION_ID}/rateLimitReached`;
+export const ACCESS_FORBIDDEN_NOTIFICATION_ID = `${EXTENSION_ID}/forbidden`;
+
 const COMMANDS = { 
 	FIX_NAME,
 	GET_CHANGED_LINES,

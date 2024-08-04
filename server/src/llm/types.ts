@@ -29,6 +29,8 @@ export interface Issue {
 export interface LLMNPlusOneResult {
     has_n_plus_one_issues: boolean;
     issues: Issue[];
+    isRateLimited?: boolean;
+    isForbidden?: boolean;
 }
 
 export interface PossibleIssue {

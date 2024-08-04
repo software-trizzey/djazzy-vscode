@@ -14,9 +14,10 @@ import { PythonProvider } from "./python";
 import { SOURCE_NAME, DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE } from "../constants/diagnostics";
 import { ExtensionSettings, cachedUserToken, defaultConventions } from "../settings";
 import LOGGER from '../common/logs';
-import COMMANDS from '../constants/commands';
-import { chatWithLLM } from '../llm/helpers';
+import COMMANDS, { ACCESS_FORBIDDEN_NOTIFICATION_ID, RATE_LIMIT_NOTIFICATION_ID } from '../constants/commands';
+import { chatWithLLM } from '../llm/chat';
 import { DeveloperInput, LLMNPlusOneResult, Models, PossibleIssue } from '../llm/types';
+import { RateLimitError, ForbiddenError } from '../llm/helpers';
 
 
 const METHOD_NAMES = [
@@ -136,24 +137,30 @@ export class DjangoProvider extends PythonProvider {
             LOGGER.warn("Only authenticated users can use the N+1 query detection feature.");
             return;
         }
-
+    
         const functionBodyWithLines = symbol.body_with_lines;
         const potentialIssues = this.analyzeFunctionForPotentialIssues(functionBodyWithLines, symbol);
-
+    
         if (potentialIssues.length > 0) {
             try {
                 const cacheKey = this.generateCacheKey(symbol, document);
                 const cachedResult = this.getCachedResult(cacheKey);
-
+    
                 let llmResult: LLMNPlusOneResult;
                 if (cachedResult) {
                     llmResult = cachedResult;
                     console.log(`Using cached result for ${cacheKey}`);
                 } else {
                     llmResult = await this.validateNPlusOneWithLLM(symbol, potentialIssues);
+                    
+                    if (llmResult.isRateLimited) {
+                        this.sendRateLimitNotification();
+                        return;
+                    }
+                    
                     this.setCachedResult(cacheKey, llmResult);
                 }
-
+    
                 if (llmResult.has_n_plus_one_issues) {
                     this.addNPlusOneDiagnostics(symbol, diagnostics, llmResult.issues);
                 }
@@ -294,7 +301,9 @@ export class DjangoProvider extends PythonProvider {
             LOGGER.warn("Only authenticated users can use the N+1 query detection feature.");
             return {
                 has_n_plus_one_issues: false,
-                issues: []
+                issues: [],
+                isRateLimited: false,
+                isForbidden: true
             };
         }
     
@@ -318,27 +327,41 @@ export class DjangoProvider extends PythonProvider {
                 cachedUserToken,
                 Models.OPEN_AI
             );
-            const processedResult: LLMNPlusOneResult = {
-                has_n_plus_one_issues: llmResult.has_n_plus_one_issues,
-                issues: llmResult.issues.map(issue => ({
-                    issue_id: issue.issue_id,
-                    description: issue.description,
-                    problematic_code: issue.problematic_code,
-                    suggestion: issue.suggestion,
-                    start_line: issue.start_line,
-                    end_line: issue.end_line,
-                    start_col: issue.start_col,
-                    end_col: issue.end_col,
-                    score: issue.score,
-                    severity: issue.severity
-                }))
-            };
             
-            return processedResult;
+            return llmResult;
         } catch (error) {
+            if (error instanceof RateLimitError) {
+                LOGGER.warn(`Usage limit exceeded for user ${cachedUserToken}`);
+                this.sendRateLimitNotification();
+                return {
+                    has_n_plus_one_issues: false,
+                    issues: [],
+                    isRateLimited: true
+                };
+            } else if (error instanceof ForbiddenError) {
+                LOGGER.error(`Forbidden error for user ${cachedUserToken}`);
+                this.sendForbiddenNotification();
+                return {
+                    has_n_plus_one_issues: false,
+                    issues: [],
+                    isForbidden: true
+                };
+            }
             this.logError(error as Error, 'LLM validation');
             throw error;
         }
+    }
+    
+    private sendRateLimitNotification(): void {
+        this.connection.sendNotification(RATE_LIMIT_NOTIFICATION_ID, {
+            message: "Daily limit for N+1 query detection has been reached. Your quota for this feature will reset tomorrow."
+        });
+    }
+    
+    private sendForbiddenNotification(): void {
+        this.connection.sendNotification(ACCESS_FORBIDDEN_NOTIFICATION_ID, {
+            message: "You do not have permission to use the N+1 query detection feature. Please check your authentication."
+        });
     }
 
     private generateCacheKey(symbol: any, document: TextDocument): string {

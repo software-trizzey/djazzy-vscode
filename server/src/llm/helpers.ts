@@ -1,10 +1,25 @@
 
 import { NPlusOneIssue, ChatAPIResponse } from './types';
 
+export class RateLimitError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'RateLimitError';
+    }
+}
+
+export class ForbiddenError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'ForbiddenError';
+    }
+}
+
 export async function handleErrorResponse(response: Response): Promise<void> {
     let errorMessage = `Error: ${response.statusText}`;
+    let errorData;
     try {
-        const errorData = await response.json();
+        errorData = await response.json();
         if (errorData.error) {
             errorMessage = `Error: ${errorData.error}`;
         }
@@ -19,6 +34,8 @@ export async function handleErrorResponse(response: Response): Promise<void> {
         case 401:
             errorMessage = 'Unauthorized request. Please log in again.';
             break;
+        case 403:
+			throw new ForbiddenError('You do not have permission to perform this action.');
         case 429:
             throw new RateLimitError('Daily request limit exceeded. Please try again tomorrow.');
         case 500:
@@ -43,11 +60,4 @@ export function validateResponse(responseData: ChatAPIResponse, originalInput: s
 
     responseData.has_n_plus_one_issues = validatedIssues.length > 0;
     responseData.issues = validatedIssues;
-}
-
-export class RateLimitError extends Error {
-    constructor(message: string) {
-        super(message);
-        this.name = 'RateLimitError';
-    }
 }

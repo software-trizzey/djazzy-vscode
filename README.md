@@ -54,6 +54,18 @@ for book in books:
     print(book.author.name)  # No additional queries
 ```
 
+### Daily Usage Limit
+To ensure fair usage and maintain service quality, we've implemented a daily limit for N+1 query validations:
+
+- **Limit**: *200 requests per day*
+- **Reset**: The limit resets at midnight UTC
+- **Exceeding the limit**: Once you reach the daily limit, you'll receive a notification, and N+1 query detection will be temporarily unavailable until the next day
+- **Tracking**: The limit is tracked per API key, so each user has their own daily allowance
+
+This limit helps us provide a consistent and reliable service to all our users while allowing for extensive use of the N+1 query detection feature during your development process.
+
+If you find that you consistently need more than 200 validations per day, please contact us at [support@alchemizedsoftware.com](mailto:support@alchemizedsoftware.com) to discuss your needs.
+
 ## Understanding N+1 Query Scores 📊
 
 Djangoly uses a scoring system to help you prioritize and address potential N+1 query issues in your Django project. Here's what you need to know:
@@ -145,9 +157,9 @@ Access these settings by going to `Preferences → Settings → Extensions → D
 
 ## Pricing 🤑
 
-Djangoly is currently available for free as part of our Beta program. During this period, all features are accessible to all users at no cost. We greatly appreciate your feedback and participation in helping us improve the extension.
+Djangoly is currently available for free as part of our Beta program. During this period, all features are accessible to all users at no cost, with a daily limit of 200 N+1 query validations per API key. We greatly appreciate your feedback and participation in helping us improve the extension.
 
-As we move towards a full release, we plan to introduce a paid subscription model. Beta users will be given advance notice of any changes to our pricing structure and may be eligible for special offers.
+As we move towards a full release, we plan to introduce a paid subscription model, which may include higher or unlimited daily validation limits. Beta users will be given advance notice of any changes to our pricing structure and may be eligible for special offers.
 
 ## Feedback ✍️
 

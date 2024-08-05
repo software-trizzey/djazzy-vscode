@@ -1,7 +1,6 @@
 export enum Models {
 	GROQ = 'GROQ',
 	OPEN_AI = 'OPEN_AI'
-
 }
 
   export interface NPlusOneIssue {
@@ -14,16 +13,22 @@ export enum Models {
 }
 
 export interface Issue {
-	issue_id: string;
-	description: string;
-    problematic_code: string;
-	suggestion: string;
-	start_line: number;
-	end_line: number;
-	start_col: number;
-	end_col: number;
-	score: number;
-	severity: string;
+    id: string;
+    startLine: number;
+    endLine: number;
+    startCol: number;
+    endCol: number;
+    message: string;
+    problematicCode: string;
+    suggestedFix: string;
+    severity: Severity;
+    score: number;
+    contextualInfo?: {
+        isInLoop: boolean;
+        loopStartLine?: number;
+        relatedField: string | null;
+        queryType: string;
+    };
 }
   
 export interface LLMNPlusOneResult {
@@ -33,31 +38,24 @@ export interface LLMNPlusOneResult {
     isForbidden?: boolean;
 }
 
-export interface PossibleIssue {
-    id: string;
-    startLine: number;
-    endLine: number;
-    startCol: number;
-    endCol: number;
-    message: string;
+
+
+export enum Severity {
+    HINT = 'HINT',
+    INFORMATION = 'INFORMATION',
+    WARNING = 'WARNING',
+    ERROR = 'ERROR',
 }
 
 export interface DeveloperInput {
     functionName: string;
     functionBody: string;
-    potentialIssues: Array<{
-        id: string;
-        startLine: number;
-        endLine: number;
-        startCol: number;
-        endCol: number;
-        message: string;
-    }>;
+    potentialIssues: Issue[];
 }
 
 export interface ChatAPIResponse {
     has_n_plus_one_issues: boolean;
-    issues: NPlusOneIssue[];
+    issues: Issue[];
     error?: string;
     status?: number;
 }

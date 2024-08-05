@@ -1,5 +1,5 @@
 
-import { NPlusOneIssue, ChatAPIResponse } from './types';
+import { ChatAPIResponse, Issue } from './types';
 
 export class RateLimitError extends Error {
     constructor(message: string) {
@@ -54,8 +54,8 @@ export function validateResponse(responseData: ChatAPIResponse, originalInput: s
         throw new Error('Unexpected response structure from server');
     }
 
-    const validatedIssues = responseData.issues.filter((issue: NPlusOneIssue) =>
-        originalInput.includes(issue.problematic_code)
+    const validatedIssues = responseData.issues.filter((issue: Issue) =>
+        originalInput.includes(issue.problematicCode)
     );
 
     responseData.has_n_plus_one_issues = validatedIssues.length > 0;

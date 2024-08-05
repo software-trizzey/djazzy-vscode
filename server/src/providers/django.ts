@@ -182,7 +182,6 @@ export class DjangoProvider extends PythonProvider {
                 }
     
                 if (llmResult.has_n_plus_one_issues) {
-                    console.log("N+1 issues detected", llmResult.issues);
                     this.addNPlusOneDiagnostics(symbol, diagnostics, llmResult.issues);
                 }
             } catch (error) {
@@ -354,8 +353,6 @@ export class DjangoProvider extends PythonProvider {
             functionBody: symbol.body,
             potentialIssues: potentialIssues
         };
-
-        console.log("Potential issues", potentialIssues);
     
         try {
             const llmResult = await chatWithLLM(
@@ -363,12 +360,15 @@ export class DjangoProvider extends PythonProvider {
                 developerInput,
                 cachedUserToken,
                 Models.OPEN_AI
-            );
-            console.log("Initial issues", llmResult.issues);
-            const validatedIssues = llmResult.issues.filter((issue: Issue) => issue.message !== IS_FALSE_POSITIVE);
-            console.log("Validated issues", validatedIssues);
-            llmResult.issues = validatedIssues;
-            
+            );            
+
+            for (let issue of llmResult.issues) {
+                const matchedPotentialIssue = potentialIssues.find(potentialIssue => potentialIssue.id === issue.id);
+                if (matchedPotentialIssue) {
+                    issue = { ...issue, contextualInfo: matchedPotentialIssue.contextualInfo };
+                }
+            }
+
             return llmResult;
         } catch (error) {
             if (error instanceof RateLimitError) {
@@ -474,7 +474,6 @@ export class DjangoProvider extends PythonProvider {
     }
 
     private clearDiagnosticsForSymbol(symbol: any, diagnostics: Diagnostic[]): void {
-        console.log("Clearing diagnostics for symbol", symbol.name);
         const symbolRange = {
             start: { line: symbol.function_start_line - 1, character: 0 },
             end: { line: symbol.function_end_line - 1, character: Number.MAX_VALUE }

@@ -290,6 +290,11 @@ export class DjangoProvider extends PythonProvider {
         const functionStartLine = symbol.function_start_line;
     
         for (const issue of issues) {
+            if (!this.shouldShowIssue(issue.score)) {
+                console.log("Skipping issue with score", issue.score);
+                continue;
+            }
+    
             const startLine = (issue.startLine ?? 1) + functionStartLine - 1;
             const endLine = (issue.endLine ?? 1) + functionStartLine - 1;
             const startCol = issue.startCol ?? 0;
@@ -322,21 +327,6 @@ export class DjangoProvider extends PythonProvider {
         }
     }
 
-    private mapSeverity(severity: Severity): DiagnosticSeverity {
-        switch (severity) {
-            case Severity.ERROR:
-                return DiagnosticSeverity.Error;
-            case Severity.WARNING:
-                return DiagnosticSeverity.Warning;
-            case Severity.INFORMATION:
-                return DiagnosticSeverity.Information;
-            case Severity.HINT:
-                return DiagnosticSeverity.Hint;
-            default:
-                return DiagnosticSeverity.Warning;
-        }
-    }
-
     private async validateNPlusOneWithLLM(symbol: any, potentialIssues: Issue[]): Promise<LLMNPlusOneResult> {
         if (!cachedUserToken) {
             LOGGER.warn("Only authenticated users can use the N+1 query detection feature.");
@@ -360,7 +350,9 @@ export class DjangoProvider extends PythonProvider {
                 developerInput,
                 cachedUserToken,
                 Models.OPEN_AI
-            );            
+            );    
+            llmResult.issues = llmResult.issues.filter(issue => this.shouldShowIssue(issue.score));
+            llmResult.has_n_plus_one_issues = llmResult.issues.length > 0;        
 
             for (let issue of llmResult.issues) {
                 const matchedPotentialIssue = potentialIssues.find(potentialIssue => potentialIssue.id === issue.id);
@@ -419,6 +411,40 @@ export class DjangoProvider extends PythonProvider {
 
     private setCachedResult(key: string, result: LLMNPlusOneResult): void {
         this.nPlusOnecache.set(key, { result, timestamp: Date.now() });
+    }
+
+    private mapSeverity(severity: Severity): DiagnosticSeverity {
+        switch (severity) {
+            case Severity.ERROR:
+                return DiagnosticSeverity.Error;
+            case Severity.WARNING:
+                return DiagnosticSeverity.Warning;
+            case Severity.INFORMATION:
+                return DiagnosticSeverity.Information;
+            case Severity.HINT:
+                return DiagnosticSeverity.Hint;
+            default:
+                return DiagnosticSeverity.Warning;
+        }
+    }
+
+    private shouldShowIssue(score: number): boolean {
+        const minScore = this.getMinScoreForSeverity(this.settings.general.nPlusOneMinimumSeverityThreshold);
+        return score >= minScore;
+    }
+
+    private getMinScoreForSeverity(severity: Severity): number {
+        switch (severity) {
+            case Severity.ERROR:
+                return 90;
+            case Severity.WARNING:
+                return 70;
+            case Severity.INFORMATION:
+                return 50;
+            case Severity.HINT:
+            default:
+                return 0;
+        }
     }
 
     private getSeverityIndicator(severity: DiagnosticSeverity): string {

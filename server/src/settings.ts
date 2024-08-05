@@ -2,6 +2,7 @@ import { URI } from 'vscode-uri';
 
 import type { LanguageConventions } from "./languageConventions";
 import type { CommentConventions } from "./commentConventions";
+import { Severity } from './llm/types';
 
 export let workspaceRoot = '';
 export let settingsVersion: number = 0;
@@ -29,6 +30,7 @@ export interface ExtensionSettings {
 	general: {
 		onlyCheckNewCode: boolean;
 		isDevMode: boolean;
+		nPlusOneMinimumSeverityThreshold: Severity;
 		notificationInterval: number;
 		prefixes: string[];
 	};
@@ -79,6 +81,7 @@ export const defaultConventions: ExtensionSettings = {
 	general: {
 		onlyCheckNewCode: false,
 		isDevMode: false,
+		nPlusOneMinimumSeverityThreshold: Severity.ERROR,
 		notificationInterval: 45, // minutes
 		prefixes: defaultPrefixes,
 	},
@@ -108,6 +111,7 @@ export const normalizeClientSettings = (
 		general: {
 			onlyCheckNewCode: settings.general.onlyCheckNewCode,
 			isDevMode: settings.general.isDevMode,
+			nPlusOneMinimumSeverityThreshold: settings.general.nPlusOneMinimumSeverityThreshold,
 			notificationInterval: settings.general.notificationInterval,
 			prefixes: settings.general.prefixes,
 		},

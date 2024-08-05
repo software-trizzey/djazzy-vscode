@@ -320,6 +320,8 @@ export class DjangoProvider extends PythonProvider {
             functionBody: symbol.body,
             potentialIssues: potentialIssues
         };
+
+        console.log("potentialIssues", potentialIssues);
     
         try {
             const llmResult = await chatWithLLM(
@@ -337,6 +339,7 @@ export class DjangoProvider extends PythonProvider {
                     issue = { ...issue, contextualInfo: matchedPotentialIssue.contextualInfo };
                 }
             }
+            console.log("LLM N+1 results", llmResult);
 
             return llmResult;
         } catch (error) {
@@ -388,6 +391,20 @@ export class DjangoProvider extends PythonProvider {
 
     private setCachedResult(key: string, result: LLMNPlusOneResult): void {
         this.nPlusOnecache.set(key, { result, timestamp: Date.now() });
+    }
+
+    clearNPlusOneCache(): void {
+        this.nPlusOnecache.clear();
+        console.log('N+1 query detection cache cleared due to severity threshold change');
+    }
+
+    public updateConfiguration(newSettings: ExtensionSettings): void {
+        const oldThreshold = this.settings.general.nPlusOneMinimumSeverityThreshold;
+        this.settings = newSettings;
+    
+        if (oldThreshold !== newSettings.general.nPlusOneMinimumSeverityThreshold) {
+            this.clearNPlusOneCache();
+        }
     }
 
     private mapSeverity(severity: Severity): DiagnosticSeverity {

@@ -113,10 +113,25 @@ export abstract class LanguageProvider {
 		return this.settings;
 	}
 
+	protected clearNPlusOneCache(): void {
+        // Note: This method should be implemented in the DjangoProvider subclass
+    }
+
 	public updateSettings(settings: ExtensionSettings): void {
 		this.settings = settings;
 		this.updateConventions(settings);
 	}
+
+	public updateConfiguration(settings: ExtensionSettings): void {
+        this.settings = settings;
+        this.updateConventions(settings);
+
+        if (this.languageId === 'python' && 
+            settings.general.nPlusOneMinimumSeverityThreshold !== 
+            this.getStoredSettings().general.nPlusOneMinimumSeverityThreshold) {
+            this.clearNPlusOneCache();
+        }
+    }
 
 	private updateConventions(settings: ExtensionSettings): void {
 		const languageSettings = settings.languages[this.languageId];

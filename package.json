@@ -119,7 +119,7 @@
 				},
 				"djangoly.general.nPlusOneMinimumSeverityThreshold": {
 					"type": "string",
-					"default": "ERROR",
+					"default": "WARNING",
 					"description": "Set the minimum severity threshold for N+1 query detection.",
 					"enum": [
 						"ERROR",

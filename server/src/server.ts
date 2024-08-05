@@ -184,6 +184,13 @@ connection.onDidChangeConfiguration(async (change) => {
 		);
 	}
 	console.log("Settings have changed. Refreshing diagnostics...");
+
+	for (const languageId in providerCache) {
+		const provider = providerCache[languageId];
+		const settings = await getDocumentSettings('N/A'); // Use global settings
+		provider.updateConfiguration(settings);
+	}
+
 	await Promise.all(
 		collectedDocuments.map(async (document) => {
 			const diagnostics = await validateTextDocument(document);

@@ -20,8 +20,6 @@ import { chatWithLLM } from '../llm/chat';
 import { DeveloperInput, LLMNPlusOneResult, Models, Issue, Severity } from '../llm/types';
 import { RateLimitError, ForbiddenError } from '../llm/helpers';
 
-const IS_FALSE_POSITIVE = 'FALSE POSITIVE';
-
 const METHOD_NAMES = [
 	"function",
 	"django_model_method",
@@ -30,19 +28,6 @@ const METHOD_NAMES = [
 	"django_testcase_method",
 ];
 
-const QUERY_METHODS = [
-    "all",
-    "filter",
-    "get",
-    "count",
-    "exists",
-    "aggregate",
-    "annotate",
-    "values",
-    "values_list",
-    "first",
-    "last",
-];
 
 const REVERSE_FOREIGN_KEY_PATTERN = /\.[\w]+_set\./;
 const FOREIGN_KEY_OR_ONE_TO_ONE_PATTERN = /\.[\w]+\./;
@@ -50,14 +35,6 @@ const FOREIGN_KEY_OR_ONE_TO_ONE_PATTERN = /\.[\w]+\./;
 const RELATED_FIELD_PATTERNS = [
     REVERSE_FOREIGN_KEY_PATTERN,
     FOREIGN_KEY_OR_ONE_TO_ONE_PATTERN
-];
-
-const AGGREGATE_METHODS = [
-    "Count",
-    "Sum",
-    "Avg",
-    "Max",
-    "Min",
 ];
 
 interface CachedResult {

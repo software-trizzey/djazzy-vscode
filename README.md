@@ -34,6 +34,7 @@ Djangoly includes several security checks to help ensure your Django project fol
 1. **DEBUG Setting:** Checks if `DEBUG` is set to `True`. This setting should be `False` in production environments.
 2. **SECRET_KEY Protection:** Verifies that the `SECRET_KEY` is not hardcoded in your settings file.
 3. **ALLOWED_HOSTS Configuration**: Checks the `ALLOWED_HOSTS` setting for potential security issues.
+4. **COOKIE Settings**: Ensures the `CSRF_COOKIE_SECURE` and `SESSION_COOKIE_SECURE` settings are set to `True` for production environments.
 
 These security checks help you identify common configuration mistakes that could lead to security vulnerabilities in your Django application. Djangoly provides warnings and recommendations to help you maintain a secure Django environment, especially when preparing for production deployment.
 

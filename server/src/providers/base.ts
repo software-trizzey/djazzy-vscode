@@ -34,6 +34,8 @@ import { NAMING_CONVENTION_VIOLATION_SOURCE_TYPE, SOURCE_NAME } from '../constan
 
 const actionWordsValues = Object.values(verbDictionary);
 
+const VARIABLES_TO_IGNORE = ["id", "pk", "debug"];
+
 
 export interface RenameSuggestion {
 	suggestedName: string;
@@ -371,7 +373,8 @@ export abstract class LanguageProvider {
 		variableName: string;
 		variableValue: any;
 	}): { violates: boolean; reason: string } {
-		if (!variableName || variableName.toLowerCase() === "id") {
+		if (!variableName || VARIABLES_TO_IGNORE.includes(variableName.toLowerCase())) {
+			console.log("Ignoring variable name:", variableName);
 			return { violates: false, reason: "" };
 		}
 		const {

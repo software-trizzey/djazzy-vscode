@@ -163,7 +163,7 @@ class DjangoAnalyzer(Analyzer):
             self.add_security_issue(
                 'debug_true',
                 line,
-                'DEBUG is set to True. This should be False in production.',
+                'DEBUG is set to True. Ensure it is False in production.',
                 IssueSeverity.WARNING
             )
 

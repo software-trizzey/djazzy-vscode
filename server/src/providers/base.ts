@@ -34,7 +34,9 @@ import { NAMING_CONVENTION_VIOLATION_SOURCE_TYPE, SOURCE_NAME } from '../constan
 
 const actionWordsValues = Object.values(verbDictionary);
 
-const VARIABLES_TO_IGNORE = ["ID", "PK", "DEBUG", "USE_I18N", "USE_L10N", "USE_TZ"];
+const VARIABLES_TO_IGNORE = [
+	"ID", "PK", "DEBUG", "USE_I18N", "USE_L10N", "USE_TZ", "CSRF_COOKIE_SECURE", "SESSION_COOKIE_SECURE"
+];
 
 
 export interface RenameSuggestion {

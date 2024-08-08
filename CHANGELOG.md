@@ -22,6 +22,13 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
+## [Version 0.1.2] - 2024-08-08
+
+### Added
+
+- [Enhancement] Add additional security checks (CSRF_COOKIE_SECURE, SESSION_COOKIE_SECURE)
+- [Enhancement] Include links to relevant Django documentation for security check symbol.
+
 ## [Version 0.1.1] - 2024-08-08
 
 ### Added

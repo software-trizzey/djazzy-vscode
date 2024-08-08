@@ -11,6 +11,8 @@ DEBUG = 'DEBUG'
 SECRET_KEY = 'SECRET_KEY'
 ALLOWED_HOSTS = 'ALLOWED_HOSTS'
 WILD_CARD = '*'
+CSRF_COOKIE_SECURE = 'CSRF_COOKIE_SECURE'
+SESSION_COOKIE = 'SESSION_COOKIE_SECURE'
 
 class IssueSeverity:
     ERROR = 'ERROR'
@@ -22,6 +24,8 @@ class IssueDocLinks:
     DEBUG = 'https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/#debug'
     SECRET_KEY = 'https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/#secret-key'
     ALLOWED_HOSTS = 'https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/#allowed-hosts'
+    CSRF_COOKIE_SECURE = 'https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/#csrf-cookie-secure'
+    SESSION_COOKIE_SECURE = 'https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/#session-cookie-secure'
 
 DJANGO_COMPONENTS = {
     'model': ['Model', 'BaseModel'],
@@ -161,6 +165,10 @@ class DjangoAnalyzer(Analyzer):
             self.check_secret_key(value_str, line)
         elif name == ALLOWED_HOSTS:
             self.check_allowed_hosts(value_str, line)
+        elif name == CSRF_COOKIE_SECURE:
+            self.check_csrf_cookie(value_str, line)
+        elif name == SESSION_COOKIE:
+            self.check_session_cookie(value_str, line)
 
     def check_debug_setting(self, value: str, line: int):
         if value.strip().lower() == 'true':
@@ -205,6 +213,28 @@ class DjangoAnalyzer(Analyzer):
                 f'ALLOWED_HOSTS contains a wildcard "*". This is not recommended for production.\n\n{IssueDocLinks.ALLOWED_HOSTS}\n',
                 IssueSeverity.WARNING,
                 IssueDocLinks.ALLOWED_HOSTS
+            )
+
+    def check_csrf_cookie(self, value: str, line: int):
+        if value == 'False':
+            LOGGER.debug('CSRF_COOKIE_SECURE is set to False')
+            self.add_security_issue(
+                'csrf_cookie_secure_false',
+                line,
+                f'CSRF_COOKIE_SECURE is False. Set this to True to avoid transmitting the CSRF cookie over HTTP accidentally.\n\n{IssueDocLinks.CSRF_COOKIE_SECURE}\n',
+                IssueSeverity.WARNING,
+                IssueDocLinks.CSRF_COOKIE_SECURE
+            )
+
+    def check_session_cookie(self, value: str, line: int):
+        if value == 'False':
+            LOGGER.debug('SESSION_COOKIE_SECURE is set to False')
+            self.add_security_issue(
+                'session_cookie_secure_false',
+                line,
+                f'SESSION_COOKIE_SECURE is False. Set this to True to avoid transmitting the session cookie over HTTP accidentally.\n\n{IssueDocLinks.SESSION_COOKIE_SECURE}\n',
+                IssueSeverity.WARNING,
+                IssueDocLinks.SESSION_COOKIE_SECURE
             )
 
     def _get_django_class_type(self, bases):

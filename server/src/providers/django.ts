@@ -12,7 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { createHash } from 'crypto';
 
 import { PythonProvider } from "./python";
-import { SOURCE_NAME, DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE } from "../constants/diagnostics";
+import { SOURCE_NAME, DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE, DJANGO_SECURITY_VIOLATION_SOURCE_TYPE } from "../constants/diagnostics";
 import { ExtensionSettings, cachedUserToken, defaultConventions } from "../settings";
 import LOGGER from '../common/logs';
 import COMMANDS, { ACCESS_FORBIDDEN_NOTIFICATION_ID, RATE_LIMIT_NOTIFICATION_ID } from '../constants/commands';
@@ -61,9 +61,12 @@ export class DjangoProvider extends PythonProvider {
         symbols: any[],
         diagnostics: Diagnostic[],
         changedLines: Set<number> | undefined,
+        securityIssues: any[],
 		document: TextDocument
     ): Promise<void> {
-        await super.validateAndCreateDiagnostics(symbols, diagnostics, changedLines, document);
+        await super.validateAndCreateDiagnostics(symbols, diagnostics, changedLines, securityIssues, document);
+
+        this.processDjangoSecurityIssues(securityIssues, diagnostics);
 
 		const highPrioritySymbols = symbols.filter(symbol => symbol.high_priority);
 		console.log(`Found ${highPrioritySymbols.length} highPrioritySymbols for review`);
@@ -362,6 +365,30 @@ export class DjangoProvider extends PythonProvider {
             }
             this.logError(error as Error, 'LLM validation');
             throw error;
+        }
+    }
+
+    private processDjangoSecurityIssues(
+        securityIssues: any[],
+        diagnostics: Diagnostic[],
+    ): void {
+        for (const issue of securityIssues) {
+            const range: Range = {
+                start: { line: issue.line - 1, character: 0 },
+                end: { line: issue.line - 1, character: Number.MAX_VALUE }
+            };
+
+            const severity = this.mapSeverity(issue.severity);
+
+            const diagnostic: Diagnostic = {
+                range,
+                message: issue.message,
+                severity: severity,
+                source: SOURCE_NAME,
+                code: DJANGO_SECURITY_VIOLATION_SOURCE_TYPE,
+            };
+
+            diagnostics.push(diagnostic);
         }
     }
     

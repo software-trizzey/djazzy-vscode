@@ -118,6 +118,7 @@ export class PythonProvider extends LanguageProvider {
 				});
 				process.stderr.on("data", (data) => {
 					error += data.toString();
+					console.log(`[PARSER] ${data}`); 
 				});
 
 				process.on("close", async (code) => {
@@ -136,11 +137,17 @@ export class PythonProvider extends LanguageProvider {
 									line.trim().startsWith("[") || line.trim().startsWith("{")
 							);
 						const jsonString = jsonLines.join("\n");
-						const symbols = JSON.parse(jsonString);
+						const results = JSON.parse(jsonString);
+						const symbols = results.symbols || [];
+						const securityIssues = results.security_issues || [];
+						
+						if (symbols.length === 0) return resolve(symbols);
+
 						await this.validateAndCreateDiagnostics(
 							symbols,
 							diagnostics,
 							changedLines,
+							securityIssues,
 							document
 						);
 
@@ -183,7 +190,8 @@ export class PythonProvider extends LanguageProvider {
         symbols: any[],
         diagnostics: Diagnostic[],
         changedLines: Set<number> | undefined,
-		document: TextDocument
+		securityIssues?: any[],
+		document?: TextDocument
     ): Promise<void> {
         const conventions = this.getConventions();
         for (const symbol of symbols) {
@@ -319,7 +327,11 @@ export class PythonProvider extends LanguageProvider {
 			"import views",
 			"import serializers",
 			"import forms",
-			"import admin"
+			"import admin",
+			"ALLOWED_HOSTS",
+			"INSTALLED_APPS",
+			"DEBUG",
+			"django", // fallback to finding "django" in the file
 		];
 	
 		const isDjangoFile = djangoPatterns.some(pattern => text.includes(pattern));

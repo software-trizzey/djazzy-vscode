@@ -447,7 +447,8 @@ export class DjangoProjectDetector {
                 }
             }
 
-            return files;
+            const filteredFiles = files.filter(file => !file.includes('venv'));
+            return filteredFiles;
         } catch (error) {
             console.error(`Error getting Python files: ${error}`);
             return [];

@@ -18,6 +18,11 @@ class IssueSeverity:
     WARNING = 'WARNING'
     HINT = 'HINT'
 
+class IssueDocLinks:
+    DEBUG = 'https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/#debug'
+    SECRET_KEY = 'https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/#secret-key'
+    ALLOWED_HOSTS = 'https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/#allowed-hosts'
+
 DJANGO_COMPONENTS = {
     'model': ['Model', 'BaseModel'],
     'serializer': ['Serializer', 'BaseSerializer'],
@@ -163,8 +168,9 @@ class DjangoAnalyzer(Analyzer):
             self.add_security_issue(
                 'debug_true',
                 line,
-                'DEBUG is set to True. Ensure it is False in production.',
-                IssueSeverity.WARNING
+                f'DEBUG is set to True. Ensure it is False in production.\n\n{IssueDocLinks.DEBUG}\n',
+                IssueSeverity.WARNING,
+                IssueDocLinks.DEBUG
             )
 
     def check_secret_key(self, value: str, line: int):
@@ -176,8 +182,9 @@ class DjangoAnalyzer(Analyzer):
             self.add_security_issue(
                 'hardcoded_secret_key',
                 line,
-                'SECRET_KEY appears to be hardcoded. It is strongly recommended to store it in an environment variable for better security.',
-                IssueSeverity.WARNING
+                f'SECRET_KEY appears to be hardcoded. It is strongly recommended to store it in an environment variable for better security.\n\n{IssueDocLinks.SECRET_KEY}\n',
+                IssueSeverity.WARNING,
+                IssueDocLinks.SECRET_KEY
             )
 
     def check_allowed_hosts(self, value: str, line: int):
@@ -186,16 +193,18 @@ class DjangoAnalyzer(Analyzer):
             self.add_security_issue(
                 'empty_allowed_hosts',
                 line,
-                'ALLOWED_HOSTS is empty. This is not secure for production.',
-                IssueSeverity.WARNING
+                f'ALLOWED_HOSTS is empty. This is not secure for production.\n\n{IssueDocLinks.ALLOWED_HOSTS}\n',
+                IssueSeverity.WARNING,
+                IssueDocLinks.ALLOWED_HOSTS
             )
         elif "'*'" in value or '"*"' in value:
             LOGGER.debug('Wildcard "*" found in ALLOWED_HOST')
             self.add_security_issue(
                 'wildcard_allowed_hosts',
                 line,
-                'ALLOWED_HOSTS contains a wildcard "*". This is not recommended for production.',
-                IssueSeverity.WARNING
+                f'ALLOWED_HOSTS contains a wildcard "*". This is not recommended for production.\n\n{IssueDocLinks.ALLOWED_HOSTS}\n',
+                IssueSeverity.WARNING,
+                IssueDocLinks.ALLOWED_HOSTS
             )
 
     def _get_django_class_type(self, bases):
@@ -221,14 +230,15 @@ class DjangoAnalyzer(Analyzer):
                 return node.func.attr in QUERY_METHODS
         return any(self.contains_query_method(child) for child in ast.iter_child_nodes(node))
 
-    def add_security_issue(self, issue_type: str, line: int, message: str, severity: str):
+    def add_security_issue(self, issue_type: str, line: int, message: str, severity: str, doc_link: str = None):
         LOGGER.debug(f'Adding security issue: {issue_type} - {message}')
 
         self.security_issues.append({
             'type': issue_type,
             'line': line,
             'message': message,
-            'severity': severity
+            'severity': severity,
+            'doc_link': doc_link
         })
 
     def perform_security_checks(self):

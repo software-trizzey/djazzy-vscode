@@ -386,6 +386,9 @@ export class DjangoProvider extends PythonProvider {
                 severity: severity,
                 source: SOURCE_NAME,
                 code: DJANGO_SECURITY_VIOLATION_SOURCE_TYPE,
+                codeDescription: {
+                    href: issue.doc_link
+                }
             };
 
             diagnostics.push(diagnostic);

@@ -1,6 +1,7 @@
 import ast
-import sys
 import json
+import re
+import sys
 
 from ast_parser import Analyzer, serialize_file_data
 
@@ -10,6 +11,12 @@ DEBUG = 'DEBUG'
 SECRET_KEY = 'SECRET_KEY'
 ALLOWED_HOSTS = 'ALLOWED_HOSTS'
 WILD_CARD = '*'
+
+class IssueSeverity:
+    ERROR = 'ERROR'
+    INFORMATION = 'INFORMATION'
+    WARNING = 'WARNING'
+    HINT = 'HINT'
 
 DJANGO_COMPONENTS = {
     'model': ['Model', 'BaseModel'],
@@ -157,18 +164,20 @@ class DjangoAnalyzer(Analyzer):
                 'debug_true',
                 line,
                 'DEBUG is set to True. This should be False in production.',
-                'High'
+                IssueSeverity.WARNING
             )
 
     def check_secret_key(self, value: str, line: int):
-        cleaned_value = value.strip("'\"")
-        if len(cleaned_value) < 50:
-            LOGGER.debug('SECRET_KEY is potentially weak')
+        env_var_patterns = re.compile(
+            r'os\.environ\.get\(|env\(|config\(|os\.getenv\('
+        )
+
+        if not env_var_patterns.search(value.strip()):
             self.add_security_issue(
-                'weak_secret_key',
+                'hardcoded_secret_key',
                 line,
-                'SECRET_KEY is potentially weak. Use a long, random string.',
-                'High'
+                'SECRET_KEY appears to be hardcoded. It is strongly recommended to store it in an environment variable for better security.',
+                IssueSeverity.WARNING
             )
 
     def check_allowed_hosts(self, value: str, line: int):
@@ -178,7 +187,7 @@ class DjangoAnalyzer(Analyzer):
                 'empty_allowed_hosts',
                 line,
                 'ALLOWED_HOSTS is empty. This is not secure for production.',
-                'Medium'
+                IssueSeverity.WARNING
             )
         elif "'*'" in value or '"*"' in value:
             LOGGER.debug('Wildcard "*" found in ALLOWED_HOST')
@@ -186,7 +195,7 @@ class DjangoAnalyzer(Analyzer):
                 'wildcard_allowed_hosts',
                 line,
                 'ALLOWED_HOSTS contains a wildcard "*". This is not recommended for production.',
-                'Medium'
+                IssueSeverity.WARNING
             )
 
     def _get_django_class_type(self, bases):
@@ -232,8 +241,11 @@ class DjangoAnalyzer(Analyzer):
         LOGGER.info(f'Security checks complete. Found {len(self.security_issues)} issues.')
 
     def parse_code(self):
-        result = super().parse_code()
-        self.perform_security_checks()
+        try:
+            result = super().parse_code()
+            self.perform_security_checks() 
+        except Exception as e:
+            LOGGER.error(f'Error parsing Django code: {e}')
         return result
 
 def main():

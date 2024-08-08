@@ -4,6 +4,13 @@ import json
 
 from ast_parser import Analyzer, serialize_file_data
 
+from log import LOGGER
+
+DEBUG = 'DEBUG'
+SECRET_KEY = 'SECRET_KEY'
+ALLOWED_HOSTS = 'ALLOWED_HOSTS'
+WILD_CARD = '*'
+
 DJANGO_COMPONENTS = {
     'model': ['Model', 'BaseModel'],
     'serializer': ['Serializer', 'BaseSerializer'],
@@ -133,6 +140,55 @@ class DjangoAnalyzer(Analyzer):
         
         self.generic_visit(node)
 
+    def check_assignment_security(self, name: str, value: ast.expr, line: int):
+        LOGGER.debug(f'Checking assignment security for {name}')
+        value_str = ast.get_source_segment(self.source_code, value)
+        if name == DEBUG:
+            self.check_debug_setting(value_str, line)
+        elif name == SECRET_KEY:
+            self.check_secret_key(value_str, line)
+        elif name == ALLOWED_HOSTS:
+            self.check_allowed_hosts(value_str, line)
+
+    def check_debug_setting(self, value: str, line: int):
+        if value.strip().lower() == 'true':
+            LOGGER.debug('DEBUG is set to True')
+            self.add_security_issue(
+                'debug_true',
+                line,
+                'DEBUG is set to True. This should be False in production.',
+                'High'
+            )
+
+    def check_secret_key(self, value: str, line: int):
+        cleaned_value = value.strip("'\"")
+        if len(cleaned_value) < 50:
+            LOGGER.debug('SECRET_KEY is potentially weak')
+            self.add_security_issue(
+                'weak_secret_key',
+                line,
+                'SECRET_KEY is potentially weak. Use a long, random string.',
+                'High'
+            )
+
+    def check_allowed_hosts(self, value: str, line: int):
+        if value == '[]':
+            LOGGER.debug('ALLOWED_HOSTS is empty')
+            self.add_security_issue(
+                'empty_allowed_hosts',
+                line,
+                'ALLOWED_HOSTS is empty. This is not secure for production.',
+                'Medium'
+            )
+        elif "'*'" in value or '"*"' in value:
+            LOGGER.debug('Wildcard "*" found in ALLOWED_HOST')
+            self.add_security_issue(
+                'wildcard_allowed_hosts',
+                line,
+                'ALLOWED_HOSTS contains a wildcard "*". This is not recommended for production.',
+                'Medium'
+            )
+
     def _get_django_class_type(self, bases):
         for base in bases:
             if isinstance(base, ast.Name) and self._is_django_component(base.id):
@@ -156,11 +212,36 @@ class DjangoAnalyzer(Analyzer):
                 return node.func.attr in QUERY_METHODS
         return any(self.contains_query_method(child) for child in ast.iter_child_nodes(node))
 
+    def add_security_issue(self, issue_type: str, line: int, message: str, severity: str):
+        LOGGER.debug(f'Adding security issue: {issue_type} - {message}')
+
+        self.security_issues.append({
+            'type': issue_type,
+            'line': line,
+            'message': message,
+            'severity': severity
+        })
+
+    def perform_security_checks(self):
+        LOGGER.info('Running security checks...')
+        for node in ast.walk(ast.parse(self.source_code)):
+            if isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if isinstance(target, ast.Name):
+                        self.check_assignment_security(target.id, node.value, node.lineno)
+        LOGGER.info(f'Security checks complete. Found {len(self.security_issues)} issues.')
+
+    def parse_code(self):
+        result = super().parse_code()
+        self.perform_security_checks()
+        return result
+
 def main():
     input_code = sys.stdin.read()
     analyzer = DjangoAnalyzer(input_code)
-    parsed_symbols = analyzer.parse_code()
-    print(json.dumps(parsed_symbols, default=serialize_file_data))
+    LOGGER.info("Django analyzer initialized")
+    parsed_code = analyzer.parse_code()
+    print(json.dumps(parsed_code, default=serialize_file_data))
 
 if __name__ == "__main__":
     main()

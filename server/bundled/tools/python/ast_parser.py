@@ -5,7 +5,10 @@ import json
 import sys
 import tokenize
 from io import StringIO
-from typing import Dict, Any
+from typing import Dict, Any, List
+
+from log import LOGGER
+
 
 DJANGO_IGNORE_FUNCTIONS = {
     "save": True,
@@ -79,6 +82,7 @@ class Analyzer(ast.NodeVisitor):
         self.comments = []
         self.pending_comments = []
         self.url_patterns = []
+        self.security_issues: List[Dict[str, Any]] = []
         self.current_class_type = None
         self.in_class = False
 
@@ -510,6 +514,7 @@ class Analyzer(ast.NodeVisitor):
         ))
 
     def parse_code(self) -> Dict[str, Any]:
+        LOGGER.info("Running parser...")
         try:
             self.get_comments()
             tree = ast.parse(self.source_code)
@@ -528,20 +533,25 @@ class Analyzer(ast.NodeVisitor):
                     is_reserved=False,
                     value=str(pattern)
                 ))
-
+            LOGGER.info(f"Parsing complete. Found {len(self.symbols)} symbols.")
         except (SyntaxError, IndentationError) as e:
             # djangoly-ignore: we're not worried about syntax errors triggered by the user's code
-            pass
+            LOGGER.error(f"Syntax error in code: {str(e)}")
         except Exception as e:
             # djangoly-ignore: we're not worried about runtime errors triggered by the user's code
-            pass
-        return self.symbols
+            LOGGER.error(f"Unexpected error during parsing: {str(e)}")
+        return {
+            "symbols": self.symbols,
+            "security_issues": self.security_issues,
+        }
 
 def main():
     input_code = sys.stdin.read()
+    LOGGER.info("Analyzer initialized")
     analyzer = Analyzer(input_code)
-    parsed_symbols = analyzer.parse_code()
-    print(json.dumps(parsed_symbols, default=serialize_file_data))
+    parsed_code = analyzer.parse_code()
+    print(json.dumps(parsed_code, default=serialize_file_data))
+    LOGGER.info("Finished processing and outputting results")
 
 if __name__ == "__main__":
     main()

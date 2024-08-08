@@ -22,6 +22,13 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
+## [Version 0.1.1] - 2024-08-08
+
+### Added
+
+- [Feature] Detect misconfigured security settings in Django settings file. (Debug, Secret key, and Allowed Hosts)
+
+
 ## [Version 0.1.0] - 2024-08-02
 
 ### Added

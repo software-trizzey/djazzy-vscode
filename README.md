@@ -28,6 +28,15 @@ Djangoly is a powerful VS Code extension designed to help teams enforce Django b
 - **Test Suite Conventions**: Notify developers to add or update test files when changes are detected in Django views or models.
 - **Redundant Comment Detection**: Automatically flags comments that do not contribute additional information or context to the code.
 
+## Security Checks (MVP) 🔒
+Djangoly includes several security checks to help ensure your Django project follows best practices for security:
+
+1. **DEBUG Setting:** Checks if `DEBUG` is set to `True`. This setting should be `False` in production environments.
+2. **SECRET_KEY Protection:** Verifies that the `SECRET_KEY` is not hardcoded in your settings file.
+3. **ALLOWED_HOSTS Configuration**: Checks the `ALLOWED_HOSTS` setting for potential security issues.
+
+These security checks help you identify common configuration mistakes that could lead to security vulnerabilities in your Django application. Djangoly provides warnings and recommendations to help you maintain a secure Django environment, especially when preparing for production deployment.
+
 ## Quick Start 🏃‍♂️💨
 
 1. **Get an API Key**: Email [hello@alchemizedsoftware.com](mailto:hello@alchemizedsoftware.com) to request an API key.

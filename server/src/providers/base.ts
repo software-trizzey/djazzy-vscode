@@ -44,8 +44,6 @@ export abstract class LanguageProvider {
 	protected conventions?: LanguageConventions;
 	protected settings: ExtensionSettings;
 
-	private systemMessage: string = '';
-
 	protected diagnostics: Map<
 		string,
 		{
@@ -72,20 +70,6 @@ export abstract class LanguageProvider {
 			return;
 		}
 		this.conventions = languageSettings;
-
-		this.systemMessage = `You are a code assistant tasked with correcting naming convention violations according to standard coding practices. The user will provide a variable or function name that violates their team's style conventions along with the function body for context.
-		Your task is to suggest a more descriptive name that aligns with the project's naming conventions. Consider the following project-specific information:
-		- Programming language: ${this.languageId}
-		- Naming conventions: snake_case, camelCase, PascalCase, etc.
-		- Existing code patterns: If a function body is provided, analyze it and any relevant surrounding code to understand the context and generate a suitable suggestion.
-		
-		Respond with a JSON object containing three keys:
-		{
-			"originalName": "string",
-			"suggestedName": "string",
-			"justification": "string"
-		}
-		Ensure the JSON object is well-formed and does not contain any extraneous characters.`;
 	}
 
 	protected getConventions(): LanguageConventions {
@@ -274,7 +258,6 @@ export abstract class LanguageProvider {
 		variableValue: any;
 	}): { violates: boolean; reason: string } {
 		if (!variableName || VARIABLES_TO_IGNORE.includes(variableName.toUpperCase())) {
-			console.log("Ignoring variable name:", variableName);
 			return { violates: false, reason: "" };
 		}
 		const {

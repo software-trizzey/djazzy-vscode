@@ -22,6 +22,12 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
+## [Version 0.1.3] - 2024-08-09
+
+### Added
+
+- [Feature] Reactivate rename suggestions (code actions) for function names.
+
 ## [Version 0.1.2] - 2024-08-08
 
 ### Added

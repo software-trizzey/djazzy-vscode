@@ -379,7 +379,6 @@ export class DjangoProvider extends PythonProvider {
                     issue = { ...issue, contextualInfo: matchedPotentialIssue.contextualInfo };
                 }
             }
-            console.log("LLM N+1 results", llmResult);
 
             return llmResult;
         } catch (error) {

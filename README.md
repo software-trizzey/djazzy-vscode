@@ -1,4 +1,4 @@
-# Djangoly: Your Django Best Practices Companion
+# Djangoly: Write Cleaner, Faster, Scalable Django Code
 
 > **🔑 API Key Required**
 > Access to Djangoly currently requires an API key. To obtain an API key and participate in our beta program, please email [hello@alchemizedsoftware.com](mailto:hello@alchemizedsoftware.com). We appreciate your interest and look forward to having you on board!

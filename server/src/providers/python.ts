@@ -21,12 +21,16 @@ import { ExtensionSettings, defaultConventions } from "../settings";
 import { PYTHON_DIRECTORY } from "../constants/filepaths";
 import { FIX_NAME } from "../constants/commands";
 import { RULE_MESSAGES } from '../constants/rules';
-import { SOURCE_NAME, NAMING_CONVENTION_VIOLATION_SOURCE_TYPE, RENAME_SUGGESTION_PLACEHOLDER } from "../constants/diagnostics";
+import { SOURCE_NAME, NAMING_CONVENTION_VIOLATION_SOURCE_TYPE, REDUNDANT_COMMENT_VIOLATION_SOURCE_TYPE } from "../constants/diagnostics";
 import { LanguageConventions, CeleryTaskDecoratorSettings } from "../languageConventions";
+import { Models, SymbolFunctionTypes } from '../llm/types';
+
+const symbolFunctionTypeList = Object.values(SymbolFunctionTypes);
 
 export class PythonProvider extends LanguageProvider {
 	provideDiagnosticsDebounced: (document: TextDocument) => void;
 
+	private symbols: any[] = [];
 	private codeActionsMessageCache: Map<string, CodeAction> = new Map();
 
 	constructor(
@@ -43,6 +47,30 @@ export class PythonProvider extends LanguageProvider {
 		);
 	}
 
+	async provideCodeActions(document: TextDocument, userToken: string): Promise<CodeAction[]> {
+		const diagnostics = document.uri
+		? this.getDiagnostic(document.uri, document.version)
+		: [];
+
+		if (!diagnostics) return [];
+
+		const codeActions: CodeAction[] = [];
+		for (const diagnostic of diagnostics) {
+			if (diagnostic.code === NAMING_CONVENTION_VIOLATION_SOURCE_TYPE) {
+				const fix = await this.generateFixForNamingConventionViolation(
+					document,
+					diagnostic,
+					userToken
+				);
+				if (fix) {
+					codeActions.push(fix);
+				}
+			}
+		}
+		const filteredActions = codeActions.filter(action => action !== undefined);
+		return filteredActions;
+	}
+
 	async generateFixForNamingConventionViolation(
 		document: TextDocument,
 		diagnostic: Diagnostic,
@@ -52,7 +80,7 @@ export class PythonProvider extends LanguageProvider {
 		const violationMessage = diagnostic.message;
 		const cacheKey = `${violationMessage}-${diagnostic.range.start.line}-${diagnostic.range.start.character}`;
 		const cachedAction = this.codeActionsMessageCache.get(cacheKey);
-		let suggestedName = "";
+		let suggestedName: string | undefined = "";
 	
 		if (cachedAction) {
 			return cachedAction;
@@ -62,7 +90,7 @@ export class PythonProvider extends LanguageProvider {
 			violationMessage.includes(RULE_MESSAGES.NAME_TOO_SHORT.replace("{name}", flaggedName)) ||
 			violationMessage.includes(RULE_MESSAGES.OBJECT_KEY_TOO_SHORT.replace("{name}", flaggedName))
 		) {
-			suggestedName = RENAME_SUGGESTION_PLACEHOLDER;
+			suggestedName = undefined;
 		} else if (
 			violationMessage.includes(RULE_MESSAGES.BOOLEAN_NO_PREFIX.replace("{name}", flaggedName)) ||
 			violationMessage.includes(RULE_MESSAGES.OBJECT_KEY_BOOLEAN_NO_PREFIX.replace("{name}", flaggedName))
@@ -73,23 +101,35 @@ export class PythonProvider extends LanguageProvider {
 			violationMessage.includes(RULE_MESSAGES.OBJECT_KEY_BOOLEAN_NEGATIVE_PATTERN.replace("{name}", flaggedName))
 		) {
 			suggestedName = flaggedName
-				.replace(/_not_([^_]+)/i, (_match, p1) => `_${p1}`)
-				.replace(/not_([^_]+)/i, (_match, p1) => `${p1}`)
+				.replace(/_not_([^_]+)/i, (_match, replacementText) => `_${replacementText}`)
+				.replace(/not_([^_]+)/i, (_match, replacementText) => `${replacementText}`)
 				.replace(/is_not_/i, "is_")
 				.replace(/did_not_/i, "did_")
 				.replace(/cannot_/i, "can_")
 				.replace(/does_not_/i, "does_")
 				.replace(/has_not_/i, "has_")
 				.toLowerCase();
-		} else if (violationMessage.includes(RULE_MESSAGES.FUNCTION_NO_ACTION_WORD.replace("{name}", flaggedName)) ||
-				violationMessage.includes(RULE_MESSAGES.FUNCTION_TOO_SHORT.replace("{name}", flaggedName))) {
-			if (this.settings.general.isDevMode) {
-				suggestedName = `get${flaggedName}`;
-			} else {
-				suggestedName = RENAME_SUGGESTION_PLACEHOLDER;
-			}
+		} else if (
+				violationMessage.includes(RULE_MESSAGES.FUNCTION_NO_ACTION_WORD.replace("{name}", flaggedName)) ||
+				violationMessage.includes(RULE_MESSAGES.FUNCTION_TOO_SHORT.replace("{name}", flaggedName))
+		) {
+			const symbol = this.symbols.find(symbol => symbol.name === flaggedName && symbolFunctionTypeList.includes(symbol.type));
+			const functionBody = symbol?.body;
+			const result = await this.fetchSuggestedNameFromLLM({
+				message: violationMessage,
+				functionBody: functionBody,
+				modelId: Models.GROQ, // GROQ is faster and can handle most name suggestion generation
+				flaggedName,
+				document,
+				diagnostic,
+				userToken,
+			});
+			suggestedName = result ? result.suggestedName : undefined;
 		}
-		const title = `Rename to '${suggestedName}'`;
+
+		if (!suggestedName) return;
+
+		const title = `Rename '${flaggedName}' to '${suggestedName}'`;
 		const range = diagnostic.range;
 		const cmd = Command.create(title, FIX_NAME, document.uri, suggestedName, range);
 		const fix = CodeAction.create(title, cmd, CodeActionKind.QuickFix);
@@ -194,6 +234,8 @@ export class PythonProvider extends LanguageProvider {
 		document?: TextDocument
     ): Promise<void> {
         const conventions = this.getConventions();
+		this.symbols = symbols;
+
         for (const symbol of symbols) {
             const {
                 type,
@@ -409,7 +451,8 @@ export class PythonProvider extends LanguageProvider {
                     diagnostics.push(this.createDiagnostic(
                         range,
                         result.reason,
-                        DiagnosticSeverity.Warning
+                        DiagnosticSeverity.Warning,
+						REDUNDANT_COMMENT_VIOLATION_SOURCE_TYPE
                     ));
                 }
             }

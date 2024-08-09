@@ -1,6 +1,6 @@
 import { API_SERVER_URL } from '../constants/api';
-import { handleErrorResponse, validateResponse } from './helpers';
-import { ChatAPIResponse, DeveloperInput, LLMNPlusOneResult, Models } from './types';
+import { handleErrorResponse } from './helpers';
+import { DeveloperInput, LLMNPlusOneResult, Models } from './types';
 import LOGGER from '../common/logs';
 
 async function sendChatRequest(
@@ -8,7 +8,7 @@ async function sendChatRequest(
     systemMessage: string,
     developerInput: DeveloperInput | string,
     userToken: string
-): Promise<ChatAPIResponse> {
+): Promise<any> {
     try {
         const response = await fetch(`${API_SERVER_URL}${endpoint}`, {
             method: 'POST',
@@ -22,14 +22,7 @@ async function sendChatRequest(
             await handleErrorResponse(response);
         }
 
-        const responseData: ChatAPIResponse = await response.json();
-        
-        if (typeof developerInput === 'object' && 'functionBody' in developerInput) {
-            validateResponse(responseData, developerInput.functionBody);
-        } else if (typeof developerInput === 'string') {
-            validateResponse(responseData, developerInput);
-        }
-
+        const responseData: any = await response.json();
         return responseData;
     } catch (error: any) {
         LOGGER.error(`Error in API call to ${endpoint}: ${error.message}`);
@@ -41,7 +34,7 @@ export async function chatWithGroq(
     systemMessage: string,
     developerInput: DeveloperInput | string,
     userToken: string
-): Promise<ChatAPIResponse> {
+): Promise<any> {
     return sendChatRequest('/chat/groq/', systemMessage, developerInput, userToken);
 }
 
@@ -49,7 +42,7 @@ export async function chatWithOpenAI(
     systemMessage: string,
     developerInput: DeveloperInput | string,
     userToken: string
-): Promise<ChatAPIResponse> {
+): Promise<any> {
     return sendChatRequest('/chat/openai/', systemMessage, developerInput, userToken);
 }
 
@@ -58,9 +51,9 @@ export const chatWithLLM = async (
     developerInput: DeveloperInput,
     userToken: string,
     modelId: Models = Models.GROQ
-): Promise<LLMNPlusOneResult> => {
+): Promise<LLMNPlusOneResult | any> => {
     try {
-        let response: ChatAPIResponse;
+        let response: any;
         if (modelId === Models.GROQ) {
             response = await chatWithGroq(systemMessage, developerInput, userToken);
         } else if (modelId === Models.OPEN_AI) {
@@ -69,7 +62,7 @@ export const chatWithLLM = async (
             throw new Error('Invalid model specified');
         }
 
-        return response as LLMNPlusOneResult;
+        return response;
     } catch (error: any) {
         if (error.name === 'RateLimitError') {
             LOGGER.warn(`Rate limit exceeded for user ${userToken}`);

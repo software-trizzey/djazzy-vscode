@@ -12,7 +12,7 @@ import {
 
 import { TextDocument, Range } from "vscode-languageserver-textdocument";
 
-import { chatWithOpenAI, chatWithGroq } from "../llm/chat";
+import { chatWithLLM } from "../llm/chat";
 
 import {
 	isLikelyBoolean,
@@ -29,28 +29,12 @@ import LOGGER from "../common/logs";
 
 import type { LanguageConventions } from "../languageConventions";
 import { RULE_MESSAGES } from '../constants/rules';
-import { verbDictionary } from '../data';
 import { NAMING_CONVENTION_VIOLATION_SOURCE_TYPE, SOURCE_NAME } from '../constants/diagnostics';
-
-const actionWordsValues = Object.values(verbDictionary);
+import { ContextType, DeveloperInput, FunctionContext, Models, ThemeSystemViolation, VariableContext } from '../llm/types';
 
 const VARIABLES_TO_IGNORE = [
 	"ID", "PK", "DEBUG", "USE_I18N", "USE_L10N", "USE_TZ", "CSRF_COOKIE_SECURE", "SESSION_COOKIE_SECURE"
 ];
-
-
-export interface RenameSuggestion {
-	suggestedName: string;
-	justification: string;
-}
-
-interface ThemeSystemViolation {
-	reason: string;
-	violates: boolean;
-	index: number;
-	value: string;
-}
-
 
 
 export abstract class LanguageProvider {
@@ -162,7 +146,6 @@ export abstract class LanguageProvider {
 				document.uri
 			);
 			if (changedLines && changedLines.size === 0) {
-				// No changes, no need to process diagnostics
 				return this.getDiagnostic(document.uri, document.version) || [];
 			}
 		}
@@ -193,95 +176,10 @@ export abstract class LanguageProvider {
 		CodeActionKind.Refactor,
 	];
 
-	public async provideCodeActions(
+	abstract provideCodeActions(
 		document: TextDocument,
 		userToken: string
-	): Promise<CodeAction[]> {
-		const diagnostics = document.uri
-			? this.getDiagnostic(document.uri, document.version)
-			: [];
-		if (!diagnostics) return [];
-		const namingConventionDiagnostics = diagnostics.filter((diagnostic) => {
-			if (diagnostic.code !== "namingConventionViolation") return false;
-
-			// TODO: for MVP we don't generate fixes for the following violations
-			if (!diagnostic.message.includes("exceeds the maximum length")) {
-				return true;
-			}
-			return false;
-		});
-		const actionPromises = namingConventionDiagnostics
-			.map((diagnostic) =>
-				this.generateFixForNamingConventionViolation(document, diagnostic, userToken)
-			)
-			.filter((promise) => promise !== undefined) as Promise<CodeAction>[];
-		return await Promise.all(actionPromises);
-	}
-
-	async generateNameSuggestions(
-		document: TextDocument,
-		diagnostic: Diagnostic,
-		userToken: string,
-		suggestionCount: number = 1
-	): Promise<RenameSuggestion[]> {
-		const flaggedName = document.getText(diagnostic.range);
-		const violationMessage = diagnostic.message;
-		const suggestions: RenameSuggestion[] = [];
-		let currentCount = 0;
-
-		while (currentCount < suggestionCount) {
-			if (violationMessage.includes(RULE_MESSAGES.NAME_TOO_SHORT.replace("{name}", flaggedName))) {
-				const response = await this.fetchSuggestedNameFromLLM({
-					message: violationMessage,
-					modelType: "groq",
-					document,
-					diagnostic,
-					userToken
-				});
-				if (response) {
-					const data = JSON.parse(response);
-					suggestions.push(data);
-				}
-			} else if (violationMessage.includes(RULE_MESSAGES.BOOLEAN_NEGATIVE_PATTERN.replace("{name}", flaggedName))) {
-				suggestions.push({
-					suggestedName: flaggedName.replace(/not/i, ""),
-					justification: "Remove negative pattern"
-				});
-			} else if (violationMessage.includes(RULE_MESSAGES.BOOLEAN_NO_PREFIX.replace("{name}", flaggedName))) {
-				const capitalizedName = flaggedName.charAt(0).toUpperCase() + flaggedName.slice(1);
-				suggestions.push({
-					suggestedName: `is${capitalizedName}`,
-					justification: "Add boolean prefix"
-				});
-			} else if (violationMessage.includes(RULE_MESSAGES.FUNCTION_NO_ACTION_WORD.replace("{name}", flaggedName)) ||
-				violationMessage.includes(RULE_MESSAGES.FUNCTION_TOO_SHORT.replace("{name}", flaggedName))) {
-					if (this.settings.general.isDevMode) {
-					suggestions.push({
-						suggestedName: `get${flaggedName}`,
-						justification: "Add verb prefix for function name"
-					});
-					} else {
-						const functionBodyRange = this.getFunctionBodyRange(document, diagnostic.range);
-						const functionBody = this.extractFunctionBody(document, functionBodyRange);
-						const limitedFunctionBody = this.limitFunctionBodySize(functionBody);
-						const response = await this.fetchSuggestedNameFromLLM({
-							message: violationMessage,
-							functionBody: limitedFunctionBody,
-							modelType: "groq",
-							document,
-							diagnostic,
-							userToken
-						});
-						if (response) {
-							const data = JSON.parse(response);
-							suggestions.push(data);
-						}
-					}
-				}
-				currentCount++;
-			}
-		return suggestions;
-	}
+	): Promise<CodeAction[]>;
 
 	public getDiagnostic(
 		documentUri: string,
@@ -625,65 +523,82 @@ export abstract class LanguageProvider {
         return surroundingCode;
     }
 
-	generateVariableNameMessage(message: string, document: TextDocument, diagnostic: Diagnostic) {
-		const variableUsage = this.getSurroundingCode(document, diagnostic.range);
-		message = `${message} Note: align the suggestion with ${this.languageId} naming conventions (e.g., snake_case, camelCase). Here is the variable usage for context:\n\n${variableUsage}`;
-
+	protected generateVariableContext(document: TextDocument, diagnostic: Diagnostic, variableName: string): VariableContext {
+		const usage = this.getSurroundingCode(document, diagnostic.range);
 		const { expressiveNames: { variables } } = this.getConventions();
-        if (variables.examples.length === 0) {
-			return message;
-			}
-		console.log("Variable examples: ", variables.examples);
-        const variableExamples = variables.examples.join(', ');
-
-		message += `\n\nHere are some examples of variable naming conventions used in ${this.languageId} projects:\nVariables: ${variableExamples}\n\nConsider these conventions when generating your suggestion.`;
-		return message;
-    }
-
-	generateFunctionMessage(message: string, functionBody: string,  document: TextDocument, diagnostic: Diagnostic) {
-        const surroundingCode = this.getSurroundingCode(document, diagnostic.range);
-		message = `${message} Note: align the suggestion with ${this.languageId} naming conventions (e.g., snake_case, camelCase, PascalCase). Here is the function body for context:\n\n${functionBody}\n\nConsider the following surrounding code when generating your suggestion:\n\n${surroundingCode}`;
-		message += `\n\nEnsure the function name begins with a verb from the approved list that best describes the function's purpose: ${actionWordsValues.join(', ')}.`;
-
+		
+		return {
+			name: variableName,
+			type: ContextType.variable,
+			usage,
+			surroundingCode: usage,
+			examples: variables.examples,
+			languageId: this.languageId
+		};
+	}
+	
+	protected generateFunctionContext(document: TextDocument, diagnostic: Diagnostic, functionName: string, functionBody: string): FunctionContext {
+		const surroundingCode = this.getSurroundingCode(document, diagnostic.range);
 		const { expressiveNames: { functions } } = this.getConventions();
-		if (functions.examples.length === 0) {
-            return message;
-        }
-		console.log("Function examples: ", functions.examples);
-		const functionExamples = functions.examples.join(', ');
-
-		message += `\n\nFor additional context, here are examples of naming conventions used in this project:\n\n${functionExamples}`;
-		return message;
-    }
+		
+		return {
+			name: functionName,
+			type: ContextType.function,
+			usage: functionBody,
+			surroundingCode,
+			examples: functions.examples,
+			languageId: this.languageId
+		};
+	}
 
 	protected async fetchSuggestedNameFromLLM({
+		flaggedName,
 		message,
 		document,
 		diagnostic,
 		userToken,
 		functionBody,
-		modelType,
+		modelId,
 	}: {
+		flaggedName: string;
 		message: string;
-		modelType: "groq" | "openai";
+		modelId: Models;
 		document: TextDocument;
 		diagnostic: Diagnostic;
 		userToken: string;
 		functionBody?: string;
-	}): Promise<any> {
-		let requestMessage = message;
-		if (functionBody) {
-			requestMessage = this.generateFunctionMessage(message, functionBody, document, diagnostic);
-		} else {
-			requestMessage = this.generateVariableNameMessage(message, document, diagnostic);
-		}
+	}): Promise<{
+		originalName: string;
+		suggestedName: string;
+		justification: string;
+	} | null> {
+        let context: VariableContext | FunctionContext;
+        if (functionBody) {
+            context = this.generateFunctionContext(document, diagnostic, flaggedName, functionBody);
+        } else {
+            context = this.generateVariableContext(document, diagnostic, flaggedName);
+        }
 		
 		try {
-			if (modelType === "openai") {
-				return await chatWithOpenAI(this.systemMessage, requestMessage, userToken);
-			} else if (modelType === "groq") {
-				return await chatWithGroq(this.systemMessage, requestMessage, userToken);
-			}
+			context.violationReason = message;
+			const developerInput: DeveloperInput = {
+				functionName: flaggedName,
+				functionBody: functionBody || "",
+				context: context,
+				isRenameSuggestion: true,
+			};
+			const response = await chatWithLLM(
+				"Suggest a name for the provided symbol based on the context.",
+				developerInput,
+				userToken,
+				modelId
+			);
+			const formattedResponse = {
+				originalName: response.originalName || flaggedName,
+				suggestedName: response.suggestedName || "",
+				justification: response.justification || "",
+			};
+			return formattedResponse;
 		} catch (error: any) {
 			if (error.error?.type === "invalid_request_error") {
 				LOGGER.error("InvalidRequestError:", error.error);

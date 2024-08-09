@@ -12,7 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { createHash } from 'crypto';
 
 import { PythonProvider } from "./python";
-import { SOURCE_NAME, DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE, DJANGO_SECURITY_VIOLATION_SOURCE_TYPE } from "../constants/diagnostics";
+import { SOURCE_NAME, DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE, DJANGO_SECURITY_VIOLATION_SOURCE_TYPE, NAMING_CONVENTION_VIOLATION_SOURCE_TYPE } from "../constants/diagnostics";
 import { ExtensionSettings, cachedUserToken, defaultConventions } from "../settings";
 import LOGGER from '../common/logs';
 import COMMANDS, { ACCESS_FORBIDDEN_NOTIFICATION_ID, RATE_LIMIT_NOTIFICATION_ID } from '../constants/commands';
@@ -82,14 +82,30 @@ export class DjangoProvider extends PythonProvider {
 		const diagnostics = document.uri
 			? this.getDiagnostic(document.uri, document.version)
 			: [];
+
 		if (!diagnostics) return [];
 
-		return diagnostics.flatMap(diagnostic => {
-			if (diagnostic.code === DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE) {
-				return this.getNPlusOneDiagnosticActions(document, diagnostic);
-			}
-			return [];
-		});
+        const codeActions: CodeAction[] = [];
+		for (const diagnostic of diagnostics) {
+            if (diagnostic.message.includes("exceeds the maximum length of")) continue;
+
+			if (diagnostic.code === NAMING_CONVENTION_VIOLATION_SOURCE_TYPE) {
+				const fix = await this.generateFixForNamingConventionViolation(
+					document,
+					diagnostic,
+					userToken
+				);
+				if (fix) {
+					codeActions.push(fix);
+				}
+			} else if (diagnostic.code === DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE) {
+                const actions = this.getNPlusOneDiagnosticActions(document, diagnostic);
+                codeActions.push(...actions);
+            }
+		}
+
+        const filteredActions = codeActions.filter(action => action !== undefined);
+		return filteredActions;
 	}
 
 	protected getNPlusOneDiagnosticActions(document: TextDocument, diagnostic: Diagnostic): CodeAction[] {
@@ -151,7 +167,7 @@ export class DjangoProvider extends PythonProvider {
                     llmResult = cachedResult;
                     console.log(`Using cached result for ${cacheKey}`);
                 } else {
-                    llmResult = await this.validateNPlusOneWithLLM(symbol, potentialIssues);
+                    llmResult = await this.validateNPlusOneWithLLM(symbol, potentialIssues, document);
                     
                     if (llmResult.isRateLimited) {
                         this.sendRateLimitNotification();
@@ -307,7 +323,11 @@ export class DjangoProvider extends PythonProvider {
         }
     }
 
-    private async validateNPlusOneWithLLM(symbol: any, potentialIssues: Issue[]): Promise<LLMNPlusOneResult> {
+    private async validateNPlusOneWithLLM(
+        symbol: any,
+        potentialIssues: Issue[],
+        document: TextDocument,
+    ): Promise<LLMNPlusOneResult> {
         if (!cachedUserToken) {
             LOGGER.warn("Only authenticated users can use the N+1 query detection feature.");
             return {
@@ -317,14 +337,31 @@ export class DjangoProvider extends PythonProvider {
                 isForbidden: true
             };
         }
+
+        const range = {
+            start: { line: symbol.function_start_line - 1, character: 0 },
+            end: { line: symbol.function_end_line - 1, character: Number.MAX_VALUE }
+        };
+
+        const temporaryDiagnostic: Diagnostic = {
+            range,
+            message: `Analyzing the provided input for N+1 queries.`,
+            severity: DiagnosticSeverity.Information,
+            source: SOURCE_NAME,
+            code: DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE,
+            codeDescription: {
+                href: 'https://docs.djangoproject.com/en/stable/topics/db/optimization/'
+            }
+        };
+        const context = this.generateFunctionContext(document, temporaryDiagnostic, symbol.name, symbol.body);
     
         const developerInput: DeveloperInput = {
             functionName: symbol.name,
             functionBody: symbol.body,
-            potentialIssues: potentialIssues
+            potentialIssues: potentialIssues,
+            context: context
         };
 
-        console.log("potentialIssues", potentialIssues);
     
         try {
             const llmResult = await chatWithLLM(
@@ -333,7 +370,7 @@ export class DjangoProvider extends PythonProvider {
                 cachedUserToken,
                 Models.OPEN_AI
             );    
-            llmResult.issues = llmResult.issues.filter(issue => this.shouldShowIssue(issue.score));
+            llmResult.issues = llmResult.issues.filter((issue: any) => this.shouldShowIssue(issue.score));
             llmResult.has_n_plus_one_issues = llmResult.issues.length > 0;        
 
             for (let issue of llmResult.issues) {

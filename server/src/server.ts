@@ -37,7 +37,7 @@ import {
 import { checkForTestFile, debounce, DjangoProjectDetector } from "./utils";
 
 import COMMANDS, { COMMANDS_LIST } from "./constants/commands";
-import { rollbar } from "./common/logs";
+import LOGGER, { rollbar } from "./common/logs";
 import { SOURCE_NAME } from './constants/diagnostics';
 
 class DiagnosticQueue {
@@ -375,6 +375,7 @@ connection.onExecuteCommand(async (params) => {
     }
 
 	if (params.command === COMMANDS.FIX_NAME && params.arguments !== undefined) {
+		LOGGER.info(`User ${cachedUserToken} triggered quick fix rename command.`);
 		const textDocument = documents.get(params.arguments[0]);
 		const newName = params.arguments[1];
 		const range = params.arguments[2];

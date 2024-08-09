@@ -38,8 +38,6 @@ export interface LLMNPlusOneResult {
     isForbidden?: boolean;
 }
 
-
-
 export enum Severity {
     HINT = 'HINT',
     INFORMATION = 'INFORMATION',
@@ -50,7 +48,9 @@ export enum Severity {
 export interface DeveloperInput {
     functionName: string;
     functionBody: string;
-    potentialIssues: Issue[];
+    context: FunctionContext | VariableContext;
+    potentialIssues?: Issue[];
+    isRenameSuggestion?: boolean;
 }
 
 export interface ChatAPIResponse {
@@ -58,4 +58,49 @@ export interface ChatAPIResponse {
     issues: Issue[];
     error?: string;
     status?: number;
+}
+
+export enum SymbolFunctionTypes {
+    FUNCTION = "function",
+    DJANGO_MODEL_METHOD = "django_model_method",
+    DJANGO_SERIALIZER_METHOD = "django_serializer_method",
+    DJANGO_VIEW_METHOD = "django_view_method",
+    DJANGO_TESTCASE_METHOD = "django_testcase_method",
+}
+
+export interface RenameSuggestion {
+	suggestedName: string;
+	justification: string;
+}
+
+export interface ThemeSystemViolation {
+	reason: string;
+	violates: boolean;
+	index: number;
+	value: string;
+}
+
+export enum ContextType {
+    function = "function",
+    variable = "variable"
+}
+
+export interface VariableContext {
+    name: string;
+    type: ContextType.variable;
+    usage: string;
+    surroundingCode: string;
+    examples: string[];
+    languageId: string;
+    violationReason?: string;
+}
+
+export interface FunctionContext {
+    name: string;
+    type: ContextType.function;
+    usage: string;
+    surroundingCode: string;
+    examples: string[];
+    languageId: string;
+    violationReason?: string;
 }

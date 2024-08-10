@@ -142,18 +142,12 @@ For more detailed guidance on optimizing Django queries, check out the [Django d
 
 ## Configuration 🧪
 
-### Django-Specific Settings
-
-- **Enable/Disable Django Linting**: Toggle Django-specific linting on or off.
-- **Django Version**: Specify your Django version to receive version-specific recommendations.
-- **Custom Django Apps**: Configure custom Django app names for more accurate linting.
-- **N+1 Query Detection Sensitivity**: Adjust the sensitivity of N+1 query detection.
-
 ### General Settings
 
 - **Check New Code Only**: Limit checks to newly written or modified code to focus on current development.
 - **Notification Interval**: Set how frequently you receive reminders to review suggestions for testing business logic.
-- **Language-Specific Settings**: Adjust settings for JavaScript and TypeScript support.
+- **Language-Specific Settings**: Adjust settings for Python linting support.
+- **N+1 Query Detection Sensitivity**: Adjust the sensitivity of N+1 query detection.
 
 Access these settings by going to `Preferences → Settings → Extensions → Djangoly`.
 
@@ -163,7 +157,7 @@ Access these settings by going to `Preferences → Settings → Extensions → D
 2. **Quick Fixes for Django Issues**: Offers actionable recommendations for quick corrections of Django-specific issues.
 3. **Django N+1 Query Detection**: The extension analyzes your Django code to identify potential N+1 query issues.
 4. **Test Suite Enforcement**: Alerts you to update or create tests following changes in Django views or models.
-5. **JavaScript/TypeScript Support**: Provide linting and best practice suggestions for JS/TS files in your Django project.
+5. **JavaScript/TypeScript Support**: Provide linting and best practice suggestions for Python files in your Django project.
 
 ## Pricing 🤑
 
@@ -184,15 +178,13 @@ Your input directly influences the development of Djangoly. Thank you for helpin
 Here's what we're planning for future releases:
 
 1. **Fat Models, Thin Views**: Maintain clean, scalable architecture
-2. **Security Checks**: Ensure your Django settings are production-ready
-3. **Django REST Framework Support**: Add specific checks and suggestions for DRF best practices.
-4. **Custom Rule Creator**: Allow users to define and share custom rules for their team's specific needs.
+2. **Django REST Framework Support**: Add specific checks and suggestions for DRF best practices.
+3. **Custom Rule Creator**: Allow users to define and share custom rules for their team's specific needs.
 
 We're always open to suggestions for our roadmap. Feel free to contribute your ideas through our feedback channels!
 
 ## Known Issues & Limitations 🐞
 
-- **Initial Language Support**: Currently, Python (Django), JavaScript, and TypeScript are supported.
 - **False Positives**: As an MVP undergoing rapid development, Djangoly may generate inaccurate diagnostics and recommendations. If you encounter any issues, please report them to [support@alchemizedsoftware.com](mailto:support@alchemizedsoftware.com).
 - **Django N+1 Query Detection**: The current implementation focuses on simple loop structures and may not catch all complex scenarios. It may produce some false positives in cases where optimizations are applied outside the immediate function scope. The detection is based on static analysis and may not account for dynamic query optimizations.
 
@@ -213,11 +205,5 @@ Purchasing a license to Djangoly grants you a non-exclusive, non-transferable ri
 - You may not modify, decompile, or reverse-engineer any part of this software in any way.
 - You may not redistribute or sublicense this software.
 - You may not use this software in a manner that contravenes any laws or regulations.
-
-### Trial Version
-
-Djangoly may offer a trial version with limited features which can be used prior to purchasing a full license. This trial is provided for evaluation purposes only, subject to the terms of the trial agreement.
-
-For full license details and rights, please refer to the license agreement provided upon purchase or installation, or contact our support team at [support@alchemizedsoftware.com](mailto:support@alchemizedsoftware.com).
 
 **Note:** This software uses software components from other open source software which are licensed under their own respective open-source licenses. Please refer to the documentation for further information on licensing for these components.

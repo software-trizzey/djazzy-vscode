@@ -1,19 +1,20 @@
 # Djangoly: Write Cleaner, Faster, Scalable Django Code
 
-> **🔑 API Key Required**
-> Access to Djangoly currently requires an API key. To obtain an API key and participate in our beta program, please email [hello@alchemizedsoftware.com](mailto:hello@alchemizedsoftware.com). We appreciate your interest and look forward to having you on board!
+## 🚀 Beta Release Notice
 
-> **🚀 Beta Release Notice**
-> 
-> Djangoly is currently in **free Beta mode**. During this phase, you can use all features at no cost. Please note:
-> 
-> - The extension is under active development and subject to changes.
-> - You may encounter bugs or unexpected behavior.
-> - We greatly appreciate your feedback to help improve the extension.
-> 
-> Thank you for being an early adopter and helping us shape Djangoly!
+Djangoly is currently in **free Beta mode**. During this phase, you can use all features at no cost. Please note:
 
-![Djangoly Logo](https://raw.githubusercontent.com/software-trizzey/images/main/assets/images/quick-fix-demo.gif)
+- The extension is under active development and subject to changes.
+- You may encounter bugs or unexpected behavior.
+- We greatly appreciate your feedback to help improve the extension.
+
+### 🔑 API Key Required
+
+Access to Djangoly currently requires an API key. To obtain an API key and participate in our beta program, you can [signup here](https://forms.gle/gEEZdfhWpQyQh2qVA).
+
+We appreciate your interest in being an early adopter and helping us shape Djangoly. Thank you for your support, and we look forward to having you on board!
+
+![Djangoly Demo](https://raw.githubusercontent.com/software-trizzey/images/main/assets/images/quick-fix-demo.gif)
 
 *Djangoly highlights Django best practice violations and offers immediate, actionable recommendations for fixing them, streamlining your development process.*
 
@@ -40,7 +41,7 @@ These security checks help you identify common configuration mistakes that could
 
 ## Quick Start 🏃‍♂️💨
 
-1. **Get an API Key**: Email [hello@alchemizedsoftware.com](mailto:hello@alchemizedsoftware.com) to request an API key.
+1. **Get an API Key**: If you don't already have an API key, you can signup for one via this [form](https://forms.gle/gEEZdfhWpQyQh2qVA).
 1. **Install the Extension**: [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Alchemized.djangoly)
 2. **Set Up Your Django Project**: If you haven't already, set up a Django project in your workspace.
 3. **Configure Django Settings**: Open the extension settings in VS Code and configure your Django-specific settings.
@@ -177,9 +178,11 @@ Your input directly influences the development of Djangoly. Thank you for helpin
 
 Here's what we're planning for future releases:
 
-1. **Fat Models, Thin Views**: Maintain clean, scalable architecture
-2. **Django REST Framework Support**: Add specific checks and suggestions for DRF best practices.
-3. **Custom Rule Creator**: Allow users to define and share custom rules for their team's specific needs.
+1. **JavaScript/TypeScript Support**: Modern Django projects leverage JavaScript at some point. We'll ensure these files align with your conventions.
+2. **Fat Models, Thin Views**: Maintain clean, scalable architecture
+3. **Django REST Framework Support**: Add specific checks and suggestions for DRF best practices.
+4. **Improve N+1 query detection**: There are some levers we can pull to increase the accuracy of this feature.
+5. **Custom Rule Creator**: Allow users to define and share custom rules for their team's specific needs.
 
 We're always open to suggestions for our roadmap. Feel free to contribute your ideas through our feedback channels!
 

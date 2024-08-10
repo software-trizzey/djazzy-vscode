@@ -22,6 +22,12 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
+## [Version 0.1.4] - 2024-08-10
+
+### Changed
+
+- [Update] Updated `README.md` sections and added beta program signup form.
+
 ## [Version 0.1.3] - 2024-08-09
 
 ### Added

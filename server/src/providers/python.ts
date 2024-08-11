@@ -180,6 +180,7 @@ export class PythonProvider extends LanguageProvider {
 						const results = JSON.parse(jsonString);
 						const symbols = results.symbols || [];
 						const securityIssues = results.security_issues || [];
+						const nPlusOneIssues = results.nplusone_issues || [];
 						
 						if (symbols.length === 0) return resolve(symbols);
 
@@ -188,6 +189,7 @@ export class PythonProvider extends LanguageProvider {
 							diagnostics,
 							changedLines,
 							securityIssues,
+							nPlusOneIssues,
 							document
 						);
 
@@ -231,6 +233,7 @@ export class PythonProvider extends LanguageProvider {
         diagnostics: Diagnostic[],
         changedLines: Set<number> | undefined,
 		securityIssues?: any[],
+		nPlusOneIssues?: any[],
 		document?: TextDocument
     ): Promise<void> {
         const conventions = this.getConventions();

@@ -4,7 +4,8 @@ import re
 import sys
 
 from ast_parser import Analyzer, serialize_file_data
-
+from nplusone.analyzer import NPlusOneAnalyzer
+from nplusone.scorer import QUERY_METHODS, NPlusOneScorer
 from log import LOGGER
 
 DEBUG = 'DEBUG'
@@ -52,12 +53,12 @@ DJANGO_IGNORE_FUNCTIONS = {
     "delete": True,
 }
 
-QUERY_METHODS = {"filter", "all", "get", "exclude", "iterator", "values", "values_list"}
-
 class DjangoAnalyzer(Analyzer):
     def __init__(self, source_code):
         super().__init__(source_code)
         self.current_django_class_type = None
+        self.nplusone_analyzer = NPlusOneAnalyzer(source_code)
+        self.nplusone_issues = []
 
     def visit_ClassDef(self, node):
         self.in_class = True
@@ -131,6 +132,9 @@ class DjangoAnalyzer(Analyzer):
         ))
 
         self.generic_visit(node)
+        self.nplusone_analyzer.analyze_function(node)
+        issues = self.nplusone_analyzer.get_issues()
+        self.nplusone_issues.extend(issues)
 
     def visit_Assign(self, node):
         for target in node.targets:
@@ -283,10 +287,15 @@ class DjangoAnalyzer(Analyzer):
     def parse_code(self):
         try:
             result = super().parse_code()
-            self.perform_security_checks() 
+            self.perform_security_checks()
+            scored_issues = NPlusOneScorer.calculate_issue_scores(self.nplusone_issues, self.source_code)
         except Exception as e:
             LOGGER.error(f'Error parsing Django code: {e}')
-        return result
+
+        return {
+            **result,
+            "nplusone_issues": scored_issues,
+        }
 
 def main():
     input_code = sys.stdin.read()

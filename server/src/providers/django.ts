@@ -62,20 +62,22 @@ export class DjangoProvider extends PythonProvider {
         diagnostics: Diagnostic[],
         changedLines: Set<number> | undefined,
         securityIssues: any[],
+        nplusOneIssues: any[],
 		document: TextDocument
     ): Promise<void> {
-        await super.validateAndCreateDiagnostics(symbols, diagnostics, changedLines, securityIssues, document);
+        await super.validateAndCreateDiagnostics(symbols, diagnostics, changedLines, securityIssues, nplusOneIssues, document);
 
         this.processDjangoSecurityIssues(securityIssues, diagnostics);
+        this.processNPlusOneIssues(nplusOneIssues, diagnostics);
 
 		const highPrioritySymbols = symbols.filter(symbol => symbol.high_priority);
 		console.log(`Found ${highPrioritySymbols.length} highPrioritySymbols for review`);
 
-		for (const symbol of highPrioritySymbols) {
-            if (METHOD_NAMES.includes(symbol.type)) {
-                await this.detectNPlusOneQuery(symbol, diagnostics, document);
-            }
-        }
+		// for (const symbol of highPrioritySymbols) {
+        //     if (METHOD_NAMES.includes(symbol.type)) {
+        //         await this.detectNPlusOneQuery(symbol, diagnostics, document);
+        //     }
+        // }
 	}
 
 	public async provideCodeActions(document: TextDocument, userToken: string): Promise<CodeAction[]> {
@@ -430,6 +432,36 @@ export class DjangoProvider extends PythonProvider {
             diagnostics.push(diagnostic);
         }
     }
+
+    private processNPlusOneIssues(issues: any[], diagnostics: Diagnostic[]): void {
+        for (const issue of issues) {
+            const range: Range = {
+                start: { line: issue.line - 1, character: issue.col_offset || 0 },
+                end: { line: issue.line - 1, character: issue.end_col_offset || Number.MAX_VALUE },
+            };
+    
+            const severity = this.mapSeverity(issue.severity || Severity.WARNING);
+            const diagnosticMessage = this.createStructuredDiagnosticMessage(issue, severity);
+            
+            const diagnostic: Diagnostic = {
+                range,
+                message: diagnosticMessage,
+                severity: severity,
+                source: SOURCE_NAME,
+                code: DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE,
+                codeDescription: {
+                    href: 'https://docs.djangoproject.com/en/stable/topics/db/optimization/',
+                },
+                data: {
+                    id: issue.id,
+                    score: issue.score,
+                    contextualInfo: issue.contextualInfo,
+                },
+            };
+    
+            diagnostics.push(diagnostic);
+        }
+    }    
     
     private sendRateLimitNotification(): void {
         this.connection.sendNotification(RATE_LIMIT_NOTIFICATION_ID, {
@@ -447,6 +479,7 @@ export class DjangoProvider extends PythonProvider {
         const functionBodyHash = createHash('md5').update(symbol.body).digest('hex');
         return `${document.uri}:${symbol.name}:${functionBodyHash}`;
     }
+    
     private getCachedResult(key: string): LLMNPlusOneResult | null {
         const cached = this.nPlusOnecache.get(key);
         if (cached && Date.now() - cached.timestamp < this.cacheTTL) {

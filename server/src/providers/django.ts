@@ -66,7 +66,7 @@ export class DjangoProvider extends PythonProvider {
 		document: TextDocument
     ): Promise<void> {
         await super.validateAndCreateDiagnostics(symbols, diagnostics, changedLines, securityIssues, nplusOneIssues, document);
-
+        
         this.processDjangoSecurityIssues(securityIssues, diagnostics);
         this.processNPlusOneIssues(nplusOneIssues, diagnostics);
 
@@ -441,7 +441,6 @@ export class DjangoProvider extends PythonProvider {
             };
     
             const severity = this.mapSeverity(issue.severity || Severity.WARNING);
-            console.log('N+1 issue severity:',"input", issue.severity, "output",severity);
             const diagnosticMessage = this.createStructuredDiagnosticMessage(issue, severity);
             
             const diagnostic: Diagnostic = {

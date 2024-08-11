@@ -9,6 +9,9 @@ class NPlusOneAnalyzer:
         self.nplusone_issues = []
         self.source_code = source_code
 
+    def get_issues(self):
+        return self.nplusone_issues
+
     def analyze_function(self, node: ast.FunctionDef):
         """
         Analyzes a function node to detect potential N+1 issues, including loops, comprehensions, and generator expressions.
@@ -230,6 +233,3 @@ class NPlusOneAnalyzer:
         if len(levels) > 1:  # More than one level usually indicates a related field
             return True
         return False
-
-    def get_issues(self):
-        return self.nplusone_issues

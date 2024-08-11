@@ -10,9 +10,9 @@ class NPlusOneAnalyzer:
 
     def analyze_function(self, node: ast.FunctionDef):
         """
-        Analyzes a function node to detect potential N+1 issues.
+        Analyzes a function node to detect potential N+1 issues, including loops, comprehensions, and generator expressions.
         """
-        loops = [n for n in ast.walk(node) if isinstance(n, (ast.For, ast.While))]
+        loops = self.find_loops(node)
         for loop in loops:
             query_calls = [n for n in ast.walk(loop) if self.is_query_call(n)]
             if query_calls:
@@ -29,14 +29,26 @@ class NPlusOneAnalyzer:
                         'problematic_code': source_segment,
                         'contextual_info': {
                             'is_in_loop': True,
-                            'loop_start_line': loop.lineno,
+                            'loop_start_line': getattr(loop, 'lineno', call.lineno),  # Default to call line if no loop line
                             'related_field': related_field,
                             'query_type': self.get_query_type(call.func),
                         },
-                        'start_line': loop.lineno,
+                        'start_line': getattr(loop, 'lineno', call.lineno),
                         'end_line': call.lineno
                     }
                     self.nplusone_issues.append(issue_detail)
+
+    def find_loops(self, node: ast.FunctionDef):
+        """
+        Find all loop-like constructs in the function, including for-loops, while-loops, comprehensions, and generator expressions.
+        """
+        loops = []
+        for loop_node in ast.walk(node):
+            if isinstance(loop_node, (ast.For, ast.While, ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)):
+                loops.append(loop_node)
+            elif isinstance(loop_node, ast.comprehension):  # Handle comprehensions within comprehensions
+                loops.append(loop_node)
+        return loops
 
     def is_query_call(self, node: ast.AST) -> bool:
         """

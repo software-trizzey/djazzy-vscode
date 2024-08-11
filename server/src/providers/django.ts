@@ -148,9 +148,11 @@ export class DjangoProvider extends PythonProvider {
         changedLines?: Set<number>
     ): void {
         const addedIssues = new Set<string>();
+        // TODO: remove this console.log
+        console.log(`Detected ${issues.length} N+1 issues`, issues);
     
         for (const issue of issues) {
-            if (!this.shouldShowIssue(issue.score)) continue;
+            // TODO: uncomment this line if (!this.shouldShowIssue(issue.score)) continue;
 
             const issueLine = issue.line - 1;
             
@@ -306,20 +308,28 @@ export class DjangoProvider extends PythonProvider {
         let contextInfo = '';
         
         if (issue.contextual_info) {
-            contextInfo = `Detected in ${issue.contextual_info.is_in_loop ? 'a loop' : 'code'} ` +
-                          `using .${issue.contextual_info.query_type}() ` +
-                          `on ${issue.contextual_info.related_field || 'a queryset'}`;
+            const queryType = issue.contextual_info.query_type;
+            const relatedField = issue.contextual_info.related_field || 'a queryset';
+            
+            if (queryType === 'attribute_access') {
+                contextInfo = `Detected in ${issue.contextual_info.is_in_loop ? 'a loop' : 'code'} ` +
+                              `while accessing the related field "${relatedField}"`;
+            } else {
+                contextInfo = `Detected in ${issue.contextual_info.is_in_loop ? 'a loop' : 'code'} ` +
+                              `using .${queryType}() on ${relatedField}`;
+            }
+            
             if (issue.contextual_info.is_in_loop) {
                 contextInfo += ` (loop starts at line ${issue.contextual_info.loop_start_line})`;
             }
         }
         
         return `${severityIndicator} N+1 Query Detected (Score: ${issue.score})
-        \n[Code]\n${issue.problematic_code}
         \n[Issue]\n${issue.message}
         \n[Context]\n${contextInfo || 'Potential inefficient database query'}\n`;
         // \n[Suggestion]\n${issue.suggestedFix}\n`; FIXME: Add back when we have method for getting suggestions
     }
+    
 
     private clearDiagnosticsForSymbol(symbol: any, diagnostics: Diagnostic[]): void {
         const symbolRange = {

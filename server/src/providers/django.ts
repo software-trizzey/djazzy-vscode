@@ -150,6 +150,8 @@ export class DjangoProvider extends PythonProvider {
         const addedIssues = new Set<string>();
     
         for (const issue of issues) {
+            if (!this.shouldShowIssue(issue.score)) continue;
+
             const issueLine = issue.line - 1;
             
             if (changedLines && changedLines.has(issueLine)) {

@@ -72,10 +72,6 @@ class DjangoAnalyzer(Analyzer):
         else:
             symbol_type = 'function'
 
-        contains_query_method = any(self.contains_query_method(call) for call in node.body)
-        contains_loop = any(isinstance(child, (ast.For, ast.While)) for child in node.body)
-        high_priority = contains_query_method and contains_loop
-
         self.symbols.append(self._create_symbol_dict(
             type=symbol_type,
             name=node.name,
@@ -93,13 +89,15 @@ class DjangoAnalyzer(Analyzer):
             decorators=decorators,
             calls=calls,
             arguments=arguments,
-            high_priority=high_priority
         ))
 
         self.generic_visit(node)
+
         self.nplusone_analyzer.analyze_function(node)
         issues = self.nplusone_analyzer.get_issues()
-        self.nplusone_issues.extend(issues)
+        for issue in issues:
+            if issue['id'] not in {i['id'] for i in self.nplusone_issues}:
+                self.nplusone_issues.append(issue)
 
     def visit_Assign(self, node):
         for target in node.targets:

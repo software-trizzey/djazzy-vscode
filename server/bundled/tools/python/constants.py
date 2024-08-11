@@ -12,6 +12,7 @@ QUERY_METHODS = [
     "annotate", "values", "values_list", "first", "last",
 ]
 
+OPTIMIZATION_METHODS = {"select_related", "prefetch_related"}
 
 DJANGO_IGNORE_FUNCTIONS = {
     "save": True,

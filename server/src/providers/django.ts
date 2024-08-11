@@ -153,8 +153,8 @@ export class DjangoProvider extends PythonProvider {
             const issueLine = issue.line - 1;
             
             if (changedLines && changedLines.has(issueLine)) {
+                // TODO: this won't work as we hanve't implemented the change line detection yet
                 console.log(`Skipping N+1 issue at line ${issueLine} due to change`);
-                // Re-analysis might be needed, so skip adding the old diagnostic for now
                 continue;
             }
     

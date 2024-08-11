@@ -41,7 +41,18 @@ RELATED_FIELD_PATTERNS = [
     FOREIGN_KEY_OR_ONE_TO_ONE_PATTERN
 ]
 
-QUERY_METHODS = {"filter", "all", "get", "exclude", "iterator", "values", "values_list"}
+QUERY_METHODS = {
+    "filter",
+    "all",
+    "get",
+    "exclude",
+    "values",
+    "values_list",
+    "first",
+    "last",
+    "count",
+    "iterator",
+}
 
 AGGREGATE_METHODS = ["Count", "Sum", "Avg", "Max", "Min"]
 
@@ -57,7 +68,6 @@ class IssueSeverity:
     ERROR = 'ERROR'
     INFORMATION = 'INFORMATION'
     WARNING = 'WARNING'
-    HINT = 'HINT'
 
 class IssueDocLinks:
     DEBUG = 'https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/#debug'

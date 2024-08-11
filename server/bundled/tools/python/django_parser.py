@@ -252,13 +252,29 @@ class DjangoAnalyzer(Analyzer):
             result = super().parse_code()
             self.perform_security_checks()
             scored_issues = NPlusOneScorer.calculate_issue_scores(self.nplusone_issues, self.source_code)
+            return {
+                **result,
+                "nplusone_issues": scored_issues,
+            }
+        except SyntaxError as e:
+            LOGGER.warning(f'Syntax error in Django code: {e}. Continuing with partial analysis.')
+            return {
+                "symbols": self.symbols,
+                "security_issues": self.security_issues,
+                "nplusone_issues": self.nplusone_issues,
+                "error": "Syntax error detected",
+                "details": str(e)
+            }
         except Exception as e:
             LOGGER.error(f'Error parsing Django code: {e}')
+            return {
+                "symbols": self.symbols,
+                "security_issues": self.security_issues,
+                "nplusone_issues": self.nplusone_issues,
+                "error": "General error detected",
+                "details": str(e)
+            }
 
-        return {
-            **result,
-            "nplusone_issues": scored_issues,
-        }
 
 def main():
     input_code = sys.stdin.read()

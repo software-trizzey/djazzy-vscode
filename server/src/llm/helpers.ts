@@ -55,7 +55,7 @@ export function validateResponse(responseData: ChatAPIResponse, originalInput: s
     }
 
     const validatedIssues = responseData.issues.filter((issue: Issue) =>
-        originalInput.includes(issue.problematicCode)
+        originalInput.includes(issue.problematic_code)
     );
 
     responseData.has_n_plus_one_issues = validatedIssues.length > 0;

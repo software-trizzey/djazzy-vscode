@@ -1,7 +1,8 @@
 import ast
+import re
+import uuid
 
-
-QUERY_METHODS = {"filter", "all", "get", "exclude", "iterator", "values", "values_list"}
+from constants import QUERY_METHODS
 
 class NPlusOneAnalyzer:
     def __init__(self, source_code: str):
@@ -17,11 +18,22 @@ class NPlusOneAnalyzer:
             query_calls = [n for n in ast.walk(loop) if self.is_query_call(n)]
             if query_calls:
                 for call in query_calls:
+                    source_segment = ast.get_source_segment(self.source_code, call)
+                    related_field = self.extract_related_field(source_segment)
                     issue_detail = {
+                        'id': str(uuid.uuid4()),
                         'function_name': node.name,
                         'line': call.lineno,
                         'col_offset': call.col_offset,
-                        'message': f'N+1 query detected: {ast.get_source_segment(self.source_code, call)}',
+                        'end_col_offset': call.col_offset + len(source_segment),
+                        'message': f'N+1 query detected: {source_segment}',
+                        'problematic_code': source_segment,
+                        'contextual_info': {
+                            'is_in_loop': True,
+                            'loop_start_line': loop.lineno,
+                            'related_field': related_field,
+                            'query_type': self.get_query_type(source_segment),
+                        },
                         'start_line': loop.lineno,
                         'end_line': call.lineno
                     }
@@ -34,6 +46,19 @@ class NPlusOneAnalyzer:
         if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
             return node.func.attr in QUERY_METHODS
         return False
+	    
+    def extract_related_field(self, line: str) -> str:
+        match = re.search(r"(\w+)\.(all\(\)|filter\(|get\()", line)
+        return match.group(1) if match else ''
+
+    def get_query_type(self, line: str) -> str:
+        if ".all()" in line:
+            return "all"
+        if ".filter(" in line:
+            return "filter"
+        if ".get(" in line:
+            return "get"
+        return "unknown"
 
     def get_issues(self):
         return self.nplusone_issues

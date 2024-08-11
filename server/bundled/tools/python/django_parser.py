@@ -7,51 +7,16 @@ from ast_parser import Analyzer, serialize_file_data
 from nplusone.analyzer import NPlusOneAnalyzer
 from nplusone.scorer import QUERY_METHODS, NPlusOneScorer
 from log import LOGGER
-
-DEBUG = 'DEBUG'
-SECRET_KEY = 'SECRET_KEY'
-ALLOWED_HOSTS = 'ALLOWED_HOSTS'
-WILD_CARD = '*'
-CSRF_COOKIE_SECURE = 'CSRF_COOKIE_SECURE'
-SESSION_COOKIE = 'SESSION_COOKIE_SECURE'
-
-class IssueSeverity:
-    ERROR = 'ERROR'
-    INFORMATION = 'INFORMATION'
-    WARNING = 'WARNING'
-    HINT = 'HINT'
-
-class IssueDocLinks:
-    DEBUG = 'https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/#debug'
-    SECRET_KEY = 'https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/#secret-key'
-    ALLOWED_HOSTS = 'https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/#allowed-hosts'
-    CSRF_COOKIE_SECURE = 'https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/#csrf-cookie-secure'
-    SESSION_COOKIE_SECURE = 'https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/#session-cookie-secure'
-
-DJANGO_COMPONENTS = {
-    'model': ['Model', 'BaseModel'],
-    'serializer': ['Serializer', 'BaseSerializer'],
-    'view': ['View', 'BaseView'],
-    'testcase': ['TestCase', 'BaseTestCase']
-}
-
-DJANGO_IGNORE_FUNCTIONS = {
-    "save": True,
-    "delete": True,
-    "__str__": True,
-    "clean": True,
-    "get_absolute_url": True,
-    "create": True,
-    "update": True,
-    "validate": True,
-    "get_queryset": True,
-    "get": True,
-    "post": True,
-    "put": True,
-    "get_context_data": True,
-    "validate_<field_name>": True,
-    "delete": True,
-}
+from constants import (
+	ALLOWED_HOSTS,
+    CSRF_COOKIE_SECURE,
+    DEBUG, DJANGO_COMPONENTS,
+    DJANGO_IGNORE_FUNCTIONS,
+    SECRET_KEY,
+    SESSION_COOKIE,
+    IssueDocLinks,
+    IssueSeverity
+)
 
 class DjangoAnalyzer(Analyzer):
     def __init__(self, source_code):

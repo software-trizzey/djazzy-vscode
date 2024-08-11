@@ -239,13 +239,13 @@ export class DjangoProvider extends PythonProvider {
                     endLine: relativeLineNumber,
                     startCol: lineInfo.start_col,
                     endCol: lineInfo.end_col,
-                    problematicCode: line,
+                    problematic_code: line,
                     message: `Potential N+1 query detected: '${line.trim()}'`,
-                    contextualInfo: {
-                        isInLoop: isInLoop,
-                        loopStartLine: isInLoop ? loopStartLine : undefined,
-                        relatedField: relatedField,
-                        queryType: this.getQueryType(line),
+                    contextual_info: {
+                        is_in_loop: isInLoop,
+                        loop_start_line: isInLoop ? loopStartLine : undefined,
+                        related_field: relatedField,
+                        query_type: this.getQueryType(line),
                     },
                     suggestedFix: this.generateSuggestedFix(line, relatedField, operations, isInLoop),
                     severity: isInLoop ? Severity.WARNING : Severity.INFORMATION,
@@ -318,7 +318,7 @@ export class DjangoProvider extends PythonProvider {
                 data: { 
                     id: issue.id, 
                     score: issue.score,
-                    contextualInfo: issue.contextualInfo
+                    contextualInfo: issue.contextual_info
                 }
             };
             diagnostics.push(diagnostic);
@@ -378,7 +378,7 @@ export class DjangoProvider extends PythonProvider {
             for (let issue of llmResult.issues) {
                 const matchedPotentialIssue = potentialIssues.find(potentialIssue => potentialIssue.id === issue.id);
                 if (matchedPotentialIssue) {
-                    issue = { ...issue, contextualInfo: matchedPotentialIssue.contextualInfo };
+                    issue = { ...issue, contextualInfo: matchedPotentialIssue.contextual_info };
                 }
             }
 
@@ -441,6 +441,7 @@ export class DjangoProvider extends PythonProvider {
             };
     
             const severity = this.mapSeverity(issue.severity || Severity.WARNING);
+            console.log('N+1 issue severity:',"input", issue.severity, "output",severity);
             const diagnosticMessage = this.createStructuredDiagnosticMessage(issue, severity);
             
             const diagnostic: Diagnostic = {
@@ -455,7 +456,7 @@ export class DjangoProvider extends PythonProvider {
                 data: {
                     id: issue.id,
                     score: issue.score,
-                    contextualInfo: issue.contextualInfo,
+                    contextualInfo: issue.contextual_info,
                 },
             };
     
@@ -576,20 +577,20 @@ export class DjangoProvider extends PythonProvider {
         const severityIndicator = this.getSeverityIndicator(severity);
         let contextInfo = '';
         
-        if (issue.contextualInfo) {
-            contextInfo = `Detected in ${issue.contextualInfo.isInLoop ? 'a loop' : 'code'} ` +
-                          `using .${issue.contextualInfo.queryType}() ` +
-                          `on ${issue.contextualInfo.relatedField || 'a queryset'}`;
-            if (issue.contextualInfo.isInLoop) {
-                contextInfo += ` (loop starts at line ${issue.contextualInfo.loopStartLine})`;
+        if (issue.contextual_info) {
+            contextInfo = `Detected in ${issue.contextual_info.is_in_loop ? 'a loop' : 'code'} ` +
+                          `using .${issue.contextual_info.query_type}() ` +
+                          `on ${issue.contextual_info.related_field || 'a queryset'}`;
+            if (issue.contextual_info.is_in_loop) {
+                contextInfo += ` (loop starts at line ${issue.contextual_info.loop_start_line})`;
             }
         }
         
         return `${severityIndicator} N+1 Query Detected (Score: ${issue.score})
-        \n[Code]\n${issue.problematicCode}
+        \n[Code]\n${issue.problematic_code}
         \n[Issue]\n${issue.message}
-        \n[Context]\n${contextInfo || 'Potential inefficient database query'}
-        \n[Suggestion]\n${issue.suggestedFix}\n`;
+        \n[Context]\n${contextInfo || 'Potential inefficient database query'}\n`;
+        // \n[Suggestion]\n${issue.suggestedFix}\n`; FIXME: Add back when we have method for getting suggestions
     }
 
     private clearDiagnosticsForSymbol(symbol: any, diagnostics: Diagnostic[]): void {

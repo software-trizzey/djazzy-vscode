@@ -19,15 +19,15 @@ export interface Issue {
     startCol: number;
     endCol: number;
     message: string;
-    problematicCode: string;
+    problematic_code: string;
     suggestedFix: string;
     severity: Severity;
     score: number;
-    contextualInfo?: {
-        isInLoop: boolean;
-        loopStartLine?: number;
-        relatedField: string | null;
-        queryType: string;
+    contextual_info?: {
+        is_in_loop: boolean;
+        loop_start_line?: number;
+        related_field: string | null;
+        query_type: string;
     };
 }
   

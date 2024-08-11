@@ -7,37 +7,10 @@ import tokenize
 from io import StringIO
 from typing import Dict, Any, List
 
+from constants import DJANGO_IGNORE_FUNCTIONS
 from log import LOGGER
+from util import serialize_file_data
 
-
-DJANGO_IGNORE_FUNCTIONS = {
-    "save": True,
-    "delete": True,
-    "__str__": True,
-    "clean": True,
-    "get_absolute_url": True,
-    "create": True,
-    "update": True,
-    "validate": True,
-    "get_queryset": True,
-    "get": True,
-    "post": True,
-    "put": True,
-    "get_context_data": True,
-    "validate_<field_name>": True,
-    "delete": True,
-    "perform_create": True,
-}
-
-def serialize_file_data(obj):
-    if isinstance(obj, ast.AST):
-        return {k: serialize_file_data(v) for k, v in ast.iter_fields(obj)}
-    elif isinstance(obj, list):
-        return [serialize_file_data(i) for i in obj]
-    elif isinstance(obj, dict):
-        return {k: serialize_file_data(v) for k, v in obj.items()}
-    else:
-        return str(obj)
 
 class DjangoURLPatternVisitor(ast.NodeVisitor):
     def __init__(self):

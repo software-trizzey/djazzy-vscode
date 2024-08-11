@@ -1,27 +1,7 @@
 import re
 
-METHOD_NAMES = [
-    "function",
-    "django_model_method",
-    "django_serializer_method",
-    "django_view_method",
-    "django_testcase_method",
-]
 
-QUERY_METHODS = [
-    "all", "filter", "get", "count", "exists", "aggregate",
-    "annotate", "values", "values_list", "first", "last",
-]
-
-REVERSE_FOREIGN_KEY_PATTERN = r"\.[\w]+_set\."
-FOREIGN_KEY_OR_ONE_TO_ONE_PATTERN = r"\.[\w]+\."
-
-RELATED_FIELD_PATTERNS = [
-    REVERSE_FOREIGN_KEY_PATTERN,
-    FOREIGN_KEY_OR_ONE_TO_ONE_PATTERN
-]
-
-AGGREGATE_METHODS = ["Count", "Sum", "Avg", "Max", "Min"]
+from constants import AGGREGATE_METHODS, QUERY_METHODS, RELATED_FIELD_PATTERNS, IssueSeverity
 
 class NPlusOneScorer:
     MAX_SCORE = 100
@@ -79,10 +59,10 @@ class NPlusOneScorer:
     @classmethod
     def get_severity(cls, score):
         if score >= cls.SCORE_THRESHOLDS['HIGH']:
-            return 'Error'
+            return IssueSeverity.ERROR
         elif score >= cls.SCORE_THRESHOLDS['MEDIUM']:
-            return 'Warning'
+            return IssueSeverity.WARNING
         elif score >= cls.SCORE_THRESHOLDS['LOW']:
-            return 'Information'
+            return IssueSeverity.INFORMATION
         else:
-            return 'Hint'
+            return IssueSeverity.HINT

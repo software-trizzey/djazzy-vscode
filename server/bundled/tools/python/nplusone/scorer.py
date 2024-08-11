@@ -65,4 +65,4 @@ class NPlusOneScorer:
         elif score >= cls.SCORE_THRESHOLDS['LOW']:
             return IssueSeverity.INFORMATION
         else:
-            return IssueSeverity.HINT
+            return IssueSeverity.INFORMATION

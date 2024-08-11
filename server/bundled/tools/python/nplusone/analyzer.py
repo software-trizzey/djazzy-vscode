@@ -1,5 +1,4 @@
 import ast
-import re
 import uuid
 
 from constants import QUERY_METHODS
@@ -19,7 +18,7 @@ class NPlusOneAnalyzer:
             if query_calls:
                 for call in query_calls:
                     source_segment = ast.get_source_segment(self.source_code, call)
-                    related_field = self.extract_related_field(source_segment)
+                    related_field = self.extract_related_field(call.func)
                     issue_detail = {
                         'id': str(uuid.uuid4()),
                         'function_name': node.name,
@@ -32,7 +31,7 @@ class NPlusOneAnalyzer:
                             'is_in_loop': True,
                             'loop_start_line': loop.lineno,
                             'related_field': related_field,
-                            'query_type': self.get_query_type(source_segment),
+                            'query_type': self.get_query_type(call.func),
                         },
                         'start_line': loop.lineno,
                         'end_line': call.lineno
@@ -46,19 +45,25 @@ class NPlusOneAnalyzer:
         if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
             return node.func.attr in QUERY_METHODS
         return False
-	    
-    def extract_related_field(self, line: str) -> str:
-        match = re.search(r"(\w+)\.(all\(\)|filter\(|get\()", line)
-        return match.group(1) if match else ''
 
-    def get_query_type(self, line: str) -> str:
-        if ".all()" in line:
-            return "all"
-        if ".filter(" in line:
-            return "filter"
-        if ".get(" in line:
-            return "get"
-        return "unknown"
+    def extract_related_field(self, node: ast.Attribute) -> str:
+        """
+        Extracts the related field from an ast.Attribute node.
+        This is used to identify the base model and the related field in a Django ORM query.
+        """
+        if isinstance(node, ast.Attribute):
+            if isinstance(node.value, ast.Attribute):
+                return self.extract_related_field(node.value)
+            if isinstance(node.value, ast.Name):
+                related_field = node.attr
+                return related_field
+        return ''
+
+    def get_query_type(self, node: ast.Attribute) -> str:
+        """
+        Determines the type of query method being used in a Django ORM query.
+        """
+        return node.attr if node.attr in QUERY_METHODS else "unknown"
 
     def get_issues(self):
         return self.nplusone_issues

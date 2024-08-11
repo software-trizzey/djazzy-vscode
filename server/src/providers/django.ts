@@ -8,7 +8,6 @@ import {
 } from "vscode-languageserver/node";
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
-import { v4 as uuidv4 } from 'uuid';
 import { createHash } from 'crypto';
 
 import { PythonProvider } from "./python";
@@ -16,26 +15,8 @@ import { SOURCE_NAME, DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE, DJANGO_SECURITY_VIO
 import { ExtensionSettings, cachedUserToken, defaultConventions } from "../settings";
 import LOGGER from '../common/logs';
 import COMMANDS, { ACCESS_FORBIDDEN_NOTIFICATION_ID, RATE_LIMIT_NOTIFICATION_ID } from '../constants/commands';
-import { chatWithLLM } from '../llm/chat';
-import { DeveloperInput, LLMNPlusOneResult, Models, Issue, Severity } from '../llm/types';
-import { RateLimitError, ForbiddenError } from '../llm/helpers';
+import { LLMNPlusOneResult, Issue, Severity } from '../llm/types';
 
-const METHOD_NAMES = [
-	"function",
-	"django_model_method",
-	"django_serializer_method",
-	"django_view_method",
-	"django_testcase_method",
-];
-
-
-const REVERSE_FOREIGN_KEY_PATTERN = /\.[\w]+_set\./;
-const FOREIGN_KEY_OR_ONE_TO_ONE_PATTERN = /\.[\w]+\./;
-
-const RELATED_FIELD_PATTERNS = [
-    REVERSE_FOREIGN_KEY_PATTERN,
-    FOREIGN_KEY_OR_ONE_TO_ONE_PATTERN
-];
 
 interface CachedResult {
     result: LLMNPlusOneResult;
@@ -69,15 +50,6 @@ export class DjangoProvider extends PythonProvider {
         
         this.processDjangoSecurityIssues(securityIssues, diagnostics);
         this.processNPlusOneIssues(nplusOneIssues, diagnostics);
-
-		const highPrioritySymbols = symbols.filter(symbol => symbol.high_priority);
-		console.log(`Found ${highPrioritySymbols.length} highPrioritySymbols for review`);
-
-		// for (const symbol of highPrioritySymbols) {
-        //     if (METHOD_NAMES.includes(symbol.type)) {
-        //         await this.detectNPlusOneQuery(symbol, diagnostics, document);
-        //     }
-        // }
 	}
 
 	public async provideCodeActions(document: TextDocument, userToken: string): Promise<CodeAction[]> {
@@ -132,280 +104,6 @@ export class DjangoProvider extends PythonProvider {
 		return actions;
 	}
 
-    private trackQuerysetOperations(functionBody: string): Set<string> {
-        const operations = new Set<string>();
-        const prefetchRegex = /\.prefetch_related\(['"](\w+)(?:__\w+)*['"]\)/g;
-        const selectRegex = /\.select_related\(['"](\w+)(?:__\w+)*['"]\)/g;
-        
-        let match;
-        while ((match = prefetchRegex.exec(functionBody)) !== null) {
-            operations.add(`prefetch:${match[1]}`);
-        }
-        while ((match = selectRegex.exec(functionBody)) !== null) {
-            operations.add(`select:${match[1]}`);
-        }
-        
-        return operations;
-    }
-
-    private async detectNPlusOneQuery(symbol: any, diagnostics: Diagnostic[], document: TextDocument): Promise<void> {
-        if (!cachedUserToken) {
-            LOGGER.warn("Only authenticated users can use the N+1 query detection feature.");
-            return;
-        }
-    
-        const functionBodyWithLines = symbol.body_with_lines;
-        const potentialIssues = this.analyzeFunctionForPotentialIssues(functionBodyWithLines, symbol);
-    
-        this.clearDiagnosticsForSymbol(symbol, diagnostics);
-
-        if (potentialIssues.length > 0) {
-            try {
-                const cacheKey = this.generateCacheKey(symbol, document);
-                const cachedResult = this.getCachedResult(cacheKey);
-    
-                let llmResult: LLMNPlusOneResult;
-                if (cachedResult) {
-                    llmResult = cachedResult;
-                    console.log(`Using cached result for ${cacheKey}`);
-                } else {
-                    llmResult = await this.validateNPlusOneWithLLM(symbol, potentialIssues, document);
-                    
-                    if (llmResult.isRateLimited) {
-                        this.sendRateLimitNotification();
-                        return;
-                    }
-                    
-                    this.setCachedResult(cacheKey, llmResult);
-                }
-    
-                if (llmResult.has_n_plus_one_issues) {
-                    this.addNPlusOneDiagnostics(symbol, diagnostics, llmResult.issues);
-                }
-            } catch (error) {
-                this.logError(error as Error, 'N+1 detection');
-            }
-        }
-    }
-
-    private isFalsePositive(line: string, operations: Set<string>): boolean {
-        const relatedField = this.extractRelatedField(line);
-        if (relatedField && (operations.has(`prefetch:${relatedField}`) || operations.has(`select:${relatedField}`))) {
-            return true;
-        }
-
-        if (line.includes('.exists()') || line.includes('.count()')) {
-            return true;
-        }
-
-        if (line.match(/\.(id|pk)$/)) {
-            return true;
-        }
-
-        if (line.match(/\.filter\([\w_]+__in=/)) {
-            return true;
-        }
-
-        return false;
-    }
-
-    private extractRelatedField(line: string): string | null {
-        const match = line.match(/(\w+)\.(all\(\)|filter\(|get\()/);
-        return match ? match[1] : null;
-    }
-
-    private analyzeFunctionForPotentialIssues(functionBodyWithLines: any[], symbol: any): Issue[] {
-        const potentialIssues: Issue[] = [];
-        const operations = this.trackQuerysetOperations(symbol.body);
-        
-        let isInLoop = false;
-        let loopStartLine = 0;
-
-        for (const lineInfo of functionBodyWithLines) {
-            const line = lineInfo.content.trim();
-            const absoluteLineNumber = lineInfo.absolute_line_number;
-            const relativeLineNumber = absoluteLineNumber - symbol.function_start_line + 1;
-
-            if (line.startsWith('for ') || line.startsWith('while ')) {
-                isInLoop = true;
-                loopStartLine = relativeLineNumber;
-            }
-
-            if ((line.includes('.all()') || line.includes('.filter(') || line.includes('.get(')) && !this.isFalsePositive(line, operations)) {
-                const relatedField = this.extractRelatedField(line);
-                potentialIssues.push({
-                    id: uuidv4(),
-                    startLine: relativeLineNumber,
-                    endLine: relativeLineNumber,
-                    startCol: lineInfo.start_col,
-                    endCol: lineInfo.end_col,
-                    problematic_code: line,
-                    message: `Potential N+1 query detected: '${line.trim()}'`,
-                    contextual_info: {
-                        is_in_loop: isInLoop,
-                        loop_start_line: isInLoop ? loopStartLine : undefined,
-                        related_field: relatedField,
-                        query_type: this.getQueryType(line),
-                    },
-                    suggestedFix: this.generateSuggestedFix(line, relatedField, operations, isInLoop),
-                    severity: isInLoop ? Severity.WARNING : Severity.INFORMATION,
-                    score: isInLoop ? 75 : 50,
-                });
-            }
-
-            if (line === '' || line.endsWith('}')) {
-                isInLoop = false;
-            }
-        }
-
-        return potentialIssues;
-    }
-
-    private getQueryType(line: string): string {
-        if (line.includes('.all()')) return 'all';
-        if (line.includes('.filter(')) return 'filter';
-        if (line.includes('.get(')) return 'get';
-        return 'unknown';
-    }
-
-    private generateSuggestedFix(line: string, relatedField: string | null, operations: Set<string>, isInLoop: boolean): string {
-        if (!relatedField) {
-            return "Consider optimizing this query to avoid potential N+1 issues.";
-        }
-
-        if (isInLoop) {
-            if (!operations.has(`prefetch:${relatedField}`)) {
-                return `Consider using .prefetch_related('${relatedField}') on the queryset before the loop.`;
-            } else {
-                return `Ensure that you're using the prefetched '${relatedField}' correctly inside the loop.`;
-            }
-        } else {
-            return `Consider using .select_related('${relatedField}') if this is a foreign key or one-to-one relationship.`;
-        }
-    }
-
-    private addNPlusOneDiagnostics(symbol: any, diagnostics: Diagnostic[], issues: Issue[]): void {
-        const functionStartLine = symbol.function_start_line;
-    
-        for (const issue of issues) {
-            if (!this.shouldShowIssue(issue.score)) {
-                console.log("Skipping issue with score", issue.score);
-                continue;
-            }
-    
-            const startLine = (issue.startLine ?? 1) + functionStartLine - 1;
-            const endLine = (issue.endLine ?? 1) + functionStartLine - 1;
-            const startCol = issue.startCol ?? 0;
-            const endCol = issue.endCol ?? Number.MAX_VALUE;
-    
-            const range: Range = {
-                start: { line: startLine - 1, character: startCol },
-                end: { line: endLine - 1, character: endCol }
-            };
-    
-            const severity = this.mapSeverity(issue.severity.toUpperCase() as Severity);
-            const diagnosticMessage = this.createStructuredDiagnosticMessage(issue, severity);
-            
-            const diagnostic: Diagnostic = {
-                range,
-                message: diagnosticMessage,
-                severity: severity,
-                source: SOURCE_NAME,
-                code: DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE,
-                codeDescription: {
-                    href: 'https://docs.djangoproject.com/en/stable/topics/db/optimization/'
-                },
-                data: { 
-                    id: issue.id, 
-                    score: issue.score,
-                    contextualInfo: issue.contextual_info
-                }
-            };
-            diagnostics.push(diagnostic);
-        }
-    }
-
-    private async validateNPlusOneWithLLM(
-        symbol: any,
-        potentialIssues: Issue[],
-        document: TextDocument,
-    ): Promise<LLMNPlusOneResult> {
-        if (!cachedUserToken) {
-            LOGGER.warn("Only authenticated users can use the N+1 query detection feature.");
-            return {
-                has_n_plus_one_issues: false,
-                issues: [],
-                isRateLimited: false,
-                isForbidden: true
-            };
-        }
-
-        const range = {
-            start: { line: symbol.function_start_line - 1, character: 0 },
-            end: { line: symbol.function_end_line - 1, character: Number.MAX_VALUE }
-        };
-
-        const temporaryDiagnostic: Diagnostic = {
-            range,
-            message: `Analyzing the provided input for N+1 queries.`,
-            severity: DiagnosticSeverity.Information,
-            source: SOURCE_NAME,
-            code: DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE,
-            codeDescription: {
-                href: 'https://docs.djangoproject.com/en/stable/topics/db/optimization/'
-            }
-        };
-        const context = this.generateFunctionContext(document, temporaryDiagnostic, symbol.name, symbol.body);
-    
-        const developerInput: DeveloperInput = {
-            functionName: symbol.name,
-            functionBody: symbol.body,
-            potentialIssues: potentialIssues,
-            context: context
-        };
-
-    
-        try {
-            const llmResult = await chatWithLLM(
-                "Analyze the provided input for N+1 queries.",
-                developerInput,
-                cachedUserToken,
-                Models.OPEN_AI
-            );    
-            llmResult.issues = llmResult.issues.filter((issue: any) => this.shouldShowIssue(issue.score));
-            llmResult.has_n_plus_one_issues = llmResult.issues.length > 0;        
-
-            for (let issue of llmResult.issues) {
-                const matchedPotentialIssue = potentialIssues.find(potentialIssue => potentialIssue.id === issue.id);
-                if (matchedPotentialIssue) {
-                    issue = { ...issue, contextualInfo: matchedPotentialIssue.contextual_info };
-                }
-            }
-
-            return llmResult;
-        } catch (error) {
-            if (error instanceof RateLimitError) {
-                LOGGER.warn(`Usage limit exceeded for user ${cachedUserToken}`);
-                this.sendRateLimitNotification();
-                return {
-                    has_n_plus_one_issues: false,
-                    issues: [],
-                    isRateLimited: true
-                };
-            } else if (error instanceof ForbiddenError) {
-                LOGGER.error(`Forbidden error for user ${cachedUserToken}`);
-                this.sendForbiddenNotification();
-                return {
-                    has_n_plus_one_issues: false,
-                    issues: [],
-                    isForbidden: true
-                };
-            }
-            this.logError(error as Error, 'LLM validation');
-            throw error;
-        }
-    }
-
     private processDjangoSecurityIssues(
         securityIssues: any[],
         diagnostics: Diagnostic[],
@@ -434,7 +132,11 @@ export class DjangoProvider extends PythonProvider {
     }
 
     private processNPlusOneIssues(issues: any[], diagnostics: Diagnostic[]): void {
+        const addedIssues = new Set<string>();
+    
         for (const issue of issues) {
+            if (addedIssues.has(issue.id)) continue;
+            
             const range: Range = {
                 start: { line: issue.line - 1, character: issue.col_offset || 0 },
                 end: { line: issue.line - 1, character: issue.end_col_offset || Number.MAX_VALUE },
@@ -460,8 +162,9 @@ export class DjangoProvider extends PythonProvider {
             };
     
             diagnostics.push(diagnostic);
+            addedIssues.add(issue.id);
         }
-    }    
+    }      
     
     private sendRateLimitNotification(): void {
         this.connection.sendNotification(RATE_LIMIT_NOTIFICATION_ID, {

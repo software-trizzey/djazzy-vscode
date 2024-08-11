@@ -44,24 +44,24 @@ export class DjangoProvider extends PythonProvider {
         changedLines: Set<number> | undefined,
         securityIssues: any[],
         nplusOneIssues: any[],
-		document: TextDocument
+        document: TextDocument
     ): Promise<void> {
         const cacheKey = this.generateCacheKey(document.getText(), document);
-
+    
         const cachedResult = this.getCachedResult(cacheKey);
         if (cachedResult) {
             console.log("Using cached result for Django diagnostics");
             diagnostics.push(...cachedResult.diagnostics);
             return;
         }
-
+    
         await super.validateAndCreateDiagnostics(symbols, diagnostics, changedLines, securityIssues, nplusOneIssues, document);
         
         this.processDjangoSecurityIssues(securityIssues, diagnostics);
         this.processNPlusOneIssues(nplusOneIssues, diagnostics);
-
+    
         this.setCachedResult(cacheKey, diagnostics);
-	}
+    }    
 
 	public async provideCodeActions(document: TextDocument, userToken: string): Promise<CodeAction[]> {
 		const diagnostics = document.uri
@@ -201,9 +201,10 @@ export class DjangoProvider extends PythonProvider {
         });
     }
 
-    private generateCacheKey(symbol: any, document: TextDocument): string {
-        const functionBodyHash = createHash('md5').update(symbol.body).digest('hex');
-        return `${document.uri}:${symbol.name}:${functionBodyHash}`;
+    private generateCacheKey(documentText: string, document: TextDocument): string {
+        const normalizedText = documentText || "";
+        const functionBodyHash = createHash('md5').update(normalizedText).digest('hex');
+        return `${document.uri}:${functionBodyHash}`;
     }
     
     private getCachedResult(key: string): CachedResult | null {

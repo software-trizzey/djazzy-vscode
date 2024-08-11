@@ -147,12 +147,12 @@ export class PythonProvider extends LanguageProvider {
 		try {
 			const text = document.getText();
 			const parserFilePath = this.getParserFilePath(text);
-
+	
 			return new Promise((resolve, reject) => {
 				const process = spawn("python3", [parserFilePath]);
 				let output = "";
 				let error = "";
-
+	
 				process.stdout.on("data", (data) => {
 					output += data.toString();
 				});
@@ -160,16 +160,15 @@ export class PythonProvider extends LanguageProvider {
 					error += data.toString();
 					console.log(`[PARSER] ${data}`); 
 				});
-
+	
 				process.on("close", async (code) => {
 					if (code !== 0) {
 						const errorMessage = `Process exited with code ${code}, stderr: ${error}`;
 						console.error(errorMessage);
 						return reject(new Error(errorMessage));
 					}
-
+	
 					try {
-						// FIXME: hack to remove non-JSON output (e.g. "install instructions")
 						const jsonLines = output
 							.split("\n")
 							.filter(
@@ -183,7 +182,7 @@ export class PythonProvider extends LanguageProvider {
 						const nPlusOneIssues = results.nplusone_issues || [];
 						
 						if (symbols.length === 0) return resolve(symbols);
-
+	
 						await this.validateAndCreateDiagnostics(
 							symbols,
 							diagnostics,
@@ -192,24 +191,30 @@ export class PythonProvider extends LanguageProvider {
 							nPlusOneIssues,
 							document
 						);
-
+	
 						resolve(diagnostics);
 					} catch (err: any) {
 						console.error("Failed to parse JSON output:", err, output);
 						reject(new Error(`Failed to parse JSON output: ${err.message}`));
 					}
 				});
-
+	
 				if (process.stdin) {
 					process.stdin.write(text);
 					process.stdin.end();
 				}
 			});
 		} catch (error: any) {
-			this.handleError(error);
-			return [];
+			if (error instanceof SyntaxError) {
+				console.warn("Syntax error detected. Skipping invalid sections and continuing...");
+				this.handleError(error);
+				return diagnostics;
+			} else {
+				this.handleError(error);
+				return [];
+			}
 		}
-	}
+	}	
 
 	sanitizeFunctionBody(body: string): string {
 		let lines = body.split('\n');

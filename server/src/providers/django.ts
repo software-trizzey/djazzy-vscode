@@ -15,11 +15,11 @@ import { SOURCE_NAME, DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE, DJANGO_SECURITY_VIO
 import { ExtensionSettings, cachedUserToken, defaultConventions } from "../settings";
 import LOGGER from '../common/logs';
 import COMMANDS, { ACCESS_FORBIDDEN_NOTIFICATION_ID, RATE_LIMIT_NOTIFICATION_ID } from '../constants/commands';
-import { LLMNPlusOneResult, Issue, Severity } from '../llm/types';
+import { Issue, Severity } from '../llm/types';
 
 
 interface CachedResult {
-    result: LLMNPlusOneResult;
+    diagnostics: Diagnostic[];
     timestamp: number;
 }
 
@@ -46,10 +46,21 @@ export class DjangoProvider extends PythonProvider {
         nplusOneIssues: any[],
 		document: TextDocument
     ): Promise<void> {
+        const cacheKey = this.generateCacheKey(document.getText(), document);
+
+        const cachedResult = this.getCachedResult(cacheKey);
+        if (cachedResult) {
+            console.log("Using cached result for Django diagnostics");
+            diagnostics.push(...cachedResult.diagnostics);
+            return;
+        }
+
         await super.validateAndCreateDiagnostics(symbols, diagnostics, changedLines, securityIssues, nplusOneIssues, document);
         
         this.processDjangoSecurityIssues(securityIssues, diagnostics);
         this.processNPlusOneIssues(nplusOneIssues, diagnostics);
+
+        this.setCachedResult(cacheKey, diagnostics);
 	}
 
 	public async provideCodeActions(document: TextDocument, userToken: string): Promise<CodeAction[]> {
@@ -131,15 +142,27 @@ export class DjangoProvider extends PythonProvider {
         }
     }
 
-    private processNPlusOneIssues(issues: any[], diagnostics: Diagnostic[]): void {
+    private processNPlusOneIssues(
+        issues: any[],
+        diagnostics: Diagnostic[],
+        changedLines?: Set<number>
+    ): void {
         const addedIssues = new Set<string>();
     
         for (const issue of issues) {
+            const issueLine = issue.line - 1;
+            
+            if (changedLines && changedLines.has(issueLine)) {
+                console.log(`Skipping N+1 issue at line ${issueLine} due to change`);
+                // Re-analysis might be needed, so skip adding the old diagnostic for now
+                continue;
+            }
+    
             if (addedIssues.has(issue.id)) continue;
             
             const range: Range = {
-                start: { line: issue.line - 1, character: issue.col_offset || 0 },
-                end: { line: issue.line - 1, character: issue.end_col_offset || Number.MAX_VALUE },
+                start: { line: issueLine, character: issue.col_offset || 0 },
+                end: { line: issueLine, character: issue.end_col_offset || Number.MAX_VALUE },
             };
     
             const severity = this.mapSeverity(issue.severity || Severity.WARNING);
@@ -164,7 +187,7 @@ export class DjangoProvider extends PythonProvider {
             diagnostics.push(diagnostic);
             addedIssues.add(issue.id);
         }
-    }      
+    }    
     
     private sendRateLimitNotification(): void {
         this.connection.sendNotification(RATE_LIMIT_NOTIFICATION_ID, {
@@ -183,17 +206,17 @@ export class DjangoProvider extends PythonProvider {
         return `${document.uri}:${symbol.name}:${functionBodyHash}`;
     }
     
-    private getCachedResult(key: string): LLMNPlusOneResult | null {
+    private getCachedResult(key: string): CachedResult | null {
         const cached = this.nPlusOnecache.get(key);
         if (cached && Date.now() - cached.timestamp < this.cacheTTL) {
-            return cached.result;
+            return cached;
         }
         return null;
-    }
+    }    
 
-    private setCachedResult(key: string, result: LLMNPlusOneResult): void {
-        this.nPlusOnecache.set(key, { result, timestamp: Date.now() });
-    }
+    private setCachedResult(key: string, diagnostics: Diagnostic[]): void {
+        this.nPlusOnecache.set(key, { diagnostics, timestamp: Date.now() });
+    }      
 
     clearNPlusOneCache(): void {
         this.nPlusOnecache.clear();

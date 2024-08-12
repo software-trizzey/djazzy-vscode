@@ -1,7 +1,6 @@
 import re
 
-
-from constants import AGGREGATE_METHODS, QUERY_METHODS, RELATED_FIELD_PATTERNS, IssueSeverity
+from constants import AGGREGATE_METHODS, QUERY_METHODS, WRITE_METHODS, RELATED_FIELD_PATTERNS, IssueSeverity
 
 class NPlusOneScorer:
     MAX_SCORE = 100
@@ -13,8 +12,10 @@ class NPlusOneScorer:
     SCORE_WEIGHTS = {
         'IN_LOOP': 40,
         'QUERY_METHOD': 30,
+        'WRITE_METHOD': 35,
         'RELATED_FIELD': 20,
-        'AGGREGATE_METHOD': 10
+        'AGGREGATE_METHOD': 10,
+        'BULK_OPERATION': -20  # Reduce score for bulk operations as they are generally more efficient
     }
 
     @classmethod
@@ -28,13 +29,17 @@ class NPlusOneScorer:
             score += cls.SCORE_WEIGHTS['IN_LOOP']
         if cls.contains_query_method(issue['message']):
             score += cls.SCORE_WEIGHTS['QUERY_METHOD']
+        if cls.contains_write_method(issue['message']):
+            score += cls.SCORE_WEIGHTS['WRITE_METHOD']
         if cls.contains_related_field(issue['message']):
             score += cls.SCORE_WEIGHTS['RELATED_FIELD']
         if cls.contains_aggregate_method(issue['message']):
             score += cls.SCORE_WEIGHTS['AGGREGATE_METHOD']
+        if cls.is_bulk_operation(issue['message']):
+            score += cls.SCORE_WEIGHTS['BULK_OPERATION']
         
-        issue['score'] = min(score, cls.MAX_SCORE)
-        issue['severity'] = cls.get_severity(score)
+        issue['score'] = min(max(score, 0), cls.MAX_SCORE)
+        issue['severity'] = cls.get_severity(issue['score'])
         return issue
 
     @staticmethod
@@ -49,12 +54,20 @@ class NPlusOneScorer:
         return any(method in message for method in QUERY_METHODS)
 
     @staticmethod
+    def contains_write_method(message):
+        return any(method in message for method in WRITE_METHODS)
+
+    @staticmethod
     def contains_related_field(message):
         return any(re.search(pattern, message) for pattern in RELATED_FIELD_PATTERNS)
 
     @staticmethod
     def contains_aggregate_method(message):
         return any(method in message for method in AGGREGATE_METHODS)
+
+    @staticmethod
+    def is_bulk_operation(message):
+        return 'bulk_create' in message or 'bulk_update' in message
 
     @classmethod
     def get_severity(cls, score):

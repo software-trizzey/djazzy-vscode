@@ -151,7 +151,7 @@ export class DjangoProvider extends PythonProvider {
         console.log(`Detected ${issues.length} N+1 issues`, issues);
     
         for (const issue of issues) {
-            // TODO: uncomment this line if (!this.shouldShowIssue(issue.score)) continue;
+            if (!this.shouldShowIssue(issue.score)) continue;
     
             const issueLine = issue.line - 1;
             
@@ -175,7 +175,7 @@ export class DjangoProvider extends PythonProvider {
                 end: { line: issueLine, character: issue.end_col_offset || Number.MAX_VALUE },
             };
     
-            const severity = this.mapSeverity(issue.severity || Severity.WARNING);
+            const severity = this.mapSeverity(issue.severity);
             const diagnosticMessage = this.createStructuredDiagnosticMessage(issue, severity);
             
             const diagnostic: Diagnostic = {
@@ -269,9 +269,9 @@ export class DjangoProvider extends PythonProvider {
             case Severity.ERROR:
                 return 90;
             case Severity.WARNING:
-                return 70;
+                return 60;
             case Severity.INFORMATION:
-                return 50;
+                return 30;
             case Severity.HINT:
             default:
                 return 0;
@@ -321,6 +321,9 @@ export class DjangoProvider extends PythonProvider {
             if (queryType === 'attribute_access') {
                 contextInfo = `Detected in ${issue.contextual_info.is_in_loop ? 'a loop' : 'code'} ` +
                               `while accessing the related field "${relatedField}"`;
+            } else if (queryType === 'write') {
+                contextInfo = `Detected in ${issue.contextual_info.is_in_loop ? 'a loop' : 'code'} ` +
+                              `performing a write operation on ${relatedField}`;
             } else {
                 contextInfo = `Detected in ${issue.contextual_info.is_in_loop ? 'a loop' : 'code'} ` +
                               `using .${queryType}() on ${relatedField}`;
@@ -336,7 +339,6 @@ export class DjangoProvider extends PythonProvider {
         \n[Context]\n${contextInfo || 'Potential inefficient database query'}\n`;
         // \n[Suggestion]\n${issue.suggestedFix}\n`; FIXME: Add back when we have method for getting suggestions
     }
-    
 
     private clearDiagnosticsForSymbol(symbol: any, diagnostics: Diagnostic[]): void {
         const symbolRange = {

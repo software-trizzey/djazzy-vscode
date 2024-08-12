@@ -22,6 +22,14 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
+
+## [Version 0.1.5] - 2024-08-11
+
+### Changed
+
+- [Feature] Refactor N+1 query detection to use static analysis classes instead of LLM calls.
+
+
 ## [Version 0.1.4] - 2024-08-10
 
 ### Changed

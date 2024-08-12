@@ -58,6 +58,7 @@ WRITE_METHODS = {
     "create",
     "update",
     "delete",
+    "save",
     "bulk_create",
     "bulk_update",
 }

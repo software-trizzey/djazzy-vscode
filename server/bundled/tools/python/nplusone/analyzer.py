@@ -71,7 +71,10 @@ class NPlusOneAnalyzer:
         LOGGER.debug(f"Adding N+1 issue in function {func_node.name} at line {call_node.lineno}")
         source_segment = ast.get_source_segment(self.source_code, call_node)
         related_field = self.extract_related_field(call_node)
-        is_related_field_access = self.is_related_field_access(call_node, func_node) if isinstance(call_node, ast.Attribute) else False
+        is_related_field_access = (
+            self.is_related_field_access(call_node, func_node, is_read=True)
+            if isinstance(call_node, ast.Attribute) else False
+        )
         query_type = self.get_query_type(call_node)
         issue_message = self.create_issue_message(source_segment, query_type, related_field, is_related_field_access)
         issue_type = "N+1 Query" if is_n_plus_one else "Repetitive Write Operation"
@@ -192,9 +195,9 @@ class NPlusOneAnalyzer:
     def find_query_calls(self, node: ast.AST):
         query_calls = [
             ast_node for ast_node in ast.walk(node) 
-            if self.is_query_call(ast_node) and not self.is_optimized_filter_query(ast_node)
+            if (self.is_query_call(ast_node) or self.is_repetitive_write(ast_node)) and not self.is_optimized_filter_query(ast_node)
         ]
-        LOGGER.debug(f"Found {len(query_calls)} query calls")
+        LOGGER.debug(f"Found {len(query_calls)} query and write calls")
         return query_calls
     
     def check_node_for_optimization(self, node: ast.AST) -> bool:
@@ -211,24 +214,16 @@ class NPlusOneAnalyzer:
             if self.is_optimized_filter_query(node):
                 return False
             if isinstance(node.func, ast.Attribute):
-                if node.func.attr in QUERY_METHODS:
-                    LOGGER.error(f"Identified query call: {node.func.attr}")
+                if node.func.attr in QUERY_METHODS or node.func.attr in WRITE_METHODS:
+                    LOGGER.error(f"Identified query or write call: {node.func.attr}")
                     return True
-                elif node.func.attr in WRITE_METHODS:
-                    LOGGER.error(f"Identified write method: {node.func.attr}")
-                    return False
             elif isinstance(node.func, ast.Name):
-                if node.func.id in QUERY_METHODS:
-                    LOGGER.error(f"Identified query call: {node.func.id}")
+                if node.func.id in QUERY_METHODS or node.func.id in WRITE_METHODS:
+                    LOGGER.error(f"Identified query or write call: {node.func.id}")
                     return True
-                elif node.func.id in WRITE_METHODS:
-                    LOGGER.error(f"Identified write method: {node.func.id}")
-                    return False
         elif isinstance(node, ast.Attribute):
-            if self.is_optimized_filter_query(node):
-                return False
-            if self.is_related_field_access(node):
-                LOGGER.error(f"Identified related field access: {node.attr}")
+            if self.is_related_field_access(node, is_read=True) or node.attr in WRITE_METHODS:
+                LOGGER.error(f"Identified related field access or write method: {node.attr}")
                 return True
         return False
     
@@ -271,9 +266,15 @@ class NPlusOneAnalyzer:
         LOGGER.debug("No optimization found")
         return False
     
-    def is_related_field_access(self, node: ast.Attribute, parent_node: ast.AST = None) -> bool:
-        if parent_node and isinstance(parent_node, ast.Assign) and node in parent_node.targets:
-            return False
+    def is_related_field_access(self, node: ast.Attribute, parent_node: ast.AST = None, is_read: bool = True) -> bool:
+        if parent_node and isinstance(parent_node, ast.Assign):
+            if node in parent_node.targets:
+                # If it's a write operation and we're looking for read operations, return False
+                if is_read:
+                    return False
+            elif node in ast.walk(parent_node.value):
+                # If it's in the value of an assignment, it's a read operation
+                return False
         
         levels = []
         current = node
@@ -289,18 +290,15 @@ class NPlusOneAnalyzer:
         return len(levels) >= 2 and not any(level in ['title', 'id', 'pk', 'save', 'append'] for level in levels)
 
     def is_potential_n_plus_one(self, node: ast.AST) -> bool:
-        """
-        Determines if an operation is a potential N+1 query operation which can be inefficient.
-        """
         if isinstance(node, ast.Call):
             if self.is_optimized_filter_query(node):
                 return False
             if isinstance(node.func, ast.Attribute):
-                return node.func.attr in QUERY_METHODS and node.func.attr not in WRITE_METHODS
+                return node.func.attr in QUERY_METHODS
             elif isinstance(node.func, ast.Name):
-                return node.func.id in QUERY_METHODS and node.func.id not in WRITE_METHODS
+                return node.func.id in QUERY_METHODS
         elif isinstance(node, ast.Attribute):
-            return self.is_related_field_access(node)
+            return self.is_related_field_access(node, is_read=True)
         return False
     
     def is_repetitive_write(self, node: ast.AST) -> bool:
@@ -312,6 +310,8 @@ class NPlusOneAnalyzer:
                 return node.func.attr in WRITE_METHODS
             elif isinstance(node.func, ast.Name):
                 return node.func.id in WRITE_METHODS
+        elif isinstance(node, ast.Attribute):
+            return node.attr in WRITE_METHODS
         return False
     
     def is_optimized_filter_query(self, node: ast.AST) -> bool:

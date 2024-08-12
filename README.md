@@ -164,7 +164,7 @@ To ensure fair usage and maintain service quality, we've implemented a daily lim
 
 This limit helps us provide a consistent and reliable service to all our users while allowing for extensive use of the N+1 query detection feature during your development process.
 
-If you find that you consistently need more than 200 validations per day, please contact us at [support@alchemizedsoftware.com](mailto:support@alchemizedsoftware.com) to discuss your needs.
+If you find that you consistently need more than 200 validations per day, please contact us at [support@djangoly.com](mailto:support@djangoly.com) to discuss your needs.
 
 ## Understanding N+1 Query Scores 📊
 
@@ -263,7 +263,7 @@ As we move towards a full release, we plan to introduce a paid subscription mode
 
 Your feedback is crucial during this Beta phase! We're eager to hear about your experience, suggestions, and any issues you encounter. Here's how you can help:
 
-- **General Feedback**, **Report Bugs**, **Feature Requests**: If you encounter any issues, have an idea for a new feature, or any other feedback, please email us at [support@alchemizedsoftware.com](mailto:support@alchemizedsoftware.com).
+- **General Feedback**, **Report Bugs**, **Feature Requests**: If you encounter any issues, have an idea for a new feature, or any other feedback, please email us at [support@djangoly.com](mailto:support@djangoly.com).
 
 Your input directly influences the development of Djangoly. Thank you for helping us create a better tool for the Django community!
 
@@ -281,12 +281,12 @@ We're always open to suggestions for our roadmap. Feel free to contribute your i
 
 ## Known Issues & Limitations 🐞
 
-- **False Positives**: As an MVP undergoing rapid development, Djangoly may generate inaccurate diagnostics and recommendations. If you encounter any issues, please report them to [support@alchemizedsoftware.com](mailto:support@alchemizedsoftware.com).
+- **False Positives**: As an MVP undergoing rapid development, Djangoly may generate inaccurate diagnostics and recommendations. If you encounter any issues, please report them to [support@djangoly.com](mailto:support@djangoly.com).
 - **Django N+1 Query Detection**: The current implementation focuses on simple loop structures and may not catch all complex scenarios. It may produce some false positives in cases where optimizations are applied outside the immediate function scope. The detection is based on static analysis and may not account for dynamic query optimizations.
 
 ## Contribution Guidelines 👯‍♀️
 
-Interested in contributing to Djangoly? Please reach out to [support@alchemizedsoftware.com](mailto:support@alchemizedsoftware.com).
+Interested in contributing to Djangoly? Please reach out to [support@djangoly.com](mailto:support@djangoly.com).
 
 ## License 👮‍♂️
 

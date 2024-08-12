@@ -147,23 +147,29 @@ export class DjangoProvider extends PythonProvider {
         diagnostics: Diagnostic[],
         changedLines?: Set<number>
     ): void {
-        const addedIssues = new Set<string>();
-        // TODO: remove this console.log
+        const uniqueIssues = new Map<string, any>();
         console.log(`Detected ${issues.length} N+1 issues`, issues);
     
         for (const issue of issues) {
             // TODO: uncomment this line if (!this.shouldShowIssue(issue.score)) continue;
-
+    
             const issueLine = issue.line - 1;
             
             if (changedLines && changedLines.has(issueLine)) {
-                // TODO: this won't work as we hanve't implemented the change line detection yet
                 console.log(`Skipping N+1 issue at line ${issueLine} due to change`);
                 continue;
             }
     
-            if (addedIssues.has(issue.id)) continue;
-            
+            const issueKey = `${issue.problematic_code}-${issue.line}`;
+    
+            const existingIssue = uniqueIssues.get(issueKey);
+            if (!existingIssue || issue.score > existingIssue.score) {
+                uniqueIssues.set(issueKey, issue);
+            }
+        }
+    
+        for (const issue of uniqueIssues.values()) {
+            const issueLine = issue.line - 1;
             const range: Range = {
                 start: { line: issueLine, character: issue.col_offset || 0 },
                 end: { line: issueLine, character: issue.end_col_offset || Number.MAX_VALUE },
@@ -189,9 +195,10 @@ export class DjangoProvider extends PythonProvider {
             };
     
             diagnostics.push(diagnostic);
-            addedIssues.add(issue.id);
         }
-    }    
+    
+        console.log(`Processed ${uniqueIssues.size} unique N+1 issues out of ${issues.length} total issues`);
+    }
     
     private sendRateLimitNotification(): void {
         this.connection.sendNotification(RATE_LIMIT_NOTIFICATION_ID, {

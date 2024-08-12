@@ -39,6 +39,95 @@ Djangoly includes several security checks to help ensure your Django project fol
 
 These security checks help you identify common configuration mistakes that could lead to security vulnerabilities in your Django application. Djangoly provides warnings and recommendations to help you maintain a secure Django environment, especially when preparing for production deployment.
 
+## How Djangoly Improves Your Code 🧑‍🏫
+
+### 1. N+1 Query Detection and Optimization
+
+Before:
+```python
+def list_books(request):
+    books = Book.objects.all()
+    for book in books:
+        print(f"{book.title} by {book.author.name}")  # This causes N+1 queries
+```
+
+After:
+```python
+def list_books(request):
+    books = Book.objects.select_related('author').all()
+    for book in books:
+        print(f"{book.title} by {book.author.name}")  # No additional queries
+```
+
+Djangoly detects the potential N+1 query issue and suggests using `select_related()` to optimize the database queries.
+
+### 2. Security Settings Check
+
+Before (in settings.py):
+```python
+DEBUG = True
+SECRET_KEY = 'my_secret_key'
+ALLOWED_HOSTS = ['*']
+```
+
+After (with Djangoly warnings):
+```python
+DEBUG = False  # Djangoly: Ensure DEBUG is False in production
+SECRET_KEY = os.environ.get('SECRET_KEY')  # Djangoly: Use environment variables for sensitive data
+ALLOWED_HOSTS = ['example.com', 'www.example.com']  # Djangoly: Specify allowed hosts explicitly
+```
+
+Djangoly identifies potential security risks in your Django settings and suggests safer alternatives.
+
+### 3. Test Suite Conventions
+
+Before (missing test file):
+```python
+# app/views.py
+def important_view(request):
+    # Some important logic here
+    pass
+
+# No corresponding test file
+```
+
+After (with Djangoly reminder):
+```python
+# app/views.py
+def important_view(request):
+    # Some important logic here
+    pass
+
+# app/tests/test_views.py (Djangoly suggests creating this file)
+from django.test import TestCase
+
+class TestImportantView(TestCase):
+    def test_important_view(self):
+        # Djangoly: Remember to add tests for the important_view function
+        pass
+```
+
+Djangoly reminds you to create and update test files when you modify your Django views or models.
+
+### 4. Redundant Comment Detection
+
+Before:
+```python
+# This function adds two numbers
+def add_numbers(a, b):
+    # sum these numbers
+    return a + b
+```
+
+After (with Djangoly suggestion):
+```python
+def add_numbers(a, b):
+    # Djangoly: Consider removing redundant comments
+    return a + b 
+```
+
+Djangoly identifies comments that don't provide additional context and suggests removing them to improve code readability.
+
 ## Quick Start 🏃‍♂️💨
 
 1. **Get an API Key**: If you don't already have an API key, you can signup for one via this [form](https://forms.gle/gEEZdfhWpQyQh2qVA).

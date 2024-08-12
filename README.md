@@ -97,9 +97,13 @@ The higher the score, the more likely the issue is to cause performance problems
 Scores are based on several factors:
 
 1. **Query in a loop**: Highest weight. Performing database queries inside loops is a common cause of N+1 problems.
-2. **Use of query methods**: Moderate weight. Certain query methods (like `filter`, `get`, etc.) used inefficiently can lead to N+1 issues.
-3. **Related field access**: Lower weight. Accessing related fields without proper optimization can cause extra queries.
-4. **Use of aggregate methods**: Lowest weight. While not always problematic, inefficient use of aggregate methods can contribute to N+1 issues.
+2. **Use of write methods**: High weight. Write operations in loops can be particularly inefficient.
+3. **Use of query methods**: Moderate weight. Certain query methods (like `filter`, `get`, etc.) used inefficiently can lead to N+1 issues.
+4. **Related field access**: Lower weight. Accessing related fields without proper optimization can cause extra queries.
+5. **Use of aggregate methods**: Lowest weight. While not always problematic, inefficient use of aggregate methods can contribute to N+1 issues.
+6. **Bulk operations**: Score reduction. Bulk operations are generally more efficient, so their presence reduces the overall issue score.
+
+The exact weights for each factor are configurable and may be adjusted based on ongoing analysis and user feedback.
 
 ### How to address N+1 query issues
 

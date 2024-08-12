@@ -79,7 +79,7 @@ class NPlusOneAnalyzer:
                 'loop_start_line': getattr(loop_node, 'lineno', call_node.lineno),
                 'related_field': related_field,
                 'query_type': query_type,
-                'is_related_field_access': is_related_field_access,  # New field for debugging
+                'is_related_field_access': is_related_field_access,
             },
             'start_line': getattr(loop_node, 'lineno', call_node.lineno),
             'end_line': call_node.lineno
@@ -156,14 +156,29 @@ class NPlusOneAnalyzer:
     
     def find_parent_queryset(self, node: ast.FunctionDef):
         LOGGER.error(f"Searching for parent queryset in function {node.name}")
-        for loop_node in ast.walk(node):
-            if isinstance(loop_node, ast.Assign) and isinstance(loop_node.value, ast.Call):
-                if isinstance(loop_node.value.func, ast.Attribute) and loop_node.value.func.attr in OPTIMIZATION_METHODS:
-                    LOGGER.error(f"Found parent queryset with optimization: {loop_node.value.func.attr}")
-                    return loop_node.value
+        for statement in node.body:
+            if isinstance(statement, ast.Assign):
+                value = statement.value
+            elif isinstance(statement, ast.Expr):
+                value = statement.value
+            else:
+                continue
+            
+            if self.check_node_for_optimization(value):
+                LOGGER.error(f"Found parent queryset with optimization")
+                return value
         LOGGER.error("No parent queryset found")
         return None
     
+    def check_node_for_optimization(self, node: ast.AST) -> bool:
+        if isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Attribute) and node.func.attr in OPTIMIZATION_METHODS:
+                return True
+            return self.check_node_for_optimization(node.func)
+        elif isinstance(node, ast.Attribute):
+            return self.check_node_for_optimization(node.value)
+        return False
+
     def find_query_calls(self, node: ast.AST):
         query_calls = [ast_node for ast_node in ast.walk(node) if self.is_query_call(ast_node)]
         LOGGER.error(f"Found {len(query_calls)} query calls")
@@ -198,7 +213,6 @@ class NPlusOneAnalyzer:
             levels += 1
             current = current.value
             
-            # Check if any level is a known Django queryset method
             if isinstance(current, ast.Attribute) and current.attr in QUERY_METHODS:
                 return True
 
@@ -208,39 +222,15 @@ class NPlusOneAnalyzer:
     def is_optimized(self, call_node: ast.AST, parent_queryset: ast.Call = None) -> bool:
         LOGGER.error(f"Checking optimization for call at line {getattr(call_node, 'lineno', 'unknown')}")
         
-        def check_node_for_optimization(node: ast.AST) -> bool:
-            LOGGER.error(f"Checking node {type(node).__name__} for optimization")
-            if isinstance(node, ast.Call):
-                if isinstance(node.func, ast.Attribute) and node.func.attr in OPTIMIZATION_METHODS:
-                    LOGGER.error(f"Found optimization method: {node.func.attr}")
-                    return True
-                for arg in node.args:
-                    if check_node_for_optimization(arg):
-                        return True
-                for keyword in node.keywords:
-                    if check_node_for_optimization(keyword.value):
-                        return True
-                return check_node_for_optimization(node.func)
-            elif isinstance(node, ast.Attribute):
-                if node.attr in OPTIMIZATION_METHODS:
-                    LOGGER.error(f"Found optimization method: {node.attr}")
-                    return True
-                return check_node_for_optimization(node.value)
-            elif isinstance(node, (ast.List, ast.Tuple, ast.Set)):
-                return any(check_node_for_optimization(elt) for elt in node.elts)
-            elif isinstance(node, ast.Dict):
-                return any(check_node_for_optimization(key) or check_node_for_optimization(value) 
-                           for key, value in zip(node.keys, node.values))
-            return False
-
-        if parent_queryset and check_node_for_optimization(parent_queryset):
+        if parent_queryset and self.check_node_for_optimization(parent_queryset):
             LOGGER.error("Optimization found in parent queryset")
             return True
 
         current = call_node
         while current:
             LOGGER.error(f"Checking node {type(current).__name__} in query chain")
-            if check_node_for_optimization(current):
+            if self.check_node_for_optimization(current):
+                LOGGER.error("Optimization found in query chain")
                 return True
             if isinstance(current, ast.Call):
                 current = current.func

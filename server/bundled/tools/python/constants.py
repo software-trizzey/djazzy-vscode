@@ -54,8 +54,15 @@ QUERY_METHODS = {
     "iterator",
 }
 
-AGGREGATE_METHODS = ["Count", "Sum", "Avg", "Max", "Min"]
+WRITE_METHODS = {
+    "create",
+    "update",
+    "delete",
+    "bulk_create",
+    "bulk_update",
+}
 
+AGGREGATE_METHODS = ["Count", "Sum", "Avg", "Max", "Min"]
 
 DEBUG = 'DEBUG'
 SECRET_KEY = 'SECRET_KEY'

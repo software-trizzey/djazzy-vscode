@@ -143,38 +143,28 @@ export class DjangoProvider extends PythonProvider {
     }
 
     private processNPlusOneIssues(
-        issues: any[],
+        issues: Issue[],
         diagnostics: Diagnostic[],
         changedLines?: Set<number>
     ): void {
-        const uniqueIssues = new Map<string, any>();
-        console.log(`Detected ${issues.length} N+1 issues`, issues);
-    
-        for (const issue of issues) {
+        const uniqueIssues = this.deduplicateIssues(issues);
+        console.log(`Detected ${issues.length} N+1 issues, ${uniqueIssues.size} after deduplication`);
+
+        for (const issue of uniqueIssues.values()) {
             if (!this.shouldShowIssue(issue.score)) continue;
-    
+
             const issueLine = issue.line - 1;
             
             if (changedLines && changedLines.has(issueLine)) {
                 console.log(`Skipping N+1 issue at line ${issueLine} due to change`);
                 continue;
             }
-    
-            const issueKey = `${issue.problematic_code}-${issue.line}`;
-    
-            const existingIssue = uniqueIssues.get(issueKey);
-            if (!existingIssue || issue.score > existingIssue.score) {
-                uniqueIssues.set(issueKey, issue);
-            }
-        }
-    
-        for (const issue of uniqueIssues.values()) {
-            const issueLine = issue.line - 1;
+
             const range: Range = {
                 start: { line: issueLine, character: issue.col_offset || 0 },
                 end: { line: issueLine, character: issue.end_col_offset || Number.MAX_VALUE },
             };
-    
+
             const severity = this.mapSeverity(issue.severity);
             const diagnosticMessage = this.createStructuredDiagnosticMessage(issue, severity);
             
@@ -193,11 +183,78 @@ export class DjangoProvider extends PythonProvider {
                     contextualInfo: issue.contextual_info,
                 },
             };
-    
+
             diagnostics.push(diagnostic);
         }
-    
-        console.log(`Processed ${uniqueIssues.size} unique N+1 issues out of ${issues.length} total issues`);
+
+        console.log(`Processed ${uniqueIssues.size} unique N+1 issues`);
+    }
+
+    private deduplicateIssues(issues: Issue[]): Map<string, Issue> {
+        const uniqueIssues = new Map<string, Issue>();
+
+        for (const issue of issues) {
+            const issueKey = this.generateIssueKey(issue);
+            const existingIssue = uniqueIssues.get(issueKey);
+
+            if (!existingIssue || this.shouldReplaceExistingIssue(existingIssue, issue)) {
+                uniqueIssues.set(issueKey, issue);
+            }
+        }
+
+        return uniqueIssues;
+    }
+
+    private generateIssueKey(issue: Issue): string {
+        // Create a unique key based on the issue's properties
+        return `${issue.line}-${issue.col_offset}-${issue.contextual_info?.query_type}-${issue.contextual_info?.is_in_loop}`;
+    }
+
+    /**
+    *  Replace if the new issue has a higher score or more detailed information
+    */
+    private shouldReplaceExistingIssue(existing: Issue, newIssue: Issue): boolean {
+        if (newIssue.score > existing.score) return true;
+        if (newIssue.score === existing.score && newIssue.message.length > existing.message.length) return true;
+        return false;
+    }
+
+    private createStructuredDiagnosticMessage(issue: Issue, severity: DiagnosticSeverity): string {
+        const severityIndicator = this.getSeverityIndicator(severity);
+        const contextInfo = this.generateContextInfo(issue);
+        
+        return `${severityIndicator} N+1 Query Detected (Score: ${issue.score})
+        \n[Issue]\n${issue.message}
+        \n[Context]\n${contextInfo}\n`;
+    }
+
+    private generateContextInfo(issue: Issue): string {
+        if (!issue.contextual_info) return 'Potential inefficient database query';
+
+        const { query_type, related_field, is_in_loop, loop_start_line, is_bulk_operation } = issue.contextual_info;
+        const fieldDescription = related_field || 'a queryset';
+        let contextInfo = '';
+
+        switch (query_type) {
+            case 'attribute_access':
+                contextInfo = `Detected while accessing the related field "${fieldDescription}"`;
+                break;
+            case 'write':
+                contextInfo = `Detected while performing a write operation on ${fieldDescription}`;
+                break;
+            default:
+                contextInfo = `Detected using .${query_type}() on ${fieldDescription}`;
+        }
+
+        if (is_in_loop) {
+            contextInfo += ` in a loop (starts at line ${loop_start_line})`;
+        }
+
+        if (is_bulk_operation) {
+            contextInfo += ` (Bulk operation detected)`;
+        }
+
+        return contextInfo;
     }
     
     private sendRateLimitNotification(): void {
@@ -300,60 +357,4 @@ export class DjangoProvider extends PythonProvider {
 			timestamp: new Date().toISOString()
 		});
 	}
-
-	private logError(error: Error, context: string): void {
-		LOGGER.error(`Error in N+1 detection: ${context}`, {
-			userId: cachedUserToken,
-			errorMessage: error.message,
-			errorStack: error.stack,
-			timestamp: new Date().toISOString()
-		});
-	}
-
-    private createStructuredDiagnosticMessage(issue: Issue, severity: DiagnosticSeverity): string {
-        const severityIndicator = this.getSeverityIndicator(severity);
-        let contextInfo = '';
-        
-        if (issue.contextual_info) {
-            const queryType = issue.contextual_info.query_type;
-            const relatedField = issue.contextual_info.related_field || 'a queryset';
-            
-            if (queryType === 'attribute_access') {
-                contextInfo = `Detected in ${issue.contextual_info.is_in_loop ? 'a loop' : 'code'} ` +
-                              `while accessing the related field "${relatedField}"`;
-            } else if (queryType === 'write') {
-                contextInfo = `Detected in ${issue.contextual_info.is_in_loop ? 'a loop' : 'code'} ` +
-                              `performing a write operation on ${relatedField}`;
-            } else {
-                contextInfo = `Detected in ${issue.contextual_info.is_in_loop ? 'a loop' : 'code'} ` +
-                              `using .${queryType}() on ${relatedField}`;
-            }
-            
-            if (issue.contextual_info.is_in_loop) {
-                contextInfo += ` (loop starts at line ${issue.contextual_info.loop_start_line})`;
-            }
-        }
-        
-        return `${severityIndicator} N+1 Query Detected (Score: ${issue.score})
-        \n[Issue]\n${issue.message}
-        \n[Context]\n${contextInfo || 'Potential inefficient database query'}\n`;
-        // \n[Suggestion]\n${issue.suggestedFix}\n`; FIXME: Add back when we have method for getting suggestions
-    }
-
-    private clearDiagnosticsForSymbol(symbol: any, diagnostics: Diagnostic[]): void {
-        const symbolRange = {
-            start: { line: symbol.function_start_line - 1, character: 0 },
-            end: { line: symbol.function_end_line - 1, character: Number.MAX_VALUE }
-        };
-        
-        for (let lastIndex = diagnostics.length - 1; lastIndex >= 0; lastIndex--) {
-            if (this.isRangeWithin(diagnostics[lastIndex].range, symbolRange)) {
-                diagnostics.splice(lastIndex, 1);
-            }
-        }
-    }
-
-    private isRangeWithin(inner: Range, outer: Range): boolean {
-        return (inner.start.line >= outer.start.line && inner.end.line <= outer.end.line);
-    }
 }

@@ -14,20 +14,25 @@ export enum Models {
 
 export interface Issue {
     id: string;
-    startLine: number;
-    endLine: number;
-    startCol: number;
-    endCol: number;
+    function_name: string;
+    line: number;
+    start_line: number;
+    end_line: number;
+    col_offset: number;
+    end_col_offset: number;
     message: string;
     problematic_code: string;
-    suggestedFix: string;
+    suggested_fix: string;
     severity: Severity;
     score: number;
+    issue_type: string;
     contextual_info?: {
         is_in_loop: boolean;
         loop_start_line?: number;
         related_field: string | null;
         query_type: string;
+        is_related_field_access: boolean;
+        is_bulk_operation: boolean;
     };
 }
   

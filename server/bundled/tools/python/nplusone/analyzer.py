@@ -2,7 +2,7 @@ import ast
 import uuid
 from typing import List
 
-from constants import QUERY_METHODS, OPTIMIZATION_METHODS, WRITE_METHODS
+from constants import QUERY_METHODS, OPTIMIZATION_METHODS, WRITE_METHODS, BULK_METHODS
 from log import LOGGER
 
 class NPlusOneAnalyzer:
@@ -66,7 +66,7 @@ class NPlusOneAnalyzer:
 
     def add_issue(self, func_node: ast.FunctionDef, loop_node: ast.AST, call_node: ast.AST, is_n_plus_one: bool):
         """
-        Add a new N+1 query issue to the list of issues, with enhanced contextual errorrmation.
+        Add a new N+1 query issue to the list of issues, with enhanced contextual information.
         """
         LOGGER.debug(f"Adding N+1 issue in function {func_node.name} at line {call_node.lineno}")
         source_segment = ast.get_source_segment(self.source_code, call_node)
@@ -76,7 +76,8 @@ class NPlusOneAnalyzer:
             if isinstance(call_node, ast.Attribute) else False
         )
         query_type = self.get_query_type(call_node)
-        issue_message = self.create_issue_message(source_segment, query_type, related_field, is_related_field_access)
+        is_bulk_operation = self.is_bulk_operation(call_node)
+        issue_message = self.create_issue_message(source_segment, query_type, related_field, is_related_field_access, is_bulk_operation)
         issue_type = "N+1 Query" if is_n_plus_one else "Repetitive Write Operation"
 
         issue_detail = {
@@ -87,12 +88,13 @@ class NPlusOneAnalyzer:
             'end_col_offset': call_node.col_offset + len(source_segment),
             'message': issue_message,
             'problematic_code': source_segment,
-            'contextual_error': {
+            'contextual_info': {
                 'is_in_loop': True,
                 'loop_start_line': getattr(loop_node, 'lineno', call_node.lineno),
                 'related_field': related_field,
                 'query_type': query_type,
                 'is_related_field_access': is_related_field_access,
+                'is_bulk_operation': is_bulk_operation,
             },
             'start_line': getattr(loop_node, 'lineno', call_node.lineno),
             'end_line': call_node.lineno,
@@ -105,23 +107,35 @@ class NPlusOneAnalyzer:
         source_segment: str,
         query_type: str,
         related_field: str,
-        is_n_plus_one: bool
+        is_related_field_access: bool,
+        is_bulk_operation: bool
     ) -> str:
-        if is_n_plus_one:
-            if query_type == "read":
+        if query_type == "read":
+            if is_bulk_operation:
+                return f"Potential Inefficient Bulk Read Operation: {source_segment}\n\n" \
+                    f"Using a bulk read operation in a loop might still be inefficient. " \
+                    "Consider restructuring the query to avoid the loop if possible."
+            else:
                 return f"Potential N+1 Query Detected: {source_segment}\n\n" \
                     f"Using a read operation in a loop can cause multiple database queries (N+1 issue). " \
                     "Consider using `select_related` or `prefetch_related` to optimize."
-            elif related_field:
-                return f"Potential N+1 Query Detected: {source_segment}\n\n" \
-                    f"Accessing the related field '{related_field}' in a loop can cause multiple database queries (N+1 issue). " \
-                    "Consider using `select_related` or `prefetch_related` to optimize."
+        elif query_type == "write":
+            if is_bulk_operation:
+                return f"Bulk Write Operation in Loop: {source_segment}\n\n" \
+                    f"Using a bulk write operation in a loop might still be inefficient. " \
+                    "Consider collecting data and performing a single bulk operation outside the loop."
+            else:
+                return f"Repetitive Write Operation Detected: {source_segment}\n\n" \
+                    "Performing individual write operations in a loop can be inefficient. " \
+                    "Consider using bulk create or update operations if possible."
+        elif is_related_field_access:
+            return f"Potential N+1 Query Detected: {source_segment}\n\n" \
+                f"Accessing the related field '{related_field}' in a loop can cause multiple database queries (N+1 issue). " \
+                "Consider using `select_related` or `prefetch_related` to optimize."
         else:
-            return f"Repetitive Write Operation Detected: {source_segment}\n\n" \
-                "Performing individual write operations in a loop can be inefficient. " \
-                "Consider using bulk create or update operations if possible."
-
-        return ""
+            return f"Potential Inefficient Database Operation: {source_segment}\n\n" \
+                "This operation in a loop might lead to multiple database queries. " \
+                "Consider optimizing the query structure."
 
     def extract_related_field(self, node: ast.AST) -> str:
         """
@@ -329,3 +343,14 @@ class NPlusOneAnalyzer:
                     is_optimized = node.value.func.attr == 'filter'
         LOGGER.debug(f"Checked for optimized filter query: {is_optimized}")
         return is_optimized
+    
+    def is_bulk_operation(self, node: ast.AST) -> bool:
+        """
+        Determines if an operation is a bulk operation.
+        """
+        if isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Attribute):
+                return node.func.attr in BULK_METHODS
+            elif isinstance(node.func, ast.Name):
+                return node.func.id in BULK_METHODS
+        return False

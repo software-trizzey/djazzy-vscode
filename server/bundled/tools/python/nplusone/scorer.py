@@ -1,6 +1,5 @@
 import re
-
-from constants import AGGREGATE_METHODS, QUERY_METHODS, WRITE_METHODS, RELATED_FIELD_PATTERNS, IssueSeverity
+from constants import AGGREGATE_METHODS, IssueSeverity
 
 class NPlusOneScorer:
     MAX_SCORE = 100
@@ -19,23 +18,30 @@ class NPlusOneScorer:
     }
 
     @classmethod
-    def calculate_issue_scores(cls, issues, function_body):
-        return [cls.calculate_issue_score(issue, function_body) for issue in issues]
+    def calculate_issue_scores(cls, issues):
+        return [cls.calculate_issue_score(issue) for issue in issues]
 
     @classmethod
-    def calculate_issue_score(cls, issue, function_body):
+    def calculate_issue_score(cls, issue):
         score = 0
-        if cls.is_in_loop(issue, function_body):
+        contextual_info = issue.get('contextual_info', {})
+
+        if contextual_info.get('is_in_loop', False):
             score += cls.SCORE_WEIGHTS['IN_LOOP']
-        if cls.contains_query_method(issue['message']):
+
+        query_type = contextual_info.get('query_type', '')
+        if query_type == 'read':
             score += cls.SCORE_WEIGHTS['QUERY_METHOD']
-        if cls.contains_write_method(issue['message']):
+        elif query_type == 'write':
             score += cls.SCORE_WEIGHTS['WRITE_METHOD']
-        if cls.contains_related_field(issue['message']):
+
+        if contextual_info.get('is_related_field_access', False):
             score += cls.SCORE_WEIGHTS['RELATED_FIELD']
+
         if cls.contains_aggregate_method(issue['message']):
             score += cls.SCORE_WEIGHTS['AGGREGATE_METHOD']
-        if cls.is_bulk_operation(issue['message']):
+
+        if contextual_info.get('is_bulk_operation', False):
             score += cls.SCORE_WEIGHTS['BULK_OPERATION']
         
         issue['score'] = min(max(score, 0), cls.MAX_SCORE)
@@ -43,31 +49,8 @@ class NPlusOneScorer:
         return issue
 
     @staticmethod
-    def is_in_loop(issue, function_body):
-        start_line = issue.get('start_line', issue.get('startLine', 0))
-        end_line = issue.get('end_line', issue.get('endLine', len(function_body.split('\n'))))
-        relevant_code = '\n'.join(function_body.split('\n')[start_line:end_line+1])
-        return bool(re.search(r'for\s|while\s', relevant_code))
-
-    @staticmethod
-    def contains_query_method(message):
-        return any(method in message for method in QUERY_METHODS)
-
-    @staticmethod
-    def contains_write_method(message):
-        return any(method in message for method in WRITE_METHODS)
-
-    @staticmethod
-    def contains_related_field(message):
-        return any(re.search(pattern, message) for pattern in RELATED_FIELD_PATTERNS)
-
-    @staticmethod
     def contains_aggregate_method(message):
         return any(method in message for method in AGGREGATE_METHODS)
-
-    @staticmethod
-    def is_bulk_operation(message):
-        return 'bulk_create' in message or 'bulk_update' in message
 
     @classmethod
     def get_severity(cls, score):

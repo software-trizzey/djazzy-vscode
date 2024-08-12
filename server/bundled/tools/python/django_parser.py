@@ -5,10 +5,11 @@ import sys
 
 from ast_parser import Analyzer, serialize_file_data
 from nplusone.analyzer import NPlusOneAnalyzer
-from nplusone.scorer import QUERY_METHODS, NPlusOneScorer
+from nplusone.scorer import NPlusOneScorer
 from log import LOGGER
 from constants import (
 	ALLOWED_HOSTS,
+    QUERY_METHODS,
     CSRF_COOKIE_SECURE,
     DEBUG, DJANGO_COMPONENTS,
     DJANGO_IGNORE_FUNCTIONS,
@@ -251,7 +252,7 @@ class DjangoAnalyzer(Analyzer):
         try:
             result = super().parse_code()
             self.perform_security_checks()
-            scored_issues = NPlusOneScorer.calculate_issue_scores(self.nplusone_issues, self.source_code)
+            scored_issues = NPlusOneScorer.calculate_issue_scores(self.nplusone_issues)
             return {
                 **result,
                 "nplusone_issues": scored_issues,

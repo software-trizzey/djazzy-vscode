@@ -63,6 +63,12 @@ WRITE_METHODS = {
     "bulk_update",
 }
 
+BULK_METHODS = {
+    "bulk_create",
+    "bulk_update",
+    "bulk_delete"
+}
+
 AGGREGATE_METHODS = ["Count", "Sum", "Avg", "Max", "Min"]
 
 DEBUG = 'DEBUG'

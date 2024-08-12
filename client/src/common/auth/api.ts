@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 import { v4 as uuidv4 } from "uuid";
 
 import logger from "../logs";
-import { API_SERVER_URL, COMMANDS, SESSION_TOKEN_KEY, SESSION_USER } from "../constants";
+import { API_KEY_SIGNUP_URL, API_SERVER_URL, COMMANDS, SESSION_TOKEN_KEY, SESSION_USER } from "../constants";
 
 import { Credentials } from "./github";
 import { LanguageClient } from 'vscode-languageclient/node';
@@ -127,50 +127,80 @@ export async function validateApiKey(apiKey: string): Promise<boolean> {
 }
 
 export async function removeApiKey(
-	context: vscode.ExtensionContext,
-	client: LanguageClient,
-	deactivate: () => Thenable<void> | undefined
+    context: vscode.ExtensionContext,
+    client: LanguageClient,
+    deactivate: () => Thenable<void> | undefined
 ): Promise<void> {
-	await context.globalState.update(COMMANDS.USER_API_KEY, undefined);
-	await client.sendRequest(COMMANDS.UPDATE_CACHED_USER_TOKEN, null);
-	vscode.window.showInformationMessage("You have deactivated Djangoly. See ya! 👋");
-	deactivate();
+    await context.globalState.update(COMMANDS.USER_API_KEY, undefined);
+
+    if (client && client.isRunning()) {
+        await client.sendRequest(COMMANDS.UPDATE_CACHED_USER_TOKEN, null);
+    } else {
+        // Try to restart the client if it's not running before signing out
+        try {
+            await client.start();
+            await client.sendRequest(COMMANDS.UPDATE_CACHED_USER_TOKEN, null);
+        } catch (error) {
+            vscode.window.showWarningMessage("Client is not running and could not be started. Please try reloading your developer window and try again.");
+        }
+    }
+
+    vscode.window.showInformationMessage("You have deactivated Djangoly. See ya! 👋");
+    deactivate();
 }
 
 export const authenticateUser = async (context, activate): Promise<boolean> => {
-    const apiKey = context.globalState.get(COMMANDS.USER_API_KEY);
-    if (!apiKey) {
+    let apiKey = context.globalState.get(COMMANDS.USER_API_KEY);
+
+    const retryAction = "Retry";
+    const REQUEST_KEY = "Request API Key";
+
+    while (!apiKey) {
         const inputApiKey = await vscode.window.showInputBox({
             prompt: "Please enter your Djangoly API key",
             placeHolder: "API Key",
-            ignoreFocusOut: true
+            ignoreFocusOut: true,
         });
 
-		const RETRY = "Retry login";
-
         if (!inputApiKey) {
-            const action = await vscode.window.showErrorMessage("A valid API key is required to use Djangoly. Please try again or contact support.", RETRY);
-			if (action === RETRY) {
-				return activate(context);
-			}
+            const action = await vscode.window.showErrorMessage(
+                "A valid API key is required to use Djangoly. If you don't have an API key, you can request one by completing the form.",
+                retryAction,
+                REQUEST_KEY
+            );
+
+            if (action === retryAction) {
+                continue;
+            } else if (action === REQUEST_KEY) {
+                vscode.env.openExternal(vscode.Uri.parse(API_KEY_SIGNUP_URL));
+                // Re-activate the extension and register commands
+                await activate(context);
+            }
             return false;
         }
 
         const isValidApiKey = await validateApiKey(inputApiKey);
         if (!isValidApiKey) {
-            const action = await vscode.window.showErrorMessage("Invalid API key. Please try again or contact support.", RETRY);
-			if (action === RETRY) {
-				return activate(context);
-			}
+            const action = await vscode.window.showErrorMessage(
+                "Invalid API key. Please try again or request a new API key using the form.",
+                retryAction,
+                REQUEST_KEY
+            );
+
+            if (action === retryAction) {
+                continue;
+            } else if (action === REQUEST_KEY) {
+                vscode.env.openExternal(vscode.Uri.parse(API_KEY_SIGNUP_URL));
+                // Re-activate the extension and register commands
+                await activate(context);
+            }
             return false;
         }
 
         await context.globalState.update(COMMANDS.USER_API_KEY, inputApiKey);
+        vscode.window.showInformationMessage("Welcome to Djangoly (Beta)! 👋");
+        apiKey = inputApiKey;
+    }
 
-		vscode.window.showInformationMessage(
-			`Welcome to Djangoly (Beta)! 👋`
-		);
-	}
-
-	return true;
+    return true;
 };

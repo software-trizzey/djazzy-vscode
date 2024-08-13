@@ -36,6 +36,19 @@ const VARIABLES_TO_IGNORE = [
 	"ID", "PK", "DEBUG", "USE_I18N", "USE_L10N", "USE_TZ", "CSRF_COOKIE_SECURE", "SESSION_COOKIE_SECURE"
 ];
 
+export abstract class BaseProvider {
+    protected connection: Connection;
+    protected settings: ExtensionSettings;
+
+    constructor(connection: Connection, settings: ExtensionSettings) {
+        this.connection = connection;
+        this.settings = settings;
+    }
+
+    protected abstract getConventions(): LanguageConventions;
+    public abstract updateSettings(settings: ExtensionSettings): void;
+}
+
 
 export abstract class LanguageProvider {
 	protected connection: Connection;

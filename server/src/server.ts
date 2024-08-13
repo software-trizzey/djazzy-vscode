@@ -22,7 +22,6 @@ import {
 import { TextDocument } from "vscode-languageserver-textdocument";
 import {
 	LanguageProvider,
-	PythonProvider,
 	DjangoProvider,
 } from "./providers";
 import {
@@ -256,23 +255,7 @@ function createLanguageProvider(
 
 	switch (languageId) {
 		case "python":
-            if (workspaceFolders) {
-                const isDjangoProject = workspaceFolders.some(folder => {
-                    try {
-                        return DjangoProjectDetector.isDjangoProject(folder.uri);
-                    } catch (error) {
-                        console.error(`Error detecting Django project: ${error}`);
-                        return false;
-                    }
-                });
-                if (isDjangoProject) {
-                    provider = new DjangoProvider(languageId, connection, settings);
-                } else {
-                    provider = new PythonProvider(languageId, connection, settings);
-                }
-            } else {
-                provider = new PythonProvider(languageId, connection, settings);
-            }
+            provider = new DjangoProvider(languageId, connection, settings);
             break;
 		default:
 			provider = undefined;

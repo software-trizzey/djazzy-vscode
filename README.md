@@ -14,9 +14,10 @@ Access to Djangoly currently requires an API key. To obtain an API key and parti
 
 We appreciate your interest in being an early adopter and helping us shape Djangoly. Thank you for your support, and we look forward to having you on board!
 
-![Djangoly Demo](https://raw.githubusercontent.com/software-trizzey/images/main/assets/images/quick-fix-demo.gif)
+![Djangoly Demo](https://raw.githubusercontent.com/software-trizzey/images/main/assets/images/djangoly-nplusone-query-fix-demo.gif)
 
-*Djangoly highlights Django best practice violations and offers immediate, actionable recommendations for fixing them, streamlining your development process.*
+
+*Djangoly highlights Django N+1 queries and offers immediate, actionable recommendations for fixing them, streamlining your development process and improving performance.*
 
 ## What's this thing do?
 

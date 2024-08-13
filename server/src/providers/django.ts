@@ -35,7 +35,7 @@ export class DjangoProvider extends PythonProvider {
         languageId: keyof typeof defaultConventions.languages,
         connection: Connection,
         settings: ExtensionSettings,
-        djangoProjectAnalyzer: DjangoProjectAnalyzer
+        djangoProjectAnalyzer: DjangoProjectAnalyzer | null
     ) {
         super(languageId, connection, settings, djangoProjectAnalyzer);
     }

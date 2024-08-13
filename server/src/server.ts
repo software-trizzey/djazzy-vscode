@@ -269,14 +269,14 @@ connection.languages.diagnostics.on(async (params) => {
 
 
 function createLanguageProvider(
-	languageId: string,
-	settings: ExtensionSettings,
-	workspaceFolders: WorkspaceFolder[] | null
+    languageId: string,
+    settings: ExtensionSettings,
+    workspaceFolders: WorkspaceFolder[] | null
 ): LanguageProvider {
-	let provider: LanguageProvider | undefined;
+    let provider: LanguageProvider | undefined;
 
-	switch (languageId) {
-		case "python":
+    switch (languageId) {
+        case "python":
             if (workspaceFolders) {
                 const isDjangoProject = workspaceFolders.some(folder => {
                     try {
@@ -287,20 +287,20 @@ function createLanguageProvider(
                     }
                 });
                 if (isDjangoProject) {
-                    provider = new DjangoProvider(languageId, connection, settings);
+                    provider = new DjangoProvider(languageId, connection, settings, djangoProjectAnalyzer);
                 } else {
-                    provider = new PythonProvider(languageId, connection, settings);
+                    provider = new PythonProvider(languageId, connection, settings, djangoProjectAnalyzer);
                 }
             } else {
-                provider = new PythonProvider(languageId, connection, settings);
+                provider = new PythonProvider(languageId, connection, settings, null);
             }
             break;
-		default:
-			provider = undefined;
-			break;
-	}
-	if (!provider) throw new Error(`Unsupported language: ${languageId}`);
-	return provider;
+        default:
+            provider = undefined;
+            break;
+    }
+    if (!provider) throw new Error(`Unsupported language: ${languageId}`);
+    return provider;
 }
 
 function getOrCreateProvider(

@@ -6,6 +6,8 @@ export const PUBLISHER = "alchemized";
 export const SESSION_USER = `${EXTENSION_ID}User`;
 export const SESSION_TOKEN_KEY = `${EXTENSION_ID}UserToken`;
 
+export const IGNORED_DIAGNOSTICS_ID = "ignoredDiagnostics";
+
 export const COMMANDS = {
 	SIGN_IN: `${EXTENSION_ID}.signIn`,
 	SIGN_OUT: `${EXTENSION_ID}.signOut`,
@@ -19,6 +21,8 @@ export const COMMANDS = {
 	USER_API_KEY: `${EXTENSION_ID}.apiKey`,
 	REMOVE_API_KEY: `${EXTENSION_ID}.removeApiKey`,
 	GET_API_KEY: `${EXTENSION_ID}.getApiKey`,
+	IGNORE_DIAGNOSTIC: `${EXTENSION_ID}.ignoreDiagnostic`,
+	REQUEST_DIAGNOSTICS: `${EXTENSION_ID}.requestDiagnostics`,
 };
 
 export const RATE_LIMIT_NOTIFICATION_ID = `${EXTENSION_ID}/rateLimitReached`;

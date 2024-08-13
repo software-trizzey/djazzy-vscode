@@ -14,7 +14,7 @@ import { PythonProvider } from "./python";
 import { SOURCE_NAME, DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE, DJANGO_SECURITY_VIOLATION_SOURCE_TYPE, NAMING_CONVENTION_VIOLATION_SOURCE_TYPE } from "../constants/diagnostics";
 import { ExtensionSettings, cachedUserToken, defaultConventions } from "../settings";
 import LOGGER from '../common/logs';
-import COMMANDS, { ACCESS_FORBIDDEN_NOTIFICATION_ID, RATE_LIMIT_NOTIFICATION_ID } from '../constants/commands';
+import COMMANDS, { ACCESS_FORBIDDEN_NOTIFICATION_ID, IGNORE_DIAGNOSTIC, RATE_LIMIT_NOTIFICATION_ID } from '../constants/commands';
 import { Issue, Severity } from '../llm/types';
 
 
@@ -94,26 +94,40 @@ export class DjangoProvider extends PythonProvider {
 	}
 
 	protected getNPlusOneDiagnosticActions(document: TextDocument, diagnostic: Diagnostic): CodeAction[] {
-		const actions: CodeAction[] = [];
-
-		if (diagnostic.code === DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE) {
-			const title = 'Report as false positive';
-			const reportAction = CodeAction.create(
-				title,
-				{
-					title: title,
-					command: COMMANDS.REPORT_FALSE_POSITIVE,
-					arguments: [document.uri, diagnostic]
-				},
-				CodeActionKind.QuickFix
-			);
-			reportAction.diagnostics = [diagnostic];
-			reportAction.isPreferred = true;
-			actions.push(reportAction);
-		}
-
-		return actions;
-	}
+        const actions: CodeAction[] = [];
+    
+        if (diagnostic.code === DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE) {
+            // Report as false positive action
+            const reportTitle = 'Report as false positive';
+            const reportAction = CodeAction.create(
+                reportTitle,
+                {
+                    title: reportTitle,
+                    command: COMMANDS.REPORT_FALSE_POSITIVE,
+                    arguments: [document.uri, diagnostic]
+                },
+                CodeActionKind.QuickFix
+            );
+            reportAction.diagnostics = [diagnostic];
+            reportAction.isPreferred = true;
+            actions.push(reportAction);
+    
+            const ignoreTitle = 'Ignore this diagnostic';
+            const ignoreAction = CodeAction.create(
+                ignoreTitle,
+                {
+                    title: ignoreTitle,
+                    command: IGNORE_DIAGNOSTIC,
+                    arguments: [document.uri, diagnostic]
+                },
+                CodeActionKind.QuickFix
+            );
+            ignoreAction.diagnostics = [diagnostic];
+            actions.push(ignoreAction);
+        }
+    
+        return actions;
+    }    
 
     private processDjangoSecurityIssues(
         securityIssues: any[],

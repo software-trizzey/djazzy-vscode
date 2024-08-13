@@ -6,6 +6,8 @@ export const CREATE_REPOSITORY = `${EXTENSION_ID}.createRepository`;
 export const CHECK_TESTS_EXISTS = `${EXTENSION_ID}.checkTestExists`;
 export const UPDATE_CACHED_USER_TOKEN = `${EXTENSION_ID}.updateCachedUserToken`;
 export const REPORT_FALSE_POSITIVE = `${EXTENSION_ID}.reportFalsePositive`;
+export const IGNORE_DIAGNOSTIC = `${EXTENSION_ID}.ignoreDiagnostic`;
+export const REQUEST_DIAGNOSTICS = `${EXTENSION_ID}.requestDiagnostics`;
 
 export const RATE_LIMIT_NOTIFICATION_ID = `${EXTENSION_ID}/rateLimitReached`;
 export const ACCESS_FORBIDDEN_NOTIFICATION_ID = `${EXTENSION_ID}/forbidden`;
@@ -16,7 +18,7 @@ const COMMANDS = {
 	CREATE_REPOSITORY,
 	CHECK_TESTS_EXISTS,
 	UPDATE_CACHED_USER_TOKEN,
-	REPORT_FALSE_POSITIVE
+	REPORT_FALSE_POSITIVE,
 };
 
 export const COMMANDS_LIST = Object.values(COMMANDS);

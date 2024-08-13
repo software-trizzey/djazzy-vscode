@@ -36,7 +36,7 @@ import {
 } from "./settings";
 import { checkForTestFile, debounce, DjangoProjectDetector } from "./utils";
 
-import COMMANDS, { COMMANDS_LIST } from "./constants/commands";
+import COMMANDS, { COMMANDS_LIST, REQUEST_DIAGNOSTICS } from "./constants/commands";
 import LOGGER, { rollbar } from "./common/logs";
 import { SOURCE_NAME } from './constants/diagnostics';
 
@@ -317,6 +317,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<Diagnos
 
 			diagnostics = await provider.provideDiagnostics(document);
 		}
+
 		return diagnostics;
 	});
 }
@@ -355,7 +356,7 @@ connection.onCodeAction(async (params) => {
 });
 
 
-connection.onExecuteCommand(async (params) => {
+connection.onExecuteCommand(async (params: any) => {
     if (params.command === COMMANDS.REPORT_FALSE_POSITIVE) {
         const [uri, diagnostic] = params.arguments || [];
         if (uri && diagnostic) {
@@ -372,6 +373,21 @@ connection.onExecuteCommand(async (params) => {
             }
         }
         return;
+    }
+
+	if (params.command === REQUEST_DIAGNOSTICS) {
+        const { uri, ignoredDiagnostics } = params.arguments || [];
+        const document = documents.get(uri);
+
+        if (document) {
+            const diagnostics = await validateTextDocument(document);
+            const filteredDiagnostics = diagnostics.filter(diagnostic => {
+                const diagnosticId = `${uri}:${diagnostic.range.start.line}:${diagnostic.range.start.character}`;
+                return !ignoredDiagnostics.includes(diagnosticId);
+            });
+
+            connection.sendDiagnostics({ uri, diagnostics: filteredDiagnostics });
+        }
     }
 
 	if (params.command === COMMANDS.FIX_NAME && params.arguments !== undefined) {

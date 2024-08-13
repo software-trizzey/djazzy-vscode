@@ -7,10 +7,17 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 const readFile = util.promisify(fs.readFile);
 const readdir = util.promisify(fs.readdir);
 
+export type ModelCache =  Map<string, { fields: Record<string, string>, relationships: Record<string, any> }>;
+
+interface ModelInfo {
+    fields: Record<string, string>;
+    relationships: Record<string, any>;
+}
+
 export class DjangoProjectAnalyzer {
     private connection: Connection;
     private workspaceFolders: WorkspaceFolder[];
-    private modelCache: Map<string, any> = new Map();
+    private modelCache: ModelCache = new Map();
     private excludedDirs: Set<string> = new Set(['venv', 'env', 'node_modules', '.git', '__pycache__']);
 
     constructor(connection: Connection, workspaceFolders: WorkspaceFolder[]) {
@@ -115,11 +122,11 @@ export class DjangoProjectAnalyzer {
         return props;
     }
 
-    getModelInfo(modelName: string): any {
+    getModelInfo(modelName: string): ModelInfo | undefined {
         return this.modelCache.get(modelName);
     }
 
-    getAllModels(): Map<string, any> {
+    getAllModels(): Map<string, ModelInfo> {
         return this.modelCache;
     }
 

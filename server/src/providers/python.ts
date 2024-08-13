@@ -35,7 +35,6 @@ export class PythonProvider extends LanguageProvider {
 	private codeActionsMessageCache: Map<string, CodeAction> = new Map();
     private djangoProjectAnalyzer: DjangoProjectAnalyzer | null;
 
-
 	constructor(
 		languageId: keyof typeof defaultConventions.languages,
 		connection: Connection,
@@ -152,12 +151,22 @@ export class PythonProvider extends LanguageProvider {
 		try {
 			const text = document.getText();
 			const parserFilePath = this.getParserFilePath(text);
+			let modelCache: { [key: string]: any } = {};
+
+			if (parserFilePath.includes("django_parser") && this.djangoProjectAnalyzer) {
+                const modelMap = this.djangoProjectAnalyzer.getAllModels();
+                
+                if (modelMap.size === 0) {
+                    console.warn("Model cache is empty. DjangoProjectAnalyzer might not be fully initialized.");
+                } else {
+                    modelCache = Object.fromEntries(modelMap);
+                }
+            }
+			const stringifiedCache = JSON.stringify(modelCache);
 	
 			return new Promise((resolve, reject) => {
-				const modelCache = this.djangoProjectAnalyzer ? 
-                    JSON.stringify(this.djangoProjectAnalyzer.getAllModels()) : 
-                    '{}';
-				const processArguments = [parserFilePath, modelCache];
+				
+				const processArguments = [parserFilePath, stringifiedCache];
 
 				const process = spawn("python3", processArguments);
 				let output = "";

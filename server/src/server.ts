@@ -35,6 +35,7 @@ import {
 	cachedUserToken,
 } from "./settings";
 import { checkForTestFile, debounce, DjangoProjectDetector } from "./utils";
+import { DjangoProjectAnalyzer } from './common/djangoProjectAnalyzer';
 
 import COMMANDS, { COMMANDS_LIST } from "./constants/commands";
 import LOGGER, { rollbar } from "./common/logs";
@@ -68,6 +69,7 @@ const connection = createConnection(ProposedFeatures.all);
 const providerCache: Record<string, LanguageProvider> = {};
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 const diagnosticQueue = new DiagnosticQueue();
+let djangoProjectAnalyzer: DjangoProjectAnalyzer | null = null;
 
 
 let hasConfigurationCapability = false;
@@ -154,6 +156,25 @@ connection.onInitialized(async () => {
 			connection.console.log("Workspace folder change event received.");
 		});
 	}
+
+	if (workspaceFolders) {
+        const isDjangoProject = workspaceFolders.some(folder => {
+            try {
+                return DjangoProjectDetector.isDjangoProject(folder.uri);
+            } catch (error) {
+                console.error(`Error detecting Django project: ${error}`);
+                return false;
+            }
+        });
+
+        if (isDjangoProject) {
+            console.log('Django project detected. Starting project analysis...');
+            djangoProjectAnalyzer = new DjangoProjectAnalyzer(connection, workspaceFolders);
+            await djangoProjectAnalyzer.analyzeProject();
+            console.log('Django project analysis completed.');
+			console.log(`Found ${djangoProjectAnalyzer.getModelCount()} models in the project.`, djangoProjectAnalyzer.getAllModels());
+        }
+    }
 
 	console.log(
 		`Finished Initializing server at: ${new Date().toLocaleTimeString()}`

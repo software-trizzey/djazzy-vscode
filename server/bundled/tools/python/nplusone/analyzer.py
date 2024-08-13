@@ -11,6 +11,7 @@ class NPlusOneAnalyzer:
         self.source_code = source_code
         self.model_cache = model_cache
         self.optimized_fields: Dict[str, Set[str]] = {}
+        LOGGER.error(f"Initialized N+1 Analyzer with {len(self.model_cache)} models")
 
     def get_issues(self):
         return self.nplusone_issues

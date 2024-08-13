@@ -242,6 +242,9 @@ export class DjangoProvider extends PythonProvider {
             case 'write':
                 contextInfo = `Detected while performing a write operation on ${fieldDescription}`;
                 break;
+            case 'read':
+                contextInfo = `Detected while performing a read operation (e.g., filter(), get()) on ${fieldDescription}`;
+                break;
             default:
                 contextInfo = `Detected using .${query_type}() on ${fieldDescription}`;
         }

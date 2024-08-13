@@ -24,6 +24,7 @@ import { RULE_MESSAGES } from '../constants/rules';
 import { SOURCE_NAME, NAMING_CONVENTION_VIOLATION_SOURCE_TYPE, REDUNDANT_COMMENT_VIOLATION_SOURCE_TYPE } from "../constants/diagnostics";
 import { LanguageConventions, CeleryTaskDecoratorSettings } from "../languageConventions";
 import { Models, SymbolFunctionTypes } from '../llm/types';
+import { DjangoProjectAnalyzer } from '../common/djangoProjectAnalyzer';
 
 const symbolFunctionTypeList = Object.values(SymbolFunctionTypes);
 
@@ -32,13 +33,17 @@ export class PythonProvider extends LanguageProvider {
 
 	private symbols: any[] = [];
 	private codeActionsMessageCache: Map<string, CodeAction> = new Map();
+    private djangoProjectAnalyzer: DjangoProjectAnalyzer | null;
+
 
 	constructor(
 		languageId: keyof typeof defaultConventions.languages,
 		connection: Connection,
-		settings: ExtensionSettings
+		settings: ExtensionSettings,
+		djangoProjectAnalyzer: DjangoProjectAnalyzer | null
 	) {
 		super(languageId, connection, settings);
+		this.djangoProjectAnalyzer = djangoProjectAnalyzer;
 
 		const timeoutInMilliseconds = 1000;
 		this.provideDiagnosticsDebounced = debounce(
@@ -149,7 +154,12 @@ export class PythonProvider extends LanguageProvider {
 			const parserFilePath = this.getParserFilePath(text);
 	
 			return new Promise((resolve, reject) => {
-				const process = spawn("python3", [parserFilePath]);
+				const modelCache = this.djangoProjectAnalyzer ? 
+                    JSON.stringify(this.djangoProjectAnalyzer.getAllModels()) : 
+                    '{}';
+				const processArguments = [parserFilePath, modelCache];
+
+				const process = spawn("python3", processArguments);
 				let output = "";
 				let error = "";
 	

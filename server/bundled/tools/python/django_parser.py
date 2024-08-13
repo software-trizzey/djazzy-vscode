@@ -20,10 +20,11 @@ from constants import (
 )
 
 class DjangoAnalyzer(Analyzer):
-    def __init__(self, source_code):
+    def __init__(self, source_code, model_cache):
         super().__init__(source_code)
         self.current_django_class_type = None
-        self.nplusone_analyzer = NPlusOneAnalyzer(source_code)
+        self.model_cache = model_cache
+        self.nplusone_analyzer = NPlusOneAnalyzer(source_code, model_cache)
         self.nplusone_issues = []
 
     def visit_ClassDef(self, node):
@@ -279,7 +280,8 @@ class DjangoAnalyzer(Analyzer):
 
 def main():
     input_code = sys.stdin.read()
-    analyzer = DjangoAnalyzer(input_code)
+    model_cache = json.loads(sys.argv[1]) if len(sys.argv) > 1 else {}
+    analyzer = DjangoAnalyzer(input_code, model_cache)
     LOGGER.info("Django analyzer initialized")
     parsed_code = analyzer.parse_code()
     print(json.dumps(parsed_code, default=serialize_file_data))

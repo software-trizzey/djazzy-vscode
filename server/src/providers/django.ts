@@ -16,6 +16,7 @@ import { ExtensionSettings, cachedUserToken, defaultConventions } from "../setti
 import LOGGER from '../common/logs';
 import COMMANDS, { ACCESS_FORBIDDEN_NOTIFICATION_ID, RATE_LIMIT_NOTIFICATION_ID } from '../constants/commands';
 import { Issue, Severity } from '../llm/types';
+import { DjangoProjectAnalyzer } from '../common/djangoProjectAnalyzer';
 
 
 interface CachedResult {
@@ -33,9 +34,10 @@ export class DjangoProvider extends PythonProvider {
     constructor(
         languageId: keyof typeof defaultConventions.languages,
         connection: Connection,
-        settings: ExtensionSettings
+        settings: ExtensionSettings,
+        djangoProjectAnalyzer: DjangoProjectAnalyzer
     ) {
-        super(languageId, connection, settings);
+        super(languageId, connection, settings, djangoProjectAnalyzer);
     }
 
     async validateAndCreateDiagnostics(

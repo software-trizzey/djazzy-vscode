@@ -1,14 +1,15 @@
 import ast
 import uuid
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Any
 
 from constants import QUERY_METHODS, OPTIMIZATION_METHODS, WRITE_METHODS, BULK_METHODS
 from log import LOGGER
 
 class NPlusOneAnalyzer:
-    def __init__(self, source_code: str):
+    def __init__(self, source_code: str, model_cache: Dict[str, Any]):
         self.nplusone_issues = []
         self.source_code = source_code
+        self.model_cache = model_cache
         self.optimized_fields: Dict[str, Set[str]] = {}
 
     def get_issues(self):

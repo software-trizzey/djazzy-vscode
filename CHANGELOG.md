@@ -22,6 +22,17 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
+## [Version 0.1.6] - 2024-08-12
+
+### Changed
+
+- [Update] Update the logic of N+1 query detector to consider related fields and levels when reviewing potential issues.
+
+
+### Added
+
+- [Enhancement] Added a limitations section to `README.md` to inform users that the N+1 query detector method can create false positives right now.
+
 
 ## [Version 0.1.5] - 2024-08-11
 

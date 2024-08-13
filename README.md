@@ -155,6 +155,34 @@ for book in books:
     print(book.author.name)  # No additional queries
 ```
 
+### Limitations of the N+1 Query Analyzer
+
+The current implementation of our N+1 Query Analyzer is a static analysis tool designed to identify potential N+1 query issues in Django applications. Most of these issues will be addressed as development of the feature continues. Overall, while it offers valuable insights, users should be aware of its limitations:
+
+1. **Context Sensitivity**: The analyzer examines queries within loops but may not fully understand the broader context of the entire function or class. This can lead to both false positives and false negatives in complex scenarios.
+
+2. **Partial Optimization Detection**: While the analyzer attempts to recognize `prefetch_related` and `select_related` optimizations, it may not always correctly associate these optimizations with subsequent queries, especially in complex or nested scenarios.
+
+3. **Limited Variable Tracking**: The current implementation has limited ability to track variables across a function. It might not accurately follow querysets that are assigned to variables and used later in the code, potentially missing some optimized queries.
+
+4. **Simplified Query Chain Analysis**: The analyzer may not fully understand complex chains of queryset methods, which could lead to misinterpretation of query optimizations in some cases.
+
+5. **Nested Loop Challenges**: While the analyzer detects queries within loops, it may struggle with accurately determining optimization in nested loop scenarios.
+
+6. **Heuristic-Based Approach**: The analyzer uses heuristics to identify potential N+1 queries, which can sometimes lead to false positives, especially for non-standard query patterns.
+
+7. **Limited Cross-Function Analysis**: The tool analyzes each function independently, which may miss N+1 query issues that span multiple functions or methods.
+
+8. **Lack of Data Flow Analysis**: The analyzer does not perform comprehensive data flow analysis, limiting its ability to track how querysets are passed between functions or methods.
+
+9. **Static Nature**: As a static analysis tool, it cannot account for runtime behavior or dynamic query construction, which may lead to both false positives and negatives in certain scenarios.
+
+10. **Incomplete Coverage of Django ORM Features**: While the analyzer covers many common Django ORM patterns, it may not fully support all features and nuances, potentially missing optimizations or issues related to less common query patterns.
+
+11. **Simplistic Pluralization**: The current pluralization logic is basic and may not accurately handle all English pluralization rules, potentially affecting the detection of some optimized fields.
+
+Given these limitations, the N+1 Query Analyzer should be used as a supplementary tool in identifying potential performance issues. It's most effective when combined with other performance analysis techniques, code reviews, and thorough testing. Users are encouraged to manually verify any issues flagged by the analyzer and to be aware that it may not catch all N+1 query problems in complex applications.
+
 ### Daily Usage Limit
 To ensure fair usage and maintain service quality, we've implemented a daily limit for N+1 query validations:
 
@@ -222,34 +250,6 @@ books = books.select_related('author')
 for book in books:
     print(book.author.name)  # No additional queries
 ```
-
-### Limitations of the N+1 Query Analyzer
-
-The current implementation of our N+1 Query Analyzer is a static analysis tool designed to identify potential N+1 query issues in Django applications. While it offers valuable insights, users should be aware of its limitations:
-
-1. **Context Sensitivity**: The analyzer examines queries within loops but may not fully understand the broader context of the entire function or class. This can lead to both false positives and false negatives in complex scenarios.
-
-2. **Partial Optimization Detection**: While the analyzer attempts to recognize `prefetch_related` and `select_related` optimizations, it may not always correctly associate these optimizations with subsequent queries, especially in complex or nested scenarios.
-
-3. **Limited Variable Tracking**: The current implementation has limited ability to track variables across a function. It might not accurately follow querysets that are assigned to variables and used later in the code, potentially missing some optimized queries.
-
-4. **Simplified Query Chain Analysis**: The analyzer may not fully understand complex chains of queryset methods, which could lead to misinterpretation of query optimizations in some cases.
-
-5. **Nested Loop Challenges**: While the analyzer detects queries within loops, it may struggle with accurately determining optimization in nested loop scenarios.
-
-6. **Heuristic-Based Approach**: The analyzer uses heuristics to identify potential N+1 queries, which can sometimes lead to false positives, especially for non-standard query patterns.
-
-7. **Limited Cross-Function Analysis**: The tool analyzes each function independently, which may miss N+1 query issues that span multiple functions or methods.
-
-8. **Lack of Data Flow Analysis**: The analyzer does not perform comprehensive data flow analysis, limiting its ability to track how querysets are passed between functions or methods.
-
-9. **Static Nature**: As a static analysis tool, it cannot account for runtime behavior or dynamic query construction, which may lead to both false positives and negatives in certain scenarios.
-
-10. **Incomplete Coverage of Django ORM Features**: While the analyzer covers many common Django ORM patterns, it may not fully support all features and nuances, potentially missing optimizations or issues related to less common query patterns.
-
-11. **Simplistic Pluralization**: The current pluralization logic is basic and may not accurately handle all English pluralization rules, potentially affecting the detection of some optimized fields.
-
-Given these limitations, the N+1 Query Analyzer should be used as a supplementary tool in identifying potential performance issues. It's most effective when combined with other performance analysis techniques, code reviews, and thorough testing. Users are encouraged to manually verify any issues flagged by the analyzer and to be aware that it may not catch all N+1 query problems in complex applications.
 
 ### Best Practices
 

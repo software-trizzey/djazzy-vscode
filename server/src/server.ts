@@ -70,6 +70,7 @@ const providerCache: Record<string, LanguageProvider> = {};
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 const diagnosticQueue = new DiagnosticQueue();
 let djangoProjectAnalyzer: DjangoProjectAnalyzer | null = null;
+let isAnalyzerReady: boolean = false;
 
 
 let hasConfigurationCapability = false;
@@ -171,6 +172,7 @@ connection.onInitialized(async () => {
             console.log('Django project detected. Starting project analysis...');
             djangoProjectAnalyzer = new DjangoProjectAnalyzer(connection, workspaceFolders);
             await djangoProjectAnalyzer.analyzeProject();
+			isAnalyzerReady = true;
             console.log('Django project analysis completed.');
 			console.log(`Found ${djangoProjectAnalyzer.getModelCount()} models in the project.`, djangoProjectAnalyzer.getAllModels());
         }
@@ -277,7 +279,7 @@ function createLanguageProvider(
 
     switch (languageId) {
         case "python":
-            if (workspaceFolders) {
+            if (workspaceFolders && isAnalyzerReady) {
                 const isDjangoProject = workspaceFolders.some(folder => {
                     try {
                         return DjangoProjectDetector.isDjangoProject(folder.uri);

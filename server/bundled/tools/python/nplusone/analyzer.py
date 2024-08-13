@@ -1,6 +1,6 @@
 import ast
 import uuid
-from typing import List
+from typing import Dict, List, Set
 
 from constants import QUERY_METHODS, OPTIMIZATION_METHODS, WRITE_METHODS, BULK_METHODS
 from log import LOGGER
@@ -9,12 +9,33 @@ class NPlusOneAnalyzer:
     def __init__(self, source_code: str):
         self.nplusone_issues = []
         self.source_code = source_code
+        self.optimized_fields: Dict[str, Set[str]] = {}
 
     def get_issues(self):
         return self.nplusone_issues
+    
+    @staticmethod
+    def run_pluralize_singularize(word: str) -> List[str]:
+        """
+        Returns a list containing the original word, a simple plural form, and a simple singular form.
+        This is a basic implementation and doesn't cover all English pluralization rules.
+        """
+        if word.endswith('s'):
+            # If it ends with 's', assume it's plural and create a singular by removing 's'
+            return [word, word, word[:-1]]
+        else:
+            # If it doesn't end with 's', assume it's singular and create a plural by adding 's'
+            return [word, word + 's', word]
 
     def analyze_function(self, node: ast.FunctionDef):
         LOGGER.error(f"Analyzing function: {node.name}")
+        self.optimized_fields = {}
+        parent_queryset = self.find_parent_queryset(node)
+        if parent_queryset:
+            self.update_optimized_fields(parent_queryset)
+        
+        LOGGER.error(f"Optimized fields: {self.optimized_fields}")
+        
         loops = self.find_loops(node)
         for loop in loops:
             LOGGER.error(f"Found loop at line {loop.lineno}")
@@ -25,17 +46,14 @@ class NPlusOneAnalyzer:
             LOGGER.error(f"Found {len(write_calls)} repetitive write operations in loop")
             
             if query_calls:
-                parent_queryset = self.find_parent_queryset(node)
-                LOGGER.error(f"Parent queryset found: {parent_queryset is not None}")
                 unique_queries = self.deduplicate_queries(query_calls, loop)
                 for call in unique_queries:
                     LOGGER.error(f"Checking query call at line {call.lineno}")
-                    if self.is_optimized(call, parent_queryset):
-                        LOGGER.error("Query call is optimized")
-                        continue
-                    
-                    LOGGER.error(f"Adding N+1 issue for query call at line {call.lineno}")
-                    self.add_issue(node, loop, call, is_n_plus_one=True)
+                    if not self.is_optimized(call):
+                        LOGGER.error(f"Adding N+1 issue for query call at line {call.lineno}")
+                        self.add_issue(node, loop, call, is_n_plus_one=True)
+                    else:
+                        LOGGER.error(f"Query call at line {call.lineno} is optimized")
             
             if write_calls:
                 for call in write_calls:
@@ -214,9 +232,44 @@ class NPlusOneAnalyzer:
         LOGGER.debug(f"Found {len(query_calls)} query and write calls")
         return query_calls
     
+    def update_optimized_fields(self, node: ast.AST):
+        if isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Attribute) and node.func.attr in OPTIMIZATION_METHODS:
+                base_model = self.get_base_model(node.func.value)
+                for arg in node.args:
+                    if isinstance(arg, ast.Str):
+                        self.add_optimized_field(base_model, arg.s)
+                for keyword in node.keywords:
+                    if isinstance(keyword.value, ast.Str):
+                        self.add_optimized_field(base_model, keyword.value.s)
+            self.update_optimized_fields(node.func)
+        elif isinstance(node, ast.Attribute):
+            self.update_optimized_fields(node.value)
+
+    def add_optimized_field(self, base_model: str, field_path: str):
+        parts = field_path.split('__')
+        current_model = base_model
+        for index, part in enumerate(parts):
+            if current_model not in self.optimized_fields:
+                self.optimized_fields[current_model] = set()
+            self.optimized_fields[current_model].add(part)
+            if index < len(parts) - 1:
+                self.optimized_fields[current_model].add('__'.join(parts[index:]))
+            current_model = part
+        LOGGER.debug(f"Added optimized field: {base_model}.{field_path}")
+        LOGGER.debug(f"Updated optimized fields: {self.optimized_fields}")
+
+    def get_base_model(self, node: ast.AST) -> str:
+        if isinstance(node, ast.Name):
+            return node.id
+        elif isinstance(node, ast.Attribute):
+            return self.get_base_model(node.value)
+        return ""
+    
     def check_node_for_optimization(self, node: ast.AST) -> bool:
         if isinstance(node, ast.Call):
             if isinstance(node.func, ast.Attribute) and node.func.attr in OPTIMIZATION_METHODS:
+                self.update_optimized_fields(node)
                 return True
             return self.check_node_for_optimization(node.func)
         elif isinstance(node, ast.Attribute):
@@ -257,51 +310,99 @@ class NPlusOneAnalyzer:
         # Consider it a potential N+1 query if there are at least two levels
         return levels >= 2
 
-    def is_optimized(self, call_node: ast.AST, parent_queryset: ast.Call = None) -> bool:
+    def is_optimized(self, call_node: ast.AST) -> bool:
         LOGGER.debug(f"Checking optimization for call at line {getattr(call_node, 'lineno', 'unknown')}")
         
-        if parent_queryset and self.check_node_for_optimization(parent_queryset):
-            LOGGER.debug("Optimization found in parent queryset")
+        if isinstance(call_node, ast.Call):
+            if isinstance(call_node.func, ast.Attribute):
+                base_model = self.get_base_model(call_node.func.value)
+                field = call_node.func.attr
+        elif isinstance(call_node, ast.Attribute):
+            base_model = self.get_base_model(call_node.value)
+            field = call_node.attr
+        else:
+            LOGGER.debug("Unexpected node type for optimization check")
+            return False
+
+        LOGGER.debug(f"Checking optimization for {base_model}.{field}")
+        LOGGER.debug(f"Optimized fields: {self.optimized_fields}")
+
+        def is_field_optimized(model, field_to_check):
+            if model in self.optimized_fields:
+                field_variations = self.run_pluralize_singularize(field_to_check)
+                LOGGER.debug(f"Checking field variations for {field_to_check}: {field_variations}")
+                for field_var in field_variations:
+                    # Check for direct optimization
+                    if field_var in self.optimized_fields[model]:
+                        return True
+                    
+                    # Check for nested optimization
+                    for opt_field in self.optimized_fields[model]:
+                        if '__' in opt_field:
+                            parts = opt_field.split('__')
+                            if parts[0] == field_var:
+                                return True
+                            if len(parts) > 1 and '__'.join(parts[:2]) == field_var:
+                                return True
+            return False
+
+        # Check if the field is optimized for the base model
+        if is_field_optimized(base_model, field):
+            LOGGER.debug(f"Field {field} is optimized for model {base_model}")
             return True
 
-        current = call_node
-        while current:
-            LOGGER.debug(f"Checking node {type(current).__name__} in query chain")
-            if self.check_node_for_optimization(current):
-                LOGGER.debug("Optimization found in query chain")
+        # Check if it's a reverse relation
+        for model in self.optimized_fields:
+            if is_field_optimized(model, base_model):
+                LOGGER.debug(f"Reverse relation found: {model} -> {base_model}")
                 return True
-            if isinstance(current, ast.Call):
-                current = current.func
-            elif isinstance(current, ast.Attribute):
-                current = current.value
-            else:
-                break
 
-        LOGGER.debug("No optimization found")
+        LOGGER.debug(f"No optimization found for {base_model}.{field}")
         return False
     
     def is_related_field_access(self, node: ast.Attribute, parent_node: ast.AST = None, is_read: bool = True) -> bool:
         if parent_node and isinstance(parent_node, ast.Assign):
             if node in parent_node.targets:
-                # If it's a write operation and we're looking for read operations, return False
                 if is_read:
                     return False
             elif node in ast.walk(parent_node.value):
-                # If it's in the value of an assignment, it's a read operation
                 return False
         
         levels = []
         current = node
         while isinstance(current, ast.Attribute):
-            if current.attr not in QUERY_METHODS and current.attr not in WRITE_METHODS and current.attr not in ['objects', 'all']:
-                levels.append(current.attr)
+            levels.append(current.attr)
             current = current.value
         if isinstance(current, ast.Name):
             levels.append(current.id)
         
-        # Consider it a related field access if there are at least two levels
-        # and it's not a known method or common attribute
-        return len(levels) >= 2 and not any(level in ['title', 'id', 'pk', 'save', 'append'] for level in levels)
+        levels.reverse()
+        field_access = '.'.join(levels)
+        
+        LOGGER.info(f"Checking field access: {field_access}")
+        
+        # Consider it a direct attribute access if it's only two levels deep (e.g., "model.field")
+        if len(levels) == 2:
+            LOGGER.debug(f"Field access '{field_access}' is likely a direct attribute")
+            return False
+        
+        # Consider it a potential N+1 query if it's more than two levels deep (e.g., "model.related.field")
+        if len(levels) > 2:
+            LOGGER.debug(f"Field access '{field_access}' is a potential related field access")
+            # Check if it's optimized
+            if self.is_optimized(node):
+                LOGGER.debug(f"Related field access '{field_access}' is optimized")
+                return False
+            else:
+                LOGGER.debug(f"Related field access '{field_access}' is not optimized")
+                return True
+        
+        # If it's a method call that could trigger a query, consider it a potential N+1 query (e.g., "model.related.filter()")
+        if isinstance(node.ctx, ast.Load) and isinstance(parent_node, ast.Call):
+            LOGGER.debug(f"Field access '{field_access}' is a method call, potential N+1 query")
+            return True
+        
+        return False
 
     def is_potential_n_plus_one(self, node: ast.AST) -> bool:
         if isinstance(node, ast.Call):

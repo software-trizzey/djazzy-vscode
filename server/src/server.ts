@@ -227,7 +227,7 @@ documents.onDidClose((e) => {
 	const documentUri = e.document.uri;
 	const provider = providerCache[e.document.languageId];
 	documentSettings.delete(documentUri);
-	provider?.deleteDiagnostic(documentUri);
+	provider.useDiagnosticManager().deleteDiagnostic(documentUri);
 });
 
 connection.languages.diagnostics.on(async (params) => {
@@ -249,13 +249,14 @@ connection.languages.diagnostics.on(async (params) => {
 function createLanguageProvider(
 	languageId: string,
 	settings: ExtensionSettings,
+	textDocument: TextDocument,
 	workspaceFolders: WorkspaceFolder[] | null
 ): LanguageProvider {
 	let provider: LanguageProvider | undefined;
 
 	switch (languageId) {
 		case "python":
-            provider = new DjangoProvider(languageId, connection, settings);
+            provider = new DjangoProvider(languageId, connection, settings, textDocument);
             break;
 		default:
 			provider = undefined;
@@ -268,10 +269,11 @@ function createLanguageProvider(
 function getOrCreateProvider(
 	languageId: string,
 	settings: ExtensionSettings,
+	textDocument: TextDocument,
 	workspaceFolders: WorkspaceFolder[] | null
 ): LanguageProvider {
 	if (!providerCache[languageId]) {
-		providerCache[languageId] = createLanguageProvider(languageId, settings, workspaceFolders);
+		providerCache[languageId] = createLanguageProvider(languageId, settings, textDocument, workspaceFolders);
 	}
 	return providerCache[languageId];
 }
@@ -281,10 +283,12 @@ async function validateTextDocument(textDocument: TextDocument): Promise<Diagnos
 		const languageId = document.languageId;
 		const settings = await getDocumentSettings(document.uri);
 		const workspaceFolders = await connection.workspace.getWorkspaceFolders();
-		const provider = getOrCreateProvider(languageId, settings, workspaceFolders);
+		const provider = getOrCreateProvider(languageId, settings, textDocument, workspaceFolders);
 		provider.updateSettings(settings);
+		
+		const diagnosticsManager = provider.useDiagnosticManager();
 
-		let diagnostics = await provider.getDiagnostic(
+		let diagnostics = await diagnosticsManager.getDiagnostic(
 			document.uri,
 			document.version
 		) || [];
@@ -293,10 +297,10 @@ async function validateTextDocument(textDocument: TextDocument): Promise<Diagnos
 			context: "server#validateTextDocument",
 		});
 
-		const diagnosticsOutdated = !diagnostics || provider.isDiagnosticsOutdated(document);
+		const diagnosticsOutdated = !diagnostics || diagnosticsManager.isDiagnosticsOutdated(document);
 		if (diagnosticsOutdated) {
-			provider.deleteDiagnostic(document.uri);
-			provider.clearDiagnostics(document.uri);
+			diagnosticsManager.deleteDiagnostic(document.uri);
+			diagnosticsManager.clearDiagnostics(document.uri);
 
 			diagnostics = await provider.provideDiagnostics(document);
 		}
@@ -327,7 +331,7 @@ connection.onCodeAction(async (params) => {
 	const settings = await getDocumentSettings(document.uri);
 	const languageId = document.languageId;
 	const workspaceFolders = await connection.workspace.getWorkspaceFolders();
-	const provider = getOrCreateProvider(languageId, settings, workspaceFolders);
+	const provider = getOrCreateProvider(languageId, settings, document, workspaceFolders);
 
 	if (!cachedUserToken) {
 		throw new Error('User is not authenticated. Token not found.');
@@ -346,8 +350,8 @@ connection.onExecuteCommand(async (params) => {
             if (document) {
                 const settings = await getDocumentSettings(uri);
                 const workspaceFolders = await connection.workspace.getWorkspaceFolders();
-                const provider = getOrCreateProvider(document.languageId, settings, workspaceFolders);
-				provider.reportFalsePositive(document, diagnostic);
+                const provider = getOrCreateProvider(document.languageId, settings, document, workspaceFolders);
+				provider.useDiagnosticManager().reportFalsePositive(document, diagnostic);
 				connection.sendNotification(ShowMessageNotification.type, {
                     type: MessageType.Info,
                     message: 'Thank you for reporting this false positive. Our team will review it.'

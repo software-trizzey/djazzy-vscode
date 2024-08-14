@@ -22,8 +22,8 @@ import path from 'path';
 import { PYTHON_DIRECTORY } from '../constants/filepaths';
 import { RULE_MESSAGES } from '../constants/rules';
 import { LanguageConventions, CeleryTaskDecoratorSettings } from '../languageConventions';
-import { debounce, validatePythonFunctionName } from '../utils';
-import { LanguageProvider } from './base';
+import { debounce, getChangedLinesFromClient, validatePythonFunctionName } from '../utils';
+import { LanguageProvider } from './languageProvider';
 
 
 interface CachedResult {
@@ -46,9 +46,10 @@ export class DjangoProvider extends LanguageProvider {
     constructor(
         languageId: keyof typeof defaultConventions.languages,
         connection: Connection,
-        settings: ExtensionSettings
+        settings: ExtensionSettings,
+        document: TextDocument
     ) {
-        super(languageId, connection, settings);
+        super(languageId, connection, settings, document);
 
         const timeoutInMilliseconds = 1000;
 		this.provideDiagnosticsDebounced = debounce(
@@ -57,11 +58,58 @@ export class DjangoProvider extends LanguageProvider {
 		);
     }
 
+    public getConventions(): LanguageConventions {
+        return defaultConventions.languages.python;
+    }
+
+    public setConventions(conventions: LanguageConventions): void {
+		this.conventions = conventions;
+	}
+
+	public getStoredSettings(): ExtensionSettings {
+		return this.settings;
+	}
+
+	public updateSettings(settings: ExtensionSettings): void {
+		this.settings = settings;
+		this.updateConventions(settings);
+	}
+
+    public async provideDiagnostics(
+		document: TextDocument
+	): Promise<Diagnostic[]> {
+		const conventions = this.getConventions();
+		this.diagnosticsManager.deleteDiagnostic(document.uri);
+		if (!conventions.isEnabled) return [];
+
+		let diagnostics: Diagnostic[] = [];
+		let changedLines: Set<number> | undefined = undefined;
+
+		if (this.settings.general.onlyCheckNewCode) {
+			changedLines = await getChangedLinesFromClient(
+				this.connection,
+				document.uri
+			);
+			if (changedLines && changedLines.size === 0) {
+				return this.diagnosticsManager.getDiagnostic(document.uri, document.version) || [];
+			}
+		}
+
+		diagnostics = await this.runDiagnostics(
+			document,
+			diagnostics,
+			changedLines
+		);
+		this.diagnosticsManager.setDiagnostic(document.uri, document.version, diagnostics);
+		return diagnostics;
+	}
+
     async generateFixForNamingConventionViolation(
 		document: TextDocument,
 		diagnostic: Diagnostic,
 		userToken: string
 	): Promise<CodeAction | undefined> {
+        const languageId = this.languageId;
 		const flaggedName = document.getText(diagnostic.range);
 		const violationMessage = diagnostic.message;
 		const cacheKey = `${violationMessage}-${diagnostic.range.start.line}-${diagnostic.range.start.character}`;
@@ -101,7 +149,7 @@ export class DjangoProvider extends LanguageProvider {
 		) {
 			const symbol = this.symbols.find(symbol => symbol.name === flaggedName && symbolFunctionTypeList.includes(symbol.type));
 			const functionBody = symbol?.body;
-			const result = await this.fetchSuggestedNameFromLLM({
+			const result = await this.llmInteractionManager.fetchSuggestedNameFromLLM({
 				message: violationMessage,
 				functionBody: functionBody,
 				modelId: Models.GROQ, // GROQ is faster and can handle most name suggestion generation
@@ -109,6 +157,7 @@ export class DjangoProvider extends LanguageProvider {
 				document,
 				diagnostic,
 				userToken,
+                languageId
 			});
 			suggestedName = result ? result.suggestedName : undefined;
 		}
@@ -193,10 +242,10 @@ export class DjangoProvider extends LanguageProvider {
 		} catch (error: any) {
 			if (error instanceof SyntaxError) {
 				console.warn("Syntax error detected. Skipping invalid sections and continuing...");
-				this.handleError(error);
+				this.errorHandler.handleError(error);
 				return diagnostics;
 			} else {
-				this.handleError(error);
+				this.errorHandler.handleError(error);
 				return [];
 			}
 		}
@@ -278,7 +327,7 @@ export class DjangoProvider extends LanguageProvider {
 
                     if (symbol.arguments) {
                         for (const arg of symbol.arguments) {
-                            const argumentResult = this.validateVariableName({
+                            const argumentResult = this.nameValidator.validateVariableName({
                                 variableName: arg.name,
                                 variableValue: arg.default,
                             });
@@ -287,11 +336,12 @@ export class DjangoProvider extends LanguageProvider {
                                     Position.create(arg.line - 1, arg.col_offset),
                                     Position.create(arg.line - 1, arg.col_offset + arg.name.length)
                                 );
-                                diagnostics.push(this.createDiagnostic(
+                                const functionArgDiagnostic = this.diagnosticsManager.createDiagnostic(
                                     argRange,
                                     argumentResult.reason,
-                                    DiagnosticSeverity.Warning
-                                ));
+                                    DiagnosticSeverity.Warning)
+                                ;
+                                diagnostics.push(functionArgDiagnostic);
                             }
                         }
                     }
@@ -299,14 +349,14 @@ export class DjangoProvider extends LanguageProvider {
 
                 case "assignment":
                 case "variable":
-                    result = this.validateVariableName({
+                    result = this.nameValidator.validateVariableName({
                         variableName: name,
                         variableValue: value,
                     });
                     break;
 
                 case "class":
-                    result = this.validateClassName(name);
+                    result = this.nameValidator.validateClassName(name);
                     break;
 
                 case "dictionary":
@@ -317,7 +367,7 @@ export class DjangoProvider extends LanguageProvider {
                     continue; // Skip the general diagnostic creation for dictionaries
 
                 case "list":
-                    result = this.validateList(value);
+                    result = this.nameValidator.validateListName(value);
                     break;
 
                 case "for_loop":
@@ -330,7 +380,7 @@ export class DjangoProvider extends LanguageProvider {
 
                 case "django_model_field":
                 case "django_serializer_field":
-                    result = this.validateVariableName({
+                    result = this.nameValidator.validateVariableName({
                         variableName: name,
                         variableValue: this.extractDjangoFieldValue(value),
                     });
@@ -343,11 +393,10 @@ export class DjangoProvider extends LanguageProvider {
                     Position.create(line, start),
                     Position.create(line, end)
                 );
-                diagnostics.push(this.createDiagnostic(
-                    range,
-                    result.reason,
-                    DiagnosticSeverity.Warning
-                ));
+                const symbolDiagnostic = this.diagnosticsManager.createDiagnostic(
+                    range, result.reason, DiagnosticSeverity.Warning
+                );
+                diagnostics.push(symbolDiagnostic);
             }
 
             this.handleComments(leading_comments, symbol, diagnostics);
@@ -395,7 +444,7 @@ export class DjangoProvider extends LanguageProvider {
 	private handleForLoopTargets(symbol: any, diagnostics: Diagnostic[]): void {
         if (symbol.target_positions) {
             for (const [variableName, line, col_offset] of symbol.target_positions) {
-                const result = this.validateVariableName({
+                const result = this.nameValidator.validateVariableName({
                     variableName: variableName,
                     variableValue: null,
                 });
@@ -404,11 +453,10 @@ export class DjangoProvider extends LanguageProvider {
                         Position.create(line, col_offset),
                         Position.create(line, col_offset + variableName.length)
                     );
-                    diagnostics.push(this.createDiagnostic(
-                        range,
-                        result.reason,
-                        DiagnosticSeverity.Warning
-                    ));
+                    const loopDiagnostic = this.diagnosticsManager.createDiagnostic(
+                        range, result.reason, DiagnosticSeverity.Warning
+                    );
+                    diagnostics.push(loopDiagnostic);
                 }
             }
         }
@@ -417,18 +465,19 @@ export class DjangoProvider extends LanguageProvider {
     private handleComments(comments: any[], symbol: any, diagnostics: Diagnostic[]): void {
         if (this.settings.comments.flagRedundant && comments) {
             for (const comment of comments) {
-                const result = this.isCommentRedundant(comment.value, symbol);
+                const result = this.commentAnalyzer.isCommentRedundant(comment.value, symbol);
                 if (result.violates) {
                     const range = Range.create(
                         Position.create(comment.line, comment.col_offset),
                         Position.create(comment.line, comment.end_col_offset)
                     );
-                    diagnostics.push(this.createDiagnostic(
+                    const commentDiagnostic = this.diagnosticsManager.createDiagnostic(
                         range,
                         result.reason,
                         DiagnosticSeverity.Warning,
 						REDUNDANT_COMMENT_VIOLATION_SOURCE_TYPE
-                    ));
+                    );
+                    diagnostics.push(commentDiagnostic);
                 }
             }
         }
@@ -443,11 +492,10 @@ export class DjangoProvider extends LanguageProvider {
                     Position.create(symbol.line, start),
                     Position.create(symbol.line, end)
                 );
-                diagnostics.push(this.createDiagnostic(
-                    range,
-                    violation,
-                    DiagnosticSeverity.Warning
-                ));
+                const celeryDiagnostic = this.diagnosticsManager.createDiagnostic(
+                    range, violation, DiagnosticSeverity.Warning
+                );
+                diagnostics.push(celeryDiagnostic);
             }
         }
     }
@@ -468,7 +516,7 @@ export class DjangoProvider extends LanguageProvider {
 		for (const pair of dictionary.key_and_value_pairs) {
 			const { key, key_start, key_end, value } = pair;
 			
-			const validationResult = this.validateObjectPropertyName({
+			const validationResult = this.nameValidator.validateObjectPropertyName({
 				objectKey: key,
 				objectValue: value,
 			});
@@ -492,17 +540,6 @@ export class DjangoProvider extends LanguageProvider {
 		}
 	
 		return { violates: hasViolatedRule, reason, diagnostics };
-	}
-
-	private validateList(value: string): { violates: boolean; reason: string } {
-		return { violates: false, reason: "" };
-	}
-
-	private validateClassName(name: string): {
-		violates: boolean;
-		reason: string;
-	} {
-		return { violates: false, reason: "" };
 	}
 
 	private validateCeleryTask(
@@ -578,7 +615,7 @@ export class DjangoProvider extends LanguageProvider {
 
 	public async provideCodeActions(document: TextDocument, userToken: string): Promise<CodeAction[]> {
 		const diagnostics = document.uri
-			? this.getDiagnostic(document.uri, document.version)
+			? this.diagnosticsManager.getDiagnostic(document.uri, document.version)
 			: [];
 
 		if (!diagnostics) return [];
@@ -806,15 +843,6 @@ export class DjangoProvider extends LanguageProvider {
     clearNPlusOneCache(): void {
         this.nPlusOnecache.clear();
         console.log('N+1 query detection cache cleared due to severity threshold change');
-    }
-
-    public updateConfiguration(newSettings: ExtensionSettings): void {
-        const oldThreshold = this.settings.general.nPlusOneMinimumSeverityThreshold;
-        this.settings = newSettings;
-    
-        if (oldThreshold !== newSettings.general.nPlusOneMinimumSeverityThreshold) {
-            this.clearNPlusOneCache();
-        }
     }
 
     private mapSeverity(severity: Severity): DiagnosticSeverity {

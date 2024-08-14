@@ -1,18 +1,24 @@
-import { CodeAction, Connection, Diagnostic } from 'vscode-languageserver/node';
+import { CodeAction, Connection, Diagnostic, MessageType, ShowMessageRequestParams } from 'vscode-languageserver/node';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+
+
+import { BaseProvider } from './base';
+
 import { CommentAnalyzer } from '../services/analysis';
 import { DiagnosticsManager } from '../services/diagnostics';
 import { ErrorHandler } from '../services/error';
 import { CodeContextExtractor } from '../services/extraction';
 import { LLMInteractionManager } from '../services/llm';
-import { NameValidator } from '../services/validation';
+import { NameValidator, ThemeValidator } from '../services/validation';
 import { defaultConventions, ExtensionSettings } from '../settings';
-import { BaseProvider } from './base';
-import { TextDocument } from 'vscode-languageserver-textdocument';
+import { LanguageConventions } from '../languageConventions';
 
 
 export abstract class LanguageProvider extends BaseProvider {
+    protected conventions: LanguageConventions = defaultConventions.languages.python;
     protected diagnosticsManager: DiagnosticsManager;
     protected nameValidator: NameValidator;
+    protected themeValidator: ThemeValidator;
     protected commentAnalyzer: CommentAnalyzer;
     protected codeContextExtractor: CodeContextExtractor;
     protected llmInteractionManager: LLMInteractionManager;
@@ -24,17 +30,71 @@ export abstract class LanguageProvider extends BaseProvider {
         settings: ExtensionSettings,
 		document: TextDocument
     ) {
-        super(connection, settings);
-        this.diagnosticsManager = new DiagnosticsManager();
-        this.nameValidator = new NameValidator(this.getConventions(), settings);
-        this.commentAnalyzer = new CommentAnalyzer();
-        this.codeContextExtractor = new CodeContextExtractor(document);
-        this.llmInteractionManager = new LLMInteractionManager(connection);
-        this.errorHandler = new ErrorHandler(connection);
+      super(connection, settings);
+      const conventions = this.getConventions();
+      this.diagnosticsManager = new DiagnosticsManager(connection);
+      this.nameValidator = new NameValidator(conventions, settings);
+      this.themeValidator = new ThemeValidator(conventions, settings);
+      this.commentAnalyzer = new CommentAnalyzer();
+      this.codeContextExtractor = new CodeContextExtractor(document);
+      this.llmInteractionManager = new LLMInteractionManager(connection, conventions);
+      this.errorHandler = new ErrorHandler(connection);
+
+      const languageSettings = settings.languages[languageId];
+      if (!languageSettings) {
+        this.sendNotSupportedMessage(languageId);
+        return;
+      }
+      this.conventions = languageSettings;
     }
 
     public abstract provideDiagnostics(document: TextDocument): Promise<Diagnostic[]>;
     protected abstract runDiagnostics(document: TextDocument, diagnostics: Diagnostic[], changedLines: Set<number> | undefined): Promise<Diagnostic[]>;
     abstract generateFixForNamingConventionViolation(document: TextDocument, diagnostic: Diagnostic, userToken: string): Promise<CodeAction | undefined>;
     abstract provideCodeActions(document: TextDocument, userToken: string): Promise<CodeAction[]>;
+    protected abstract clearNPlusOneCache(): void;
+
+    public useDiagnosticManager() {
+      return this.diagnosticsManager;
+    }
+
+    public getSettings() {
+      return this.settings;
+    }
+
+    public updateConventions(settings: ExtensionSettings): void {
+      const languageSettings = settings.languages[this.languageId];
+      if (!languageSettings) {
+        this.sendNotSupportedMessage(this.languageId);
+        return;
+      }
+      this.conventions = languageSettings;
+    }
+    public updateConfiguration(updatedSettings: ExtensionSettings): void {
+      this.settings = updatedSettings;
+      this.updateConventions(updatedSettings);
+
+      if (
+        updatedSettings.general.nPlusOneMinimumSeverityThreshold !== 
+        this.getSettings().general.nPlusOneMinimumSeverityThreshold
+      ) {
+        this.clearNPlusOneCache();
+      }
+    }
+
+    private sendNotSupportedMessage(languageId: string): void {
+      const messageParams: ShowMessageRequestParams = {
+        type: MessageType.Warning,
+        message: `The language ${languageId} is not currently supported by Djangoly extension.`,
+        actions: [{ title: "Dismiss" }],
+      };
+      this.connection
+        .sendRequest("window/showMessageRequest", messageParams)
+        .then((response) => {
+          if (response) {
+            console.log(`User dismissed the message for ${languageId} support.`);
+          }
+        });
+    }
+
 }

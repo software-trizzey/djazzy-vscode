@@ -3,12 +3,13 @@ import { URI } from 'vscode-uri';
 import type { LanguageConventions } from "./languageConventions";
 import type { CommentConventions } from "./commentConventions";
 import { Severity } from './llm/types';
+import { WorkspaceFolder } from 'vscode-languageserver';
 
 export let workspaceRoot = '';
 export let settingsVersion: number = 0;
 export let cachedUserToken: string | null = null;
 
-export  function setWorkspaceRoot(workspaceFolders: any): void {
+export  function setWorkspaceRoot(workspaceFolders: WorkspaceFolder[]): void {
 	if (workspaceFolders && workspaceFolders.length > 0) {
         workspaceRoot = convertUriToPath(workspaceFolders[0].uri);
 	} else {

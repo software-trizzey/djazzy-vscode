@@ -100,7 +100,7 @@ connection.onInitialize((params: InitializeParams) => {
 
 connection.onInitialized(async () => {
 	const routeId = "server#index";
-	const workspaceFolders = await connection.workspace.getWorkspaceFolders();
+	const workspaceFolders = await connection.workspace.getWorkspaceFolders() || [];
 	setWorkspaceRoot(workspaceFolders);
 
 	const logContext = {

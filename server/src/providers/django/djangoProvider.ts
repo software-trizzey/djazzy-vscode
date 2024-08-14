@@ -416,8 +416,10 @@ export class DjangoProvider extends LanguageProvider {
     }
 
 	private getParserFilePath(): string {
+        // TODO: make this dynamic. Also be careful when moving this file as it will break current import path
 		const parserFilePath = path.join(
             __dirname,
+            "..",
             "..",
             "..",
             `./${PYTHON_DIRECTORY}/django_parser.py`

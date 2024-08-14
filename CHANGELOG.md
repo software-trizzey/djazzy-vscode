@@ -22,6 +22,12 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
+## [Version 0.1.7] - 2024-08-13
+
+### Changed
+
+- [Update] Refactored project structure and broke language provider class into smaller focused service classes.
+
 ## [Version 0.1.6] - 2024-08-12
 
 ### Changed

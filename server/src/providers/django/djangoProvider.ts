@@ -12,18 +12,24 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import { createHash } from 'crypto';
 
-import { SOURCE_NAME, DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE, DJANGO_SECURITY_VIOLATION_SOURCE_TYPE, NAMING_CONVENTION_VIOLATION_SOURCE_TYPE, REDUNDANT_COMMENT_VIOLATION_SOURCE_TYPE } from "../constants/diagnostics";
-import { ExtensionSettings, cachedUserToken, defaultConventions } from "../settings";
-import LOGGER from '../common/logs';
-import COMMANDS, { ACCESS_FORBIDDEN_NOTIFICATION_ID, FIX_NAME, RATE_LIMIT_NOTIFICATION_ID } from '../constants/commands';
-import { Issue, Models, Severity, SymbolFunctionTypes } from '../llm/types';
+import {
+	SOURCE_NAME,
+	DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE,
+	DJANGO_SECURITY_VIOLATION_SOURCE_TYPE,
+	NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
+	REDUNDANT_COMMENT_VIOLATION_SOURCE_TYPE
+} from "../../constants/diagnostics";
+import { ExtensionSettings, cachedUserToken, defaultConventions } from "../../settings";
+import LOGGER from '../../common/logs';
+import COMMANDS, { ACCESS_FORBIDDEN_NOTIFICATION_ID, FIX_NAME, RATE_LIMIT_NOTIFICATION_ID } from '../../constants/commands';
+import { Issue, Models, Severity, SymbolFunctionTypes } from '../../llm/types';
 import { spawn } from 'child_process';
 import path from 'path';
-import { PYTHON_DIRECTORY } from '../constants/filepaths';
-import { RULE_MESSAGES } from '../constants/rules';
-import { LanguageConventions, CeleryTaskDecoratorSettings } from '../languageConventions';
-import { debounce, getChangedLinesFromClient, validatePythonFunctionName } from '../utils';
-import { LanguageProvider } from './languageProvider';
+import { PYTHON_DIRECTORY } from '../../constants/filepaths';
+import { RULE_MESSAGES } from '../../constants/rules';
+import { LanguageConventions, CeleryTaskDecoratorSettings } from '../../languageConventions';
+import { debounce, getChangedLinesFromClient, validatePythonFunctionName } from '../../utils';
+import { LanguageProvider } from '../languageProvider';
 
 
 interface CachedResult {

@@ -30,6 +30,7 @@ import { RULE_MESSAGES } from '../../constants/rules';
 import { LanguageConventions, CeleryTaskDecoratorSettings } from '../../languageConventions';
 import { debounce, getChangedLinesFromClient, validatePythonFunctionName } from '../../utils';
 import { LanguageProvider } from '../languageProvider';
+import { DjangoProjectDetector, ModelCache } from './djangoProjectDetector';
 
 
 interface CachedResult {
@@ -48,6 +49,10 @@ export class DjangoProvider extends LanguageProvider {
 	private codeActionsMessageCache: Map<string, CodeAction> = new Map();
     private nPlusOnecache: Map<string, CachedResult> = new Map();
     private cacheTTL: number = FIVE_MINUTES;
+    private isDjangoProject: boolean = false;
+    private modelCache: ModelCache = new Map();
+    private djangoProjectDetectionPromise: Promise<boolean>;
+
 
     constructor(
         languageId: keyof typeof defaultConventions.languages,
@@ -56,6 +61,8 @@ export class DjangoProvider extends LanguageProvider {
         document: TextDocument
     ) {
         super(languageId, connection, settings, document);
+
+        this.djangoProjectDetectionPromise = this.detectDjangoProjectAndModels(document);
 
         const timeoutInMilliseconds = 1000;
 		this.provideDiagnosticsDebounced = debounce(
@@ -80,6 +87,21 @@ export class DjangoProvider extends LanguageProvider {
 		this.settings = settings;
 		this.updateConventions(settings);
 	}
+
+    private async detectDjangoProjectAndModels(document: TextDocument): Promise<boolean> {
+        const documentUri = document.uri;
+
+        this.isDjangoProject = await DjangoProjectDetector.analyzeProject(documentUri, this.connection);
+        
+        if (this.isDjangoProject) {
+            this.modelCache = DjangoProjectDetector.getAllModels();
+            console.log(`Django project detected. Found ${this.modelCache.size} models.`);
+        } else {
+            console.log("Not a Django project");
+        }
+        
+        return this.isDjangoProject;
+    }
 
     public async provideDiagnostics(
 		document: TextDocument
@@ -186,6 +208,7 @@ export class DjangoProvider extends LanguageProvider {
 		changedLines: Set<number> | undefined
 	): Promise<Diagnostic[]> {
 		try {
+            const isDjangProject = await this.djangoProjectDetectionPromise;
 			const text = document.getText();
 			const parserFilePath = this.getParserFilePath();
 	
@@ -231,6 +254,7 @@ export class DjangoProvider extends LanguageProvider {
 							document,
 							securityIssues,
 							nPlusOneIssues,
+                            isDjangProject
 						);
 	
 						resolve(diagnostics);
@@ -281,6 +305,7 @@ export class DjangoProvider extends LanguageProvider {
 		document: TextDocument,
 		securityIssues: any[],
 		nPlusOneIssues: any[],
+        isDjangoProject: boolean
     ): Promise<void> {
         const cacheKey = this.generateCacheKey(document.getText(), document);
     
@@ -407,9 +432,11 @@ export class DjangoProvider extends LanguageProvider {
 
             this.handleComments(leading_comments, symbol, diagnostics);
             this.handleCeleryTask(symbol, conventions, diagnostics);
-
-            this.processDjangoSecurityIssues(securityIssues, diagnostics);
-            this.processNPlusOneIssues(nPlusOneIssues, diagnostics);
+            
+            if (isDjangoProject) {
+                this.processDjangoSecurityIssues(securityIssues, diagnostics);
+                this.processNPlusOneIssues(nPlusOneIssues, diagnostics);
+            }
         
             this.setCachedResult(cacheKey, diagnostics);
         }

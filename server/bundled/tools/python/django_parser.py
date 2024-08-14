@@ -20,11 +20,19 @@ from constants import (
 )
 
 class DjangoAnalyzer(Analyzer):
-    def __init__(self, source_code):
+    def __init__(self, source_code, model_cache_json: str):
         super().__init__(source_code)
         self.current_django_class_type = None
-        self.nplusone_analyzer = NPlusOneAnalyzer(source_code)
+        self.model_cache = self.parse_model_cache(model_cache_json)
+        self.nplusone_analyzer = NPlusOneAnalyzer(source_code, self.model_cache)
         self.nplusone_issues = []
+
+    def parse_model_cache(self, model_cache_json):
+        try:
+            return json.loads(model_cache_json)
+        except json.JSONDecodeError as e:
+            LOGGER.error(f"Error parsing model cache JSON: {e}")
+            return {}
 
     def visit_ClassDef(self, node):
         self.in_class = True
@@ -278,8 +286,13 @@ class DjangoAnalyzer(Analyzer):
 
 
 def main():
+    if len(sys.argv) < 2:
+        LOGGER.error("Usage: python script.py <model_cache_json>")
+        sys.exit(1)
+
+    model_cache_json = sys.argv[1]
     input_code = sys.stdin.read()
-    analyzer = DjangoAnalyzer(input_code)
+    analyzer = DjangoAnalyzer(input_code, model_cache_json)
     LOGGER.info("Django analyzer initialized")
     parsed_code = analyzer.parse_code()
     print(json.dumps(parsed_code, default=serialize_file_data))

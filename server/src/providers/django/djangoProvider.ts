@@ -211,9 +211,12 @@ export class DjangoProvider extends LanguageProvider {
             const isDjangProject = await this.djangoProjectDetectionPromise;
 			const text = document.getText();
 			const parserFilePath = this.getParserFilePath();
+            const modelCacheObject = Object.fromEntries(this.modelCache);
+            const modelCacheJson = JSON.stringify(modelCacheObject);
+            console.log("Stringifed Model cache", modelCacheJson);
 	
 			return new Promise((resolve, reject) => {
-				const process = spawn("python3", [parserFilePath]);
+				const process = spawn("python3", [parserFilePath, modelCacheJson]);
 				let output = "";
 				let error = "";
 	

@@ -72,10 +72,11 @@ class LLMService:
             }
 
             response = self._send_chat_request(
-                '/verify_queryset_optimization/',
+                '/chat/verify_queryset_optimization/',
                 "You are an AI assistant analyzing Django querysets for optimization.",
                 developer_input
             )
+            LOGGER.debug(f"LLM Response: {response}")
 
             if isinstance(response, dict) and 'error' in response:
                 LOGGER.error(f"Error in LLM response: {response['error']}")

@@ -66,17 +66,16 @@ class NPlusOneAnalyzer:
                         "query_type": self.query_analyzer.get_query_type(child),
                     }
                     
-                    is_optimized = self.llm_service.validate_optimization(context)
-                    LOGGER.debug(f"Optimization status for {base_model}.{field}: {is_optimized}")
+                    optimized_check_result = self.llm_service.verify_queryset_optimization(context)
+                    LOGGER.debug(f"Optimization status for {base_model}.{field}: {optimized_check_result['is_optimized']}")
                     
-                    if not is_optimized:
+                    if not optimized_check_result['is_optimized']:
                         LOGGER.debug(f"Adding issue for {base_model}.{field}")
                         self.issue_reporter.add_issue(
                             func_node, 
                             loop_node, 
                             child, 
                             self.query_analyzer,
-                            explanation="Potential N+1 query detected by LLM"
                         )
 
     def clear_tracker(self):

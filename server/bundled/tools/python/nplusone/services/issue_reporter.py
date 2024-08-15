@@ -2,23 +2,21 @@ import ast
 import uuid
 
 from log import LOGGER
+from .query_analyzer import QueryAnalyzer
 
 class IssueReporter:
     def __init__(self, source_code: str):
         self.issues = []
         self.source_code = source_code
 
-    def add_issue(self, func_node: ast.FunctionDef, loop_node: ast.AST, call_node: ast.AST, query_analyzer):
+    def add_issue(self, func_node: ast.FunctionDef, loop_node: ast.AST, call_node: ast.AST, query_analyzer: QueryAnalyzer):
         LOGGER.debug(f"Adding N+1 issue in function {func_node.name} at line {call_node.lineno}")
         source_segment = ast.get_source_segment(self.source_code, call_node)
         related_field = query_analyzer.extract_related_field(call_node)
-        is_related_field_access = (
-            query_analyzer.is_related_field_access(call_node, func_node, is_read=True)
-            if isinstance(call_node, ast.Attribute) else False
-        )
         query_type = query_analyzer.get_query_type(call_node)
-        is_bulk_operation = query_analyzer.is_bulk_operation(call_node)
-        issue_message = self.create_issue_message(source_segment, query_type, related_field, is_related_field_access, is_bulk_operation)
+        issue_message = self.create_issue_message(
+            source_segment, query_type, related_field, related_field is not None, False
+        )
 
         issue_detail = {
             'id': str(uuid.uuid4()),
@@ -33,8 +31,8 @@ class IssueReporter:
                 'loop_start_line': getattr(loop_node, 'lineno', call_node.lineno),
                 'related_field': related_field,
                 'query_type': query_type,
-                'is_related_field_access': is_related_field_access,
-                'is_bulk_operation': is_bulk_operation,
+                'is_related_field_access': None,
+                'is_bulk_operation': query_type == "bulk",
             },
             'start_line': getattr(loop_node, 'lineno', call_node.lineno),
             'end_line': call_node.lineno,
@@ -42,7 +40,14 @@ class IssueReporter:
         }
         self.issues.append(issue_detail)
 
-    def create_issue_message(self, source_segment: str, query_type: str, related_field: str, is_related_field_access: bool, is_bulk_operation: bool) -> str:
+    def create_issue_message(
+        self,
+        source_segment: str,
+        query_type: str,
+        related_field: str,
+        is_related_field_access: bool,
+        is_bulk_operation: bool
+    ) -> str:
         if query_type == "read":
             if is_bulk_operation:
                 return f"Potential Inefficient Bulk Read Operation: {source_segment}\n\n" \

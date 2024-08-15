@@ -22,6 +22,7 @@ class LLMService:
     def __init__(self, api_server_json: Dict[str, Any]):
         self.api_server_url = api_server_json["api_server_url"]
         self.user_token = api_server_json["user_token"]
+        LOGGER.info(f"Initialized LLM service with API server URL {self.api_server_url}")
 
     def validate_optimization(self, context: Dict[str, Any]) -> bool:
         try:
@@ -33,6 +34,7 @@ class LLMService:
                 "field": context.get("field", ""),
                 "queryType": context.get("query_type", ""),
             }
+            LOGGER.debug(f"Validating optimization with developer input: {developer_input}")
 
             response = self.chat_with_llm(
                 system_message="You are an AI assistant analyzing Django queries for N+1 problems.",

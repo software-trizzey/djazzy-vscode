@@ -47,29 +47,37 @@ class NPlusOneAnalyzer:
             self.analyze_loop(node, loop)
 
     def analyze_loop(self, func_node: ast.FunctionDef, loop_node: ast.AST):
+        LOGGER.info(f"Analyzing loop {loop_node} in function {func_node.name}")
         for child in ast.walk(loop_node):
-            if self.query_analyzer.is_potential_n_plus_one(child):
+            LOGGER.debug(f"Checking child {child}")
+            if self.query_analyzer.is_potential_n_plus_one(child, loop_node):
                 base_model = self.query_analyzer.get_base_model(child)
                 field = self.query_analyzer.extract_related_field(child)
+                LOGGER.debug(f"Potential N+1 query detected: {base_model}.{field}")
                 
                 if base_model and field:
+                    LOGGER.debug(f"Checking optimization for {base_model}.{field}")
                     context = {
-                        "queryset": ast.unparse(child),
-                        "model": base_model,
+                        "function_body": ast.unparse(func_node),
+                        "model_info": self.model_cache.get(base_model, {}),
+                        "optimized_querysets": self.queryset_tracker.optimized_querysets,
+                        "base_model": base_model,
                         "field": field,
-                        "additional_context": {
-                            "function_body": ast.unparse(func_node),
-                            "optimized_querysets": self.queryset_tracker.optimized_querysets,
-                        }
+                        "query_type": self.query_analyzer.get_query_type(child),
                     }
                     
-                    verification_result = self.llm_service.verify_queryset_optimization(context)
+                    is_optimized = self.llm_service.validate_optimization(context)
+                    LOGGER.debug(f"Optimization status for {base_model}.{field}: {is_optimized}")
                     
-                    if not verification_result['is_optimized']:
+                    if not is_optimized:
+                        LOGGER.debug(f"Adding issue for {base_model}.{field}")
                         self.issue_reporter.add_issue(
                             func_node, 
                             loop_node, 
                             child, 
                             self.query_analyzer,
-                            explanation=verification_result['explanation']
+                            explanation="Potential N+1 query detected by LLM"
                         )
+
+    def clear_tracker(self):
+        self.queryset_tracker.clear()

@@ -60,7 +60,6 @@ class NPlusOneAnalyzer:
                     context = {
                         "function_body": ast.unparse(func_node),
                         "model_info": self.model_cache.get(base_model, {}),
-                        "optimized_querysets": self.queryset_tracker.optimized_querysets,
                         "base_model": base_model,
                         "field": field,
                         "query_type": self.query_analyzer.get_query_type(child),
@@ -76,6 +75,10 @@ class NPlusOneAnalyzer:
                             loop_node, 
                             child, 
                             self.query_analyzer,
+                            base_model,
+                            field,
+                            self.model_cache.get(base_model, {}),
+                            optimized_check_result['is_optimized']
                         )
 
     def clear_tracker(self):

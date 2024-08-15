@@ -10,10 +10,7 @@ class NPlusOneScorer:
     SCORE_WEIGHTS = {
         'IN_LOOP': 40,
         'QUERY_METHOD': 30,
-        'WRITE_METHOD': 35,
-        'RELATED_FIELD': 20,
-        'AGGREGATE_METHOD': 10,
-        'BULK_OPERATION': -20  # Reduce score for bulk operations as they are generally more efficient
+        'MULTI_LINE': 15,
     }
 
     @classmethod
@@ -23,33 +20,29 @@ class NPlusOneScorer:
     @classmethod
     def calculate_issue_score(cls, issue):
         score = 0
-        contextual_info = issue.get('contextual_info', {})
 
-        if contextual_info.get('is_in_loop', False):
-            score += cls.SCORE_WEIGHTS['IN_LOOP']
+        score += cls.SCORE_WEIGHTS['IN_LOOP']
 
-        query_type = contextual_info.get('query_type', '')
-        if query_type == 'read':
+        if 'filter' in issue['problematic_code'] or 'get' in issue['problematic_code'] or 'all' in issue['problematic_code']:
             score += cls.SCORE_WEIGHTS['QUERY_METHOD']
-        elif query_type == 'write':
-            score += cls.SCORE_WEIGHTS['WRITE_METHOD']
 
-        if contextual_info.get('is_related_field_access', False):
-            score += cls.SCORE_WEIGHTS['RELATED_FIELD']
+        if issue['end_line'] > issue['start_line']:
+            score += cls.SCORE_WEIGHTS['MULTI_LINE']
 
-        if cls.contains_aggregate_method(issue['message']):
+        if cls.contains_aggregate_method(issue['problematic_code']):
             score += cls.SCORE_WEIGHTS['AGGREGATE_METHOD']
 
-        if contextual_info.get('is_bulk_operation', False):
-            score += cls.SCORE_WEIGHTS['BULK_OPERATION']
-        
-        issue['score'] = min(max(score, 0), cls.MAX_SCORE)
-        issue['severity'] = cls.get_severity(issue['score'])
+        score = min(max(score, 0), cls.MAX_SCORE)
+        severity = cls.get_severity(score)
+
+        issue['score'] = score
+        issue['severity'] = severity
+
         return issue
 
     @staticmethod
-    def contains_aggregate_method(message):
-        return any(method in message for method in AGGREGATE_METHODS)
+    def contains_aggregate_method(code):
+        return any(method in code for method in AGGREGATE_METHODS)
 
     @classmethod
     def get_severity(cls, score):
@@ -60,4 +53,4 @@ class NPlusOneScorer:
         elif score >= cls.SCORE_THRESHOLDS['LOW']:
             return IssueSeverity.INFORMATION
         else:
-            return IssueSeverity.INFORMATION
+            return IssueSeverity.HINT

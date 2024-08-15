@@ -82,6 +82,7 @@ class IssueSeverity:
     ERROR = 'ERROR'
     INFORMATION = 'INFORMATION'
     WARNING = 'WARNING'
+    HINT = 'HINT'
 
 class IssueDocLinks:
     DEBUG = 'https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/#debug'

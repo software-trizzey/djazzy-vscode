@@ -757,18 +757,18 @@ export class DjangoProvider extends LanguageProvider {
         console.log(`Detected ${issues.length} N+1 issues, ${uniqueIssues.size} after deduplication`);
 
         for (const issue of uniqueIssues.values()) {
-            if (!this.shouldShowIssue(issue.score)) continue;
+            // if (!this.shouldShowIssue(issue.score)) continue;
 
-            const issueLine = issue.line - 1;
-            
-            if (changedLines && changedLines.has(issueLine)) {
-                console.log(`Skipping N+1 issue at line ${issueLine} due to change`);
-                continue;
-            }
+            console.log("ISSUE", issue);
+
+            // if (changedLines && !this.isIssueInChangedLines(issue, changedLines)) {
+            //     console.log(`Skipping N+1 issue at lines ${issue.start_line}-${issue.end_line} due to no changes`);
+            //     continue;
+            // }
 
             const range: Range = {
-                start: { line: issueLine, character: issue.col_offset || 0 },
-                end: { line: issueLine, character: issue.end_col_offset || Number.MAX_VALUE },
+                start: { line: issue.start_line - 1, character: issue.col_offset },
+                end: { line: issue.end_line - 1, character: issue.end_col_offset },
             };
 
             const severity = this.mapSeverity(issue.severity);
@@ -786,7 +786,9 @@ export class DjangoProvider extends LanguageProvider {
                 data: {
                     id: issue.id,
                     score: issue.score,
-                    contextualInfo: issue.contextual_info,
+                    contextualInfo: {
+                        query_type: this.inferQueryType(issue.problematic_code),
+                    },
                 },
             };
 
@@ -794,6 +796,13 @@ export class DjangoProvider extends LanguageProvider {
         }
 
         console.log(`Processed ${uniqueIssues.size} unique N+1 issues`);
+    }
+
+    private inferQueryType(code: string): string {
+        if (code.includes('filter') || code.includes('get') || code.includes('all')) {
+            return 'read';
+        }
+        return 'unknown';
     }
 
     private deduplicateIssues(issues: Issue[]): Map<string, Issue> {
@@ -825,34 +834,46 @@ export class DjangoProvider extends LanguageProvider {
         return false;
     }
 
+    private isIssueInChangedLines(issue: Issue, changedLines: Set<number>): boolean {
+        for (let line = issue.start_line; line <= issue.end_line; line++) {
+            if (changedLines.has(line - 1)) {  // changedLines are 0-indexed
+                return true;
+            }
+        }
+        return false;
+    }
+
     private createStructuredDiagnosticMessage(issue: Issue, severity: DiagnosticSeverity): string {
         const severityIndicator = this.getSeverityIndicator(severity);
-        const contextInfo = this.generateContextInfo(issue);
+        // TODO: 
+        // const contextInfo = this.generateContextInfo(issue);
         
         return `${severityIndicator} N+1 Query Detected (Score: ${issue.score})
         \n[Issue]\n${issue.message}
-        \n[Context]\n${contextInfo}\n`;
+        \n[Problematic Code]\n${issue.problematic_code}
+        \n[Suggested Fix]\n${issue.suggested_fix || 'No specific fix suggested.'}\n`;
     }
 
     private generateContextInfo(issue: Issue): string {
         if (!issue.contextual_info) return 'Potential inefficient database query';
 
-        const { query_type, related_field, is_in_loop, loop_start_line, is_bulk_operation } = issue.contextual_info;
+        const { query_type, related_field, is_in_loop, loop_start_line, is_bulk_operation, is_related_field_access } = issue.contextual_info;
         const fieldDescription = related_field || 'a queryset';
-        let contextInfo = '';
+        let contextInfo = `Detected in function "${issue.function_name}"`;
 
-        switch (query_type) {
-            case 'attribute_access':
-                contextInfo = `Detected while accessing the related field "${fieldDescription}"`;
-                break;
-            case 'write':
-                contextInfo = `Detected while performing a write operation on ${fieldDescription}`;
-                break;
-            case 'read':
-                contextInfo = `Detected while performing a read operation (e.g., filter(), get()) on ${fieldDescription}`;
-                break;
-            default:
-                contextInfo = `Detected using .${query_type}() on ${fieldDescription}`;
+        if (is_related_field_access) {
+            contextInfo += `, accessing the related field "${fieldDescription}"`;
+        } else {
+            switch (query_type) {
+                case 'write':
+                    contextInfo += `, performing a write operation on ${fieldDescription}`;
+                    break;
+                case 'read':
+                    contextInfo += `, performing a read operation (e.g., filter(), get()) on ${fieldDescription}`;
+                    break;
+                default:
+                    contextInfo += `, using .${query_type}() on ${fieldDescription}`;
+            }
         }
 
         if (is_in_loop) {
@@ -912,7 +933,7 @@ export class DjangoProvider extends LanguageProvider {
             case Severity.HINT:
                 return DiagnosticSeverity.Hint;
             default:
-                return DiagnosticSeverity.Warning;
+                return DiagnosticSeverity.Hint;
         }
     }
 

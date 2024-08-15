@@ -109,7 +109,7 @@ class QueryAnalyzer:
 
             attrs.reverse()
             result = '.'.join(attrs) if attrs else ''
-            LOGGER.info(f"Extracted related field: {result}")
+            LOGGER.info(f"Extracted related field: {result or 'None'}")
             return result
 
         LOGGER.debug("No related field extracted")

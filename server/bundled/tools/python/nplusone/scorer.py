@@ -1,4 +1,3 @@
-import re
 from constants import AGGREGATE_METHODS, IssueSeverity
 
 class NPlusOneScorer:

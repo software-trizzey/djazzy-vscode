@@ -1,5 +1,4 @@
 from typing import Dict, Set
-
 from log import LOGGER
 
 class QuerysetTracker:
@@ -7,9 +6,17 @@ class QuerysetTracker:
         self.optimized_querysets: Dict[str, Set[str]] = {}
 
     def add_optimized_field(self, base_model: str, field_path: str):
+        if not base_model or not field_path:
+            LOGGER.warning(f"Invalid input: base_model={base_model}, field_path={field_path}")
+            return
+
         parts = field_path.split('__')
         current_model = base_model.capitalize()
         for i, part in enumerate(parts):
+            if not part:
+                LOGGER.warning(f"Empty part in field_path: {field_path}")
+                continue
+
             if current_model not in self.optimized_querysets:
                 self.optimized_querysets[current_model] = set()
             
@@ -22,6 +29,10 @@ class QuerysetTracker:
                 current_model = part.capitalize()
 
     def is_optimized(self, base_model: str, field: str) -> bool:
+        if not base_model or not field:
+            LOGGER.warning(f"Invalid input: base_model={base_model}, field={field}")
+            return False
+
         base_model = base_model.capitalize()
         field = field.lower()
 
@@ -38,3 +49,10 @@ class QuerysetTracker:
                 return True
 
         return False
+
+    def get_optimized_fields(self, base_model: str) -> Set[str]:
+        LOGGER.debug(f"Getting optimized fields for {base_model}")
+        return self.optimized_querysets.get(base_model.capitalize(), set())
+
+    def clear(self):
+        self.optimized_querysets.clear()

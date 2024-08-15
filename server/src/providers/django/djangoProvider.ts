@@ -31,6 +31,7 @@ import { LanguageConventions, CeleryTaskDecoratorSettings } from '../../language
 import { debounce, getChangedLinesFromClient, validatePythonFunctionName } from '../../utils';
 import { LanguageProvider } from '../languageProvider';
 import { DjangoProjectDetector, ModelCache } from './djangoProjectDetector';
+import { API_SERVER_URL } from '../../constants/api';
 
 
 interface CachedResult {
@@ -213,9 +214,14 @@ export class DjangoProvider extends LanguageProvider {
 			const parserFilePath = this.getParserFilePath();
             const modelCacheObject = Object.fromEntries(this.modelCache);
             const modelCacheJson = JSON.stringify(modelCacheObject);
+            const userTokenString = cachedUserToken || "";
+            const apiConnectionInfo = JSON.stringify({
+                api_server_url: API_SERVER_URL,
+                user_token: userTokenString
+            });
 	
 			return new Promise((resolve, reject) => {
-				const process = spawn("python3", [parserFilePath, modelCacheJson]);
+				const process = spawn("python3", [parserFilePath, modelCacheJson, apiConnectionInfo]);
 				let output = "";
 				let error = "";
 	

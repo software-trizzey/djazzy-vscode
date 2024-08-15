@@ -20,11 +20,12 @@ from constants import (
 )
 
 class DjangoAnalyzer(Analyzer):
-    def __init__(self, source_code, model_cache_json: str):
+    def __init__(self, source_code, model_cache_json: str, api_server_connection_json: str):
         super().__init__(source_code)
         self.current_django_class_type = None
         self.model_cache = self.parse_model_cache(model_cache_json)
-        self.nplusone_analyzer = NPlusOneAnalyzer(source_code, self.model_cache)
+        api_server_connection = self.parse_api_server_connection(api_server_connection_json)
+        self.nplusone_analyzer = NPlusOneAnalyzer(source_code, self.model_cache, api_server_connection)
         self.nplusone_issues = []
 
     def parse_model_cache(self, model_cache_json):
@@ -32,6 +33,13 @@ class DjangoAnalyzer(Analyzer):
             return json.loads(model_cache_json)
         except json.JSONDecodeError as e:
             LOGGER.error(f"Error parsing model cache JSON: {e}")
+            return {}
+        
+    def parse_api_server_connection(self, api_server_connection_json):
+        try:
+            return json.loads(api_server_connection_json)
+        except json.JSONDecodeError as e:
+            LOGGER.error(f"Error parsing API server connection JSON: {e}")
             return {}
 
     def visit_ClassDef(self, node):
@@ -101,12 +109,7 @@ class DjangoAnalyzer(Analyzer):
         ))
 
         self.generic_visit(node)
-
         self.nplusone_analyzer.analyze_function(node)
-        issues = self.nplusone_analyzer.get_issues()
-        for issue in issues:
-            if issue['id'] not in {i['id'] for i in self.nplusone_issues}:
-                self.nplusone_issues.append(issue)
 
     def visit_Assign(self, node):
         for target in node.targets:
@@ -247,6 +250,9 @@ class DjangoAnalyzer(Analyzer):
             'doc_link': doc_link
         })
 
+    def get_nplusone_issues(self):
+        return self.nplusone_analyzer.analyze()
+
     def perform_security_checks(self):
         LOGGER.info('Running security checks...')
         for node in ast.walk(ast.parse(self.source_code)):
@@ -260,7 +266,8 @@ class DjangoAnalyzer(Analyzer):
         try:
             result = super().parse_code()
             self.perform_security_checks()
-            scored_issues = NPlusOneScorer.calculate_issue_scores(self.nplusone_issues)
+            nplusone_issues = self.get_nplusone_issues()
+            scored_issues = NPlusOneScorer.calculate_issue_scores(nplusone_issues)
             return {
                 **result,
                 "nplusone_issues": scored_issues,
@@ -286,13 +293,14 @@ class DjangoAnalyzer(Analyzer):
 
 
 def main():
-    if len(sys.argv) < 2:
-        LOGGER.error("Usage: python script.py <model_cache_json>")
+    if len(sys.argv) < 3:
+        LOGGER.error("Usage: python script.py <model_cache_json> <api_server_json>")
         sys.exit(1)
 
     model_cache_json = sys.argv[1]
+    api_server_json = sys.argv[2]
     input_code = sys.stdin.read()
-    analyzer = DjangoAnalyzer(input_code, model_cache_json)
+    analyzer = DjangoAnalyzer(input_code, model_cache_json, api_server_json)
     LOGGER.info("Django analyzer initialized")
     parsed_code = analyzer.parse_code()
     print(json.dumps(parsed_code, default=serialize_file_data))

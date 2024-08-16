@@ -26,8 +26,8 @@ class SimplifiedN1Detector:
         for child in ast.walk(node):
             if isinstance(child, ast.Call) and isinstance(child.func, ast.Attribute):
                 if child.func.attr in ['select_related', 'prefetch_related']:
-                    if isinstance(child.func.value, ast.Name):
-                        self.optimized_querysets.add(child.func.value.id)
+                    queryset_name = self.get_queryset_name(child)
+                    self.optimized_querysets.add(queryset_name)
 
     def find_loops(self, node: ast.AST) -> List[ast.AST]:
         return [n for n in ast.walk(node)
@@ -44,9 +44,14 @@ class SimplifiedN1Detector:
     def is_potential_n1_query(self, node: ast.AST) -> bool:
         if isinstance(node, ast.Call):
             if isinstance(node.func, ast.Attribute):
-                return node.func.attr in ['filter', 'get', 'all']
+                if node.func.attr in ['filter', 'get', 'all']:
+                    queryset_name = self.get_queryset_name(node)
+                    return queryset_name not in self.optimized_querysets
         elif isinstance(node, ast.Attribute):
-            return len(self.get_attribute_chain(node)) > 2
+            chain = self.get_attribute_chain(node)
+            if len(chain) > 2:
+                queryset_name = chain[0]
+                return queryset_name not in self.optimized_querysets
         return False
 
     def add_issue(self, func_node: ast.FunctionDef, loop_node: ast.AST, query_node: ast.AST):
@@ -83,7 +88,7 @@ class SimplifiedN1Detector:
         return list(reversed(chain))
 
     def get_queryset_name(self, node: ast.AST) -> str:
-        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+        if isinstance(node, ast.Call):
             return self.get_queryset_name(node.func.value)
         elif isinstance(node, ast.Attribute):
             return self.get_queryset_name(node.value)

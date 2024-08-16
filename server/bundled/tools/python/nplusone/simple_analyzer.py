@@ -1,6 +1,6 @@
 import ast
 import uuid
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List, Set, Tuple
 
 
 class SimplifiedN1Detector:
@@ -54,7 +54,7 @@ class SimplifiedN1Detector:
         queryset_name = self.get_queryset_name(query_node)
         is_optimized = queryset_name in self.optimized_querysets
         
-        suggestion = self.get_suggestion(query_node, is_optimized)
+        explantion, suggestion = self.get_explanation_and_suggestion(query_node, is_optimized)
 
         self.issues.append({
             'id': str(uuid.uuid4()),
@@ -62,7 +62,7 @@ class SimplifiedN1Detector:
             'line': query_node.lineno,
             'col_offset': query_node.col_offset,
             'end_col_offset': query_node.col_offset + len(source_segment),
-            'message': f"Potential N+1 query detected: {source_segment}",
+            'message': explantion,
             'problematic_code': source_segment,
             'start_line': loop_node.lineno,
             'end_line': query_node.lineno,
@@ -88,21 +88,30 @@ class SimplifiedN1Detector:
             return node.id
         return ""
 
-    def get_suggestion(self, node: ast.AST, is_optimized: bool) -> str:
+    def get_explanation_and_suggestion(self, node: ast.AST, is_optimized: bool) -> Tuple[str, str]:
         if is_optimized:
-            return "This queryset appears to be optimized. Ensure that the optimization covers all necessary related fields."
+            explanation = "This queryset appears to be optimized, but there might still be room for improvement."
+            suggestion = "Ensure that the optimization covers all necessary related fields."
+            return explanation, suggestion
 
         if isinstance(node, ast.Call):
             if isinstance(node.func, ast.Attribute):
                 if node.func.attr == 'filter':
-                    return "Consider using select_related() or prefetch_related() to optimize this query."
+                    explanation = "A filter operation inside a loop may result in multiple database queries."
+                    suggestion = "Consider using select_related() or prefetch_related() to optimize this query."
                 elif node.func.attr == 'get':
-                    return "If this 'get' operation is inside a loop, consider prefetching the data or moving the query outside the loop."
+                    explanation = "Multiple 'get' operations inside a loop can lead to numerous database queries."
+                    suggestion = "If this 'get' operation is inside a loop, consider prefetching the data or moving the query outside the loop."
                 elif node.func.attr == 'all':
-                    return "If you're accessing related objects, consider using select_related() or prefetch_related()."
+                    explanation = "Fetching all objects and then accessing related objects can cause multiple queries."
+                    suggestion = "If you're accessing related objects, consider using select_related() or prefetch_related()."
         elif isinstance(node, ast.Attribute):
             chain = self.get_attribute_chain(node)
             if len(chain) > 2:
-                return f"Consider using select_related('{chain[1]}') to prefetch this related object."
+                explanation = f"Accessing nested related objects ({'.'.join(chain)}) within a loop can trigger additional queries."
+                suggestion = f"Consider using select_related('{chain[1]}') to prefetch this related object."
+        else:
+            explanation = "This operation might lead to multiple database queries in a loop."
+            suggestion = "Review this query to see if it can be optimized using select_related(), prefetch_related(), or by restructuring the code."
 
-        return "Review this query to see if it can be optimized using select_related(), prefetch_related(), or by restructuring the code."
+        return explanation, suggestion

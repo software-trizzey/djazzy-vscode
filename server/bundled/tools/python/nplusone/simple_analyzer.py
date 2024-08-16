@@ -54,18 +54,21 @@ class SimplifiedN1Detector:
         queryset_name = self.get_queryset_name(query_node)
         is_optimized = queryset_name in self.optimized_querysets
         
-        explantion, suggestion = self.get_explanation_and_suggestion(query_node, is_optimized)
+        explanation, suggestion = self.get_explanation_and_suggestion(query_node, is_optimized)
+
+        start_line, start_col = self.get_start_of_line(loop_node)
+        end_line, end_col = self.get_end_of_line(query_node)
 
         self.issues.append({
             'id': str(uuid.uuid4()),
             'function_name': func_node.name,
-            'line': query_node.lineno,
-            'col_offset': query_node.col_offset,
-            'end_col_offset': query_node.col_offset + len(source_segment),
-            'message': explantion,
+            'line': loop_node.lineno,
+            'start_line': start_line,
+            'end_line': end_line,
+            'col_offset': start_col,
+            'end_col_offset': end_col,
+            'message': explanation,
             'problematic_code': source_segment,
-            'start_line': loop_node.lineno,
-            'end_line': query_node.lineno,
             'is_optimized': is_optimized,
             'suggestion': suggestion,
         })
@@ -115,3 +118,19 @@ class SimplifiedN1Detector:
             suggestion = "Review this query to see if it can be optimized using select_related(), prefetch_related(), or by restructuring the code."
 
         return explanation, suggestion
+    
+    def get_start_of_line(self, node: ast.AST) -> Tuple[int, int]:
+        """
+        Get the line number and find the start of the line (considering indentation)
+        """
+        line = node.lineno
+        col_offset = len(self.source_code.splitlines()[line - 1]) - len(self.source_code.splitlines()[line - 1].lstrip())
+        return line, col_offset
+
+    def get_end_of_line(self, node: ast.AST) -> Tuple[int, int]:
+        """
+        Get the line number and find the end of the line
+        """
+        line = node.end_lineno if hasattr(node, 'end_lineno') else node.lineno
+        end_col = len(self.source_code.splitlines()[line - 1].rstrip())
+        return line, end_col

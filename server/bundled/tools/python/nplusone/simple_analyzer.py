@@ -2,23 +2,32 @@ import ast
 import uuid
 from typing import Any, Dict, List, Set, Tuple
 
+from log import LOGGER
 
 class SimplifiedN1Detector:
     def __init__(self, source_code: str):
         self.source_code = source_code
         self.issues: List[Dict[str, Any]] = []
         self.optimized_querysets: Set[str] = set()
+        LOGGER.debug("N+1 detection initialized")
 
     def analyze(self) -> List[Dict[str, Any]]:
+        LOGGER.info("Starting analysis of source code")
         tree = ast.parse(self.source_code)
         for node in ast.walk(tree):
             if isinstance(node, ast.FunctionDef):
+                LOGGER.debug("Analyzing function: %s", node.name)
                 self.analyze_function(node)
+        LOGGER.info("Analysis complete. Found %d issues", len(self.issues))
         return self.issues
 
     def analyze_function(self, node: ast.FunctionDef):
+        LOGGER.debug("Finding optimized querysets in function: %s", node.name)
         self.find_optimized_querysets(node)
+        LOGGER.debug("Optimized querysets found: %s", self.optimized_querysets)
+        
         loops = self.find_loops(node)
+        LOGGER.debug("Found %d loops in function %s", len(loops), node.name)
         for loop in loops:
             self.analyze_loop(node, loop)
 
@@ -28,17 +37,22 @@ class SimplifiedN1Detector:
                 if child.func.attr in ['select_related', 'prefetch_related']:
                     queryset_name = self.get_queryset_name(child)
                     self.optimized_querysets.add(queryset_name)
+                    LOGGER.debug("Found optimized queryset: %s", queryset_name)
 
     def find_loops(self, node: ast.AST) -> List[ast.AST]:
-        return [n for n in ast.walk(node)
+        loops = [n for n in ast.walk(node)
             if isinstance(
                 n, (ast.For, ast.While, ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)
             )
         ]
+        LOGGER.debug("Found %d loops", len(loops))
+        return loops
 
     def analyze_loop(self, func_node: ast.FunctionDef, loop_node: ast.AST):
+        LOGGER.debug("Analyzing loop at line %d in function %s", loop_node.lineno, func_node.name)
         for child in ast.walk(loop_node):
             if self.is_potential_n1_query(child):
+                LOGGER.info("Potential N+1 query found at line %d", child.lineno)
                 self.add_issue(func_node, loop_node, child)
 
     def is_potential_n1_query(self, node: ast.AST) -> bool:
@@ -46,12 +60,16 @@ class SimplifiedN1Detector:
             if isinstance(node.func, ast.Attribute):
                 if node.func.attr in ['filter', 'get', 'all']:
                     queryset_name = self.get_queryset_name(node)
-                    return queryset_name not in self.optimized_querysets
+                    is_optimized = queryset_name in self.optimized_querysets
+                    LOGGER.debug("Checking call to %s. Optimized: %s", node.func.attr, is_optimized)
+                    return not is_optimized
         elif isinstance(node, ast.Attribute):
             chain = self.get_attribute_chain(node)
             if len(chain) > 2:
                 queryset_name = chain[0]
-                return queryset_name not in self.optimized_querysets
+                is_optimized = queryset_name in self.optimized_querysets
+                LOGGER.debug("Checking attribute chain %s. Optimized: %s", '.'.join(chain), is_optimized)
+                return not is_optimized
         return False
 
     def add_issue(self, func_node: ast.FunctionDef, loop_node: ast.AST, query_node: ast.AST):
@@ -64,7 +82,7 @@ class SimplifiedN1Detector:
         start_line, start_col = self.get_start_of_line(loop_node)
         end_line, end_col = self.get_end_of_line(query_node)
 
-        self.issues.append({
+        issue = {
             'id': str(uuid.uuid4()),
             'function_name': func_node.name,
             'line': loop_node.lineno,
@@ -76,7 +94,10 @@ class SimplifiedN1Detector:
             'problematic_code': source_segment,
             'is_optimized': is_optimized,
             'suggestion': suggestion,
-        })
+        }
+
+        self.issues.append(issue)
+        LOGGER.info("Added issue: %s", issue)
     
     def get_attribute_chain(self, node: ast.AST) -> List[str]:
         chain = []
@@ -97,6 +118,8 @@ class SimplifiedN1Detector:
         return ""
 
     def get_explanation_and_suggestion(self, node: ast.AST, is_optimized: bool) -> Tuple[str, str]:
+        LOGGER.debug("Generating explanation and suggestion for node at line %d", node.lineno)
+        
         if is_optimized:
             explanation = "This queryset appears to be optimized, but there might still be room for improvement."
             suggestion = "Ensure that the optimization covers all necessary related fields."
@@ -117,11 +140,22 @@ class SimplifiedN1Detector:
             chain = self.get_attribute_chain(node)
             if len(chain) > 2:
                 explanation = f"Accessing nested related objects ({'.'.join(chain)}) within a loop can trigger additional queries."
-                suggestion = f"Consider using select_related('{chain[1]}') to prefetch this related object."
+                field_to_optimize = chain[1]  # The first relation in the chain
+                
+                if field_to_optimize == 'objects':
+                    if len(chain) > 3:
+                        field_to_optimize = chain[2]
+                        suggestion = f"Consider using select_related('{field_to_optimize}') or prefetch_related('{field_to_optimize}') to optimize this query."
+                    else:
+                        suggestion = "Review this query to see if it can be optimized using select_related() or prefetch_related() for specific fields."
+                else:
+                    suggestion = f"Consider using select_related('{field_to_optimize}') or prefetch_related('{field_to_optimize}') to optimize this query."
         else:
             explanation = "This operation might lead to multiple database queries in a loop."
             suggestion = "Review this query to see if it can be optimized using select_related(), prefetch_related(), or by restructuring the code."
 
+        LOGGER.debug("Generated explanation: %s", explanation)
+        LOGGER.debug("Generated suggestion: %s", suggestion)
         return explanation, suggestion
     
     def get_start_of_line(self, node: ast.AST) -> Tuple[int, int]:
@@ -130,6 +164,7 @@ class SimplifiedN1Detector:
         """
         line = node.lineno
         col_offset = len(self.source_code.splitlines()[line - 1]) - len(self.source_code.splitlines()[line - 1].lstrip())
+        LOGGER.debug("Start of line %d: col %d", line, col_offset)
         return line, col_offset
 
     def get_end_of_line(self, node: ast.AST) -> Tuple[int, int]:
@@ -138,4 +173,5 @@ class SimplifiedN1Detector:
         """
         line = node.end_lineno if hasattr(node, 'end_lineno') else node.lineno
         end_col = len(self.source_code.splitlines()[line - 1].rstrip())
+        LOGGER.debug("End of line %d: col %d", line, end_col)
         return line, end_col

@@ -1,12 +1,13 @@
 import ast
 import uuid
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Set
 
 
 class SimplifiedN1Detector:
     def __init__(self, source_code: str):
         self.source_code = source_code
         self.issues: List[Dict[str, Any]] = []
+        self.optimized_querysets: Set[str] = set()
 
     def analyze(self) -> List[Dict[str, Any]]:
         tree = ast.parse(self.source_code)
@@ -16,9 +17,17 @@ class SimplifiedN1Detector:
         return self.issues
 
     def analyze_function(self, node: ast.FunctionDef):
+        self.find_optimized_querysets(node)
         loops = self.find_loops(node)
         for loop in loops:
             self.analyze_loop(node, loop)
+
+    def find_optimized_querysets(self, node: ast.AST):
+        for child in ast.walk(node):
+            if isinstance(child, ast.Call) and isinstance(child.func, ast.Attribute):
+                if child.func.attr in ['select_related', 'prefetch_related']:
+                    if isinstance(child.func.value, ast.Name):
+                        self.optimized_querysets.add(child.func.value.id)
 
     def find_loops(self, node: ast.AST) -> List[ast.AST]:
         return [n for n in ast.walk(node)
@@ -42,6 +51,11 @@ class SimplifiedN1Detector:
 
     def add_issue(self, func_node: ast.FunctionDef, loop_node: ast.AST, query_node: ast.AST):
         source_segment = ast.get_source_segment(self.source_code, query_node)
+        queryset_name = self.get_queryset_name(query_node)
+        is_optimized = queryset_name in self.optimized_querysets
+        
+        suggestion = self.get_suggestion(query_node, is_optimized)
+
         self.issues.append({
             'id': str(uuid.uuid4()),
             'function_name': func_node.name,
@@ -52,6 +66,8 @@ class SimplifiedN1Detector:
             'problematic_code': source_segment,
             'start_line': loop_node.lineno,
             'end_line': query_node.lineno,
+            'is_optimized': is_optimized,
+            'suggestion': suggestion,
         })
     
     def get_attribute_chain(self, node: ast.AST) -> List[str]:
@@ -63,3 +79,30 @@ class SimplifiedN1Detector:
             chain.append(node.id)
         return list(reversed(chain))
 
+    def get_queryset_name(self, node: ast.AST) -> str:
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+            return self.get_queryset_name(node.func.value)
+        elif isinstance(node, ast.Attribute):
+            return self.get_queryset_name(node.value)
+        elif isinstance(node, ast.Name):
+            return node.id
+        return ""
+
+    def get_suggestion(self, node: ast.AST, is_optimized: bool) -> str:
+        if is_optimized:
+            return "This queryset appears to be optimized. Ensure that the optimization covers all necessary related fields."
+
+        if isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Attribute):
+                if node.func.attr == 'filter':
+                    return "Consider using select_related() or prefetch_related() to optimize this query."
+                elif node.func.attr == 'get':
+                    return "If this 'get' operation is inside a loop, consider prefetching the data or moving the query outside the loop."
+                elif node.func.attr == 'all':
+                    return "If you're accessing related objects, consider using select_related() or prefetch_related()."
+        elif isinstance(node, ast.Attribute):
+            chain = self.get_attribute_chain(node)
+            if len(chain) > 2:
+                return f"Consider using select_related('{chain[1]}') to prefetch this related object."
+
+        return "Review this query to see if it can be optimized using select_related(), prefetch_related(), or by restructuring the code."

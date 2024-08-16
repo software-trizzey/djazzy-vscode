@@ -848,10 +848,15 @@ export class DjangoProvider extends LanguageProvider {
         // TODO: 
         // const contextInfo = this.generateContextInfo(issue);
         
-        return `${severityIndicator} N+1 Query Detected (Score: ${issue.score})
+        let message = `${severityIndicator} N+1 Query Detected (Score: ${issue.score})
         \n[Issue]\n${issue.message}
-        \n[Problematic Code]\n${issue.problematic_code}
-        \n[Suggested Fix]\n${issue.suggested_fix || 'No specific fix suggested.'}\n`;
+        \n[Problematic Code]\n${issue.problematic_code}`;
+
+        if (issue.suggestion) {
+            message += `\n\n[Suggested Fix]\n${issue.suggestion}\n`;
+        }
+
+        return message;
     }
 
     private generateContextInfo(issue: Issue): string {

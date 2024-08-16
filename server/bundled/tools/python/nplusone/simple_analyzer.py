@@ -2,6 +2,7 @@ import ast
 import uuid
 from typing import Any, Dict, List, Set, Tuple
 
+from constants import WRITE_METHODS
 from log import LOGGER
 
 class SimplifiedN1Detector:
@@ -57,12 +58,7 @@ class SimplifiedN1Detector:
 
     def is_potential_n1_query(self, node: ast.AST) -> bool:
         if isinstance(node, ast.Call):
-            if isinstance(node.func, ast.Attribute):
-                if node.func.attr in ['filter', 'get', 'all']:
-                    queryset_name = self.get_queryset_name(node)
-                    is_optimized = queryset_name in self.optimized_querysets
-                    LOGGER.debug("Checking call to %s. Optimized: %s", node.func.attr, is_optimized)
-                    return not is_optimized
+            return self.check_call(node)
         elif isinstance(node, ast.Attribute):
             chain = self.get_attribute_chain(node)
             if len(chain) > 2:
@@ -70,6 +66,19 @@ class SimplifiedN1Detector:
                 is_optimized = queryset_name in self.optimized_querysets
                 LOGGER.debug("Checking attribute chain %s. Optimized: %s", '.'.join(chain), is_optimized)
                 return not is_optimized
+        return False
+
+    def check_call(self, node: ast.Call) -> bool:
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr in ['filter', 'get', 'all'] + list(WRITE_METHODS):
+                queryset_name = self.get_queryset_name(node)
+                is_optimized = queryset_name in self.optimized_querysets
+                LOGGER.debug("Checking call to %s. Optimized: %s", node.func.attr, is_optimized)
+                return not is_optimized
+            # Check for nested calls
+            return self.check_call(node.func.value) if isinstance(node.func.value, ast.Call) else False
+        elif isinstance(node.func, ast.Name):
+            return node.func.id in ['filter', 'get', 'all'] + list(WRITE_METHODS)
         return False
 
     def add_issue(self, func_node: ast.FunctionDef, loop_node: ast.AST, query_node: ast.AST):
@@ -127,35 +136,73 @@ class SimplifiedN1Detector:
 
         if isinstance(node, ast.Call):
             if isinstance(node.func, ast.Attribute):
-                if node.func.attr == 'filter':
+                method_name = node.func.attr
+                if method_name in WRITE_METHODS:
+                    return self.handle_write_operation(method_name)
+                elif method_name == 'filter':
                     explanation = "A filter operation inside a loop may result in multiple database queries."
-                    suggestion = "Consider using select_related() or prefetch_related() to optimize this query."
-                elif node.func.attr == 'get':
+                    suggestion = "Consider using select_related() or prefetch_related() to optimize this query. If possible, try to move the filter operation outside the loop."
+                elif method_name == 'get':
                     explanation = "Multiple 'get' operations inside a loop can lead to numerous database queries."
-                    suggestion = "If this 'get' operation is inside a loop, consider prefetching the data or moving the query outside the loop."
-                elif node.func.attr == 'all':
+                    suggestion = "Consider using select_related() to prefetch related objects, or use filter() with specific fields to retrieve multiple objects at once."
+                elif method_name == 'all':
                     explanation = "Fetching all objects and then accessing related objects can cause multiple queries."
-                    suggestion = "If you're accessing related objects, consider using select_related() or prefetch_related()."
+                    suggestion = "Use select_related() or prefetch_related() to fetch related objects in a single query."
         elif isinstance(node, ast.Attribute):
             chain = self.get_attribute_chain(node)
             if len(chain) > 2:
-                explanation = f"Accessing nested related objects ({'.'.join(chain)}) within a loop can trigger additional queries."
-                field_to_optimize = chain[1]  # The first relation in the chain
-                
-                if field_to_optimize == 'objects':
-                    if len(chain) > 3:
-                        field_to_optimize = chain[2]
-                        suggestion = f"Consider using select_related('{field_to_optimize}') or prefetch_related('{field_to_optimize}') to optimize this query."
-                    else:
-                        suggestion = "Review this query to see if it can be optimized using select_related() or prefetch_related() for specific fields."
-                else:
-                    suggestion = f"Consider using select_related('{field_to_optimize}') or prefetch_related('{field_to_optimize}') to optimize this query."
-        else:
-            explanation = "This operation might lead to multiple database queries in a loop."
-            suggestion = "Review this query to see if it can be optimized using select_related(), prefetch_related(), or by restructuring the code."
+                return self.handle_attribute_chain(chain)
+
+        explanation = "This operation might lead to multiple database queries in a loop."
+        suggestion = "Review this query to see if it can be optimized using select_related(), prefetch_related(), or by restructuring the code."
 
         LOGGER.debug("Generated explanation: %s", explanation)
         LOGGER.debug("Generated suggestion: %s", suggestion)
+        return explanation, suggestion
+
+    def handle_write_operation(self, method_name: str) -> Tuple[str, str]:
+        if method_name == 'create':
+            explanation = "Multiple create operations inside a loop can lead to excessive database writes."
+            suggestion = "Consider using bulk_create() to create multiple objects in a single query."
+        elif method_name == 'bulk_create':
+            explanation = "Bulk create operation detected. This is generally efficient for creating multiple objects."
+            suggestion = "Ensure that bulk_create is used with an appropriate batch size to balance memory usage and database performance."
+        elif method_name == 'update':
+            explanation = "Multiple update operations inside a loop can lead to excessive database writes."
+            suggestion = "Consider using bulk_update() to update multiple objects in a single query, or update() with a filter to affect multiple objects at once."
+        elif method_name == 'bulk_update':
+            explanation = "Bulk update operation detected. This is generally efficient for updating multiple objects."
+            suggestion = "Ensure that bulk_update is used with an appropriate batch size and only updates necessary fields."
+        elif method_name == 'save':
+            explanation = "Multiple save operations inside a loop can lead to excessive individual database writes."
+            suggestion = "Consider using bulk_create() or bulk_update() instead of individual save() calls. If using save() for updates, you might also consider using update() on a queryset."
+        elif method_name == 'delete':
+            explanation = "Multiple delete operations inside a loop can lead to excessive individual database deletes."
+            suggestion = "Consider using bulk_delete() or delete() on a queryset to remove multiple objects in a single query."
+        
+        LOGGER.debug("Generated write operation explanation: %s", explanation)
+        LOGGER.debug("Generated write operation suggestion: %s", suggestion)
+        return explanation, suggestion
+
+    def handle_attribute_chain(self, chain: List[str]) -> Tuple[str, str]:
+        explanation = f"Accessing nested related objects ({'.'.join(chain)}) within a loop can trigger additional queries."
+        
+        if chain[-1] in WRITE_METHODS:
+            return self.handle_write_operation(chain[-1])
+        
+        field_to_optimize = chain[1]  # The first relation in the chain
+        
+        if field_to_optimize == 'objects':
+            if len(chain) > 3:
+                field_to_optimize = chain[2]
+                suggestion = f"Consider using select_related('{field_to_optimize}') or prefetch_related('{field_to_optimize}') to optimize this query."
+            else:
+                suggestion = "Review this query to see if it can be optimized using select_related() or prefetch_related() for specific fields."
+        else:
+            suggestion = f"Consider using select_related('{field_to_optimize}') or prefetch_related('{field_to_optimize}') to optimize this query."
+
+        LOGGER.debug("Generated attribute chain explanation: %s", explanation)
+        LOGGER.debug("Generated attribute chain suggestion: %s", suggestion)
         return explanation, suggestion
     
     def get_start_of_line(self, node: ast.AST) -> Tuple[int, int]:

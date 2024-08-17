@@ -1,4 +1,4 @@
-from constants import AGGREGATE_METHODS, IssueSeverity
+from constants import IssueSeverity, WRITE_METHODS
 
 class NPlusOneScorer:
     MAX_SCORE = 100
@@ -10,6 +10,7 @@ class NPlusOneScorer:
     SCORE_WEIGHTS = {
         'IN_LOOP': 40,
         'QUERY_METHOD': 30,
+        'WRITE_METHOD': 35,
         'MULTI_LINE': 15,
     }
 
@@ -23,14 +24,14 @@ class NPlusOneScorer:
 
         score += cls.SCORE_WEIGHTS['IN_LOOP']
 
-        if 'filter' in issue['problematic_code'] or 'get' in issue['problematic_code'] or 'all' in issue['problematic_code']:
+        if cls.contains_query_method(issue['problematic_code']):
             score += cls.SCORE_WEIGHTS['QUERY_METHOD']
+
+        if cls.contains_write_method(issue['problematic_code']):
+            score += cls.SCORE_WEIGHTS['WRITE_METHOD']
 
         if issue['end_line'] > issue['start_line']:
             score += cls.SCORE_WEIGHTS['MULTI_LINE']
-
-        if cls.contains_aggregate_method(issue['problematic_code']):
-            score += cls.SCORE_WEIGHTS['AGGREGATE_METHOD']
 
         score = min(max(score, 0), cls.MAX_SCORE)
         severity = cls.get_severity(score)
@@ -41,8 +42,12 @@ class NPlusOneScorer:
         return issue
 
     @staticmethod
-    def contains_aggregate_method(code):
-        return any(method in code for method in AGGREGATE_METHODS)
+    def contains_query_method(code):
+        return any(method in code for method in ['filter', 'get', 'all'])
+
+    @staticmethod
+    def contains_write_method(code):
+        return any(method in code for method in WRITE_METHODS)
 
     @classmethod
     def get_severity(cls, score):

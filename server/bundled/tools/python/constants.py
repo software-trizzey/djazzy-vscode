@@ -69,7 +69,7 @@ BULK_METHODS = {
     "bulk_delete"
 }
 
-AGGREGATE_METHODS = ["Count", "Sum", "Avg", "Max", "Min"]
+AGGREGATE_METHODS = {'annotate', 'count', 'first', 'last', 'latest', 'earliest'}
 
 DEBUG = 'DEBUG'
 SECRET_KEY = 'SECRET_KEY'

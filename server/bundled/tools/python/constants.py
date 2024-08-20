@@ -45,13 +45,6 @@ QUERY_METHODS = {
     "filter",
     "all",
     "get",
-    "exclude",
-    "values",
-    "values_list",
-    "first",
-    "last",
-    "count",
-    "iterator",
 }
 
 WRITE_METHODS = {
@@ -69,7 +62,7 @@ BULK_METHODS = {
     "bulk_delete"
 }
 
-AGGREGATE_METHODS = ["Count", "Sum", "Avg", "Max", "Min"]
+AGGREGATE_METHODS = {'annotate', 'count', 'first', 'last', 'latest', 'earliest'}
 
 DEBUG = 'DEBUG'
 SECRET_KEY = 'SECRET_KEY'
@@ -82,6 +75,7 @@ class IssueSeverity:
     ERROR = 'ERROR'
     INFORMATION = 'INFORMATION'
     WARNING = 'WARNING'
+    HINT = 'HINT'
 
 class IssueDocLinks:
     DEBUG = 'https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/#debug'

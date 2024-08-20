@@ -22,6 +22,17 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
+## [Version 0.1.7] - 2024-08-13
+
+### Added
+
+- [Feature] TODO: Add Django model scanner that will find and cache the current project's model definitions.
+- [Enhancement] TODO: Use cached model data to improve accuracy of related field detection for N+1 analysis.
+
+### Changed
+
+- [Update] Refactored project structure and broke language provider class into smaller focused service classes.
+
 ## [Version 0.1.6] - 2024-08-12
 
 ### Changed

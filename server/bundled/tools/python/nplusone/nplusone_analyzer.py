@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Set, Tuple
 from constants import WRITE_METHODS, QUERY_METHODS
 from log import LOGGER
 
-class SimplifiedN1Detector:
+class NPlusOneDetector:
     QUERYSET_METHODS = {'filter', 'all', 'get', 'exclude', 'order_by', 'prefetch_related', 'select_related'}
 
     def __init__(self, source_code: str):
@@ -27,10 +27,7 @@ class SimplifiedN1Detector:
         return self.issues
 
     def analyze_function(self, node: ast.FunctionDef):
-        LOGGER.debug("Finding optimized querysets in function: %s", node.name)
         self.find_optimized_querysets(node)
-        LOGGER.debug("Querysets found: %s", self.found_querysets)
-        LOGGER.debug("Optimized querysets found: %s", self.optimized_querysets)
         
         loops = self.find_loops(node)
         LOGGER.debug("Found %d loops in function %s", len(loops), node.name)
@@ -40,11 +37,7 @@ class SimplifiedN1Detector:
         self.reset_cached_querysets_and_variables()
     
     def analyze_loop(self, func_node: ast.FunctionDef, loop_node: ast.AST):
-        LOGGER.debug("Analyzing loop at line %d in function %s", loop_node.lineno, func_node.name)
-
         for child in ast.walk(loop_node):
-            LOGGER.debug("Analyzing node of type: %s at line %d", type(child).__name__, getattr(child, 'lineno', None))
-
             if isinstance(child, ast.Assign):
                 self.handle_assignment(child)
 

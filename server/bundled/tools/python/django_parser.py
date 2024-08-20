@@ -4,7 +4,7 @@ import re
 import sys
 
 from ast_parser import Analyzer, serialize_file_data
-from nplusone.simple_analyzer import SimplifiedN1Detector
+from nplusone.nplusone_analyzer import NPlusOneDetector
 from nplusone.scorer import NPlusOneScorer
 from log import LOGGER
 from constants import (
@@ -24,7 +24,7 @@ class DjangoAnalyzer(Analyzer):
         super().__init__(source_code)
         self.current_django_class_type = None
         self.model_cache = self.parse_model_cache(model_cache_json)
-        self.nplusone_analyzer = SimplifiedN1Detector(source_code)
+        self.nplusone_analyzer = NPlusOneDetector(source_code)
         self.nplusone_issues = []
 
     def parse_model_cache(self, model_cache_json):

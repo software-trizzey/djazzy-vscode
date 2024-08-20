@@ -37,9 +37,7 @@ class SimplifiedN1Detector:
         for loop in loops:
             self.analyze_loop(node, loop)
         
-        self.found_querysets.clear()
-        self.optimized_querysets.clear()
-        self.optimized_variables.clear()
+        self.reset_cached_querysets_and_variables()
     
     def analyze_loop(self, func_node: ast.FunctionDef, loop_node: ast.AST):
         LOGGER.debug("Analyzing loop at line %d in function %s", loop_node.lineno, func_node.name)
@@ -360,3 +358,9 @@ class SimplifiedN1Detector:
             LOGGER.debug("Relation manager %s is optimized", relation_manager)
             return True
         return False
+    
+    def reset_cached_querysets_and_variables(self):
+        self.found_querysets.clear()
+        self.optimized_querysets.clear()
+        self.optimized_variables.clear()
+        LOGGER.debug("Cached querysets and children cleared")

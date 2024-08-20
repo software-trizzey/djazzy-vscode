@@ -1,3 +1,3 @@
 export * from "./base";
 export * from "./languageProvider";
-export * from "./django";
+export * from "./django/djangoProvider";

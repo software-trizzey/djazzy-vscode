@@ -12,18 +12,26 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import { createHash } from 'crypto';
 
-import { SOURCE_NAME, DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE, DJANGO_SECURITY_VIOLATION_SOURCE_TYPE, NAMING_CONVENTION_VIOLATION_SOURCE_TYPE, REDUNDANT_COMMENT_VIOLATION_SOURCE_TYPE } from "../constants/diagnostics";
-import { ExtensionSettings, cachedUserToken, defaultConventions } from "../settings";
-import LOGGER from '../common/logs';
-import COMMANDS, { ACCESS_FORBIDDEN_NOTIFICATION_ID, FIX_NAME, RATE_LIMIT_NOTIFICATION_ID } from '../constants/commands';
-import { Issue, Models, Severity, SymbolFunctionTypes } from '../llm/types';
+import {
+	SOURCE_NAME,
+	DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE,
+	DJANGO_SECURITY_VIOLATION_SOURCE_TYPE,
+	NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
+	REDUNDANT_COMMENT_VIOLATION_SOURCE_TYPE
+} from "../../constants/diagnostics";
+import { ExtensionSettings, cachedUserToken, defaultConventions } from "../../settings";
+import LOGGER from '../../common/logs';
+import COMMANDS, { ACCESS_FORBIDDEN_NOTIFICATION_ID, FIX_NAME, RATE_LIMIT_NOTIFICATION_ID } from '../../constants/commands';
+import { Issue, Models, Severity, SymbolFunctionTypes } from '../../llm/types';
 import { spawn } from 'child_process';
 import path from 'path';
-import { PYTHON_DIRECTORY } from '../constants/filepaths';
-import { RULE_MESSAGES } from '../constants/rules';
-import { LanguageConventions, CeleryTaskDecoratorSettings } from '../languageConventions';
-import { debounce, getChangedLinesFromClient, validatePythonFunctionName } from '../utils';
-import { LanguageProvider } from './languageProvider';
+import { PYTHON_DIRECTORY } from '../../constants/filepaths';
+import { RULE_MESSAGES } from '../../constants/rules';
+import { LanguageConventions, CeleryTaskDecoratorSettings } from '../../languageConventions';
+import { debounce, getChangedLinesFromClient, validatePythonFunctionName } from '../../utils';
+import { LanguageProvider } from '../languageProvider';
+import { DjangoProjectDetector, ModelCache } from './djangoProjectDetector';
+import { API_SERVER_URL } from '../../constants/api';
 
 
 interface CachedResult {
@@ -42,6 +50,10 @@ export class DjangoProvider extends LanguageProvider {
 	private codeActionsMessageCache: Map<string, CodeAction> = new Map();
     private nPlusOnecache: Map<string, CachedResult> = new Map();
     private cacheTTL: number = FIVE_MINUTES;
+    private isDjangoProject: boolean = false;
+    private modelCache: ModelCache = new Map();
+    private djangoProjectDetectionPromise: Promise<boolean>;
+
 
     constructor(
         languageId: keyof typeof defaultConventions.languages,
@@ -50,6 +62,8 @@ export class DjangoProvider extends LanguageProvider {
         document: TextDocument
     ) {
         super(languageId, connection, settings, document);
+
+        this.djangoProjectDetectionPromise = this.detectDjangoProjectAndModels(document);
 
         const timeoutInMilliseconds = 1000;
 		this.provideDiagnosticsDebounced = debounce(
@@ -74,6 +88,21 @@ export class DjangoProvider extends LanguageProvider {
 		this.settings = settings;
 		this.updateConventions(settings);
 	}
+
+    private async detectDjangoProjectAndModels(document: TextDocument): Promise<boolean> {
+        const documentUri = document.uri;
+
+        this.isDjangoProject = await DjangoProjectDetector.analyzeProject(documentUri, this.connection);
+        
+        if (this.isDjangoProject) {
+            this.modelCache = DjangoProjectDetector.getAllModels();
+            console.log(`Django project detected. Found ${this.modelCache.size} models.`);
+        } else {
+            console.log("Not a Django project");
+        }
+        
+        return this.isDjangoProject;
+    }
 
     public async provideDiagnostics(
 		document: TextDocument
@@ -180,11 +209,19 @@ export class DjangoProvider extends LanguageProvider {
 		changedLines: Set<number> | undefined
 	): Promise<Diagnostic[]> {
 		try {
+            const isDjangProject = await this.djangoProjectDetectionPromise;
 			const text = document.getText();
 			const parserFilePath = this.getParserFilePath();
+            const modelCacheObject = Object.fromEntries(this.modelCache);
+            const modelCacheJson = JSON.stringify(modelCacheObject);
+            const userTokenString = cachedUserToken || "";
+            const apiConnectionInfo = JSON.stringify({
+                api_server_url: API_SERVER_URL,
+                user_token: userTokenString
+            });
 	
 			return new Promise((resolve, reject) => {
-				const process = spawn("python3", [parserFilePath]);
+				const process = spawn("python3", [parserFilePath, modelCacheJson, apiConnectionInfo]);
 				let output = "";
 				let error = "";
 	
@@ -225,6 +262,7 @@ export class DjangoProvider extends LanguageProvider {
 							document,
 							securityIssues,
 							nPlusOneIssues,
+                            isDjangProject
 						);
 	
 						resolve(diagnostics);
@@ -272,9 +310,10 @@ export class DjangoProvider extends LanguageProvider {
         symbols: any[],
         diagnostics: Diagnostic[],
         changedLines: Set<number> | undefined,
-		document: TextDocument,
-		securityIssues: any[],
-		nPlusOneIssues: any[],
+        document: TextDocument,
+        securityIssues: any[],
+        nPlusOneIssues: any[],
+        isDjangoProject: boolean
     ): Promise<void> {
         const cacheKey = this.generateCacheKey(document.getText(), document);
     
@@ -284,134 +323,151 @@ export class DjangoProvider extends LanguageProvider {
             diagnostics.push(...cachedResult.diagnostics);
             return;
         }
-
+    
         const conventions = this.getConventions();
-		this.symbols = symbols;
-
+        this.symbols = symbols;
+    
         for (const symbol of symbols) {
-            const {
-                type,
-                name,
-                line,
-                value,
-                leading_comments,
-                body,
-                function_start_line,
-                function_end_line,
-                is_reserved,
-            } = symbol;
-
-            if (is_reserved) {
-                continue; // Skip validation for reserved symbols
-            }
-
-            if (changedLines && !changedLines.has(line)) {
-                continue; // Skip validation if line not in changedLines
-            }
-
-            let result = null;
-            switch (type) {
-                case "function":
-                case "django_model_method":
-                case "django_serializer_method":
-                case "django_view_method":
-                case "django_testcase_method":
-                    result = await this.validateFunctionName(
-                        name,
-                        {
-                            content: body,
-                            bodyLength: function_end_line - function_start_line + 1,
-                        },
-                        conventions
-                    );
-
-                    if (symbol.arguments) {
-                        for (const arg of symbol.arguments) {
-                            const argumentResult = this.nameValidator.validateVariableName({
-                                variableName: arg.name,
-                                variableValue: arg.default,
-                            });
-                            if (argumentResult.violates) {
-                                const argRange = Range.create(
-                                    Position.create(arg.line - 1, arg.col_offset),
-                                    Position.create(arg.line - 1, arg.col_offset + arg.name.length)
-                                );
-                                const functionArgDiagnostic = this.diagnosticsManager.createDiagnostic(
-                                    argRange,
-                                    argumentResult.reason,
-                                    DiagnosticSeverity.Warning)
-                                ;
-                                diagnostics.push(functionArgDiagnostic);
-                            }
-                        }
-                    }
-                    break;
-
-                case "assignment":
-                case "variable":
-                    result = this.nameValidator.validateVariableName({
-                        variableName: name,
-                        variableValue: value,
-                    });
-                    break;
-
-                case "class":
-                    result = this.nameValidator.validateClassName(name);
-                    break;
-
-                case "dictionary":
-                    result = this.validateDictionary(symbol);
-                    if (result.violates && result.diagnostics) {
-                        diagnostics.push(...result.diagnostics);
-                    }
-                    continue; // Skip the general diagnostic creation for dictionaries
-
-                case "list":
-                    result = this.nameValidator.validateListName(value);
-                    break;
-
-                case "for_loop":
-                    this.handleForLoopTargets(symbol, diagnostics);
-                    continue; // Skip the general diagnostic creation for for loops
-
-                case "django_model":
-                    // TODO: Implement model name validation
-                    break;
-
-                case "django_model_field":
-                case "django_serializer_field":
-                    result = this.nameValidator.validateVariableName({
-                        variableName: name,
-                        variableValue: this.extractDjangoFieldValue(value),
-                    });
-                    break;
-            }
-
-			if (result && result.violates) {
-                const { line, start, end } = this.adjustColumnOffsets(symbol);
-                const range = Range.create(
-                    Position.create(line, start),
-                    Position.create(line, end)
-                );
-                const symbolDiagnostic = this.diagnosticsManager.createDiagnostic(
-                    range, result.reason, DiagnosticSeverity.Warning
-                );
-                diagnostics.push(symbolDiagnostic);
-            }
-
-            this.handleComments(leading_comments, symbol, diagnostics);
-            this.handleCeleryTask(symbol, conventions, diagnostics);
-
+            this.processSymbol(symbol, diagnostics, changedLines, conventions);
+        }
+    
+        if (isDjangoProject) {
             this.processDjangoSecurityIssues(securityIssues, diagnostics);
             this.processNPlusOneIssues(nPlusOneIssues, diagnostics);
-        
-            this.setCachedResult(cacheKey, diagnostics);
+        }
+    
+        this.setCachedResult(cacheKey, diagnostics);
+    }
+
+    private async processSymbol(
+        symbol: any,
+        diagnostics: Diagnostic[],
+        changedLines: Set<number> | undefined,
+        conventions: LanguageConventions
+    ): Promise<void> {
+        const {
+            type,
+            name,
+            line,
+            value,
+            leading_comments,
+            body,
+            function_start_line,
+            function_end_line,
+            is_reserved,
+        } = symbol;
+    
+        if (is_reserved) {
+            return; // Skip validation for reserved symbols
+        }
+    
+        if (changedLines && !changedLines.has(line)) {
+            return; // Skip validation if line not in changedLines
+        }
+    
+        let result = null;
+        switch (type) {
+            case "function":
+            case "django_model_method":
+            case "django_serializer_method":
+            case "django_view_method":
+            case "django_testcase_method":
+                result = await this.validateFunctionName(
+                    name,
+                    {
+                        content: body,
+                        bodyLength: function_end_line - function_start_line + 1,
+                    },
+                    conventions
+                );
+    
+                if (symbol.arguments) {
+                    this.validateFunctionArguments(symbol, diagnostics);
+                }
+                break;
+    
+            case "assignment":
+            case "variable":
+                result = this.nameValidator.validateVariableName({
+                    variableName: name,
+                    variableValue: value,
+                });
+                break;
+    
+            case "class":
+                result = this.nameValidator.validateClassName(name);
+                break;
+    
+            case "dictionary":
+                result = this.validateDictionary(symbol);
+                if (result.violates && result.diagnostics) {
+                    diagnostics.push(...result.diagnostics);
+                }
+                return; // Skip the general diagnostic creation for dictionaries
+    
+            case "list":
+                result = this.nameValidator.validateListName(value);
+                break;
+    
+            case "for_loop":
+                this.handleForLoopTargets(symbol, diagnostics);
+                return; // Skip the general diagnostic creation for for loops
+    
+            case "django_model":
+                // TODO: Implement model name validation
+                break;
+    
+            case "django_model_field":
+            case "django_serializer_field":
+                result = this.nameValidator.validateVariableName({
+                    variableName: name,
+                    variableValue: this.extractDjangoFieldValue(value),
+                });
+                break;
+        }
+    
+        if (result && result.violates) {
+            const { line, start, end } = this.adjustColumnOffsets(symbol);
+            const range = Range.create(
+                Position.create(line, start),
+                Position.create(line, end)
+            );
+            const symbolDiagnostic = this.diagnosticsManager.createDiagnostic(
+                range, result.reason, DiagnosticSeverity.Warning
+            );
+            diagnostics.push(symbolDiagnostic);
+        }
+    
+        this.handleComments(leading_comments, symbol, diagnostics);
+        this.handleCeleryTask(symbol, conventions, diagnostics);
+    }
+    
+    private validateFunctionArguments(symbol: any, diagnostics: Diagnostic[]): void {
+        for (const arg of symbol.arguments) {
+            const argumentResult = this.nameValidator.validateVariableName({
+                variableName: arg.name,
+                variableValue: arg.default,
+            });
+            if (argumentResult.violates) {
+                const argRange = Range.create(
+                    Position.create(arg.line - 1, arg.col_offset),
+                    Position.create(arg.line - 1, arg.col_offset + arg.name.length)
+                );
+                const functionArgDiagnostic = this.diagnosticsManager.createDiagnostic(
+                    argRange,
+                    argumentResult.reason,
+                    DiagnosticSeverity.Warning
+                );
+                diagnostics.push(functionArgDiagnostic);
+            }
         }
     }
 
 	private getParserFilePath(): string {
+        // TODO: make this dynamic. Also be careful when moving this file as it will break current import path
 		const parserFilePath = path.join(
             __dirname,
+            "..",
             "..",
             "..",
             `./${PYTHON_DIRECTORY}/django_parser.py`

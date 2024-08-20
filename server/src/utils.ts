@@ -3,7 +3,6 @@ import * as path from 'path';
 
 import { Position, Range, RequestType } from "vscode-languageserver";
 import { Connection } from "vscode-languageserver/node";
-import { URI } from 'vscode-uri';
 
 import { GET_CHANGED_LINES } from "./constants/commands";
 import { RULE_MESSAGES } from './constants/rules';
@@ -379,99 +378,3 @@ export const checkForTestFile = async (uri: string): Promise<boolean> => {
 export const trackCodeActionRenameEvent = (userToken: string, flaggedName: string) => {
 	LOGGER.info(`[USER ${userToken}] Requested suggested name for "${flaggedName}"`);
 };
-
-
-
-
-export class DjangoProjectDetector {
-    private static DJANGO_INDICATORS = [
-        'manage.py',
-        'django-admin.py',
-        'settings.py',
-        'urls.py',
-        'wsgi.py',
-        'asgi.py'
-    ];
-
-    private static DJANGO_IMPORT_PATTERNS = [
-        'from django',
-        'import django',
-        'from rest_framework',
-        'import rest_framework'
-    ];
-
-    static isDjangoProject(projectUri: string): boolean {
-        try {
-            const projectPath = URI.parse(projectUri).fsPath;
-            
-            for (const indicator of this.DJANGO_INDICATORS) {
-                if (this.fileExists(path.join(projectPath, indicator))) {
-                    return true;
-                }
-            }
-
-            const pythonFiles = this.getPythonFiles(projectPath);
-            for (const file of pythonFiles) {
-                if (this.fileContainsDjangoImports(file)) {
-                    return true;
-                }
-            }
-
-            return false;
-        } catch (error) {
-            console.error(`Error detecting Django project: ${error}`);
-            return false;
-        }
-    }
-
-    private static fileExists(filePath: string): boolean {
-        try {
-            return fs.existsSync(filePath);
-        } catch (error) {
-            console.error(`Error checking file existence: ${error}`);
-            return false;
-        }
-    }
-
-    private static getPythonFiles(dir: string): string[] {
-        try {
-            const files: string[] = [];
-            const entries = fs.readdirSync(dir, { withFileTypes: true });
-
-            for (const entry of entries) {
-                const fullPath = path.join(dir, entry.name);
-                if (entry.isDirectory()) {
-                    files.push(...this.getPythonFiles(fullPath));
-                } else if (entry.isFile() && path.extname(entry.name) === '.py') {
-                    files.push(fullPath);
-                }
-            }
-
-            const filteredFiles = files.filter(file => !file.includes('venv'));
-            return filteredFiles;
-        } catch (error) {
-            console.error(`Error getting Python files: ${error}`);
-            return [];
-        }
-    }
-
-    private static fileContainsDjangoImports(filePath: string): boolean {
-        try {
-            const content = fs.readFileSync(filePath, 'utf-8');
-            return this.DJANGO_IMPORT_PATTERNS.some(pattern => content.includes(pattern));
-        } catch (error) {
-            console.error(`Error reading file: ${error}`);
-            return false;
-        }
-    }
-
-    static isDjangoPythonFile(fileUri: string): boolean {
-        try {
-            const filePath = URI.parse(fileUri).fsPath;
-            return this.fileContainsDjangoImports(filePath);
-        } catch (error) {
-            console.error(`Error checking Django Python file: ${error}`);
-            return false;
-        }
-    }
-}

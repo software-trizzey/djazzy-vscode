@@ -33,35 +33,13 @@ import {
 	updateCachedUserToken,
 	cachedUserToken,
 } from "./settings";
-import { checkForTestFile, debounce, DjangoProjectDetector } from "./utils";
+import { checkForTestFile, debounce } from "./utils";
+
+import { DiagnosticQueue } from "./services/diagnostics";
 
 import COMMANDS, { COMMANDS_LIST } from "./constants/commands";
 import LOGGER, { rollbar } from "./common/logs";
 import { SOURCE_NAME } from './constants/diagnostics';
-
-class DiagnosticQueue {
-	private queues: Map<string, Promise<Diagnostic[]>> = new Map();
-  
-	async queueDiagnosticRequest(
-		document: TextDocument,
-		diagnosticFunction: (document: TextDocument) => Promise<Diagnostic[]>
-	): Promise<Diagnostic[]> {
-		const uri = document.uri;
-
-		const diagnosticPromise = (async () => {
-			await this.queues.get(uri);
-			return await diagnosticFunction(document);
-		})();
-
-		// Replace any existing promise in the queue with this new one
-		this.queues.set(uri, diagnosticPromise);
-		return await diagnosticPromise;
-	}
-
-	clearQueue(uri: string) {
-		this.queues.delete(uri);
-	}
-}
 
 const connection = createConnection(ProposedFeatures.all);
 const providerCache: Record<string, LanguageProvider> = {};
@@ -122,7 +100,7 @@ connection.onInitialize((params: InitializeParams) => {
 
 connection.onInitialized(async () => {
 	const routeId = "server#index";
-	const workspaceFolders = await connection.workspace.getWorkspaceFolders();
+	const workspaceFolders = await connection.workspace.getWorkspaceFolders() || [];
 	setWorkspaceRoot(workspaceFolders);
 
 	const logContext = {

@@ -6,9 +6,13 @@ from constants import WRITE_METHODS, QUERY_METHODS
 from log import LOGGER
 
 class SimplifiedN1Detector:
+    QUERYSET_METHODS = {'filter', 'all', 'get', 'exclude', 'order_by', 'prefetch_related', 'select_related'}
+
+
     def __init__(self, source_code: str):
         self.source_code = source_code
         self.issues: List[Dict[str, Any]] = []
+        self.found_querysets: Set[str] = set()
         self.optimized_querysets: Set[str] = set()
         LOGGER.debug("N+1 detection initialized")
 
@@ -37,8 +41,15 @@ class SimplifiedN1Detector:
             if isinstance(child, ast.Call) and isinstance(child.func, ast.Attribute):
                 if child.func.attr in ['select_related', 'prefetch_related']:
                     queryset_name = self.get_queryset_name(child)
-                    self.optimized_querysets.add(queryset_name)
+                    self.optimized_querysets.add(queryset_name.lower())
                     LOGGER.debug("Found optimized queryset: %s", queryset_name)
+
+            if isinstance(child, ast.Call) and isinstance(child.func, ast.Attribute):
+                method_name = child.func.attr
+                if method_name in self.QUERYSET_METHODS:
+                    queryset_name = self.get_queryset_name(child)
+                    self.found_querysets.add(queryset_name)
+                    LOGGER.debug("Found queryset: %s via method %s", queryset_name, method_name)
 
     def find_loops(self, node: ast.AST) -> List[ast.AST]:
         loops = [n for n in ast.walk(node)
@@ -64,6 +75,7 @@ class SimplifiedN1Detector:
             if len(chain) > 2:
                 queryset_name = chain[0]
                 is_optimized = queryset_name in self.optimized_querysets
+                LOGGER.info(f"Is queryset {queryset_name} optimized: {str(self.optimized_querysets)}? {is_optimized}")
                 LOGGER.debug("Checking attribute chain %s. Optimized: %s", '.'.join(chain), is_optimized)
                 return not is_optimized
         return False
@@ -71,11 +83,22 @@ class SimplifiedN1Detector:
     def check_call(self, node: ast.Call) -> bool:
         if isinstance(node.func, ast.Attribute):
             method_name = node.func.attr
-            if method_name in list(QUERY_METHODS) + list(WRITE_METHODS):
+
+            # Detects select_related or prefetch_related calls
+            if method_name in self.QUERYSET_METHODS:
                 queryset_name = self.get_queryset_name(node)
                 is_optimized = queryset_name in self.optimized_querysets
                 LOGGER.debug("Checking call to %s. Optimized: %s", method_name, is_optimized)
                 return not is_optimized
+            
+            # Additional logic to check related object manager accesses (e.g., order.orderitem_set.all())
+            if method_name == 'all':
+                # Check if we're dealing with a related object manager (e.g., orderitem_set)
+                base_name = self.get_queryset_name(node.func.value)
+                if base_name and base_name in self.optimized_querysets:
+                    LOGGER.debug("Found optimized related manager: %s", base_name)
+                    return False 
+
             # Check for nested calls
             return self.check_call(node.func.value) if isinstance(node.func.value, ast.Call) else False
         elif isinstance(node.func, ast.Name):

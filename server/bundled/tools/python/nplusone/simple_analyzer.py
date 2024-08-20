@@ -45,76 +45,21 @@ class SimplifiedN1Detector:
         for child in ast.walk(loop_node):
             LOGGER.debug("Analyzing node of type: %s at line %d", type(child).__name__, getattr(child, 'lineno', None))
 
-            # Handle variable assignment from optimized querysets
             if isinstance(child, ast.Assign):
-                LOGGER.debug("Analyzing assignment at line %d", child.lineno)
-                for target in child.targets:
-                    if isinstance(target, ast.Name):
-                        variable_name = target.id
-                        LOGGER.debug("Assignment target variable: %s", variable_name)
-                        
-                        # Check if the value being assigned is from an optimized queryset
-                        if isinstance(child.value, ast.Call) and isinstance(child.value.func, ast.Attribute):
-                            model, relation_manager, method = self.split_chain(child.value)
-                            LOGGER.debug("Assignment value is a call to method %s on relation manager %s", method, relation_manager)
-                            
-                            if relation_manager and self.is_query_optimized(relation_manager):
-                                LOGGER.debug("Assigning optimized queryset %s to variable %s", relation_manager, variable_name)
-                                self.optimized_variables[variable_name] = relation_manager  # Track the optimization
+                self.handle_assignment(child)
 
-            # Handle for-loops iterating over optimized querysets
             elif isinstance(child, ast.For):
-                LOGGER.debug("Analyzing for-loop at line %d", child.lineno)
-                if isinstance(child.iter, ast.Name):
-                    iter_variable = child.iter.id
-                    LOGGER.debug("For-loop iterating over variable: %s", iter_variable)
-                    
-                    if iter_variable in self.optimized_variables:
-                        LOGGER.debug("Iterating over optimized queryset: %s", self.optimized_variables[iter_variable])
-                        # Track the loop variable as being optimized
-                        target_variable = child.target.id if isinstance(child.target, ast.Name) else None
-                        if target_variable:
-                            LOGGER.debug("Loop variable %s is from optimized queryset %s", target_variable, self.optimized_variables[iter_variable])
-                            self.optimized_variables[target_variable] = self.optimized_variables[iter_variable]
+                self.handle_for_loop(child)
 
-            # Handle potential N+1 queries for attributes on optimized loop variables
             elif isinstance(child, ast.Attribute):
-                chain = self.get_attribute_chain(child)
-                variable_name = chain[0]
-                LOGGER.debug("Analyzing attribute access at line %d: %s", child.lineno, '.'.join(chain))
-                
-                # Check if the variable is an optimized loop variable
-                if variable_name in self.optimized_variables:
-                    LOGGER.debug("Variable %s is optimized (from %s)", variable_name, self.optimized_variables[variable_name])
-                    continue  # Skip N+1 detection for this optimized variable
+                self.handle_attribute(child, func_node, loop_node)
 
-            # Handle potential N+1 queries for function calls
             elif isinstance(child, ast.Call) and isinstance(child.func, ast.Attribute):
-                LOGGER.debug("Analyzing function call at line %d", child.lineno)
-                model, relation_manager, method = self.split_chain(child)
-                
-                if relation_manager:
-                    # Check if the variable or the relation manager is optimized
-                    if isinstance(child.func.value, ast.Name):
-                        variable_name = child.func.value.id
-                        LOGGER.debug("Checking if variable %s is optimized", variable_name)
-                        
-                        if variable_name in self.optimized_variables:
-                            LOGGER.debug("Variable %s is optimized from relation manager %s", variable_name, self.optimized_variables[variable_name])
-                            continue  # Skip N+1 detection for this optimized variable
+                self.handle_function_call(child, func_node, loop_node)
 
-                    if self.is_query_optimized(relation_manager):
-                        LOGGER.debug("Relation manager %s is optimized", relation_manager)
-                        continue  # Skip N+1 detection for this optimized relation manager
-
-                LOGGER.info("Potential N+1 query found at line %d in loop at line %d: relation manager %s", 
-                            child.lineno, loop_node.lineno, relation_manager)
-                self.add_issue(func_node, loop_node, child)
-
-            # Check for potential N+1 queries on attributes
             elif self.is_potential_n1_query(child):
-                LOGGER.info("Potential N+1 query found at line %d in loop at line %d", child.lineno, loop_node.lineno)
-                self.add_issue(func_node, loop_node, child)
+                self.handle_potential_n1_query(child, func_node, loop_node)
+
             else:
                 LOGGER.debug("Node at line %d is not an N+1 query", getattr(child, 'lineno', None))
 
@@ -286,6 +231,58 @@ class SimplifiedN1Detector:
         LOGGER.debug("Generated explanation: %s", explanation)
         LOGGER.debug("Generated suggestion: %s", suggestion)
         return explanation, suggestion
+    
+    def handle_assignment(self, child: ast.Assign):
+        LOGGER.debug("Analyzing assignment at line %d", child.lineno)
+        for target in child.targets:
+            if isinstance(target, ast.Name):
+                variable_name = target.id
+                LOGGER.debug("Assignment target variable: %s", variable_name)
+                if isinstance(child.value, ast.Call) and isinstance(child.value.func, ast.Attribute):
+                    model, relation_manager, method = self.split_chain(child.value)
+                    LOGGER.debug("Assignment value is a call to method %s on relation manager %s for model %s", method, relation_manager, model)
+                    if relation_manager and self.is_query_optimized(relation_manager):
+                        LOGGER.debug("Assigning optimized queryset %s to variable %s", relation_manager, variable_name)
+                        self.optimized_variables[variable_name] = relation_manager
+
+    def handle_for_loop(self, child: ast.For):
+        LOGGER.debug("Analyzing for-loop at line %d", child.lineno)
+        if isinstance(child.iter, ast.Name):
+            iter_variable = child.iter.id
+            LOGGER.debug("For-loop iterating over variable: %s", iter_variable)
+            if iter_variable in self.optimized_variables:
+                LOGGER.debug("Iterating over optimized queryset: %s", self.optimized_variables[iter_variable])
+                target_variable = child.target.id if isinstance(child.target, ast.Name) else None
+                if target_variable:
+                    LOGGER.debug("Loop variable %s is from optimized queryset %s", target_variable, self.optimized_variables[iter_variable])
+                    self.optimized_variables[target_variable] = self.optimized_variables[iter_variable]
+
+    def handle_attribute(self, child: ast.Attribute, func_node: ast.FunctionDef, loop_node: ast.AST):
+        chain = self.get_attribute_chain(child)
+        variable_name = chain[0]
+        LOGGER.debug("Analyzing attribute access at line %d: %s", child.lineno, '.'.join(chain))
+        if variable_name in self.optimized_variables:
+            LOGGER.debug("Variable %s is optimized (from %s)", variable_name, self.optimized_variables[variable_name])
+
+    def handle_function_call(self, child: ast.Call, func_node: ast.FunctionDef, loop_node: ast.AST):
+        LOGGER.debug("Analyzing function call at line %d", child.lineno)
+        model, relation_manager, method = self.split_chain(child)
+        if relation_manager:
+            if isinstance(child.func.value, ast.Name):
+                variable_name = child.func.value.id
+                LOGGER.debug("Checking if variable %s is optimized", variable_name)
+                if variable_name in self.optimized_variables:
+                    LOGGER.debug("Variable %s is optimized from relation manager %s", variable_name, self.optimized_variables[variable_name])
+                    return
+            if self.is_query_optimized(relation_manager):
+                LOGGER.debug("Relation manager %s is optimized", relation_manager)
+                return
+        LOGGER.info("Potential N+1 query found at line %d in loop at line %d: relation manager %s", child.lineno, loop_node.lineno, relation_manager)
+        self.add_issue(func_node, loop_node, child)
+
+    def handle_potential_n1_query(self, child: ast.AST, func_node: ast.FunctionDef, loop_node: ast.AST):
+        LOGGER.info("Potential N+1 query found at line %d in loop at line %d", child.lineno, loop_node.lineno)
+        self.add_issue(func_node, loop_node, child)
 
     def handle_write_operation(self, method_name: str) -> Tuple[str, str]:
         if method_name == 'create':

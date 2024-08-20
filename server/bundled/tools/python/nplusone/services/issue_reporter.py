@@ -9,15 +9,17 @@ class IssueReporter:
         self.issues = []
         self.source_code = source_code
 
-    def add_issue(self, func_node: ast.FunctionDef, loop_node: ast.AST, call_node: ast.AST, query_analyzer: QueryAnalyzer):
+    def add_issue(self, func_node: ast.FunctionDef, loop_node: ast.AST, call_node: ast.AST, query_analyzer: QueryAnalyzer, base_model: str, field: str, model_info: dict, is_optimized: bool):
         LOGGER.debug(f"Adding N+1 issue in function {func_node.name} at line {call_node.lineno}")
         source_segment = ast.get_source_segment(self.source_code, call_node)
         related_field = query_analyzer.extract_related_field(call_node)
         query_type = query_analyzer.get_query_type(call_node)
-        issue_message = self.create_issue_message(
-            source_segment, query_type, related_field, related_field is not None, False
-        )
 
+        is_related_field_access = related_field is not None
+
+        issue_message = self.create_issue_message(
+            source_segment, query_type, related_field, is_related_field_access, query_type == "bulk"
+        )
         issue_detail = {
             'id': str(uuid.uuid4()),
             'function_name': func_node.name,
@@ -31,8 +33,11 @@ class IssueReporter:
                 'loop_start_line': getattr(loop_node, 'lineno', call_node.lineno),
                 'related_field': related_field,
                 'query_type': query_type,
-                'is_related_field_access': None,
+                'is_related_field_access': is_related_field_access,
                 'is_bulk_operation': query_type == "bulk",
+                'base_model': base_model,
+                'model_info': model_info,
+                'is_optimized': is_optimized,
             },
             'start_line': getattr(loop_node, 'lineno', call_node.lineno),
             'end_line': call_node.lineno,

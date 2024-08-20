@@ -16,7 +16,6 @@ We appreciate your interest in being an early adopter and helping us shape Djang
 
 ![Djangoly Demo](https://raw.githubusercontent.com/software-trizzey/images/main/assets/images/djangoly-nplusone-query-fix-demo.gif)
 
-
 *Djangoly highlights Django N+1 queries and offers immediate, actionable recommendations for fixing them, streamlining your development process and improving performance.*
 
 ## What's this thing do?
@@ -31,6 +30,7 @@ Djangoly is a powerful VS Code extension designed to help teams enforce Django b
 - **Redundant Comment Detection**: Flags comments that do not contribute additional information or context to the code.
 
 ## Security Checks (MVP) 🔒
+
 Djangoly includes several security checks to help ensure your Django project follows best practices for security:
 
 1. **DEBUG Setting:** Checks if `DEBUG` is set to `True`. This setting should be `False` in production environments.
@@ -45,6 +45,7 @@ These security checks help you identify common configuration mistakes that could
 ### 1. N+1 Query Detection and Optimization
 
 Before:
+
 ```python
 def list_books(request):
     books = Book.objects.all()
@@ -53,6 +54,7 @@ def list_books(request):
 ```
 
 After:
+
 ```python
 def list_books(request):
     books = Book.objects.select_related('author').all()
@@ -65,6 +67,7 @@ Djangoly detects the potential N+1 query issue and suggests using `select_relate
 ### 2. Security Settings Check
 
 Before (in settings.py):
+
 ```python
 DEBUG = True
 SECRET_KEY = 'my_secret_key'
@@ -72,6 +75,7 @@ ALLOWED_HOSTS = ['*']
 ```
 
 After (with Djangoly warnings):
+
 ```python
 DEBUG = False  # Djangoly: Ensure DEBUG is False in production
 SECRET_KEY = os.environ.get('SECRET_KEY')  # Djangoly: Use environment variables for sensitive data
@@ -83,6 +87,7 @@ Djangoly identifies potential security risks in your Django settings and suggest
 ### 3. Test Suite Conventions
 
 Before (missing test file):
+
 ```python
 # app/views.py
 def important_view(request):
@@ -93,6 +98,7 @@ def important_view(request):
 ```
 
 After (with Djangoly reminder):
+
 ```python
 # app/views.py
 def important_view(request):
@@ -113,6 +119,7 @@ Djangoly reminds you to create and update test files when you modify your Django
 ### 4. Redundant Comment Detection
 
 Before:
+
 ```python
 # This function adds two numbers
 def add_numbers(a, b):
@@ -121,6 +128,7 @@ def add_numbers(a, b):
 ```
 
 After (with Djangoly suggestion):
+
 ```python
 def add_numbers(a, b):
     # Djangoly: Consider removing redundant comments
@@ -132,136 +140,82 @@ Djangoly identifies comments that don't provide additional context and suggests 
 ## Quick Start 🏃‍♂️💨
 
 1. **Get an API Key**: If you don't already have an API key, you can signup for one via this [form](https://forms.gle/gEEZdfhWpQyQh2qVA).
-1. **Install the Extension**: [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Alchemized.djangoly)
-2. **Set Up Your Django Project**: If you haven't already, set up a Django project in your workspace.
-3. **Configure Django Settings**: Open the extension settings in VS Code and configure your Django-specific settings.
-4. **Start Coding**: Begin developing your Django project. The extension will automatically start analyzing your code.
-5. **Review Suggestions**: Check the Problems panel in VS Code for Django best practice suggestions and quick fixes.
+2. **Install the Extension**: [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Alchemized.djangoly)
+3. **Set Up Your Django Project**: If you haven't already, set up a Django project in your workspace.
+4. **Configure Django Settings**: Open the extension settings in VS Code and configure your Django-specific settings.
+5. **Start Coding**: Begin developing your Django project. The extension will automatically start analyzing your code.
+6. **Review Suggestions**: Check the Problems panel in VS Code for Django best practice suggestions and quick fixes.
 
-## Key Django Features 🎯
+## Django N+1 Query Detection 🕵️‍♂️
 
-### Django N+1 Query Detection
+Djangoly includes a powerful static analysis tool to help identify potential N+1 query issues in your Django projects. This feature examines your code to flag instances where database queries might be inefficiently executed within loops.
 
-Automatically identifies potential performance issues related to database queries. For example:
+### How It Works
 
-```python
-# This code will be flagged as a potential N+1 query
-for book in books:
-    print(book.author.name)  # Accessing a related object inside a loop
+The N+1 query detector performs a static analysis of your Django code, focusing on:
 
-# Suggested optimization
-books = books.select_related('author')
-for book in books:
-    print(book.author.name)  # No additional queries
-```
+1. Identifying loops in your functions
+2. Detecting database query operations within these loops
+3. Recognizing optimized querysets using `select_related()` or `prefetch_related()`
+4. Scoring and categorizing potential issues based on their severity
 
-### Limitations of the N+1 Query Analyzer
+### Key Features
 
-The current implementation of our N+1 Query Analyzer is a static analysis tool designed to identify potential N+1 query issues in Django applications. Most of these issues will be addressed as development of the feature continues. Overall, while it offers valuable insights, users should be aware of its limitations:
+- **Static Analysis**: Analyzes your code without execution, providing quick feedback during development.
+- **Loop Detection**: Identifies various types of loops where N+1 queries often occur.
+- **Optimization Recognition**: Acknowledges when `select_related()` or `prefetch_related()` are used to optimize queries.
+- **Severity Scoring**: Assigns a score to each detected issue, helping you prioritize optimizations.
 
-1. **Context Sensitivity**: The analyzer examines queries within loops but may not fully understand the broader context of the entire function or class. This can lead to both false positives and false negatives in complex scenarios.
+### Understanding N+1 Query Scores
 
-2. **Partial Optimization Detection**: While the analyzer attempts to recognize `prefetch_related` and `select_related` optimizations, it may not always correctly associate these optimizations with subsequent queries, especially in complex or nested scenarios.
+Each detected N+1 query issue is assigned a score from 0 to 100, indicating its potential impact:
 
-3. **Limited Variable Tracking**: The current implementation has limited ability to track variables across a function. It might not accurately follow querysets that are assigned to variables and used later in the code, potentially missing some optimized queries.
+- **0-30**: Hint (Low priority)
+- **31-60**: Information (Medium-low priority)
+- **61-89**: Warning (Medium-high priority)
+- **90-100**: Error (High priority)
 
-4. **Simplified Query Chain Analysis**: The analyzer may not fully understand complex chains of queryset methods, which could lead to misinterpretation of query optimizations in some cases.
+Scores are calculated based on factors such as:
 
-5. **Nested Loop Challenges**: While the analyzer detects queries within loops, it may struggle with accurately determining optimization in nested loop scenarios.
+- Presence of query operations in loops
+- Use of write methods (create, update, delete)
+- Complexity of the query (e.g., nested attribute access)
 
-6. **Heuristic-Based Approach**: The analyzer uses heuristics to identify potential N+1 queries, which can sometimes lead to false positives, especially for non-standard query patterns.
+### Limitations and Best Practices
 
-7. **Limited Cross-Function Analysis**: The tool analyzes each function independently, which may miss N+1 query issues that span multiple functions or methods.
+While our N+1 query detector is a valuable tool, it's important to understand its limitations:
 
-8. **Lack of Data Flow Analysis**: The analyzer does not perform comprehensive data flow analysis, limiting its ability to track how querysets are passed between functions or methods.
+1. **Static Analysis**: As a static tool, it cannot account for runtime behavior or dynamic query construction.
+2. **False Positives/Negatives**: The tool may occasionally flag optimized queries or miss some complex N+1 scenarios.
+3. **Context Limitation**: It may not fully understand the broader context of your entire application.
 
-9. **Static Nature**: As a static analysis tool, it cannot account for runtime behavior or dynamic query construction, which may lead to both false positives and negatives in certain scenarios.
+Best practices when using this feature:
 
-10. **Incomplete Coverage of Django ORM Features**: While the analyzer covers many common Django ORM patterns, it may not fully support all features and nuances, potentially missing optimizations or issues related to less common query patterns.
-
-11. **Simplistic Pluralization**: The current pluralization logic is basic and may not accurately handle all English pluralization rules, potentially affecting the detection of some optimized fields.
-
-Given these limitations, the N+1 Query Analyzer should be used as a supplementary tool in identifying potential performance issues. It's most effective when combined with other performance analysis techniques, code reviews, and thorough testing. Users are encouraged to manually verify any issues flagged by the analyzer and to be aware that it may not catch all N+1 query problems in complex applications.
-
-### Daily Usage Limit
-To ensure fair usage and maintain service quality, we've implemented a daily limit for N+1 query validations:
-
-- **Limit**: *200 requests per day*
-- **Reset**: The limit resets at midnight UTC
-- **Exceeding the limit**: Once you reach the daily limit, you'll receive a notification, and N+1 query detection will be temporarily unavailable until the next day
-- **Tracking**: The limit is tracked per API key, so each user has their own daily allowance
-
-This limit helps us provide a consistent and reliable service to all our users while allowing for extensive use of the N+1 query detection feature during your development process.
-
-If you find that you consistently need more than 200 validations per day, please contact us at [support@djangoly.com](mailto:support@djangoly.com) to discuss your needs.
-
-## Understanding N+1 Query Scores 📊
-
-Djangoly uses a scoring system to help you prioritize and address potential N+1 query issues in your Django project. Here's what you need to know:
-
-### What do the scores mean?
-
-- **Score Range**: 0-100
-- **Severity Levels**:
-  - 0-30:   💡 Hint (Low priority)
-  - 31-60:  ℹ️ Information (Medium-low priority)
-  - 61-89:  🔶 Warning (Medium-high priority)
-  - 90-100: 🛑 Error (High priority)
-
-The higher the score, the more likely the issue is to cause performance problems in your application.
-
-### How are scores calculated?
-
-Scores are based on several factors:
-
-1. **Query in a loop**: Highest weight. Performing database queries inside loops is a common cause of N+1 problems.
-2. **Use of write methods**: High weight. Write operations in loops can be particularly inefficient.
-3. **Use of query methods**: Moderate weight. Certain query methods (like `filter`, `get`, etc.) used inefficiently can lead to N+1 issues.
-4. **Related field access**: Lower weight. Accessing related fields without proper optimization can cause extra queries.
-5. **Use of aggregate methods**: Lowest weight. While not always problematic, inefficient use of aggregate methods can contribute to N+1 issues.
-6. **Bulk operations**: Score reduction. Bulk operations are generally more efficient, so their presence reduces the overall issue score.
-
-The exact weights for each factor are configurable and may be adjusted based on ongoing analysis and user feedback.
-
-### How to address N+1 query issues
-
-1. **For high-scoring issues (Warning/Error)**:
-   - Review the flagged code carefully.
-   - Consider using `select_related()` or `prefetch_related()` to optimize queries.
-   - Restructure loops to avoid repeated database calls.
-
-2. **For medium-scoring issues (Information)**:
-   - Evaluate the context of the query. Is it in a performance-critical part of your application?
-   - Look for opportunities to optimize, but balance with code readability.
-
-3. **For low-scoring issues (Hint)**:
-   - These are often suggestions for potential optimizations.
-   - Address them if you're working on optimizing that specific area of code.
+- Use it as an initial check to identify potential problem areas.
+- Always verify flagged issues in the context of your application logic.
+- Combine with runtime analysis tools (like Django Debug Toolbar) for comprehensive optimization.
+- Consider the trade-off between query optimization and code readability.
 
 ### Example and Fix
 
 ```python
-# High-score issue (Error):
+# Potential N+1 query issue:
 for book in books:
-    print(book.author.name)  # Accessing a related object inside a loop
+    print(book.author.name)  # This might trigger additional queries
 
-# Fix:
+# Optimized version:
 books = books.select_related('author')
 for book in books:
     print(book.author.name)  # No additional queries
 ```
 
-### Best Practices
 
-- Always test performance improvements with real data.
-- Use Django's `prefetch_related()` for many-to-many relationships.
-- Consider using `django-debug-toolbar` to identify N+1 queries in development.
-- For complex scenarios, batch processing or custom SQL might be necessary.
+
+### Final thoughts
 
 Remember, while addressing N+1 queries is important for performance, it's also crucial to maintain code readability and maintainability. Always consider the trade-offs when optimizing.
 
 For more detailed guidance on optimizing Django queries, check out the [Django documentation on database optimization](https://docs.djangoproject.com/en/stable/topics/db/optimization/).
-
 
 ## Configuration 🧪
 

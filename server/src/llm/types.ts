@@ -22,7 +22,7 @@ export interface Issue {
     end_col_offset: number;
     message: string;
     problematic_code: string;
-    suggested_fix: string;
+    suggestion: string;
     severity: Severity;
     score: number;
     issue_type: string;

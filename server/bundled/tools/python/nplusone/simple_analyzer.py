@@ -2,7 +2,7 @@ import ast
 import uuid
 from typing import Any, Dict, List, Set, Tuple
 
-from constants import WRITE_METHODS
+from constants import WRITE_METHODS, QUERY_METHODS
 from log import LOGGER
 
 class SimplifiedN1Detector:
@@ -71,7 +71,7 @@ class SimplifiedN1Detector:
     def check_call(self, node: ast.Call) -> bool:
         if isinstance(node.func, ast.Attribute):
             method_name = node.func.attr
-            if method_name in ['filter', 'get', 'all'] + list(WRITE_METHODS):
+            if method_name in list(QUERY_METHODS) + list(WRITE_METHODS):
                 queryset_name = self.get_queryset_name(node)
                 is_optimized = queryset_name in self.optimized_querysets
                 LOGGER.debug("Checking call to %s. Optimized: %s", method_name, is_optimized)
@@ -79,7 +79,7 @@ class SimplifiedN1Detector:
             # Check for nested calls
             return self.check_call(node.func.value) if isinstance(node.func.value, ast.Call) else False
         elif isinstance(node.func, ast.Name):
-            return node.func.id in ['filter', 'get', 'all'] + list(WRITE_METHODS)
+            return node.func.id in list(QUERY_METHODS) + list(WRITE_METHODS)
         return False
 
     def add_issue(self, func_node: ast.FunctionDef, loop_node: ast.AST, query_node: ast.AST):

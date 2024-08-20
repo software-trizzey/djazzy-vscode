@@ -45,13 +45,6 @@ QUERY_METHODS = {
     "filter",
     "all",
     "get",
-    "exclude",
-    "values",
-    "values_list",
-    "first",
-    "last",
-    "count",
-    "iterator",
 }
 
 WRITE_METHODS = {

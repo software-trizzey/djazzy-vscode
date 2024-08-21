@@ -22,6 +22,16 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
+## [Version 0.1.8] - 2024-08-21
+
+### Added
+
+- [Enhancement] Track activation/deactivation events using Rollbar
+
+### Removed
+
+- [Removal] Remove API key and extension auth requirement to streamline onboarding.
+
 ## [Version 0.1.7] - 2024-08-21
 
 ### Added

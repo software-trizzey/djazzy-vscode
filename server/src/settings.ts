@@ -82,7 +82,7 @@ export const defaultConventions: ExtensionSettings = {
 	general: {
 		onlyCheckNewCode: false,
 		isDevMode: false,
-		nPlusOneMinimumSeverityThreshold: Severity.WARNING,
+		nPlusOneMinimumSeverityThreshold: Severity.INFORMATION,
 		notificationInterval: 45, // minutes
 		prefixes: defaultPrefixes,
 	},

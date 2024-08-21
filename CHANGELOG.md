@@ -22,12 +22,17 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] Brief description of what was removed.
 
-## [Version 0.1.7] - 2024-08-13
+## [Version 0.1.7] - 2024-08-21
 
 ### Added
 
-- [Feature] TODO: Add Django model scanner that will find and cache the current project's model definitions.
-- [Enhancement] TODO: Use cached model data to improve accuracy of related field detection for N+1 analysis.
+- [Feature] Add Django model scanner that will find and cache the current project's model definitions.
+- [Enhancement] Use cached model data to improve accuracy of related field detection for N+1 analysis.
+
+### Changed
+
+- [Update] Refined N+1 analysis class for better handling of pre-optimized querysets.
+- [Update] Reduce scoring system thresholds so that high severity errors are harder to hit. Issues with error levels will likely block teams using pre-commit git hooks so we want to be thoughtful here.
 
 ### Changed
 

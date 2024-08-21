@@ -948,16 +948,16 @@ export class DjangoProvider extends LanguageProvider {
     private getMinScoreForSeverity(severity: Severity): number {
         switch (severity) {
             case Severity.ERROR:
-                return 90;
+                return 95;
             case Severity.WARNING:
-                return 60;
+                return 71;
             case Severity.INFORMATION:
-                return 30;
+                return 41;
             case Severity.HINT:
             default:
                 return 0;
         }
-    }
+    }    
 
     private getSeverityIndicator(severity: DiagnosticSeverity): string {
         switch (severity) {
@@ -970,7 +970,7 @@ export class DjangoProvider extends LanguageProvider {
             case DiagnosticSeverity.Hint:
                 return '💡';
             default:
-                return '•';
+                return '💡';
         }
     }
 

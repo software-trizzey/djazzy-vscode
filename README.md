@@ -170,16 +170,16 @@ The N+1 query detector performs a static analysis of your Django code, focusing 
 
 Each detected N+1 query issue is assigned a score from 0 to 100, indicating its potential impact:
 
-- **0-30**: Hint (Low priority)
-- **31-60**: Information (Medium-low priority)
-- **61-89**: Warning (Medium-high priority)
-- **90-100**: Error (High priority)
+- **0-40**: Hint (Low priority)
+- **41-70**: Information (Medium-low priority)
+- **71-94**: Warning (Medium-high priority)
+- **95-100**: Error (High priority)
 
 Scores are calculated based on factors such as:
 
-- Presence of query operations in loops
-- Use of write methods (create, update, delete)
-- Complexity of the query (e.g., nested attribute access)
+- Presence of query operations inside loops
+- Use of write methods (create, update, delete) which may exacerbate the performance impact
+- Complexity and multi-line queries (e.g., when queries span multiple lines of code)
 
 ### Limitations and Best Practices
 

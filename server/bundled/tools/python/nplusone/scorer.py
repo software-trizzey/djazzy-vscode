@@ -5,7 +5,7 @@ class NPlusOneScorer:
     SCORE_THRESHOLDS = {
         'LOW': 40,
         'MEDIUM': 70,
-        'HIGH': 90
+        'HIGH': 95 # reserve this tier for issues that will likely block developer commits
     }
     SCORE_WEIGHTS = {
         'IN_LOOP': 25,

@@ -1,26 +1,13 @@
 # Djangoly: Write Cleaner, Faster, Scalable Django Code
 
-## 🚀 Beta Release Notice
+> **🚀 Beta Release Notice**
+>
+> Djangoly is currently in **free Beta mode**. During this phase, you can use all features at no cost. Please note:
+>
+> - The extension is under active development and subject to changes.
+> - You may encounter bugs or unexpected behavior.
+> - We greatly appreciate your feedback to help improve the extension.
 
-Djangoly is currently in **free Beta mode**. During this phase, you can use all features at no cost. Please note:
-
-- The extension is under active development and subject to changes.
-- You may encounter bugs or unexpected behavior.
-- We greatly appreciate your feedback to help improve the extension.
-
-### 🔑 API Key Required
-
-Access to Djangoly currently requires an API key. To obtain an API key and participate in our beta program, you can [signup here](https://forms.gle/gEEZdfhWpQyQh2qVA).
-
-We appreciate your interest in being an early adopter and helping us shape Djangoly. Thank you for your support, and we look forward to having you on board!
-
-![Djangoly Demo](https://raw.githubusercontent.com/software-trizzey/images/main/assets/images/djangoly-nplusone-query-fix-demo.gif)
-
-*Djangoly highlights Django N+1 queries and offers immediate, actionable recommendations for fixing them, streamlining your development process and improving performance.*
-
-## What's this thing do?
-
-Djangoly is a powerful VS Code extension designed to help teams enforce Django best practices and coding conventions. Our tool ensures that your Django projects adhere to established best practices and team-defined conventions, reducing review cycles and improving code quality.
 
 ## Features (MVP) ✨
 
@@ -148,6 +135,8 @@ Djangoly identifies comments that don't provide additional context and suggests 
 
 ## Django N+1 Query Detection 🕵️‍♂️
 
+![Djangoly Demo](https://raw.githubusercontent.com/software-trizzey/images/main/assets/images/djangoly-nplusone-query-fix-demo.gif)
+
 Djangoly includes a powerful static analysis tool to help identify potential N+1 query issues in your Django projects. This feature examines your code to flag instances where database queries might be inefficiently executed within loops.
 
 ### How It Works
@@ -208,8 +197,6 @@ books = books.select_related('author')
 for book in books:
     print(book.author.name)  # No additional queries
 ```
-
-
 
 ### Final thoughts
 
@@ -273,16 +260,4 @@ Interested in contributing to Djangoly? Please reach out to [support@djangoly.co
 
 ## License 👮‍♂️
 
-Djangoly is proprietary software. Use of this software is subject to the terms and conditions of the license agreement provided with the software. The software is available for purchase, and its use is limited to the licensed terms agreed upon purchasing or subscribing.
-
-### Usage
-
-Purchasing a license to Djangoly grants you a non-exclusive, non-transferable right to use and incorporate the extension as per the license terms and conditions specified in the agreement. Unauthorized copying, sharing, distribution, or reproduction of any part of this software is strictly prohibited and constitutes a violation of applicable copyright laws.
-
-### Restrictions
-
-- You may not modify, decompile, or reverse-engineer any part of this software in any way.
-- You may not redistribute or sublicense this software.
-- You may not use this software in a manner that contravenes any laws or regulations.
-
-**Note:** This software uses software components from other open source software which are licensed under their own respective open-source licenses. Please refer to the documentation for further information on licensing for these components.
+Djangoly is proprietary software but moving towards an open-source model. Stay tuned.

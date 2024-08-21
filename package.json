@@ -13,14 +13,12 @@
 		"theme": "dark"
 	},
 	"license": "LICENSE.md",
-	"pricing": "Trial",
+	"pricing": "Free",
 	"categories": [
 		"Programming Languages",
 		"Linters",
-		"Other",
-		"Data Science",
-		"Machine Learning",
-		"Education"
+		"Education",
+		"Other"
 	],
 	"keywords": [
 		"django",

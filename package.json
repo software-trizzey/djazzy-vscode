@@ -36,15 +36,10 @@
 	"main": "./client/out/extension",
 	"contributes": {
 		"activationEvents": [
-			"onCommand:djangoly.signIn",
 			"onCommand:djangoly.addCustomRule",
 			"onCommand:djangoly.openWalkthrough"
 		],
 		"commands": [
-			{
-				"command": "djangoly.signIn",
-				"title": "Djangoly: Sign In"
-			},
 			{
 				"command": "djangoly.openSettings",
 				"title": "Djangoly: Open Settings"

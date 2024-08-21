@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
 import { UserSession } from "./auth/github";
-import { notifyUserNoAuthRequired } from "./auth/api";
 import { COMMANDS, EXTENSION_ID, EXTENSION_NAME, PUBLISHER, SESSION_USER } from "./constants";
 import { trackUserInterestInCustomRules } from "./logs";
 
@@ -12,12 +11,6 @@ const WORKBENCH_ACTIONS = {
 export function registerCommands(
     context: vscode.ExtensionContext,
 ): void {
-    const signIn = vscode.commands.registerCommand(
-        COMMANDS.SIGN_IN,
-        notifyUserNoAuthRequired
-    );
-    context.subscriptions.push(signIn);
-
     const addCustomRuleCommand = vscode.commands.registerCommand(
         COMMANDS.ADD_CUSTOM_RULE,
         () => {

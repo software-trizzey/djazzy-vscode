@@ -204,10 +204,3 @@ export const authenticateUser = async (context, activate): Promise<boolean> => {
 
     return true;
 };
-
-export const notifyUserNoAuthRequired = (): void => {
-	vscode.window.showInformationMessage(
-		"Welcome to Djangoly! This extension is currently free to use and doesn't require authentication for the current features.",
-		"Got it"
-	);
-};

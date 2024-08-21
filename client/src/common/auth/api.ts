@@ -211,11 +211,3 @@ export const notifyUserNoAuthRequired = (): void => {
 		"Got it"
 	);
 };
-
-export const handleDeactivationByThankingUser = async (deactivate: () => Thenable<void> | undefined): Promise<void> => {
-	vscode.window.showInformationMessage(
-		"Thank you for using Djangoly! If you have any feedback or suggestions, please let us know. See you later! 👋",
-		"Bye"
-	);
-	deactivate();
-};

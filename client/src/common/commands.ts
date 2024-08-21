@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { UserSession } from "./auth/github";
-import { notifyUserNoAuthRequired,  handleDeactivationByThankingUser } from "./auth/api";
+import { notifyUserNoAuthRequired } from "./auth/api";
 import { COMMANDS, EXTENSION_ID, EXTENSION_NAME, PUBLISHER, SESSION_USER } from "./constants";
 import { trackUserInterestInCustomRules } from "./logs";
 
@@ -9,16 +9,14 @@ const WORKBENCH_ACTIONS = {
 	OPEN_SETTINGS: 'workbench.action.openSettings'
 };
 
-export function registerCommands(context: vscode.ExtensionContext, deactivate: () => Thenable<void> | undefined){
-    const signIn = vscode.commands.registerCommand(COMMANDS.SIGN_IN, notifyUserNoAuthRequired
+export function registerCommands(
+    context: vscode.ExtensionContext,
+): void {
+    const signIn = vscode.commands.registerCommand(
+        COMMANDS.SIGN_IN,
+        notifyUserNoAuthRequired
     );
     context.subscriptions.push(signIn);
-
-    const signOutCommand = vscode.commands.registerCommand(
-        COMMANDS.SIGN_OUT,
-        () => handleDeactivationByThankingUser(deactivate)
-    );
-    context.subscriptions.push(signOutCommand);
 
     const addCustomRuleCommand = vscode.commands.registerCommand(
         COMMANDS.ADD_CUSTOM_RULE,

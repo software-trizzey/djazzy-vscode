@@ -8,8 +8,6 @@ import {
 	TransportKind,
 } from "vscode-languageclient/node";
 
-import { Credentials } from "./common/auth/github";
-
 import { EXTENSION_ID, EXTENSION_DISPLAY_NAME, COMMANDS, RATE_LIMIT_NOTIFICATION_ID, ACCESS_FORBIDDEN_NOTIFICATION_ID } from "./common/constants";
 
 import {
@@ -17,13 +15,13 @@ import {
 } from "./common/utils/git";
 import { registerCommands } from './common/commands';
 import { setupFileWatchers } from './common/utils/fileWatchers';
+import { trackActivation, trackDeactivation } from './common/logs';
 
 
 let client: LanguageClient;
 
 export async function activate(context: vscode.ExtensionContext) {
-	const credentials = new Credentials();
-	await credentials.initialize(context);
+	trackActivation(context);
 
 	const serverModule = context.asAbsolutePath(
 		path.join("server", "out", "server.js")
@@ -56,7 +54,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		clientOptions
 	);
 
-	registerCommands(context, deactivate);
+	registerCommands(context);
 
 	client.start().then(async () => {
 		activateClientNotifications(client);
@@ -73,7 +71,14 @@ export async function activate(context: vscode.ExtensionContext) {
 	});
 }
 
-export function deactivate(): Thenable<void> | undefined {
+export function deactivate(context: vscode.ExtensionContext): Thenable<void> | undefined {
+	trackDeactivation(context);
+
+	vscode.window.showInformationMessage(
+		"Thank you for using Djangoly! If you have any feedback or suggestions, please let us know. See you later! 👋",
+		"Bye"
+	);
+
 	if (!client) {
 		return undefined;
 	}

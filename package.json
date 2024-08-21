@@ -46,10 +46,6 @@
 				"title": "Djangoly: Sign In"
 			},
 			{
-				"command": "djangoly.signOut",
-				"title": "Djangoly: Sign Out"
-			},
-			{
 				"command": "djangoly.openSettings",
 				"title": "Djangoly: Open Settings"
 			}

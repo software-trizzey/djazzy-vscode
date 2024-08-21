@@ -757,14 +757,12 @@ export class DjangoProvider extends LanguageProvider {
         console.log(`Detected ${issues.length} N+1 issues, ${uniqueIssues.size} after deduplication`);
 
         for (const issue of uniqueIssues.values()) {
-            // if (!this.shouldShowIssue(issue.score)) continue;
+            if (!this.shouldShowIssue(issue.score)) continue;
 
-            console.log("ISSUE", issue);
-
-            // if (changedLines && !this.isIssueInChangedLines(issue, changedLines)) {
-            //     console.log(`Skipping N+1 issue at lines ${issue.start_line}-${issue.end_line} due to no changes`);
-            //     continue;
-            // }
+            if (changedLines && !this.isIssueInChangedLines(issue, changedLines)) {
+                console.log(`Skipping N+1 issue at lines ${issue.start_line}-${issue.end_line} due to no changes`);
+                continue;
+            }
 
             const range: Range = {
                 start: { line: issue.start_line - 1, character: issue.col_offset },

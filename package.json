@@ -283,7 +283,7 @@
 		"vscode:prepublish": "NODE_ENV=production tsc -b",
 		"clean": "rimraf ./client/out ./server/out",
 		"compile": "tsc -b",
-		"package": "vsce package",
+		"package": "vsce package --allow-missing-repository",
 		"dev:package": "npm run package --pre-release",
 		"publish": "vsce publish --allow-missing-repository",
 		"dev-publish": "npm run dev:package && code --install-extension djangoly-0.1.6.vsix",

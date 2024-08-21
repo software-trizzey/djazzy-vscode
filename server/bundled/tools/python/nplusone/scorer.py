@@ -3,15 +3,15 @@ from constants import IssueSeverity, WRITE_METHODS
 class NPlusOneScorer:
     MAX_SCORE = 100
     SCORE_THRESHOLDS = {
-        'LOW': 30,
-        'MEDIUM': 60,
+        'LOW': 40,
+        'MEDIUM': 70,
         'HIGH': 90
     }
     SCORE_WEIGHTS = {
-        'IN_LOOP': 40,
-        'QUERY_METHOD': 30,
-        'WRITE_METHOD': 35,
-        'MULTI_LINE': 15,
+        'IN_LOOP': 25,
+        'QUERY_METHOD': 25,
+        'WRITE_METHOD': 30,
+        'MULTI_LINE': 10,
     }
 
     @classmethod

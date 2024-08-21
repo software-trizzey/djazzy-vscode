@@ -17,7 +17,6 @@ import {
 } from "./common/utils/git";
 import { registerCommands } from './common/commands';
 import { setupFileWatchers } from './common/utils/fileWatchers';
-import { authenticateUser } from './common/auth/api';
 
 
 let client: LanguageClient;
@@ -25,9 +24,6 @@ let client: LanguageClient;
 export async function activate(context: vscode.ExtensionContext) {
 	const credentials = new Credentials();
 	await credentials.initialize(context);
-
-    const isAuthenticated = await authenticateUser(context, activate);
-	if (!isAuthenticated) return;
 
 	const serverModule = context.asAbsolutePath(
 		path.join("server", "out", "server.js")
@@ -60,7 +56,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		clientOptions
 	);
 
-	registerCommands(context, client, activate, deactivate);
+	registerCommands(context);
 
 	client.start().then(async () => {
 		activateClientNotifications(client);

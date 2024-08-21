@@ -680,16 +680,7 @@ export class DjangoProvider extends LanguageProvider {
 		for (const diagnostic of diagnostics) {
             if (diagnostic.message.includes("exceeds the maximum length of")) continue;
 
-			if (diagnostic.code === NAMING_CONVENTION_VIOLATION_SOURCE_TYPE) {
-				const fix = await this.generateFixForNamingConventionViolation(
-					document,
-					diagnostic,
-					userToken
-				);
-				if (fix) {
-					codeActions.push(fix);
-				}
-			} else if (diagnostic.code === DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE) {
+			if (diagnostic.code === DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE) {
                 const actions = this.getNPlusOneDiagnosticActions(document, diagnostic);
                 codeActions.push(...actions);
             }

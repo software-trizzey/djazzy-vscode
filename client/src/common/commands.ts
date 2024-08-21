@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
-import { LanguageClient } from "vscode-languageclient/node";
 import { UserSession } from "./auth/github";
-import { authenticateUser,  removeApiKey } from "./auth/api";
+import { notifyUserNoAuthRequired,  handleDeactivationByThankingUser } from "./auth/api";
 import { COMMANDS, EXTENSION_ID, EXTENSION_NAME, PUBLISHER, SESSION_USER } from "./constants";
 import { trackUserInterestInCustomRules } from "./logs";
 
@@ -10,21 +9,14 @@ const WORKBENCH_ACTIONS = {
 	OPEN_SETTINGS: 'workbench.action.openSettings'
 };
 
-export function registerCommands(
-    context: vscode.ExtensionContext,
-    client: LanguageClient,
-    activate: (context: vscode.ExtensionContext) => Promise<void>,
-    deactivate: () => Thenable<void> | undefined
-){
-    const signIn = vscode.commands.registerCommand(
-        COMMANDS.SIGN_IN,
-        () => authenticateUser(context, activate)
+export function registerCommands(context: vscode.ExtensionContext){
+    const signIn = vscode.commands.registerCommand(COMMANDS.SIGN_IN, notifyUserNoAuthRequired
     );
     context.subscriptions.push(signIn);
 
     const signOutCommand = vscode.commands.registerCommand(
         COMMANDS.SIGN_OUT,
-        () => removeApiKey(context, client, deactivate)
+        () => handleDeactivationByThankingUser
     );
     context.subscriptions.push(signOutCommand);
 

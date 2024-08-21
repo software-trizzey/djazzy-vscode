@@ -9,14 +9,14 @@ const WORKBENCH_ACTIONS = {
 	OPEN_SETTINGS: 'workbench.action.openSettings'
 };
 
-export function registerCommands(context: vscode.ExtensionContext){
+export function registerCommands(context: vscode.ExtensionContext, deactivate: () => Thenable<void> | undefined){
     const signIn = vscode.commands.registerCommand(COMMANDS.SIGN_IN, notifyUserNoAuthRequired
     );
     context.subscriptions.push(signIn);
 
     const signOutCommand = vscode.commands.registerCommand(
         COMMANDS.SIGN_OUT,
-        () => handleDeactivationByThankingUser
+        () => handleDeactivationByThankingUser(deactivate)
     );
     context.subscriptions.push(signOutCommand);
 

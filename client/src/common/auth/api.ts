@@ -205,14 +205,17 @@ export const authenticateUser = async (context, activate): Promise<boolean> => {
     return true;
 };
 
-export const notifyUserNoAuthRequired = async (): Promise<void> => {
-	await vscode.window.showInformationMessage(
+export const notifyUserNoAuthRequired = (): void => {
+	vscode.window.showInformationMessage(
 		"Welcome to Djangoly! This extension is currently free to use and doesn't require authentication for the current features.",
+		"Got it"
 	);
 };
 
-export const handleDeactivationByThankingUser = async (): Promise<void> => {
-	await vscode.window.showInformationMessage(
-		"Thank you for using Djangoly! If you have any feedback or suggestions, please let us know. 🚀",
+export const handleDeactivationByThankingUser = async (deactivate: () => Thenable<void> | undefined): Promise<void> => {
+	vscode.window.showInformationMessage(
+		"Thank you for using Djangoly! If you have any feedback or suggestions, please let us know. See you later! 👋",
+		"Bye"
 	);
+	deactivate();
 };

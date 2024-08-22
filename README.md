@@ -27,6 +27,14 @@ Djangoly includes several security checks to help ensure your Django project fol
 
 These security checks help you identify common configuration mistakes that could lead to security vulnerabilities in your Django application. Djangoly provides warnings and recommendations to help you maintain a secure Django environment, especially when preparing for production deployment.
 
+## Quick Start (Free) 🏃‍♂️💨
+
+1. **Install the Extension**: [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Alchemized.djangoly)
+2. **Set Up Your Django Project**: If you haven't already, set up a Django project in your workspace.
+3. **Configure Django Settings**: Open the extension settings in VS Code and configure your Django-specific settings.
+4. **Start Coding**: Begin developing your Django project. The extension will automatically start analyzing your code.
+5. **Review Suggestions**: Check the Problems panel in VS Code for Django best practice suggestions and quick fixes.
+
 ## How Djangoly Improves Your Code 🧑‍🏫
 
 ### 1. N+1 Query Detection and Optimization
@@ -124,85 +132,13 @@ def add_numbers(a, b):
 
 Djangoly identifies comments that don't provide additional context and suggests removing them to improve code readability.
 
-## Quick Start 🏃‍♂️💨
-
-1. **Get an API Key**: If you don't already have an API key, you can signup for one via this [form](https://forms.gle/gEEZdfhWpQyQh2qVA).
-2. **Install the Extension**: [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Alchemized.djangoly)
-3. **Set Up Your Django Project**: If you haven't already, set up a Django project in your workspace.
-4. **Configure Django Settings**: Open the extension settings in VS Code and configure your Django-specific settings.
-5. **Start Coding**: Begin developing your Django project. The extension will automatically start analyzing your code.
-6. **Review Suggestions**: Check the Problems panel in VS Code for Django best practice suggestions and quick fixes.
-
 ## Django N+1 Query Detection 🕵️‍♂️
 
 ![Djangoly Demo](https://raw.githubusercontent.com/software-trizzey/images/main/assets/images/djangoly-nplusone-query-fix-demo.gif)
 
 Djangoly includes a powerful static analysis tool to help identify potential N+1 query issues in your Django projects. This feature examines your code to flag instances where database queries might be inefficiently executed within loops.
 
-### How It Works
-
-The N+1 query detector performs a static analysis of your Django code, focusing on:
-
-1. Identifying loops in your functions
-2. Detecting database query operations within these loops
-3. Recognizing optimized querysets using `select_related()` or `prefetch_related()`
-4. Scoring and categorizing potential issues based on their severity
-
-### Key Features
-
-- **Static Analysis**: Analyzes your code without execution, providing quick feedback during development.
-- **Loop Detection**: Identifies various types of loops where N+1 queries often occur.
-- **Optimization Recognition**: Acknowledges when `select_related()` or `prefetch_related()` are used to optimize queries.
-- **Severity Scoring**: Assigns a score to each detected issue, helping you prioritize optimizations.
-
-### Understanding N+1 Query Scores
-
-Each detected N+1 query issue is assigned a score from 0 to 100, indicating its potential impact:
-
-- **0-40**: Hint (Low priority)
-- **41-70**: Information (Medium-low priority)
-- **71-94**: Warning (Medium-high priority)
-- **95-100**: Error (High priority)
-
-Scores are calculated based on factors such as:
-
-- Presence of query operations inside loops
-- Use of write methods (create, update, delete) which may exacerbate the performance impact
-- Complexity and multi-line queries (e.g., when queries span multiple lines of code)
-
-### Limitations and Best Practices
-
-While our N+1 query detector is a valuable tool, it's important to understand its limitations:
-
-1. **Static Analysis**: As a static tool, it cannot account for runtime behavior or dynamic query construction.
-2. **False Positives/Negatives**: The tool may occasionally flag optimized queries or miss some complex N+1 scenarios.
-3. **Context Limitation**: It may not fully understand the broader context of your entire application.
-
-Best practices when using this feature:
-
-- Use it as an initial check to identify potential problem areas.
-- Always verify flagged issues in the context of your application logic.
-- Combine with runtime analysis tools (like Django Debug Toolbar) for comprehensive optimization.
-- Consider the trade-off between query optimization and code readability.
-
-### Example and Fix
-
-```python
-# Potential N+1 query issue:
-for book in books:
-    print(book.author.name)  # This might trigger additional queries
-
-# Optimized version:
-books = books.select_related('author')
-for book in books:
-    print(book.author.name)  # No additional queries
-```
-
-### Final thoughts
-
-Remember, while addressing N+1 queries is important for performance, it's also crucial to maintain code readability and maintainability. Always consider the trade-offs when optimizing.
-
-For more detailed guidance on optimizing Django queries, check out the [Django documentation on database optimization](https://docs.djangoproject.com/en/stable/topics/db/optimization/).
+For more information about how the scoring system works, please see the [N+1 Query Detection Scoring System](./nplusone-scoring.md).
 
 ## Configuration 🧪
 
@@ -215,40 +151,6 @@ For more detailed guidance on optimizing Django queries, check out the [Django d
 
 Access these settings by going to `Preferences → Settings → Extensions → Djangoly`.
 
-## Usage 📖
-
-1. **Django Project Analysis**: Real-time analysis of your Django code, highlighting deviations from best practices as you type.
-2. **Quick Fixes for Django Issues**: Offers actionable recommendations for quick corrections of Django-specific issues.
-3. **Django N+1 Query Detection**: The extension analyzes your Django code to identify potential N+1 query issues.
-4. **Test Suite Enforcement**: Alerts you to update or create tests following changes in Django views or models.
-5. **JavaScript/TypeScript Support**: Provide linting and best practice suggestions for Python files in your Django project.
-
-## Pricing 🤑
-
-Djangoly is currently available for free as part of our Beta program. During this period, all features are accessible to all users at no cost, with a daily limit of 200 N+1 query validations per API key. We greatly appreciate your feedback and participation in helping us improve the extension.
-
-As we move towards a full release, we plan to introduce a paid subscription model, which may include higher or unlimited daily validation limits. Beta users will be given advance notice of any changes to our pricing structure and may be eligible for special offers.
-
-## Feedback ✍️
-
-Your feedback is crucial during this Beta phase! We're eager to hear about your experience, suggestions, and any issues you encounter. Here's how you can help:
-
-- **General Feedback**, **Report Bugs**, **Feature Requests**: If you encounter any issues, have an idea for a new feature, or any other feedback, please email us at [support@djangoly.com](mailto:support@djangoly.com).
-
-Your input directly influences the development of Djangoly. Thank you for helping us create a better tool for the Django community!
-
-## Roadmap 🗺️
-
-Here's what we're planning for future releases:
-
-1. **JavaScript/TypeScript Support**: Modern Django projects leverage JavaScript at some point. We'll ensure these files align with your conventions.
-2. **Fat Models, Thin Views**: Maintain clean, scalable architecture
-3. **Django REST Framework Support**: Add specific checks and suggestions for DRF best practices.
-4. **Improve N+1 query detection**: There are some levers we can pull to increase the accuracy of this feature.
-5. **Custom Rule Creator**: Allow users to define and share custom rules for their team's specific needs.
-
-We're always open to suggestions for our roadmap. Feel free to contribute your ideas through our feedback channels!
-
 ## Known Issues & Limitations 🐞
 
 - **False Positives**: As an MVP undergoing rapid development, Djangoly may generate inaccurate diagnostics and recommendations. If you encounter any issues, please report them to [support@djangoly.com](mailto:support@djangoly.com).
@@ -256,8 +158,12 @@ We're always open to suggestions for our roadmap. Feel free to contribute your i
 
 ## Contribution Guidelines 👯‍♀️
 
-Interested in contributing to Djangoly? Please reach out to [support@djangoly.com](mailto:support@djangoly.com).
+We <3 contributions big and small. In priority order (although everything is appreciated) with the most helpful first:
 
-## License 👮‍♂️
+ - Vote on features or get early access to beta functionality in our roadmap
+ - Open a PR (see our instructions on developing PostHog locally)
+ - Submit a feature request or bug report
 
-Djangoly is proprietary software but moving towards an open-source model. Stay tuned.
+## Open-source License 👮‍♂️
+
+This repo is available under the MIT expat license. We plan to add paid features at some point that will be covered under another license. Stay tuned.

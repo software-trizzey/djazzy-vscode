@@ -9,7 +9,8 @@
 		"outDir": "out",
 		"rootDir": "src",
 		"resolveJsonModule": true,
-		"esModuleInterop": true
+		"esModuleInterop": true,
+		"types": ["jest", "node"]
 	},
 	"include": ["src/**/*.ts", "test/**/*.ts"],
 	"exclude": ["node_modules", ".vscode-test", "webpack.config.js"]

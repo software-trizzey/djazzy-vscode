@@ -5,9 +5,9 @@
 	"author": "Tristan Deane",
 	"version": "0.1.8",
 	"repository": {
-        "type": "git",
-        "url": "https://github.com/software-trizzey/djangoly.git"
-    },
+		"type": "git",
+		"url": "https://github.com/software-trizzey/djangoly.git"
+	},
 	"publisher": "alchemized",
 	"bugs": {
 		"url": "https://github.com/software-trizzey/djangoly/issues"
@@ -39,6 +39,7 @@
 		"node": ">=18"
 	},
 	"main": "./client/out/extension",
+	"server": "./server/out/server",
 	"contributes": {
 		"activationEvents": [
 			"onCommand:djangoly.addCustomRule",
@@ -56,52 +57,59 @@
 				"title": "Getting Started with Djangoly",
 				"description": "Learn how to use the key features of Djangoly.",
 				"steps": [
-				{
-					"id": "djangoly.installExtension",
-					"title": "Install the Extension",
-					"description": "Open VS Code, go to the Extensions view, and search for 'Djangoly'. Click 'Install' and wait for the installation to complete.",
-					"media": {
-					"image": "assets/images/walkthrough/install.png",
-					"altText": "Install Djangoly"
-					}
-				},
-				{
-					"id": "djangoly.signIn",
-					"title": "Sign In with GitHub",
-					"description": "Open command palette and type in → ```Djangoly: Sign In```. Or press the button below: \n[Sign In](command:djangoly.signIn)\nAccept the notification and you should be signed in via your GitHub account.",
-					"media": {
-						"image": "assets/images/walkthrough/signIn.png",
-						"altText": "Sign In"
+					{
+						"id": "djangoly.installExtension",
+						"title": "Install the Extension",
+						"description": "Open VS Code, go to the Extensions view, and search for 'Djangoly'. Click 'Install' and wait for the installation to complete.",
+						"media": {
+							"image": "assets/images/walkthrough/install.png",
+							"altText": "Install Djangoly"
+						}
 					},
-					"completionEvents": ["onCommand:djangoly.signIn"]
-				},
-				{
-					"id": "djangoly.untestedCode",
-					"title": "Untested API Code Detection",
-					"description": "Introduce a new piece of business logic without a test. Notice that Djangoly reminds you to test the changes.",
-					"media": {
-						"image": "assets/gifs/flag-untested-api-code.gif",
-						"altText": "Untested Code Demo"
+					{
+						"id": "djangoly.signIn",
+						"title": "Sign In with GitHub",
+						"description": "Open command palette and type in → ```Djangoly: Sign In```. Or press the button below: \n[Sign In](command:djangoly.signIn)\nAccept the notification and you should be signed in via your GitHub account.",
+						"media": {
+							"image": "assets/images/walkthrough/signIn.png",
+							"altText": "Sign In"
+						},
+						"completionEvents": [
+							"onCommand:djangoly.signIn"
+						]
+					},
+					{
+						"id": "djangoly.untestedCode",
+						"title": "Untested API Code Detection",
+						"description": "Introduce a new piece of business logic without a test. Notice that Djangoly reminds you to test the changes.",
+						"media": {
+							"image": "assets/gifs/flag-untested-api-code.gif",
+							"altText": "Untested Code Demo"
+						}
+					},
+					{
+						"id": "djangoly.setupRules",
+						"title": "Setup Naming and Testing Rules",
+						"description": "Customize naming conventions and test requirements for your workspace.\n[Customize Rules](command:djangoly.openSettings)\n\n[Import Conventions](command:djangoly.addCustomRule)",
+						"media": {
+							"image": "assets/images/walkthrough/settings.png",
+							"altText": "Setup Rules"
+						}
 					}
-				},
-				{
-					"id": "djangoly.setupRules",
-					"title": "Setup Naming and Testing Rules",
-					"description": "Customize naming conventions and test requirements for your workspace.\n[Customize Rules](command:djangoly.openSettings)\n\n[Import Conventions](command:djangoly.addCustomRule)",
-					"media": {
-					  "image": "assets/images/walkthrough/settings.png",
-					  "altText": "Setup Rules"
-					}
-				  }
 				]
 			}
 		],
 		"languages": [
 			{
-			  "id": "python",
-			  "aliases": ["Python", "py"],
-			  "extensions": [".py"],
-			  "configuration": "./language-configuration.json"
+				"id": "python",
+				"aliases": [
+					"Python",
+					"py"
+				],
+				"extensions": [
+					".py"
+				],
+				"configuration": "./language-configuration.json"
 			}
 		],
 		"configuration": {
@@ -279,11 +287,12 @@
 		"vscode:prepublish": "NODE_ENV=production tsc -b",
 		"clean": "rimraf ./client/out ./server/out",
 		"compile": "tsc -b",
+		"build": "node esbuild.config.js",
 		"package": "vsce package --allow-missing-repository",
 		"dev:package": "npm run package --pre-release",
 		"publish": "vsce publish --allow-missing-repository",
 		"dev-publish": "npm run dev:package && code --install-extension djangoly-0.1.8.vsix",
-		"watch": "tsc -b -w",
+		"watch": "node esbuild.config.js --watch",
 		"lint": "eslint ./client/src ./server/src --ext .ts,.tsx",
 		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
 		"test": "npm run compile && sh ./scripts/e2e.sh"
@@ -293,6 +302,7 @@
 		"@types/node": "^18.14.6",
 		"@typescript-eslint/eslint-plugin": "^7.1.0",
 		"@typescript-eslint/parser": "^7.1.0",
+		"esbuild": "^0.23.1",
 		"eslint": "^8.57.0",
 		"mocha": "^10.3.0",
 		"typescript": "^5.3.3"

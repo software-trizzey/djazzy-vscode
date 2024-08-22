@@ -19,19 +19,17 @@ import {
 	NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
 	REDUNDANT_COMMENT_VIOLATION_SOURCE_TYPE
 } from "../../constants/diagnostics";
-import { ExtensionSettings, cachedUserToken, defaultConventions } from "../../settings";
+import { ExtensionSettings, defaultConventions } from "../../settings";
 import LOGGER from '../../common/logs';
 import COMMANDS, { ACCESS_FORBIDDEN_NOTIFICATION_ID, FIX_NAME, RATE_LIMIT_NOTIFICATION_ID } from '../../constants/commands';
 import { Issue, Models, Severity, SymbolFunctionTypes } from '../../llm/types';
 import { spawn } from 'child_process';
 import path from 'path';
-import { PYTHON_DIRECTORY } from '../../constants/filepaths';
 import { RULE_MESSAGES } from '../../constants/rules';
 import { LanguageConventions, CeleryTaskDecoratorSettings } from '../../languageConventions';
 import { debounce, getChangedLinesFromClient, validatePythonFunctionName } from '../../utils';
 import { LanguageProvider } from '../languageProvider';
 import { DjangoProjectDetector, ModelCache } from './djangoProjectDetector';
-import { API_SERVER_URL } from '../../constants/api';
 
 
 interface CachedResult {
@@ -214,14 +212,9 @@ export class DjangoProvider extends LanguageProvider {
 			const parserFilePath = this.getParserFilePath();
             const modelCacheObject = Object.fromEntries(this.modelCache);
             const modelCacheJson = JSON.stringify(modelCacheObject);
-            const userTokenString = cachedUserToken || "";
-            const apiConnectionInfo = JSON.stringify({
-                api_server_url: API_SERVER_URL,
-                user_token: userTokenString
-            });
 	
 			return new Promise((resolve, reject) => {
-				const process = spawn("python3", [parserFilePath, modelCacheJson, apiConnectionInfo]);
+				const process = spawn("python3", [parserFilePath, modelCacheJson]);
 				let output = "";
 				let error = "";
 	
@@ -966,7 +959,7 @@ export class DjangoProvider extends LanguageProvider {
 
 	public logFalsePositiveFeedback(diagnosticId: string): void {
 		LOGGER.info(`False positive reported`, {
-			userId: cachedUserToken,
+			userId: "anonymous",
 			diagnosticId: diagnosticId,
 			timestamp: new Date().toISOString()
 		});

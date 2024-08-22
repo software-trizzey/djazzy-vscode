@@ -20,7 +20,7 @@ from constants import (
 )
 
 class DjangoAnalyzer(Analyzer):
-    def __init__(self, source_code, model_cache_json: str, api_server_connection_json: str):
+    def __init__(self, source_code, model_cache_json: str):
         super().__init__(source_code)
         self.current_django_class_type = None
         self.model_cache = self.parse_model_cache(model_cache_json)
@@ -32,13 +32,6 @@ class DjangoAnalyzer(Analyzer):
             return json.loads(model_cache_json)
         except json.JSONDecodeError as e:
             LOGGER.error(f"Error parsing model cache JSON: {e}")
-            return {}
-        
-    def parse_api_server_connection(self, api_server_connection_json):
-        try:
-            return json.loads(api_server_connection_json)
-        except json.JSONDecodeError as e:
-            LOGGER.error(f"Error parsing API server connection JSON: {e}")
             return {}
 
     def visit_ClassDef(self, node):
@@ -292,14 +285,13 @@ class DjangoAnalyzer(Analyzer):
 
 
 def main():
-    if len(sys.argv) < 3:
-        LOGGER.error("Usage: python script.py <model_cache_json> <api_server_json>")
+    if len(sys.argv) < 2:
+        LOGGER.error("Usage: python script.py <model_cache_json>")
         sys.exit(1)
 
     model_cache_json = sys.argv[1]
-    api_server_json = sys.argv[2]
     input_code = sys.stdin.read()
-    analyzer = DjangoAnalyzer(input_code, model_cache_json, api_server_json)
+    analyzer = DjangoAnalyzer(input_code, model_cache_json)
     LOGGER.info("Django analyzer initialized")
     parsed_code = analyzer.parse_code()
     print(json.dumps(parsed_code, default=serialize_file_data))

@@ -3,7 +3,7 @@
 	"displayName": "Djangoly",
 	"description": "Streamline your development with automated best practice checks. Improve code quality and performance with intelligent, Django-specific insights",
 	"author": "Tristan Deane",
-	"version": "0.1.8",
+	"version": "0.1.9",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/software-trizzey/djangoly.git"
@@ -291,7 +291,7 @@
 		"package": "vsce package --allow-missing-repository && node esbuild.config.js --production",
 		"dev:package": "npm run package --pre-release",
 		"publish": "vsce publish --allow-missing-repository",
-		"dev-publish": "npm run dev:package && code --install-extension djangoly-0.1.8.vsix",
+		"dev-publish": "npm run dev:package && code --install-extension djangoly-0.1.9.vsix",
 		"watch": "npm-run-all -p watch:*",
 		"watch:esbuild": "node esbuild.config.js --watch",
 		"watch:tsc": "tsc --noEmit --watch --project tsconfig.json",

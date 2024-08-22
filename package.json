@@ -4,8 +4,15 @@
 	"description": "Streamline your development with automated best practice checks. Improve code quality and performance with intelligent, Django-specific insights",
 	"author": "Tristan Deane",
 	"version": "0.1.8",
+	"repository": {
+        "type": "git",
+        "url": "https://github.com/software-trizzey/djangoly.git"
+    },
 	"publisher": "alchemized",
-	"homepage": "",
+	"bugs": {
+		"url": "https://github.com/software-trizzey/djangoly/issues"
+	},
+	"homepage": "https://github.com/software-trizzey/djangoly#readme",
 	"preview": true,
 	"icon": "assets/images/logo-v2.png",
 	"galleryBanner": {

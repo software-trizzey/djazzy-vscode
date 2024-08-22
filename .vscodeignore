@@ -21,6 +21,8 @@ client/src/**
 server/src/**
 .github/**
 
+# Exclude all node_modules and selectively include needed packages
+
 node_modules/**
 
 # Client runtime dependencies
@@ -31,16 +33,20 @@ client/node_modules/**
 !client/node_modules/uuid/**
 !client/node_modules/vscode-languageclient/**
 
-
-# Server runtime dependencies (INCOMPLETE)
-server/node_modules/**
+# Server runtime dependencies
+!server/node_modules/**
 !server/node_modules/lru-cache/**
 !server/node_modules/rollbar/**
 !server/node_modules/uuid/**
 !server/node_modules/vscode-languageserver-textdocument/**
 !server/node_modules/vscode-languageserver/**
+!server/node_modules/vscode-languageserver-protocol/**
+!server/node_modules/vscode-languageserver-types/**
+!server/node_modules/vscode-jsonrpc/**
 !server/node_modules/vscode-uri/**
-
+!server/node_modules/json-stringify-safe/**
+!server/node_modules/zod/**
+!server/node_modules/zod-to-json-schema/**
 
 # Documentation and miscellaneous
 .vscode/**

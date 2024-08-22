@@ -286,13 +286,16 @@
 	"scripts": {
 		"vscode:prepublish": "NODE_ENV=production tsc -b",
 		"clean": "rimraf ./client/out ./server/out",
-		"compile": "tsc -b",
+		"compile": "npm run check-types && node esbuild.config.js",
+		"check-types": "tsc --noEmit",
 		"build": "node esbuild.config.js",
-		"package": "vsce package --allow-missing-repository",
+		"package": "vsce package --allow-missing-repository && node esbuild.config.js --production",
 		"dev:package": "npm run package --pre-release",
 		"publish": "vsce publish --allow-missing-repository",
 		"dev-publish": "npm run dev:package && code --install-extension djangoly-0.1.8.vsix",
-		"watch": "node esbuild.config.js --watch",
+		"watch": "npm-run-all -p watch:*",
+		"watch:esbuild": "node esbuild.config.js --watch",
+		"watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
 		"lint": "eslint ./client/src ./server/src --ext .ts,.tsx",
 		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
 		"test": "npm run compile && sh ./scripts/e2e.sh"
@@ -305,6 +308,7 @@
 		"esbuild": "^0.23.1",
 		"eslint": "^8.57.0",
 		"mocha": "^10.3.0",
+		"npm-run-all": "^4.1.5",
 		"typescript": "^5.3.3"
 	}
 }

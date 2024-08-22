@@ -465,13 +465,14 @@ export class DjangoProvider extends LanguageProvider {
 
 	private getParserFilePath(): string {
         const basePath = process.env.PYTHON_TOOLS_PATH || path.resolve(
-            __dirname, '..', '..', '..', 'bundled', 'tools', 'python'
+            __dirname, '..', 'bundled', 'tools', 'python'
         );
         const parserFilePath = path.join(basePath, 'django_parser.py');
+
+        console.log(`[DEBUG] Resolved parser file path: ${parserFilePath}`);
     
         return parserFilePath;
     }
-    
 
 	private extractDjangoFieldValue(fieldValue: string): any {
 		if (fieldValue.includes("BooleanField")) {

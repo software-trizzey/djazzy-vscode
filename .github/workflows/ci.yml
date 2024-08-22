@@ -1,12 +1,8 @@
 name: Test Workflow
 
 on:
-  push:
-    branches:
-      - '*'
-  pull_request:
-    branches:
-      - '*'
+  push:          # Runs on every push, regardless of branch
+  pull_request:  # Runs on every pull request, regardless of branch
 
 jobs:
   build-and-test:
@@ -30,6 +26,14 @@ jobs:
 
       - name: Build the project
         run: npm run compile
+
+      - name: Install xvfb
+        run: sudo apt-get install xvfb
+
+      - name: Start xvfb
+        run: |
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1280x1024x24 &
 
       - name: Run client and server tests
         run: |

@@ -21,6 +21,11 @@ import { trackActivation, trackDeactivation } from './common/logs';
 let client: LanguageClient;
 
 export async function activate(context: vscode.ExtensionContext) {
+	if (context.globalState.get(COMMANDS.USER_API_KEY)){
+		await context.globalState.update(COMMANDS.USER_API_KEY, undefined);
+		console.log("Cleared cached key", context.globalState.get(COMMANDS.USER_API_KEY));
+	}
+
 	const serverModule = context.asAbsolutePath(
 		path.join("server", "out", "server.js")
 	);

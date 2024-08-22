@@ -25,13 +25,11 @@ import COMMANDS, { ACCESS_FORBIDDEN_NOTIFICATION_ID, FIX_NAME, RATE_LIMIT_NOTIFI
 import { Issue, Models, Severity, SymbolFunctionTypes } from '../../llm/types';
 import { spawn } from 'child_process';
 import path from 'path';
-import { PYTHON_DIRECTORY } from '../../constants/filepaths';
 import { RULE_MESSAGES } from '../../constants/rules';
 import { LanguageConventions, CeleryTaskDecoratorSettings } from '../../languageConventions';
 import { debounce, getChangedLinesFromClient, validatePythonFunctionName } from '../../utils';
 import { LanguageProvider } from '../languageProvider';
 import { DjangoProjectDetector, ModelCache } from './djangoProjectDetector';
-import { API_SERVER_URL } from '../../constants/api';
 
 
 interface CachedResult {

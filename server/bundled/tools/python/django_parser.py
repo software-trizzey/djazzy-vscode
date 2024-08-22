@@ -285,7 +285,7 @@ class DjangoAnalyzer(Analyzer):
 
 
 def main():
-    if len(sys.argv) < 3:
+    if len(sys.argv) < 2:
         LOGGER.error("Usage: python script.py <model_cache_json>")
         sys.exit(1)
 

@@ -311,11 +311,7 @@ connection.onCodeAction(async (params) => {
 	const workspaceFolders = await connection.workspace.getWorkspaceFolders();
 	const provider = getOrCreateProvider(languageId, settings, document, workspaceFolders);
 
-	if (!cachedUserToken) {
-		throw new Error('User is not authenticated. Token not found.');
-	}
-
-	const actions = await provider.provideCodeActions(document, cachedUserToken);
+	const actions = await provider.provideCodeActions(document, '');
 	return actions;
 });
 

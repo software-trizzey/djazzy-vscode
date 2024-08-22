@@ -464,16 +464,14 @@ export class DjangoProvider extends LanguageProvider {
     }
 
 	private getParserFilePath(): string {
-        // TODO: make this dynamic. Also be careful when moving this file as it will break current import path
-		const parserFilePath = path.join(
-            __dirname,
-            "..",
-            "..",
-            "..",
-            `./${PYTHON_DIRECTORY}/django_parser.py`
+        const basePath = process.env.PYTHON_TOOLS_PATH || path.resolve(
+            __dirname, '..', '..', '..', 'bundled', 'tools', 'python'
         );
-		return parserFilePath;
-	}
+        const parserFilePath = path.join(basePath, 'django_parser.py');
+    
+        return parserFilePath;
+    }
+    
 
 	private extractDjangoFieldValue(fieldValue: string): any {
 		if (fieldValue.includes("BooleanField")) {

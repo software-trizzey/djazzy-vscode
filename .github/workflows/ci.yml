@@ -1,25 +1,24 @@
 name: Test Workflow
 
 on:
-  push:          # Runs on every push, regardless of branch
-  pull_request:  # Runs on every pull request, regardless of branch
+  push:
+  pull_request:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
-
     strategy:
       matrix:
-        node-version: [18.x]
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 18.x
 
       - name: Install dependencies
         run: npm install
@@ -27,15 +26,10 @@ jobs:
       - name: Build the project
         run: npm run compile
 
-      - name: Install xvfb
-        run: sudo apt-get install xvfb
+      - name: Run tests on Linux with Xvfb
+        run: xvfb-run -a npm test
+        if: runner.os == 'Linux'
 
-      - name: Start xvfb
-        run: |
-          export DISPLAY=:99
-          Xvfb :99 -screen 0 1280x1024x24 &
-
-      - name: Run client and server tests
-        run: |
-          chmod +x scripts/e2e.sh
-          scripts/e2e.sh
+      - name: Run tests on non-Linux OS
+        run: npm test
+        if: runner.os != 'Linux'

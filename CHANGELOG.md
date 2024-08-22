@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Version 0.1.9] - 2024-08-22
+
+### Added
+
+- [Enhancement] Add esbuild to bundle extension
+
+### Fixed
+
+- [Bugfix] Addressed `Request textDocument/codeAction failed.` where we were check for user token in codeAction flow. However, API key requirements were removed in version `0.1.8`
+
+
 ## [Version 0.1.8] - 2024-08-21
 
 ### Added

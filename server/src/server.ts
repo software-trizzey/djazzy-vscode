@@ -256,7 +256,7 @@ function getOrCreateProvider(
 	return providerCache[languageId];
 }
 
-async function validateTextDocument(textDocument: TextDocument): Promise<Diagnostic[]> {
+export async function validateTextDocument(textDocument: TextDocument): Promise<Diagnostic[]> {
 	return await diagnosticQueue.queueDiagnosticRequest(textDocument, async (document) => {
 		const languageId = document.languageId;
 		const settings = await getDocumentSettings(document.uri);

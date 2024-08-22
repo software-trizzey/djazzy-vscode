@@ -5,8 +5,9 @@
 		"lib": ["es2020"],
 		"outDir": "out",
 		"rootDir": "src",
-		"sourceMap": true
+		"sourceMap": true,
+		"types": ["mocha", "node"]
 	},
-	"include": ["src", "src/utils.ts"],
+	"include": ["src/**/*.ts"],
 	"exclude": ["node_modules", ".vscode-test", "webpack.config.js"]
 }

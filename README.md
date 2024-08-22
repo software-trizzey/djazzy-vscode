@@ -8,6 +8,16 @@
 > - You may encounter bugs or unexpected behavior.
 > - We greatly appreciate your feedback to help improve the extension.
 
+## Table of Contents
+- [Features (MVP) ✨](#features-mvp-)
+- [Quick Start (Free) 🏃‍♂️💨](#quick-start-free-)
+- [How Djangoly Improves Your Code 🧑‍🏫](#how-djangoly-improves-your-code-)
+- [Django N+1 Query Detection 🕵️‍♂️](#django-n1-query-detection-)
+- [Configuration 🧪](#configuration-)
+- [Known Issues & Limitations 🐞](#known-issues--limitations-)
+- [Contribution Guidelines 👯‍♀️](#contribution-guidelines-)
+- [Open-source License 👮‍♂️](#open-source-license-)
+
 
 ## Features (MVP) ✨
 

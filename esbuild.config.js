@@ -25,7 +25,6 @@ async function main() {
 		logLevel: !production ? 'debug' : 'silent',
 		outdir: 'client/out',
 		plugins: [
-			/* add to the end of plugins array */
 			esbuildProblemMatcherPlugin
 		]
 	});
@@ -48,7 +47,6 @@ async function main() {
 		logLevel: !production ? 'debug' : 'silent',
 		outdir: 'server/out',
 		plugins: [
-		  /* add to the end of plugins array */
 		  esbuildProblemMatcherPlugin
 		]
 	  })

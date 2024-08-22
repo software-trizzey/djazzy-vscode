@@ -91,60 +91,12 @@ Djangoly identifies potential security risks in your Django settings and suggest
 
 ### 3. Test Suite Conventions
 
-Before (missing test file):
-
-```python
-# app/views.py
-def important_view(request):
-    # Some important logic here
-    pass
-
-# No corresponding test file
-```
-
-After (with Djangoly reminder):
-
-```python
-# app/views.py
-def important_view(request):
-    # Some important logic here
-    pass
-
-# app/tests/test_views.py (Djangoly suggests creating this file)
-from django.test import TestCase
-
-class TestImportantView(TestCase):
-    def test_important_view(self):
-        # Djangoly: Remember to add tests for the important_view function
-        pass
-```
-
+![Djangoly untested code demo](https://raw.githubusercontent.com/software-trizzey/images/main/assets/images/flag-untested-api-code.gif)
 Djangoly reminds you to create and update test files when you modify your Django views or models.
-
-### 4. Redundant Comment Detection
-
-Before:
-
-```python
-# This function adds two numbers
-def add_numbers(a, b):
-    # sum these numbers
-    return a + b
-```
-
-After (with Djangoly suggestion):
-
-```python
-def add_numbers(a, b):
-    # Djangoly: Consider removing redundant comments
-    return a + b 
-```
-
-Djangoly identifies comments that don't provide additional context and suggests removing them to improve code readability.
 
 ## Django N+1 Query Detection 🕵️‍♂️
 
-![Djangoly Demo](https://raw.githubusercontent.com/software-trizzey/images/main/assets/images/djangoly-nplusone-query-fix-demo.gif)
+![Djangoly N+1 demo gif](https://raw.githubusercontent.com/software-trizzey/images/main/assets/images/djangoly-nplusone-query-fix-demo.gif)
 
 Djangoly includes a powerful static analysis tool to help identify potential N+1 query issues in your Django projects. This feature examines your code to flag instances where database queries might be inefficiently executed within loops.
 

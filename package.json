@@ -284,11 +284,10 @@
 		}
 	},
 	"scripts": {
-		"vscode:prepublish": "NODE_ENV=production tsc -b",
+		"vscode:prepublish": "NODE_ENV=production npm run compile",
 		"clean": "rimraf ./client/out ./server/out",
 		"compile": "npm run check-types && node esbuild.config.js",
 		"check-types": "tsc --noEmit",
-		"build": "node esbuild.config.js",
 		"package": "vsce package --allow-missing-repository && node esbuild.config.js --production",
 		"dev:package": "npm run package --pre-release",
 		"publish": "vsce publish --allow-missing-repository",
@@ -298,7 +297,9 @@
 		"watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
 		"lint": "eslint ./client/src ./server/src --ext .ts,.tsx",
 		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
-		"test": "npm run compile && sh ./scripts/e2e.sh"
+		"compile-tests": "tsc -b",
+		"pretest": "npm run compile-tests",
+		"test": "sh ./scripts/e2e.sh"
 	},
 	"devDependencies": {
 		"@types/mocha": "^10.0.6",

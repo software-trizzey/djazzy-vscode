@@ -25,15 +25,16 @@ server/src/**
 
 node_modules/**
 
-# Client runtime dependencies
-client/node_modules/**
+# Client runtime dependencies (I need to figure out which of these are actually needed)
+!client/node_modules/**
 !client/node_modules/@octokit/rest/**
 !client/node_modules/rollbar/**
 !client/node_modules/simple-git/**
 !client/node_modules/uuid/**
 !client/node_modules/vscode-languageclient/**
+!client/node_modules/vscode-languageserver-protocol/**
 
-# Server runtime dependencies
+# Server runtime dependencies (I need to figure out which of these are actually needed)
 !server/node_modules/**
 !server/node_modules/lru-cache/**
 !server/node_modules/rollbar/**

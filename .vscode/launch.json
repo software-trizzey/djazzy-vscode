@@ -12,10 +12,7 @@
 				"${workspaceRoot}/server/out/**/*.js"
 			],
 			"autoAttachChildProcesses": true,
-			"preLaunchTask": {
-				"type": "npm",
-				"script": "watch"
-			},
+			"preLaunchTask": "watch",
 			"envFile": "${workspaceRoot}/server/.env"
 		},
 		{

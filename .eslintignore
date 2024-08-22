@@ -4,4 +4,6 @@ client/out/**
 server/node_modules/**
 server/out/**
 
+esbuild.config.js
+
 **webpack.config.js**

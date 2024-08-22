@@ -4,42 +4,52 @@
 **/.hg/**
 **/.DS_Store
 **/Thumbs.db
+**/.env
 
 # Development-specific files
+**/*.ts
 **/tsconfig.json
 **/webpack.config.js
+**/jest.config.json
+**/jest.config.js
+**/esbuild.config.js
 **/*.test.*
 **/tests/**
 client/testFixture/**
 examples/**
 client/src/**
 server/src/**
+.github/**
+
+# Exclude all node_modules and selectively include needed packages
 
 node_modules/**
 
-# Client runtime dependencies
-!client/node_modules/vscode-jsonrpc/**
+# Client runtime dependencies (I need to figure out which of these are actually needed)
+!client/node_modules/**
+!client/node_modules/@octokit/rest/**
+!client/node_modules/rollbar/**
+!client/node_modules/simple-git/**
+!client/node_modules/uuid/**
 !client/node_modules/vscode-languageclient/**
 !client/node_modules/vscode-languageserver-protocol/**
-!client/node_modules/vscode-languageserver-types/**
-!client/node_modules/{minimatch,brace-expansion,concat-map,balanced-match}/**
-!client/node_modules/{semver,lru-cache,yallist}/**
-!client/node_modules/@octokit/**
 
-# Server runtime dependencies (INCOMPLETE)
-!server/node_modules/@babel/parser
-!server/node_modules/@babel/traverse
-!server/node_modules/decamelize
-!server/node_modules/rollbar
-!server/node_modules/vscode-jsonrpc/**
-!server/node_modules/vscode-languageserver
-!server/node_modules/vscode-languageserver-textdocument
+# Server runtime dependencies (I need to figure out which of these are actually needed)
+!server/node_modules/**
+!server/node_modules/lru-cache/**
+!server/node_modules/rollbar/**
+!server/node_modules/uuid/**
+!server/node_modules/vscode-languageserver-textdocument/**
+!server/node_modules/vscode-languageserver/**
 !server/node_modules/vscode-languageserver-protocol/**
 !server/node_modules/vscode-languageserver-types/**
+!server/node_modules/vscode-jsonrpc/**
+!server/node_modules/vscode-uri/**
+!server/node_modules/json-stringify-safe/**
 !server/node_modules/zod/**
 !server/node_modules/zod-to-json-schema/**
-
 
 # Documentation and miscellaneous
 .vscode/**
 .gitignore
+CHANGELOG.template.md

@@ -21,8 +21,6 @@ import { trackActivation, trackDeactivation } from './common/logs';
 let client: LanguageClient;
 
 export async function activate(context: vscode.ExtensionContext) {
-	trackActivation(context);
-
 	const serverModule = context.asAbsolutePath(
 		path.join("server", "out", "server.js")
 	);
@@ -56,24 +54,22 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	registerCommands(context);
 
-	client.start().then(async () => {
-		activateClientNotifications(client);
+	await client.start();
+	activateClientNotifications(client);
+	trackActivation(context);
 
-		client.onRequest(COMMANDS.GET_GIT_DIFF, getChangedLines);
+	client.onRequest(COMMANDS.GET_GIT_DIFF, getChangedLines);
 
-		const token = context.globalState.get(COMMANDS.USER_API_KEY);
-		if (token) {
-			await client.sendRequest(COMMANDS.UPDATE_CACHED_USER_TOKEN, token);
-		}
+	const token = context.globalState.get(COMMANDS.USER_API_KEY);
+	if (token) {
+		await client.sendRequest(COMMANDS.UPDATE_CACHED_USER_TOKEN, token);
+	}
 
-		const apiFolderWatchers = await setupFileWatchers(client, context);
-		clientOptions.synchronize.fileEvents = apiFolderWatchers;
-	});
+	const apiFolderWatchers = await setupFileWatchers(client, context);
+	clientOptions.synchronize.fileEvents = apiFolderWatchers;
 }
 
 export function deactivate(context: vscode.ExtensionContext): Thenable<void> | undefined {
-	trackDeactivation(context);
-
 	vscode.window.showInformationMessage(
 		"Thank you for using Djangoly! If you have any feedback or suggestions, please let us know. See you later! 👋",
 		"Bye"
@@ -82,7 +78,9 @@ export function deactivate(context: vscode.ExtensionContext): Thenable<void> | u
 	if (!client) {
 		return undefined;
 	}
-	return client.stop();
+	return client.stop().then(() => {
+		trackDeactivation(context);
+	});
 }
 
 

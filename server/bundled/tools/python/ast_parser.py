@@ -110,6 +110,7 @@ class Analyzer(ast.NodeVisitor):
             'col_offset': kwargs.get('col_offset'),
             'end_col_offset': kwargs.get('end_col_offset'),
             'is_reserved': kwargs.get('is_reserved', False),
+            'has_set_foreign_key_related_name': kwargs.get('has_set_foreign_key_related_name', None),
         }
         
         if 'value' in kwargs:

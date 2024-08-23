@@ -423,12 +423,12 @@ export class DjangoProvider extends LanguageProvider {
                     djangoModelAndSerializerFieldMessage = result.reason;
                 }
 
-                if (symbol.type === "django_model_field" && this.isForeignKeyField(value)) {
-                    const hasRelatedName = this.foreignKeyHasRelatedName(symbol);
-                    if (!hasRelatedName) {
-                        djangoModelAndSerializerFieldMessage = `ForeignKey '${name}' is missing 'related_name'. It is recommended to always define 'related_name' for better reverse access.`;
-                    }
-            }
+                if (
+                    symbol.type === "django_model_field" &&
+                    symbol.has_set_foreign_key_related_name === false
+                ) {
+                    djangoModelAndSerializerFieldMessage = `ForeignKey '${name}' is missing 'related_name'. It is recommended to always define 'related_name' for better reverse access.`;
+                }
                 break;
         }
     
@@ -444,7 +444,10 @@ export class DjangoProvider extends LanguageProvider {
             diagnostics.push(symbolDiagnostic);
         }
 
-        if (djangoModelAndSerializerFieldMessage) {
+        if (
+            djangoModelAndSerializerFieldMessage &&
+            symbol.has_set_foreign_key_related_name === false
+        ) {
             const { line: adjustedLine, start, end } = this.adjustColumnOffsets(symbol);
             const range = Range.create(
                 Position.create(adjustedLine, start),

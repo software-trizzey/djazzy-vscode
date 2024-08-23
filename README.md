@@ -22,7 +22,10 @@
 ## Features (MVP) ✨
 
 - **Django N+1 Query Detection**: Identifies potential N+1 query issues in Django projects, flagging instances where related field access occurs within loops without proper optimization.
-- **Django-Specific Linting**: Automatically check your Django code against best practices and common pitfalls.
+- **Django-Specific Linting**: Automatically check your Django code against best practices and common pitfalls, including:
+  - **ForeignKey Validation**: Ensures all `ForeignKey` fields have a `related_name` and `on_delete` argument specified to avoid common pitfalls in query relationships and data management.
+  - **Raw SQL Query Detection**: Flags direct usage of raw SQL queries, including `raw()` and `connection.cursor()`. These can bypass Django ORM protections and introduce security vulnerabilities. Djangoly suggests safer alternatives using Django's ORM.
+  - **CharField and TextField Nullability**: Ensures `CharField` and `TextField` fields are not incorrectly marked as `null=True`, which can lead to inconsistencies in data integrity.
 - **Test Suite Conventions**: Notify developers to add or update test files when changes are detected in Django views or models.
 - **Redundant Comment Detection**: Flags comments that do not contribute additional information or context to the code.
 

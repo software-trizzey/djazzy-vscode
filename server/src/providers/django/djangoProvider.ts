@@ -423,11 +423,12 @@ export class DjangoProvider extends LanguageProvider {
                     djangoModelAndSerializerFieldMessage = result.reason;
                 }
 
-                if (
-                    symbol.type === "django_model_field" &&
-                    symbol.has_set_foreign_key_related_name === false
-                ) {
-                    djangoModelAndSerializerFieldMessage = `ForeignKey '${name}' is missing 'related_name'. It is recommended to always define 'related_name' for better reverse access.`;
+                if (symbol.type === "django_model_field") {
+                    if (symbol.has_set_foreign_key_related_name === false) {
+                        djangoModelAndSerializerFieldMessage = `ForeignKey '${name}' is missing 'related_name'. It is recommended to always define 'related_name' for better reverse access.`;
+                    } else if (symbol.has_set_foreign_key_on_delete === false) {
+                        djangoModelAndSerializerFieldMessage = `ForeignKey '${name}' is missing 'on_delete'. It is strongly recommended to always define 'on_delete' for better data integrity.`;
+                    }
                 }
                 break;
         }
@@ -446,18 +447,24 @@ export class DjangoProvider extends LanguageProvider {
 
         if (
             djangoModelAndSerializerFieldMessage &&
-            symbol.has_set_foreign_key_related_name === false
+            (
+                symbol.has_set_foreign_key_related_name === false ||
+                symbol.has_set_foreign_key_on_delete === false
+            )
         ) {
             const { line: adjustedLine, start, end } = this.adjustColumnOffsets(symbol);
             const range = Range.create(
                 Position.create(adjustedLine, start),
                 Position.create(adjustedLine, end)
             );
+            // TODO: severity should be configurable
+            const severity = symbol.has_set_foreign_key_on_delete === false ? 
+                DiagnosticSeverity.Warning : DiagnosticSeverity.Information;
     
             const diagnostic = this.diagnosticsManager.createDiagnostic(
                 range,
                 djangoModelAndSerializerFieldMessage,
-                DiagnosticSeverity.Information // TODO: should be configurable
+                severity
             );
             diagnostics.push(diagnostic);
         }
@@ -833,17 +840,6 @@ export class DjangoProvider extends LanguageProvider {
 
         return uniqueIssues;
     }
-
-    private isForeignKeyField(value: string): boolean {
-        return value.includes("ForeignKey");
-    }
-    
-    private foreignKeyHasRelatedName(symbol: any): boolean {
-        if (symbol.arguments && Array.isArray(symbol.arguments)) {
-            return symbol.arguments.some((arg: any) => arg.name === "related_name");
-        }
-        return false;
-    }    
 
     private generateIssueKey(issue: Issue): string {
         // Create a unique key based on the issue's properties

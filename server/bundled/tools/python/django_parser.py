@@ -108,11 +108,16 @@ class DjangoAnalyzer(Analyzer):
             if isinstance(target, ast.Name):
                 value_source = ast.get_source_segment(self.source_code, node.value)
                 comments = self.get_related_comments(node)
+
+                self.check_foreign_key_related_name(node, target, comments, value_source)
                 
                 if self.in_class and self.current_django_class_type:
                     symbol_type = f'{self.current_django_class_type}_field'
                 else:
                     symbol_type = 'assignment'
+
+                full_line_text = self.source_code.splitlines()[node.lineno - 1]
+                full_line_length = len(full_line_text) 
                 
                 self.symbols.append(self._create_symbol_dict(
                     type=symbol_type,
@@ -122,7 +127,8 @@ class DjangoAnalyzer(Analyzer):
                     col_offset=target.col_offset,
                     end_col_offset=target.col_offset + len(target.id),
                     is_reserved=False,
-                    value=value_source
+                    value=value_source,
+                    full_line_length=full_line_length
                 ))
         
         self.generic_visit(node)
@@ -207,6 +213,26 @@ class DjangoAnalyzer(Analyzer):
                 IssueSeverity.WARNING,
                 IssueDocLinks.SESSION_COOKIE_SECURE
             )
+
+    def check_foreign_key_related_name(self, node, target, comments, value_source):
+        """
+        Helper method to check if a ForeignKey field is missing the related_name argument.
+        """
+        if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Attribute):
+            if node.value.func.attr == 'ForeignKey':
+                has_related_name = any(kw.arg == 'related_name' for kw in node.value.keywords)
+                if not has_related_name:
+                    self.symbols.append(self._create_symbol_dict(
+                        type='missing_related_name',
+                        name=target.id,
+                        comments=comments,
+                        line=node.lineno,
+                        col_offset=target.col_offset,
+                        end_col_offset=target.col_offset + len(target.id),
+                        is_reserved=False,
+                        value=value_source,
+                        message=f"ForeignKey '{target.id}' is missing 'related_name'."
+                    ))
 
     def _get_django_class_type(self, bases):
         for base in bases:

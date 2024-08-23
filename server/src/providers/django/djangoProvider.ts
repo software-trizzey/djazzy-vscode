@@ -358,7 +358,9 @@ export class DjangoProvider extends LanguageProvider {
             return; // Skip validation if line not in changedLines
         }
     
-        let result = null;
+        let result: { violates: boolean; reason: string, diagnostics?: any[] } | undefined;
+        let djangoModelAndSerializerFieldMessage: string | undefined = undefined;
+
         switch (type) {
             case "function":
             case "django_model_method":
@@ -416,6 +418,17 @@ export class DjangoProvider extends LanguageProvider {
                     variableName: name,
                     variableValue: this.extractDjangoFieldValue(value),
                 });
+
+                if (result && result.violates) {
+                    djangoModelAndSerializerFieldMessage = result.reason;
+                }
+
+                if (symbol.type === "django_model_field" && this.isForeignKeyField(value)) {
+                    const hasRelatedName = this.foreignKeyHasRelatedName(symbol);
+                    if (!hasRelatedName) {
+                        djangoModelAndSerializerFieldMessage = `ForeignKey '${name}' is missing 'related_name'. It is recommended to always define 'related_name' for better reverse access.`;
+                    }
+            }
                 break;
         }
     
@@ -429,6 +442,21 @@ export class DjangoProvider extends LanguageProvider {
                 range, result.reason, DiagnosticSeverity.Warning
             );
             diagnostics.push(symbolDiagnostic);
+        }
+
+        if (djangoModelAndSerializerFieldMessage) {
+            const { line: adjustedLine, start, end } = this.adjustColumnOffsets(symbol);
+            const range = Range.create(
+                Position.create(adjustedLine, start),
+                Position.create(adjustedLine, end)
+            );
+    
+            const diagnostic = this.diagnosticsManager.createDiagnostic(
+                range,
+                djangoModelAndSerializerFieldMessage,
+                DiagnosticSeverity.Information // TODO: should be configurable
+            );
+            diagnostics.push(diagnostic);
         }
     
         this.handleComments(leading_comments, symbol, diagnostics);
@@ -650,10 +678,12 @@ export class DjangoProvider extends LanguageProvider {
 		if (symbol.type === "function" || symbol.type.startsWith("django_") && symbol.type.endsWith("_method")) {
 			start += "def ".length;
             end = start + symbol.name.length;
-		} else if (symbol.type === "class" || symbol.type.startsWith("django_")) {
+		} else if (symbol.type === "class") {
 			start += "class ".length;
 			end = symbol.end_col_offset || (start + symbol.name.length);
-		}
+		} else if (symbol.value?.includes("ForeignKey") && symbol?.full_line_length) {
+            end = symbol.full_line_length;
+        }
 	
 		start = Math.max(0, start);
 		end = Math.max(start, end);
@@ -800,6 +830,17 @@ export class DjangoProvider extends LanguageProvider {
 
         return uniqueIssues;
     }
+
+    private isForeignKeyField(value: string): boolean {
+        return value.includes("ForeignKey");
+    }
+    
+    private foreignKeyHasRelatedName(symbol: any): boolean {
+        if (symbol.arguments && Array.isArray(symbol.arguments)) {
+            return symbol.arguments.some((arg: any) => arg.name === "related_name");
+        }
+        return false;
+    }    
 
     private generateIssueKey(issue: Issue): string {
         // Create a unique key based on the issue's properties

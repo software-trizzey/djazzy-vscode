@@ -3,6 +3,8 @@ import json
 import re
 import sys
 
+from typing import Optional
+
 from ast_parser import Analyzer, serialize_file_data
 from nplusone.nplusone_analyzer import NPlusOneDetector
 from nplusone.scorer import NPlusOneScorer
@@ -108,11 +110,16 @@ class DjangoAnalyzer(Analyzer):
             if isinstance(target, ast.Name):
                 value_source = ast.get_source_segment(self.source_code, node.value)
                 comments = self.get_related_comments(node)
+
+                has_related_name_field = self.check_foreign_key_related_name(node)
                 
                 if self.in_class and self.current_django_class_type:
                     symbol_type = f'{self.current_django_class_type}_field'
                 else:
                     symbol_type = 'assignment'
+
+                full_line_text = self.source_code.splitlines()[node.lineno - 1]
+                full_line_length = len(full_line_text) 
                 
                 self.symbols.append(self._create_symbol_dict(
                     type=symbol_type,
@@ -122,7 +129,9 @@ class DjangoAnalyzer(Analyzer):
                     col_offset=target.col_offset,
                     end_col_offset=target.col_offset + len(target.id),
                     is_reserved=False,
-                    value=value_source
+                    value=value_source,
+                    has_set_foreign_key_related_name=has_related_name_field,
+                    full_line_length=full_line_length
                 ))
         
         self.generic_visit(node)
@@ -207,6 +216,22 @@ class DjangoAnalyzer(Analyzer):
                 IssueSeverity.WARNING,
                 IssueDocLinks.SESSION_COOKIE_SECURE
             )
+
+    def check_foreign_key_related_name(self, node) -> Optional[bool]:
+        """
+        Helper method to check if a ForeignKey field has a related_name argument.
+        Returns:
+            - True: If related_name is present in ForeignKey
+            - False: If ForeignKey does not have related_name
+            - None: If the field is not a ForeignKey
+        """
+        if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Attribute):
+            if node.value.func.attr == 'ForeignKey' and isinstance(node.value.func.value, ast.Name) and node.value.func.value.id == 'models':
+                for keyword in node.value.keywords:
+                    if keyword.arg == 'related_name':
+                        return True
+                return False
+        return None 
 
     def _get_django_class_type(self, bases):
         for base in bases:

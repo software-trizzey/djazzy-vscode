@@ -110,6 +110,7 @@ class Analyzer(ast.NodeVisitor):
             'col_offset': kwargs.get('col_offset'),
             'end_col_offset': kwargs.get('end_col_offset'),
             'is_reserved': kwargs.get('is_reserved', False),
+            'has_set_foreign_key_related_name': kwargs.get('has_set_foreign_key_related_name', None),
         }
         
         if 'value' in kwargs:
@@ -134,6 +135,8 @@ class Analyzer(ast.NodeVisitor):
             symbol['arguments'] = kwargs['arguments']
         if kwargs.get('high_priority'):
             symbol['high_priority'] = kwargs['high_priority']
+        if kwargs.get('full_line_length'):
+            symbol['full_line_length'] = kwargs['full_line_length']
         
         return symbol
 

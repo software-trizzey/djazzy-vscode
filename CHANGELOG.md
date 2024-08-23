@@ -7,8 +7,8 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - [Feature] Flag Django model foreign key fields that don't have `related_name=` set.
-- [Feature] TODO: Flag Django model foreign key fields that don't have `on_delete=` set.
-- [Feature] TODO: Flag Django model CharField and TextField fields that have set `null=True`
+- [Feature] Flag Django model foreign key fields that don't have `on_delete=` set.
+- [Feature] Flag Django model CharField and TextField fields that have set `null=True`
 - [Feature] TODO: Avoid Direct Use of raw() Queries (this check encourages safer code practices).
 
 ## [Version 0.1.9] - 2024-08-22

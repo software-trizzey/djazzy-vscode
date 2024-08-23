@@ -112,6 +112,8 @@ class DjangoAnalyzer(Analyzer):
                 comments = self.get_related_comments(node)
 
                 has_related_name_field = self.check_foreign_key_related_name(node)
+                has_on_delete_field = self.check_foreign_key_on_delete(node)
+                is_charfield_or_textfield_nullable = self.check_charfield_and_textfield_is_nullable(node)
                 
                 if self.in_class and self.current_django_class_type:
                     symbol_type = f'{self.current_django_class_type}_field'
@@ -131,6 +133,8 @@ class DjangoAnalyzer(Analyzer):
                     is_reserved=False,
                     value=value_source,
                     has_set_foreign_key_related_name=has_related_name_field,
+                    has_set_foreign_key_on_delete=has_on_delete_field,
+                    is_charfield_or_textfield_nullable=is_charfield_or_textfield_nullable,
                     full_line_length=full_line_length
                 ))
         
@@ -231,7 +235,39 @@ class DjangoAnalyzer(Analyzer):
                     if keyword.arg == 'related_name':
                         return True
                 return False
-        return None 
+        return None
+    
+    def check_foreign_key_on_delete(self, node) -> Optional[bool]:
+        """
+        Helper method to check if a ForeignKey field has an on_delete argument.
+        Returns:
+            - True: If on_delete is present in ForeignKey
+            - False: If ForeignKey does not have on_delete
+            - None: If the field is not a ForeignKey
+        """
+        if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Attribute):
+            if node.value.func.attr == 'ForeignKey' and isinstance(node.value.func.value, ast.Name) and node.value.func.value.id == 'models':
+                for keyword in node.value.keywords:
+                    if keyword.arg == 'on_delete':
+                        return True
+                return False
+        return None
+    
+    def check_charfield_and_textfield_is_nullable(self, node):
+        """
+        Helper method to check if a CharField or TextField has null=True.
+        Returns:
+            - True: If null=True is present in CharField or TextField
+            - False: If CharField or TextField does not have null=True
+            - None: If the field is not a CharField or TextField
+        """
+        if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Attribute):
+            if node.value.func.attr in ['CharField', 'TextField'] and isinstance(node.value.func.value, ast.Name):
+                for keyword in node.value.keywords:
+                    if keyword.arg == 'null' and keyword.value.value == True:
+                        return True
+                return False
+        return None
 
     def _get_django_class_type(self, bases):
         for base in bases:

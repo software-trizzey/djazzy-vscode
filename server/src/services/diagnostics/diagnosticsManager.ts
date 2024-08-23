@@ -52,6 +52,7 @@ export class DiagnosticsManager {
         severity: DiagnosticSeverity,
         sourceType = NAMING_CONVENTION_VIOLATION_SOURCE_TYPE
     ): Diagnostic {
+        // TODO: create link to more information based on sourcetype and message
         return Diagnostic.create(
             range,
             message,

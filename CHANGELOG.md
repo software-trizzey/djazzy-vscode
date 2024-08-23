@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Version 0.1.11] - 2024-08-23
+
+### Fixed
+
+- [Bugfix] Fix issue where model field parsing logic didn't account for Django models that inherited from other models (not models.Model)
+
+
 ## [Version 0.1.10] - 2024-08-23
 
 ### Added
@@ -10,6 +17,10 @@ All notable changes to this project will be documented in this file.
 - [Feature] Flag Django model foreign key fields that don't have `on_delete=` set.
 - [Feature] Flag Django model CharField and TextField fields that have set `null=True`
 - [Feature] Avoid Direct Use of raw() and cursor() Queries (this check encourages safer code practices).
+
+### Fixed
+
+- [Bugfix] Fixed issue where for loop variables weren't carried over by our parser.
 
 ## [Version 0.1.9] - 2024-08-22
 

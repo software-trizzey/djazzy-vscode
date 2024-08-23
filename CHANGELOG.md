@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Version 0.1.11] - 2024-08-23
 
+### Changed
+
+- [Enhancement] Improve Python/Django parser logging. This will help us diagnose errors in prod.
+
 ### Fixed
 
 - [Bugfix] Fix issue where model field parsing logic didn't account for Django models that inherited from other models (not models.Model)

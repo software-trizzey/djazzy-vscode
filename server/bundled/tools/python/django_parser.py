@@ -57,12 +57,17 @@ class DjangoAnalyzer(Analyzer):
 
     def visit_ClassDef(self, node):
         self.in_class = True
-        django_class_type = self._get_django_class_type(node.bases)
+        class_definitions = None
+        if self.tree:
+            class_definitions = {
+                class_node.name: class_node for class_node in ast.walk(self.tree) if isinstance(class_node, ast.ClassDef)
+            }
 
-        if django_class_type:
+        # Check if this class or any of its parent classes inherit from models.Model
+        if self.is_django_model_class(node, class_definitions):
             comments = self.get_related_comments(node)
             self.symbols.append(self._create_symbol_dict(
-                type=django_class_type,
+                type='django_model',
                 name=node.name,
                 comments=comments,
                 line=node.lineno,
@@ -70,7 +75,7 @@ class DjangoAnalyzer(Analyzer):
                 end_col_offset=node.col_offset + len(node.name),
                 is_reserved=False
             ))
-            self.current_django_class_type = django_class_type
+            self.current_django_class_type = 'django_model'
         else:
             self.current_django_class_type = None
 
@@ -249,7 +254,7 @@ class DjangoAnalyzer(Analyzer):
             - None: If the field is not a ForeignKey
         """
         if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Attribute):
-            if node.value.func.attr == 'ForeignKey' and isinstance(node.value.func.value, ast.Name) and node.value.func.value.id == 'models':
+            if node.value.func.attr == 'ForeignKey':
                 for keyword in node.value.keywords:
                     if keyword.arg == 'related_name':
                         return True
@@ -265,13 +270,13 @@ class DjangoAnalyzer(Analyzer):
             - None: If the field is not a ForeignKey
         """
         if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Attribute):
-            if node.value.func.attr == 'ForeignKey' and isinstance(node.value.func.value, ast.Name) and node.value.func.value.id == 'models':
+            if node.value.func.attr == 'ForeignKey':
                 for keyword in node.value.keywords:
                     if keyword.arg == 'on_delete':
                         return True
                 return False
         return None
-    
+
     def check_charfield_and_textfield_is_nullable(self, node):
         """
         Helper method to check if a CharField or TextField has null=True.
@@ -281,7 +286,7 @@ class DjangoAnalyzer(Analyzer):
             - None: If the field is not a CharField or TextField
         """
         if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Attribute):
-            if node.value.func.attr in ['CharField', 'TextField'] and isinstance(node.value.func.value, ast.Name):
+            if node.value.func.attr in ['CharField', 'TextField']:
                 for keyword in node.value.keywords:
                     if keyword.arg == 'null' and keyword.value.value == True:
                         return True
@@ -317,6 +322,24 @@ class DjangoAnalyzer(Analyzer):
                 if isinstance(func.value, ast.Name) and func.value.id == "connection":
                     return True
             return self.is_connection_cursor(func.value)
+        return False
+    
+    def is_django_model_class(self, node, class_definitions):
+        LOGGER.debug(f"Checking if class {node.name} is a Django model class")
+        if not isinstance(node, ast.ClassDef):
+            return False
+        
+        for base in node.bases:
+            # Check if base class is 'models.Model' or indirectly inherits it
+            if isinstance(base, ast.Attribute) and base.attr == 'Model' and base.value.id == 'models':
+                return True
+            
+            # Recursively check if base class inherits from models.Model
+            if isinstance(base, ast.Name) and base.id in class_definitions:
+                parent_class = class_definitions[base.id]
+                if self.is_django_model_class(parent_class, class_definitions):
+                    return True
+        
         return False
 
     def add_security_issue(self, issue_type: str, line: int, message: str, severity: str, doc_link: str = None):

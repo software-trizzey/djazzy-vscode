@@ -28,6 +28,8 @@ class DjangoAnalyzer(Analyzer):
         self.model_cache = self.parse_model_cache(model_cache_json)
         self.nplusone_analyzer = NPlusOneDetector(source_code)
         self.nplusone_issues = []
+        self.flag_cursor_detection = True # TODO: make this a setting
+        self.processed_nodes = set()
 
     def parse_model_cache(self, model_cache_json):
         try:
@@ -35,6 +37,23 @@ class DjangoAnalyzer(Analyzer):
         except json.JSONDecodeError as e:
             LOGGER.error(f"Error parsing model cache JSON: {e}")
             return {}
+        
+    def visit_Call(self, node):
+        node_id = (node.lineno, node.col_offset)
+        if node_id in self.processed_nodes:
+            return
+
+        self.processed_nodes.add(node_id)
+
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr == "raw":
+                self.add_raw_sql_issue(node)
+
+            if self.flag_cursor_detection:
+                if self.is_connection_cursor(node.func):
+                    self.add_raw_sql_issue(node, is_using_cursor=True, severity=IssueSeverity.INFORMATION)
+
+        self.generic_visit(node)
 
     def visit_ClassDef(self, node):
         self.in_class = True
@@ -291,6 +310,14 @@ class DjangoAnalyzer(Analyzer):
             if isinstance(node.func, ast.Attribute):
                 return node.func.attr in QUERY_METHODS
         return any(self.contains_query_method(child) for child in ast.iter_child_nodes(node))
+    
+    def is_connection_cursor(self, func):
+        if isinstance(func, ast.Attribute):
+            if func.attr == "cursor":
+                if isinstance(func.value, ast.Name) and func.value.id == "connection":
+                    return True
+            return self.is_connection_cursor(func.value)
+        return False
 
     def add_security_issue(self, issue_type: str, line: int, message: str, severity: str, doc_link: str = None):
         LOGGER.debug(f'Adding security issue: {issue_type} - {message}')
@@ -302,6 +329,33 @@ class DjangoAnalyzer(Analyzer):
             'severity': severity,
             'doc_link': doc_link
         })
+
+    def add_raw_sql_issue(self, node, is_using_cursor=False, severity=IssueSeverity.WARNING):
+        """
+        Adds an issue if a raw() SQL query or connection.cursor() SQL execution is detected.
+        """
+        LOGGER.debug(f"Raw SQL query detected for {node.func.attr} at line {node.lineno}")
+        raw_query_line_number = node.lineno
+
+        if is_using_cursor:
+            message = (
+                "Avoid using 'connection.cursor()' to execute raw SQL queries directly. "
+                "This can bypass Django's ORM protections against SQL injection and reduce database portability. "
+                "Consider using Django's ORM instead."
+            )
+        else:
+            message = (
+                "Avoid using 'raw()' SQL queries directly. This can bypass Django's ORM protections "
+                "against SQL injection and reduce database portability. Consider using Django's ORM instead."
+            )
+
+        self.add_security_issue(
+            issue_type="raw_sql_usage",
+            line=raw_query_line_number,
+            message=message,
+            severity=severity,
+            doc_link=IssueDocLinks.RAW_SQL_USAGE
+        )
 
     def get_nplusone_issues(self):
         return self.nplusone_analyzer.analyze()

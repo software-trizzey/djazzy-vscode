@@ -38,6 +38,24 @@ class DjangoAnalyzer(Analyzer):
             LOGGER.error(f"Error parsing model cache JSON: {e}")
             return {}
         
+    def get_model_info(self, model_name: str) -> Optional[dict]:
+        """
+        Retrieves model information from the model cache.
+        Args:
+            model_name (str): The name of the model class to retrieve information for.
+
+        Returns:
+            Optional[dict]: A dictionary containing fields, relationships, and parent models,
+                            or None if the model is not found.
+        """
+        model_info = self.model_cache.get(model_name)
+        if model_info:
+            LOGGER.debug(f"Found model info for {model_name}: {model_info}")
+            return model_info
+        else:
+            LOGGER.debug(f"Model info for {model_name} not found in cache")
+            return None
+        
     def visit_Call(self, node):
         node_id = (node.lineno, node.col_offset)
         if node_id in self.processed_nodes:
@@ -325,21 +343,40 @@ class DjangoAnalyzer(Analyzer):
         return False
     
     def is_django_model_class(self, node, class_definitions):
-        LOGGER.debug(f"Checking if class {node.name} is a Django model class")
         if not isinstance(node, ast.ClassDef):
             return False
-        
+
         for base in node.bases:
-            # Check if base class is 'models.Model' or indirectly inherits it
+            # Direct check for 'models.Model'
             if isinstance(base, ast.Attribute) and base.attr == 'Model' and base.value.id == 'models':
+                LOGGER.debug(f"Found direct subclass of models.Model for {node.name}")
                 return True
-            
-            # Recursively check if base class inherits from models.Model
+
+            # Recursively check each parent class in the chain
             if isinstance(base, ast.Name) and base.id in class_definitions:
                 parent_class = class_definitions[base.id]
+                LOGGER.debug(f"Checking parent class {base.id} for {node.name}")
                 if self.is_django_model_class(parent_class, class_definitions):
+                    LOGGER.debug(f"Model {node.name} is a django model with a parent of {base.id}")
                     return True
-        
+
+            if isinstance(base, ast.Name):
+                LOGGER.debug(f"Checking parent models for {base.id}")
+                parent_model_info = self.get_model_info(base.id)  # Fetch cached model info
+                if parent_model_info:
+                    LOGGER.debug(f"Parent model info for {base.id}: {parent_model_info}")
+                    # Recursively check if any of the parent models are Django models
+                    for parent_model in parent_model_info['parent_models']:
+                        LOGGER.debug(f"Checking if {parent_model} is a Django model for {node.name}")
+                        if parent_model == 'models.Model':
+                            LOGGER.debug(f"Model {node.name} is a django model because its parent is models.Model")
+                            return True
+                        if parent_model in class_definitions:
+                            parent_class = class_definitions[parent_model]
+                            if self.is_django_model_class(parent_class, class_definitions):
+                                LOGGER.debug(f"Model {node.name} is a django model with a parent of {parent_model}")
+                                return True
+        LOGGER.debug(f"Model {node.name} is not a django model")
         return False
 
     def add_security_issue(self, issue_type: str, line: int, message: str, severity: str, doc_link: str = None):

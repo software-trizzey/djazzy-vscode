@@ -4,11 +4,12 @@ import { URI } from 'vscode-uri';
 import { Connection, WorkspaceFolder } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
-export type ModelCache = Map<string, { fields: Record<string, string>, relationships: Record<string, any> }>;
+export type ModelCache = Map<string, { fields: Record<string, string>, relationships: Record<string, any>, parent_models: string[] }>;
 
 interface ModelInfo {
     fields: Record<string, string>;
     relationships: Record<string, any>;
+    parent_models: string[];
 }
 
 export class DjangoProjectDetector {
@@ -174,18 +175,19 @@ export class DjangoProjectDetector {
             return;
         }
 
-        const modelRegex = /class\s+(\w+)\(.*models\.Model.*\):[\s\S]*?(?=\n\S|$)/g;
+        const modelRegex = /class\s+(\w+)\(([\w.,\s]*)\):[\s\S]*?(?=\n\S|$)/g;
         const text = document.getText();
         let match;
         while ((match = modelRegex.exec(text)) !== null) {
             const modelName = match[1];
+            const parentModels = match[2].split(',').map(model => model.trim());
             const modelContent = match[0];
-            const modelInfo = this.extractModelInfo(modelContent);
+            const modelInfo = this.extractModelInfo(modelContent, parentModels);
             this.modelCache.set(modelName, modelInfo);
         }
     }
 
-    private static extractModelInfo(modelContent: string): ModelInfo {
+    private static extractModelInfo(modelContent: string, parentModels: string[]): ModelInfo {
         const fields: Record<string, string> = {};
         const relationships: Record<string, any> = {};
 
@@ -210,7 +212,7 @@ export class DjangoProjectDetector {
             };
         }
 
-        return { fields, relationships };
+        return { fields, relationships, parent_models: parentModels };
     }
 
     private static extractFieldProperties(propsString: string): Record<string, string> {

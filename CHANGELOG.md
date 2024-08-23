@@ -10,7 +10,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- [Bugfix] Fix issue where model field parsing logic didn't account for Django models that inherited from other models (not models.Model)
+- [Bugfix] Fix issue where model field parsing logic didn't account for Django models that inherited from other models (not models.Model). This update required that we cache model parents during the initial scan so that we could trace the inheritance chain through multiple files.
 
 
 ## [Version 0.1.10] - 2024-08-23

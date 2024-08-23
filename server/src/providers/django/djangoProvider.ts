@@ -462,7 +462,7 @@ export class DjangoProvider extends LanguageProvider {
         );
         const parserFilePath = path.join(basePath, 'django_parser.py');
 
-        console.log(`[DEBUG] Resolved parser file path: ${parserFilePath}`);
+        console.log(`Resolved parser file path: ${parserFilePath}`);
     
         return parserFilePath;
     }

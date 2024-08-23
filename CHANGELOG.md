@@ -2,14 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Version 0.1.10] - 2024-08-22
+## [Version 0.1.10] - 2024-08-23
 
 ### Added
 
 - [Feature] Flag Django model foreign key fields that don't have `related_name=` set.
 - [Feature] Flag Django model foreign key fields that don't have `on_delete=` set.
 - [Feature] Flag Django model CharField and TextField fields that have set `null=True`
-- [Feature] TODO: Avoid Direct Use of raw() Queries (this check encourages safer code practices).
+- [Feature] Avoid Direct Use of raw() and cursor() Queries (this check encourages safer code practices).
 
 ## [Version 0.1.9] - 2024-08-22
 

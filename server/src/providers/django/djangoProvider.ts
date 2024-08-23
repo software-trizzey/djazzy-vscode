@@ -17,7 +17,8 @@ import {
 	DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE,
 	DJANGO_SECURITY_VIOLATION_SOURCE_TYPE,
 	NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
-	REDUNDANT_COMMENT_VIOLATION_SOURCE_TYPE
+	REDUNDANT_COMMENT_VIOLATION_SOURCE_TYPE,
+    DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE
 } from "../../constants/diagnostics";
 import { ExtensionSettings, defaultConventions } from "../../settings";
 import LOGGER from '../../common/logs';
@@ -359,7 +360,6 @@ export class DjangoProvider extends LanguageProvider {
         }
     
         let result: { violates: boolean; reason: string, diagnostics?: any[] } | undefined;
-        let djangoModelAndSerializerFieldMessage: string | undefined = undefined;
 
         switch (type) {
             case "function":
@@ -420,53 +420,15 @@ export class DjangoProvider extends LanguageProvider {
                 });
 
                 if (result && result.violates) {
-                    djangoModelAndSerializerFieldMessage = result.reason;
+                    this.addDiagnostic(diagnostics, symbol, result.reason);
                 }
 
-                if (symbol.type === "django_model_field") {
-                    if (symbol.has_set_foreign_key_related_name === false) {
-                        djangoModelAndSerializerFieldMessage = `ForeignKey '${name}' is missing 'related_name'. It is recommended to always define 'related_name' for better reverse access.`;
-                    } else if (symbol.has_set_foreign_key_on_delete === false) {
-                        djangoModelAndSerializerFieldMessage = `ForeignKey '${name}' is missing 'on_delete'. It is strongly recommended to always define 'on_delete' for better data integrity.`;
-                    }
-                }
+                this.checkDjangoFieldConventions(symbol, diagnostics);
                 break;
         }
     
         if (result && result.violates) {
-            const { line, start, end } = this.adjustColumnOffsets(symbol);
-            const range = Range.create(
-                Position.create(line, start),
-                Position.create(line, end)
-            );
-            const symbolDiagnostic = this.diagnosticsManager.createDiagnostic(
-                range, result.reason, DiagnosticSeverity.Warning
-            );
-            diagnostics.push(symbolDiagnostic);
-        }
-
-        if (
-            djangoModelAndSerializerFieldMessage &&
-            (
-                symbol.has_set_foreign_key_related_name === false ||
-                symbol.has_set_foreign_key_on_delete === false
-            )
-        ) {
-            const { line: adjustedLine, start, end } = this.adjustColumnOffsets(symbol);
-            const range = Range.create(
-                Position.create(adjustedLine, start),
-                Position.create(adjustedLine, end)
-            );
-            // TODO: severity should be configurable
-            const severity = symbol.has_set_foreign_key_on_delete === false ? 
-                DiagnosticSeverity.Warning : DiagnosticSeverity.Information;
-    
-            const diagnostic = this.diagnosticsManager.createDiagnostic(
-                range,
-                djangoModelAndSerializerFieldMessage,
-                severity
-            );
-            diagnostics.push(diagnostic);
+            this.addDiagnostic(diagnostics, symbol, result.reason);
         }
     
         this.handleComments(leading_comments, symbol, diagnostics);
@@ -691,9 +653,9 @@ export class DjangoProvider extends LanguageProvider {
 		} else if (symbol.type === "class") {
 			start += "class ".length;
 			end = symbol.end_col_offset || (start + symbol.name.length);
-		} else if (symbol.value?.includes("ForeignKey") && symbol?.full_line_length) {
+		} else if (/(ForeignKey|TextField|CharField)/.test(symbol.value) && symbol?.full_line_length) {
             end = symbol.full_line_length;
-        }
+        }        
 	
 		start = Math.max(0, start);
 		end = Math.max(start, end);
@@ -819,6 +781,58 @@ export class DjangoProvider extends LanguageProvider {
         console.log(`Processed ${uniqueIssues.size} unique N+1 issues`);
     }
 
+    private checkDjangoFieldConventions(symbol: any, diagnostics: Diagnostic[]): void {
+        let djangoModelAndSerializerFieldMessage: string | undefined;
+    
+        if (symbol.type === "django_model_field") {
+            if (symbol.has_set_foreign_key_related_name === false) {
+                djangoModelAndSerializerFieldMessage = `ForeignKey '${symbol.name}' is missing 'related_name'. It is recommended to always define 'related_name' for better reverse access.`;
+            } else if (symbol.has_set_foreign_key_on_delete === false) {
+                djangoModelAndSerializerFieldMessage = `ForeignKey '${symbol.name}' is missing 'on_delete'. It is strongly recommended to always define 'on_delete' for better data integrity.`;
+            } else if (symbol.is_charfield_or_textfield_nullable === true) {
+                djangoModelAndSerializerFieldMessage = `CharField/TextField '${symbol.name}' uses null=True. Use blank=True instead to avoid NULL values. Django stores empty strings for text fields, keeping queries and validation simpler.`;
+            }
+        }
+    
+        if (djangoModelAndSerializerFieldMessage) {
+            const severity = this.determineModelFieldSeverity(symbol);
+            this.addDiagnostic(
+                diagnostics,
+                symbol,
+                djangoModelAndSerializerFieldMessage,
+                severity,
+                DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE
+            );
+        }
+    }
+
+    private addDiagnostic(
+        diagnostics: Diagnostic[],
+        symbol: any,
+        message: string,
+        severity: DiagnosticSeverity = DiagnosticSeverity.Warning,
+        sourceType: string = NAMING_CONVENTION_VIOLATION_SOURCE_TYPE
+    ): void {
+        const { line, start, end } = this.adjustColumnOffsets(symbol);
+        const range = Range.create(
+            Position.create(line, start),
+            Position.create(line, end)
+        );
+    
+        const diagnostic = this.diagnosticsManager.createDiagnostic(range, message, severity, sourceType);
+        diagnostics.push(diagnostic);
+    }
+
+    private determineModelFieldSeverity(symbol: any): DiagnosticSeverity {
+        // TODO: this should be configurable via settings
+        if (symbol.has_set_foreign_key_on_delete === false) {
+            return DiagnosticSeverity.Warning;
+        } else if (symbol.has_set_foreign_key_related_name === false) {
+            return DiagnosticSeverity.Information;
+        }
+        return DiagnosticSeverity.Information;
+    }
+    
     private inferQueryType(code: string): string {
         if (code.includes('filter') || code.includes('get') || code.includes('all')) {
             return 'read';

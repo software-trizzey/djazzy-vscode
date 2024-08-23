@@ -137,6 +137,8 @@ class Analyzer(ast.NodeVisitor):
             symbol['arguments'] = kwargs['arguments']
         if kwargs.get('high_priority'):
             symbol['high_priority'] = kwargs['high_priority']
+        if kwargs.get('target_positions'):
+            symbol['target_positions'] = kwargs['target_positions']
         if kwargs.get('full_line_length'):
             symbol['full_line_length'] = kwargs['full_line_length']
         
@@ -401,6 +403,7 @@ class Analyzer(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_For(self, node):
+        LOGGER.error(f"Visiting for loop {node}")
         comments = self.get_related_comments(node)
         target = None
         target_positions = []

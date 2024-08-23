@@ -51,6 +51,8 @@ class DjangoURLPatternVisitor(ast.NodeVisitor):
 class Analyzer(ast.NodeVisitor):
     def __init__(self, source_code):
         self.source_code = source_code
+        self.tree = None
+        self.source_code = source_code
         self.symbols = []
         self.comments = []
         self.pending_comments = []
@@ -498,10 +500,10 @@ class Analyzer(ast.NodeVisitor):
         LOGGER.info("Running parser...")
         try:
             self.get_comments()
-            tree = ast.parse(self.source_code)
-            self.visit(tree)
+            self.tree = ast.parse(self.source_code)
+            self.visit(self.tree)
             url_visitor = DjangoURLPatternVisitor()
-            url_visitor.visit(tree)
+            url_visitor.visit(self.tree)
             self.url_patterns = url_visitor.url_patterns
             for pattern in self.url_patterns:
                 self.symbols.append(self._create_symbol_dict(

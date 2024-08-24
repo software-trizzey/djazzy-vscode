@@ -14,6 +14,18 @@ from constants import (
     IssueSeverity
 )
 
+class RawSqlIssueMessages:
+    RAW_SQL_USAGE = (
+        "Avoid using 'raw' queries to execute raw SQL queries directly. "
+        "This can bypass Django's ORM protections against SQL injection and reduce database portability. "
+        "Consider using Django's ORM instead."
+    )
+    RAW_SQL_USAGE_WITH_CURSOR = (
+        "Avoid using 'connection.cursor()' to execute raw SQL queries directly. "
+        "This can bypass Django's ORM protections against SQL injection and reduce database portability. "
+        "Consider using Django's ORM instead."
+    )
+
 class SecurityIssue(object):
     def __init__(self, issue_type: str, line: int, message: str, severity: str, doc_link: str = None):
         self.issue_type = issue_type
@@ -68,15 +80,8 @@ class SecurityCheckService(ast.NodeVisitor):
 
     def add_raw_sql_issue(self, node, is_using_cursor=False, severity=IssueSeverity.WARNING):
         raw_query_line_number = node.lineno
-        message = (
-            "Avoid using 'connection.cursor()' to execute raw SQL queries directly. "
-            if is_using_cursor else
-            "Avoid using 'raw()' SQL queries directly. "
-        )
-        message += (
-            "This can bypass Django's ORM protections against SQL injection and reduce database portability. "
-            "Consider using Django's ORM instead."
-        )
+        message = RawSqlIssueMessages.RAW_SQL_USAGE_WITH_CURSOR if is_using_cursor else RawSqlIssueMessages.RAW_SQL_USAGE
+        
         self.add_security_issue(
             issue_type="raw_sql_usage",
             line=raw_query_line_number,

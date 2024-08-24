@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import patch
 
 from constants import IssueSeverity
-from checks.security import SecurityCheckService
+from checks.security import SecurityCheckService, RawSqlIssueMessages
 
 
 class TestSecurityCheckService(unittest.TestCase):
@@ -48,8 +48,20 @@ class TestSecurityCheckService(unittest.TestCase):
         self.assertIn('ALLOWED_HOSTS contains a wildcard', issues[0].message)
 
     @patch('log.LOGGER')
-    def test_raw_sql_query_detected(self, mock_logger):
-        source_code = """from django.db import connection\nconnection.cursor().execute('SELECT * FROM my_table')"""
+    def test_raw_sql_query_using_model_manager_detected(self, mock_logger):
+        source_code = "User.objects.raw('SELECT * FROM auth_user')"
+        service = SecurityCheckService(source_code)
+        
+        service.run_security_checks()
+        
+        issues = service.get_security_issues()
+        self.assertEqual(len(issues), 1)
+        self.assertEqual(issues[0].issue_type, 'raw_sql_usage')
+        self.assertEqual(issues[0].severity, IssueSeverity.WARNING)
+        self.assertIn(RawSqlIssueMessages.RAW_SQL_USAGE, issues[0].message)
+
+    def test_raw_sql_query_with_cursor_detected(self):
+        source_code = """from django.db import connection\nconnection.cursor()"""
         service = SecurityCheckService(source_code)
         
         service.run_security_checks()
@@ -58,7 +70,7 @@ class TestSecurityCheckService(unittest.TestCase):
         self.assertEqual(len(issues), 1)
         self.assertEqual(issues[0].issue_type, 'raw_sql_usage')
         self.assertEqual(issues[0].severity, IssueSeverity.INFORMATION)
-        self.assertIn("Avoid using 'connection.cursor()'", issues[0].message)
+        self.assertIn(RawSqlIssueMessages.RAW_SQL_USAGE_WITH_CURSOR, issues[0].message)
 
     @patch('log.LOGGER')
     def test_csrf_cookie_secure_false_detected(self, mock_logger):

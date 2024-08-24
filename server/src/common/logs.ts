@@ -5,6 +5,16 @@ export const rollbar = new Rollbar({
 	environment:  process.env.NODE_ENV === "development" ? "development" : "production",
 	captureUncaught: true,
 	captureUnhandledRejections: true,
+	checkIgnore: (isUncaught, args, item: any) => {
+		if (item.body.trace_chain && item.body.trace_chain.length > 0) {
+			const exception = item.body.trace_chain[0].exception;
+			if (exception && exception.message === "Canceled") {
+				console.log("Ignoring Canceled: Canceled error", exception);
+				return true;
+			}
+		}
+		return false; // Let all other errors through
+	},
 });
 
 

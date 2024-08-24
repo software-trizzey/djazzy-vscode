@@ -38,7 +38,6 @@ class ModelFieldCheckService:
         Returns:
             - A dictionary containing the results for each check.
         """
-        LOGGER.info(f"Running model field checks on {node}")
         results = {
             'has_related_name_field': self.check_foreign_key_related_name(node),
             'has_on_delete_field': self.check_foreign_key_on_delete(node),

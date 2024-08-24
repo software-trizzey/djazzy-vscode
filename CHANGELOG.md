@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Version 0.1.12] - 2024-08-24
+
+### Changed
+
+- [Enhancement] Refactored security checks to service class and added unit tests.
+- [Enhancement] Refactored model field checks to service class and added unit tests.
+- [Enhancement] Simplified PR template format.
+
 ## [Version 0.1.11] - 2024-08-23
 
 ### Changed

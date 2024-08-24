@@ -16,6 +16,7 @@ from nplusone.nplusone_analyzer import NPlusOneDetector
 from nplusone.scorer import NPlusOneScorer
 
 from checks.security import SecurityCheckService
+from checks.model_fields import ModelFieldCheckService
 
 
 class DjangoAnalyzer(Analyzer):
@@ -27,6 +28,7 @@ class DjangoAnalyzer(Analyzer):
         self.nplusone_issues = []
         self.security_service = SecurityCheckService(source_code)
         self.security_issues = []
+        self.model_field_check_service = ModelFieldCheckService(source_code)
 
     def parse_model_cache(self, model_cache_json):
         try:
@@ -133,9 +135,7 @@ class DjangoAnalyzer(Analyzer):
                 value_source = ast.get_source_segment(self.source_code, node.value)
                 comments = self.get_related_comments(node)
 
-                has_related_name_field = self.check_foreign_key_related_name(node)
-                has_on_delete_field = self.check_foreign_key_on_delete(node)
-                is_charfield_or_textfield_nullable = self.check_charfield_and_textfield_is_nullable(node)
+                field_check_results = self.model_field_check_service.run_model_field_checks(node)
                 
                 if self.in_class and self.current_django_class_type:
                     symbol_type = f'{self.current_django_class_type}_field'
@@ -154,61 +154,13 @@ class DjangoAnalyzer(Analyzer):
                     end_col_offset=target.col_offset + len(target.id),
                     is_reserved=False,
                     value=value_source,
-                    has_set_foreign_key_related_name=has_related_name_field,
-                    has_set_foreign_key_on_delete=has_on_delete_field,
-                    is_charfield_or_textfield_nullable=is_charfield_or_textfield_nullable,
+                    has_set_foreign_key_related_name=field_check_results["has_related_name_field"],
+                    has_set_foreign_key_on_delete=field_check_results["has_on_delete_field"],
+                    is_charfield_or_textfield_nullable=field_check_results["is_charfield_or_textfield_nullable"],
                     full_line_length=full_line_length
                 ))
         
         self.generic_visit(node)
-
-    def check_foreign_key_related_name(self, node) -> Optional[bool]:
-        """
-        Helper method to check if a ForeignKey field has a related_name argument.
-        Returns:
-            - True: If related_name is present in ForeignKey
-            - False: If ForeignKey does not have related_name
-            - None: If the field is not a ForeignKey
-        """
-        if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Attribute):
-            if node.value.func.attr == 'ForeignKey':
-                for keyword in node.value.keywords:
-                    if keyword.arg == 'related_name':
-                        return True
-                return False
-        return None
-    
-    def check_foreign_key_on_delete(self, node) -> Optional[bool]:
-        """
-        Helper method to check if a ForeignKey field has an on_delete argument.
-        Returns:
-            - True: If on_delete is present in ForeignKey
-            - False: If ForeignKey does not have on_delete
-            - None: If the field is not a ForeignKey
-        """
-        if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Attribute):
-            if node.value.func.attr == 'ForeignKey':
-                for keyword in node.value.keywords:
-                    if keyword.arg == 'on_delete':
-                        return True
-                return False
-        return None
-
-    def check_charfield_and_textfield_is_nullable(self, node):
-        """
-        Helper method to check if a CharField or TextField has null=True.
-        Returns:
-            - True: If null=True is present in CharField or TextField
-            - False: If CharField or TextField does not have null=True
-            - None: If the field is not a CharField or TextField
-        """
-        if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Attribute):
-            if node.value.func.attr in ['CharField', 'TextField']:
-                for keyword in node.value.keywords:
-                    if keyword.arg == 'null' and keyword.value.value is True:
-                        return True
-                return False
-        return None
 
     def _get_django_class_type(self, bases):
         for base in bases:

@@ -14,3 +14,4 @@ node_modules
 *.pyd
 __pycache__/
 **.venv/
+.ruff_cache

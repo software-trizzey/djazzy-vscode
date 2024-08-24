@@ -2,7 +2,6 @@ import ast
 
 from typing import Optional
 
-from log import LOGGER
 
 
 class ModelFieldNames:

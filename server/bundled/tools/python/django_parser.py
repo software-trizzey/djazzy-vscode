@@ -306,7 +306,7 @@ class DjangoAnalyzer(Analyzer):
         if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Attribute):
             if node.value.func.attr in ['CharField', 'TextField']:
                 for keyword in node.value.keywords:
-                    if keyword.arg == 'null' and keyword.value.value == True:
+                    if keyword.arg == 'null' and keyword.value.value is True:
                         return True
                 return False
         return None

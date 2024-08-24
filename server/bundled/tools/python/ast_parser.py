@@ -4,6 +4,7 @@ import builtins
 import json
 import sys
 import tokenize
+
 from io import StringIO
 from typing import Dict, Any, List
 
@@ -11,42 +12,6 @@ from constants import DJANGO_IGNORE_FUNCTIONS
 from log import LOGGER
 from util import serialize_file_data
 
-
-class DjangoURLPatternVisitor(ast.NodeVisitor):
-    def __init__(self):
-        self.url_patterns = []
-
-    def visit_Assign(self, node):
-        if isinstance(node.targets[0], ast.Name) and node.targets[0].id == 'urlpatterns':
-            if isinstance(node.value, ast.List):
-                for elt in node.value.elts:
-                    if isinstance(elt, ast.Call) and isinstance(elt.func, ast.Name):
-                        if elt.func.id in ['path', 're_path', 'url']:
-                            pattern = {
-                                'type': elt.func.id,
-                                'route': None,
-                                'view': None,
-                                'name': None,
-                                'line': elt.lineno,
-                                'col': elt.col_offset,
-                                'end_line': elt.end_lineno,
-                                'end_col': elt.end_col_offset
-                            }
-                            
-                            for currentIndex, arg in enumerate(elt.args):
-                                if currentIndex == 0 and isinstance(arg, ast.Constant):
-                                    pattern['route'] = arg.value
-                                elif currentIndex == 1:
-                                    if isinstance(arg, ast.Name):
-                                        pattern['view'] = arg.id
-                                    elif isinstance(arg, ast.Attribute):
-                                        pattern['view'] = f"{arg.value.id}.{arg.attr}"
-                            
-                            for keyword in elt.keywords:
-                                if keyword.arg == 'name' and isinstance(keyword.value, ast.Constant):
-                                    pattern['name'] = keyword.value.value
-                            
-                            self.url_patterns.append(pattern)
 
 class Analyzer(ast.NodeVisitor):
     def __init__(self, source_code):
@@ -435,8 +400,6 @@ class Analyzer(ast.NodeVisitor):
         ))
         self.generic_visit(node)
 
-
-
     def handle_nested_structures(self, node):
         for inner_node in ast.iter_child_nodes(node):
             if isinstance(inner_node, ast.Assign):
@@ -444,7 +407,7 @@ class Analyzer(ast.NodeVisitor):
             elif isinstance(inner_node, (ast.If, ast.For, ast.While, ast.Try)):
                 self.generic_visit(inner_node)  # Further drill down to catch any deeper nested comments
 
-    def handle_assignment(self, node, parent_node):
+    def handle_assignment(self, node):
         comments = self.get_related_comments(node)
         for target in node.targets:
             if isinstance(target, ast.Name):
@@ -501,20 +464,6 @@ class Analyzer(ast.NodeVisitor):
             self.get_comments()
             self.tree = ast.parse(self.source_code)
             self.visit(self.tree)
-            url_visitor = DjangoURLPatternVisitor()
-            url_visitor.visit(self.tree)
-            self.url_patterns = url_visitor.url_patterns
-            for pattern in self.url_patterns:
-                self.symbols.append(self._create_symbol_dict(
-                    type='django_url_pattern',
-                    name=pattern['name'] or pattern['route'] or '',
-                    comments=[],
-                    line=pattern['line'] - 1,
-                    col_offset=pattern['col'],
-                    end_col_offset=pattern['col'] + len(pattern['type']),
-                    is_reserved=False,
-                    value=str(pattern)
-                ))
             LOGGER.info(f"Parsing complete. Found {len(self.symbols)} symbols.")
         except (SyntaxError, IndentationError) as e:
             # djangoly-ignore: we're not worried about syntax errors triggered by the user's code
@@ -526,6 +475,7 @@ class Analyzer(ast.NodeVisitor):
             "symbols": self.symbols,
             "security_issues": self.security_issues,
         }
+
 
 def main():
     input_code = sys.stdin.read()

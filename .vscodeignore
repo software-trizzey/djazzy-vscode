@@ -5,6 +5,8 @@
 **/.DS_Store
 **/Thumbs.db
 **/.env
+**__pycache__**
+**.ruff_cache**
 
 # Development-specific files
 **/*.ts
@@ -53,3 +55,13 @@ node_modules/**
 .vscode/**
 .gitignore
 CHANGELOG.template.md
+
+
+# Python
+server/bundled/tools/python/.ruff_cache/**
+server/bundled/tools/python/__pycache__/**
+server/bundled/tools/python/.python-version
+# This might turn into node_modules where if use 3rd party libraries they won't be included.
+# So be careful excluding .venv
+server/bundled/tools/python/.venv/**
+server/bundled/tools/python/tests/**

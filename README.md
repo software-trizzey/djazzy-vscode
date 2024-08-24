@@ -1,5 +1,3 @@
-# Djangoly: Write Cleaner, Faster, Scalable Django Code
-
 > **🚀 Beta Release Notice**
 >
 > Djangoly is currently in **free Beta mode**. During this phase, you can use all features at no cost. Please note:
@@ -8,45 +6,35 @@
 > - You may encounter bugs or unexpected behavior.
 > - We greatly appreciate your feedback to help improve the extension.
 
-## Table of Contents
-- [Features (MVP) ✨](#features-mvp-)
-- [Quick Start (Free) 🏃‍♂️💨](#quick-start-free-)
-- [How Djangoly Improves Your Code 🧑‍🏫](#how-djangoly-improves-your-code-)
-- [Django N+1 Query Detection 🕵️‍♂️](#django-n1-query-detection-)
-- [Configuration 🧪](#configuration-)
-- [Known Issues & Limitations 🐞](#known-issues--limitations-)
-- [Contribution Guidelines 👯‍♀️](#contribution-guidelines-)
-- [Open-source License 👮‍♂️](#open-source-license-)
+# Djangoly: Write Cleaner, Faster, Scalable Django Code
+
+Djangoly is a VS Code extension built for Django developers (surprise, surprise). It uses static analysis to ensure your project aligns with Django best practices and conventions. You can install the extension via the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Alchemized.djangoly) or by searching for `djangoly` in your IDE's extension tab.
 
 
-## Features (MVP) ✨
+## Features ✨
 
 - **Django N+1 Query Detection**: Identifies potential N+1 query issues in Django projects, flagging instances where related field access occurs within loops without proper optimization.
 - **Django-Specific Linting**: Automatically check your Django code against best practices and common pitfalls, including:
   - **ForeignKey Validation**: Ensures all `ForeignKey` fields have a `related_name` and `on_delete` argument specified to avoid common pitfalls in query relationships and data management.
   - **Raw SQL Query Detection**: Flags direct usage of raw SQL queries, including `raw()` and `connection.cursor()`. These can bypass Django ORM protections and introduce security vulnerabilities. Djangoly suggests safer alternatives using Django's ORM.
   - **CharField and TextField Nullability**: Ensures `CharField` and `TextField` fields are not incorrectly marked as `null=True`, which can lead to inconsistencies in data integrity.
+- **Security Checks**: Includes several security checks to help ensure your Django project follows best practices for security:
+  - **DEBUG Setting:** Checks if `DEBUG` is set to `True`. This setting should be `False` in production environments.
+  - **SECRET_KEY Protection:** Verifies that the `SECRET_KEY` is not hardcoded in your settings file.
+  - **ALLOWED_HOSTS Configuration**: Checks the `ALLOWED_HOSTS` setting for potential security issues.
+  - **COOKIE Settings**: Ensures the `CSRF_COOKIE_SECURE` and `SESSION_COOKIE_SECURE` settings are set to `True` for production environments.
 - **Test Suite Conventions**: Notify developers to add or update test files when changes are detected in Django views or models.
 - **Redundant Comment Detection**: Flags comments that do not contribute additional information or context to the code.
 
-## Security Checks (MVP) 🔒
-
-Djangoly includes several security checks to help ensure your Django project follows best practices for security:
-
-1. **DEBUG Setting:** Checks if `DEBUG` is set to `True`. This setting should be `False` in production environments.
-2. **SECRET_KEY Protection:** Verifies that the `SECRET_KEY` is not hardcoded in your settings file.
-3. **ALLOWED_HOSTS Configuration**: Checks the `ALLOWED_HOSTS` setting for potential security issues.
-4. **COOKIE Settings**: Ensures the `CSRF_COOKIE_SECURE` and `SESSION_COOKIE_SECURE` settings are set to `True` for production environments.
-
-These security checks help you identify common configuration mistakes that could lead to security vulnerabilities in your Django application. Djangoly provides warnings and recommendations to help you maintain a secure Django environment, especially when preparing for production deployment.
-
-## Quick Start (Free) 🏃‍♂️💨
+## Quick Start 🏃‍♂️💨
 
 1. **Install the Extension**: [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Alchemized.djangoly)
 2. **Set Up Your Django Project**: If you haven't already, set up a Django project in your workspace.
 3. **Configure Django Settings**: Open the extension settings in VS Code and configure your Django-specific settings.
 4. **Start Coding**: Begin developing your Django project. The extension will automatically start analyzing your code.
 5. **Review Suggestions**: Check the Problems panel in VS Code for Django best practice suggestions and quick fixes.
+
+**Note**: To modify the extension rules, access these settings by going to `Preferences → Settings → Extensions → Djangoly`.
 
 ## How Djangoly Improves Your Code 🧑‍🏫
 
@@ -105,17 +93,6 @@ Djangoly includes a powerful static analysis tool to help identify potential N+1
 
 For more information about how the scoring system works, please see the [N+1 Query Detection Scoring System](./nplusone-scoring.md).
 
-## Configuration 🧪
-
-### General Settings
-
-- **Check New Code Only**: Limit checks to newly written or modified code to focus on current development.
-- **Notification Interval**: Set how frequently you receive reminders to review suggestions for testing business logic.
-- **Language-Specific Settings**: Adjust settings for Python linting support.
-- **N+1 Query Detection Sensitivity**: Adjust the sensitivity of N+1 query detection.
-
-Access these settings by going to `Preferences → Settings → Extensions → Djangoly`.
-
 ## Known Issues & Limitations 🐞
 
 - **False Positives**: As an MVP undergoing rapid development, Djangoly may generate inaccurate diagnostics and recommendations. If you encounter any issues, please report them to [support@djangoly.com](mailto:support@djangoly.com).
@@ -123,12 +100,11 @@ Access these settings by going to `Preferences → Settings → Extensions → D
 
 ## Contribution Guidelines 👯‍♀️
 
-We <3 contributions big and small. In priority order (although everything is appreciated) with the most helpful first:
+If you're interested in helping out you can do one of the following:
 
- - Vote on features or get early access to beta functionality in our roadmap
- - Open a PR (see our instructions on developing PostHog locally)
- - Submit a feature request or bug report
+- Open a PR (see our instructions on developing PostHog locally)
+- Submit a feature request or bug report
 
 ## Open-source License 👮‍♂️
 
-This repo is available under the MIT expat license. We plan to add paid features at some point that will be covered under another license. Stay tuned.
+This repo is available under the MIT expat license. We plan to add paid features at some point that will be covered under another commercial license. Stay tuned.

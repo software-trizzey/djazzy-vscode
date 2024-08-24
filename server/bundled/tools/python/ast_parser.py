@@ -6,7 +6,7 @@ import sys
 import tokenize
 
 from io import StringIO
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 from constants import DJANGO_IGNORE_FUNCTIONS
 from log import LOGGER
@@ -22,7 +22,6 @@ class Analyzer(ast.NodeVisitor):
         self.comments = []
         self.pending_comments = []
         self.url_patterns = []
-        self.security_issues: List[Dict[str, Any]] = []
         self.current_class_type = None
         self.in_class = False
 
@@ -473,7 +472,6 @@ class Analyzer(ast.NodeVisitor):
             LOGGER.error(f"Unexpected error during parsing: {str(e)}")
         return {
             "symbols": self.symbols,
-            "security_issues": self.security_issues,
         }
 
 

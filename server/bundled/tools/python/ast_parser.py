@@ -405,7 +405,6 @@ class Analyzer(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_For(self, node):
-        LOGGER.error(f"Visiting for loop {node}")
         comments = self.get_related_comments(node)
         target = None
         target_positions = []

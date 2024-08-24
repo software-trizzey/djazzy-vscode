@@ -29,7 +29,6 @@ DJANGO_IGNORE_FUNCTIONS = {
     "put": True,
     "get_context_data": True,
     "validate_<field_name>": True,
-    "delete": True,
     "perform_create": True,
 }
 

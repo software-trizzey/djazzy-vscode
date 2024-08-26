@@ -70,19 +70,6 @@ WILD_CARD = '*'
 CSRF_COOKIE_SECURE = 'CSRF_COOKIE_SECURE'
 SESSION_COOKIE = 'SESSION_COOKIE_SECURE'
 
-class IssueSeverity:
-    ERROR = 'ERROR'
-    INFORMATION = 'INFORMATION'
-    WARNING = 'WARNING'
-    HINT = 'HINT'
-
-class IssueDocLinks:
-    DEBUG = 'https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/#debug'
-    SECRET_KEY = 'https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/#secret-key'
-    ALLOWED_HOSTS = 'https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/#allowed-hosts'
-    CSRF_COOKIE_SECURE = 'https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/#csrf-cookie-secure'
-    SESSION_COOKIE_SECURE = 'https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/#session-cookie-secure'
-    RAW_SQL_USAGE = 'https://docs.djangoproject.com/en/5.0/topics/security/#sql-injection-protection'
 
 DJANGO_COMPONENTS = {
     'model': ['Model', 'BaseModel'],

@@ -1,4 +1,5 @@
-from constants import IssueSeverity, WRITE_METHODS
+from constants import WRITE_METHODS
+from issue import IssueSeverity
 
 class NPlusOneScorer:
     MAX_SCORE = 100

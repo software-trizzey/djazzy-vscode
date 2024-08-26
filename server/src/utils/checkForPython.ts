@@ -8,11 +8,8 @@ export function checkForPythonAndVenv(): { pythonExecutable: string } | null {
         console.log(`Python detected: ${hostPythonVersion.trim()}`);
 
 		const isWindows = process.platform === 'win32';
-		console.log("Is Windows host: ", isWindows);
-		console.log("Current directory: ", __dirname);
         
         const extensionVenvPath = path.join(__dirname, '../bundled/tools/python/.venv');
-		console.log("Extension venv path: ", extensionVenvPath);
         const pythonExecutable = path.join(extensionVenvPath, isWindows ? 'Scripts' : 'bin', 'python');
 
         if (existsSync(extensionVenvPath)) {

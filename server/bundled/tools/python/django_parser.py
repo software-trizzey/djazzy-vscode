@@ -2,8 +2,6 @@ import ast
 import json
 import sys
 
-from typing import Optional
-
 from log import LOGGER
 from constants import (
     QUERY_METHODS,
@@ -11,12 +9,15 @@ from constants import (
     DJANGO_IGNORE_FUNCTIONS,
 )
 
-from ast_parser import Analyzer, serialize_file_data
+from ast_parser import Analyzer
 from nplusone.nplusone_analyzer import NPlusOneDetector
 from nplusone.scorer import NPlusOneScorer
 
 from checks.security import SecurityCheckService
 from checks.model_fields import ModelFieldCheckService
+from checks.skinny_views.checker import ViewComplexityAnalyzer
+from checks.skinny_views.scorer import ViewComplexityScorer, ScoreThresholds
+from util import serialize_file_data, is_django_model_class
 
 
 class DjangoAnalyzer(Analyzer):
@@ -29,6 +30,9 @@ class DjangoAnalyzer(Analyzer):
         self.security_service = SecurityCheckService(source_code)
         self.security_issues = []
         self.model_field_check_service = ModelFieldCheckService(source_code)
+        # TODO: make configurable based on user settings
+        self.complexity_scorer = ViewComplexityScorer(ScoreThresholds(line_threshold=50, operation_threshold=10))
+        self.complexity_analyzer = ViewComplexityAnalyzer(source_code, self.complexity_scorer)
 
     def parse_model_cache(self, model_cache_json):
         try:
@@ -36,24 +40,6 @@ class DjangoAnalyzer(Analyzer):
         except json.JSONDecodeError as e:
             LOGGER.error(f"Error parsing model cache JSON: {e}")
             return {}
-        
-    def get_model_info(self, model_name: str) -> Optional[dict]:
-        """
-        Retrieves model information from the model cache.
-        Args:
-            model_name (str): The name of the model class to retrieve information for.
-
-        Returns:
-            Optional[dict]: A dictionary containing fields, relationships, and parent models,
-                            or None if the model is not found.
-        """
-        model_info = self.model_cache.get(model_name)
-        if model_info:
-            LOGGER.debug(f"Found model info for {model_name}: {model_info}")
-            return model_info
-        else:
-            LOGGER.debug(f"Model info for {model_name} not found in cache")
-            return None
 
     def visit_ClassDef(self, node):
         self.in_class = True
@@ -64,7 +50,7 @@ class DjangoAnalyzer(Analyzer):
             }
 
         # Check if this class or any of its parent classes inherit from models.Model
-        if self.is_django_model_class(node, class_definitions):
+        if is_django_model_class(node, class_definitions, self.model_cache):
             comments = self.get_related_comments(node)
             self.symbols.append(self._create_symbol_dict(
                 type='django_model',
@@ -79,9 +65,28 @@ class DjangoAnalyzer(Analyzer):
         else:
             self.current_django_class_type = None
 
-        self.generic_visit(node)
-        self.in_class = False
-        self.current_django_class_type = None
+        if self.is_django_view_class(node):
+            issue = self.complexity_analyzer.run_complexity_analysis(node)
+            if issue:
+                LOGGER.debug(f'Complexity issue detected for view class {node.name.value}: {issue}')
+                # TODO: add issue properties as fields to symbol
+                self.symbols.append(self._create_symbol_dict(
+                    type='django_view',
+                    name=node.name.value,
+                    message=issue.message,
+                    severity=issue.severity,
+                    comments=comments,
+                    line=node.lineno,
+                    col_offset=node.col_offset,
+                    end_col_offset=node.col_offset + len(node.name.value),
+                    is_reserved=False
+                ))
+                LOGGER.info()
+            self.current_django_class_type = 'django_view'
+        else:
+            self.generic_visit(node)
+            self.in_class = False
+            self.current_django_class_type = None
 
     def visit_FunctionDef(self, node):
         comments = self.get_related_comments(node)
@@ -102,14 +107,24 @@ class DjangoAnalyzer(Analyzer):
         
         self.visit_FunctionBody(node.body, calls)
 
+        message = None
+        severity = None
         if self.in_class and self.current_django_class_type:
             symbol_type = f'{self.current_django_class_type}_method'
+        elif self.is_django_view_function(node):
+            symbol_type = 'django_view'
+            issue = self.complexity_analyzer.run_complexity_analysis(node)
+            if issue:
+                message = issue.message
+                severity = issue.severity
         else:
             symbol_type = 'function'
 
         self.symbols.append(self._create_symbol_dict(
             type=symbol_type,
             name=node.name,
+            message=message,
+            severity=severity,
             comments=comments,
             line=function_start_line,
             col_offset=function_start_col,
@@ -185,42 +200,17 @@ class DjangoAnalyzer(Analyzer):
                 return node.func.attr in QUERY_METHODS
         return any(self.contains_query_method(child) for child in ast.iter_child_nodes(node))
     
-    def is_django_model_class(self, node, class_definitions):
-        if not isinstance(node, ast.ClassDef):
-            return False
+    def is_django_view_function(self, node):
+        """
+        Simple check to see if the function is a Django view function based on its location or decorators.
+        """
+        return any(decorator.id == 'view' for decorator in node.decorator_list if isinstance(decorator, ast.Name)) or 'views' in self.source_code
 
-        for base in node.bases:
-            # Direct check for 'models.Model'
-            if isinstance(base, ast.Attribute) and base.attr == 'Model' and base.value.id == 'models':
-                LOGGER.debug(f"Found direct subclass of models.Model for {node.name}")
-                return True
-
-            # Recursively check each parent class in the chain
-            if isinstance(base, ast.Name) and base.id in class_definitions:
-                parent_class = class_definitions[base.id]
-                LOGGER.debug(f"Checking parent class {base.id} for {node.name}")
-                if self.is_django_model_class(parent_class, class_definitions):
-                    LOGGER.debug(f"Model {node.name} is a django model with a parent of {base.id}")
-                    return True
-
-            if isinstance(base, ast.Name):
-                LOGGER.debug(f"Checking parent models for {base.id}")
-                parent_model_info = self.get_model_info(base.id)  # Fetch cached model info
-                if parent_model_info:
-                    LOGGER.debug(f"Parent model info for {base.id}: {parent_model_info}")
-                    # Recursively check if any of the parent models are Django models
-                    for parent_model in parent_model_info['parent_models']:
-                        LOGGER.debug(f"Checking if {parent_model} is a Django model for {node.name}")
-                        if parent_model == 'models.Model':
-                            LOGGER.debug(f"Model {node.name} is a django model because its parent is models.Model")
-                            return True
-                        if parent_model in class_definitions:
-                            parent_class = class_definitions[parent_model]
-                            if self.is_django_model_class(parent_class, class_definitions):
-                                LOGGER.debug(f"Model {node.name} is a django model with a parent of {parent_model}")
-                                return True
-        LOGGER.debug(f"Model {node.name} is not a django model")
-        return False
+    def is_django_view_class(self, node):
+        """
+        Check if the class is a Django view class based on inheritance or its location.
+        """
+        return any(base.attr == 'View' for base in node.bases if isinstance(base, ast.Attribute)) or 'views' in self.source_code
 
     def get_nplusone_issues(self):
         return self.nplusone_analyzer.analyze()

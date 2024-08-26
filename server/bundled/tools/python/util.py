@@ -1,30 +1,65 @@
 import ast
-import astroid
+
+from typing import Optional
 
 from log import LOGGER
 
 
-MODEL_NAME_CHAIN = 'django.db.models.base.Model'
+def get_model_info(model_name: str, model_cache: dict) -> Optional[dict]:
+    """
+    Retrieves model information from the model cache.
+    Args:
+        model_name (str): The name of the model class to retrieve information for.
+        model_cache (dict): A dictionary containing model information for all models in the project.
 
-def is_django_model_class(node):
+    Returns:
+        Optional[dict]: A dictionary containing fields, relationships, and parent models,
+                        or None if the model is not found.
     """
-    Determines if a node is a Django model class by using astroid to infer types.
-    """
-    if not isinstance(node, astroid.ClassDef):
+    model_info = model_cache.get(model_name)
+    if model_info:
+        LOGGER.debug(f"Found model info for {model_name}: {model_info}")
+        return model_info
+    else:
+        LOGGER.debug(f"Model info for {model_name} not found in cache")
+        return None
+
+
+def is_django_model_class(node, class_definitions, model_cache):
+    if not isinstance(node, ast.ClassDef):
         return False
 
-    try:
-        for base in node.bases:
-            inferred_bases = base.infer()
-            for inferred in inferred_bases:
-                # Check if the class is a subclass of 'django.db.models.Model'
-                if isinstance(inferred, astroid.ClassDef) and inferred.qname() == MODEL_NAME_CHAIN:
-                    LOGGER.debug(f"Found subclass of django.db.models.Model: {node.name}")
-                    return True
-    except astroid.InferenceError as e:
-        LOGGER.warning(f"Error inferring base class for {node.name}: {e}")
+    for base in node.bases:
+        # Direct check for 'models.Model'
+        if isinstance(base, ast.Attribute) and base.attr == 'Model' and base.value.id == 'models':
+            LOGGER.debug(f"Found direct subclass of models.Model for {node.name}")
+            return True
 
-    LOGGER.debug(f"Class {node.name} is not a Django model")
+        # Recursively check each parent class in the chain
+        if isinstance(base, ast.Name) and base.id in class_definitions:
+            parent_class = class_definitions[base.id]
+            LOGGER.debug(f"Checking parent class {base.id} for {node.name}")
+            if is_django_model_class(parent_class, class_definitions, model_cache):
+                LOGGER.debug(f"Model {node.name} is a django model with a parent of {base.id}")
+                return True
+
+        if isinstance(base, ast.Name):
+            LOGGER.debug(f"Checking parent models for {base.id}")
+            parent_model_info = get_model_info(base.id, model_cache)  # Fetch cached model info
+            if parent_model_info:
+                LOGGER.debug(f"Parent model info for {base.id}: {parent_model_info}")
+                # Recursively check if any of the parent models are Django models
+                for parent_model in parent_model_info['parent_models']:
+                    LOGGER.debug(f"Checking if {parent_model} is a Django model for {node.name}")
+                    if parent_model == 'models.Model':
+                        LOGGER.debug(f"Model {node.name} is a django model because its parent is models.Model")
+                        return True
+                    if parent_model in class_definitions:
+                        parent_class = class_definitions[parent_model]
+                        if is_django_model_class(parent_class, class_definitions, model_cache):
+                            LOGGER.debug(f"Model {node.name} is a django model with a parent of {parent_model}")
+                            return True
+    LOGGER.debug(f"Model {node.name} is not a django model")
     return False
 
 

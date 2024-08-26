@@ -1,1 +1,1 @@
-astroid==3.3.2
+libcst==1.4.0

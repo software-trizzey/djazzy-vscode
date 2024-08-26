@@ -71,6 +71,8 @@ class Analyzer(ast.NodeVisitor):
         symbol = {
             'type': kwargs.get('type'),
             'name': kwargs.get('name'),
+            'message': kwargs.get('message', None),
+            'severity': kwargs.get('severity', None),
             'leading_comments': kwargs.get('comments', []),
             'line': kwargs.get('line'),
             'col_offset': kwargs.get('col_offset'),

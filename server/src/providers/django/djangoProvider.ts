@@ -20,7 +20,7 @@ import {
 	REDUNDANT_COMMENT_VIOLATION_SOURCE_TYPE,
     DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE
 } from "../../constants/diagnostics";
-import { ExtensionSettings, defaultConventions } from "../../settings";
+import { ExtensionSettings, defaultConventions, pythonExecutable } from "../../settings";
 import LOGGER from '../../common/logs';
 import COMMANDS, { ACCESS_FORBIDDEN_NOTIFICATION_ID, FIX_NAME, RATE_LIMIT_NOTIFICATION_ID } from '../../constants/commands';
 import { Issue, Models, Severity, SymbolFunctionTypes } from '../../llm/types';
@@ -215,7 +215,7 @@ export class DjangoProvider extends LanguageProvider {
             const modelCacheJson = JSON.stringify(modelCacheObject);
 	
 			return new Promise((resolve, reject) => {
-				const process = spawn("python3", [parserFilePath, modelCacheJson]);
+				const process = spawn(pythonExecutable, [parserFilePath, modelCacheJson]);
 				let output = "";
 				let error = "";
 	
@@ -310,7 +310,6 @@ export class DjangoProvider extends LanguageProvider {
         isDjangoProject: boolean
     ): Promise<void> {
         const cacheKey = this.generateCacheKey(document.getText(), document);
-    
         const cachedResult = this.getCachedResult(cacheKey);
         if (cachedResult) {
             console.log("Using cached result for Django diagnostics");
@@ -331,7 +330,7 @@ export class DjangoProvider extends LanguageProvider {
         }
     
         this.setCachedResult(cacheKey, diagnostics);
-    }
+    }    
 
     private async processSymbol(
         symbol: any,
@@ -425,6 +424,9 @@ export class DjangoProvider extends LanguageProvider {
 
                 this.checkDjangoFieldConventions(symbol, diagnostics);
                 break;
+            case "django_view":
+                console.log("symbol", symbol);
+                console.log(`View ${name} has ${symbol.body.length} lines of code`);
         }
     
         if (result && result.violates) {

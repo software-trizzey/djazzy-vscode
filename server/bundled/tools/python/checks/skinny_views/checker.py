@@ -44,12 +44,27 @@ class ViewComplexityAnalyzer:
 
     def get_line_count(self, node):
         """
-        Get the number of lines for a given function or class.
+        Get the number of lines for a given function or class, handling cases where end_lineno 
+        may be missing or invalid.
         """
-        return node.end_lineno - node.lineno + 1 if hasattr(node, 'end_lineno') else len(self.source_code.splitlines())
+        if hasattr(node, 'end_lineno') and hasattr(node, 'lineno'):
+            return node.end_lineno - node.lineno + 1
+        else:
+            # If line numbers are not available, fall back to counting lines from the node source segment
+            return len(ast.get_source_segment(self.source_code, node).splitlines())
+
 
     def count_operations(self, body):
         """
-        Count the number of operations (like function calls, conditionals, loops) in the function body.
+        Recursively count the number of operations (like function calls, conditionals, loops) 
+        in the function or class body.
         """
-        return sum(isinstance(stmt, (ast.Assign, ast.Call, ast.If, ast.For, ast.While, ast.Try, ast.With)) for stmt in body)
+        operations = 0
+        for stmt in body:
+            if isinstance(stmt, (ast.Assign, ast.Call, ast.If, ast.For, ast.While, ast.Try, ast.With, ast.Return)):
+                operations += 1
+            # Recursively count operations in nested blocks (e.g., inside if/for/while bodies)
+            if hasattr(stmt, 'body'):
+                operations += self.count_operations(stmt.body)
+        return operations
+

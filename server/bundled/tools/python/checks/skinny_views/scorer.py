@@ -83,7 +83,6 @@ class ViewComplexityScorer:
                 operation_count=metrics['operation_count'],
                 severity=IssueSeverity.WARNING #TODO: make this configurable
             )
-            LOGGER.info(f'Complexity issue detected {issue.message}')
             return complexity_level, score, issue
 
         return complexity_level, score, None

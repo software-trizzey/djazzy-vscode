@@ -27,7 +27,7 @@ class DjangoAnalyzer(Analyzer):
         self.current_django_class_type = None
         self.model_cache = self.parse_model_cache(model_cache_json)
         self.class_type_cache = {}
-        self.class_definitions = None
+        self.class_definitions = {}
         self.nplusone_analyzer = NPlusOneDetector(source_code)
         self.nplusone_issues = []
         self.security_service = SecurityCheckService(source_code)
@@ -53,15 +53,20 @@ class DjangoAnalyzer(Analyzer):
         else:
             LOGGER.debug(f"Model info for {model_name} not found in cache")
             return None
+        
+    def collect_class_definitions(self):
+        """
+        Collect class definitions in the AST.
+        """
+        LOGGER.debug("Collecting Django class definitions...")
+        for node in ast.walk(self.tree):
+            if isinstance(node, ast.ClassDef):
+                self.class_definitions[node.name] = node
+        LOGGER.debug(f"Collected {len(self.class_definitions)} class definitions.")
 
     def visit_ClassDef(self, node):
         self.in_class = True
-        class_type = None
-
-        # FIXME: code isn't working right now because the class definitions are None on first pass
-        if self.class_definitions is not None:
-            LOGGER.debug(f'Checking class {node.name} for Django class type')
-            class_type = self.view_detection_service.get_django_class_type(node, self.class_definitions)
+        class_type = self.view_detection_service.get_django_class_type(node, self.class_definitions)
 
         if class_type == 'django_model':
             comments = self.get_related_comments(node)
@@ -123,6 +128,7 @@ class DjangoAnalyzer(Analyzer):
 
         message = None
         severity = None
+        issue_code = None
         if self.in_class and self.current_django_class_type:
             symbol_type = f'{self.current_django_class_type}_method'
         elif self.view_detection_service.is_django_view_function(node):
@@ -202,14 +208,12 @@ class DjangoAnalyzer(Analyzer):
     def parse_code(self):
         try:
             LOGGER.info("Parsing Django code")
-            result = super().parse_code()
+            self.get_comments()
+            self.tree = ast.parse(self.source_code)
+            self.collect_class_definitions()
 
+            super().visit(self.tree)
             self.view_detection_service.initialize(self.tree)
-
-            if self.tree:
-                self.class_definitions = {
-                    class_node.name: class_node for class_node in ast.walk(self.tree) if isinstance(class_node, ast.ClassDef)
-                }
 
             self.security_service.run_security_checks()
             self.security_issues = self.security_service.get_formatted_security_issues()
@@ -218,7 +222,7 @@ class DjangoAnalyzer(Analyzer):
             scored_issues = NPlusOneScorer.calculate_issue_scores(nplusone_issues)
 
             return {
-                **result,
+                "symbols": self.symbols,
                 "security_issues": self.security_issues,
                 "nplusone_issues": scored_issues,
             }

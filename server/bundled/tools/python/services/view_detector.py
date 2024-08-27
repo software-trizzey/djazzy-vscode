@@ -4,6 +4,10 @@ from log import LOGGER
 
 MAX_DEPTH = 5
 
+class DjangoViewType:
+    CLASS_VIEW = 'django_class_view'
+    FUNCTIONAL_VIEW = 'django_func_view'
+
 class DjangoViewDetectionService:
     DJANGO_VIEW_BASES = {
         'View', 'TemplateView', 'ListView', 'DetailView', 'CreateView', 'UpdateView', 'DeleteView',
@@ -92,9 +96,9 @@ class DjangoViewDetectionService:
             checked.add(current_node.name)
 
             if self.is_django_view_class(current_node):
-                self.class_type_cache[node.name] = 'django_class_view'
+                self.class_type_cache[node.name] = DjangoViewType.CLASS_VIEW
                 LOGGER.info(f"Class {node.name} identified as Django view")
-                return 'django_class_view'
+                return DjangoViewType.CLASS_VIEW
 
             # Check if it's a direct subclass of models.Model
             for base in current_node.bases:

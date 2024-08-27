@@ -15,7 +15,8 @@ from checks.model_fields import ModelFieldCheckService
 from checks.skinny_views.checker import ViewComplexityAnalyzer
 from checks.skinny_views.scorer import ViewComplexityScorer, ScoreThresholds
 
-from services.view_detector import DjangoViewDetectionService
+from issue import IssueSeverity
+from services.view_detector import DjangoViewDetectionService, DjangoViewType
 
 from util import serialize_file_data
 
@@ -58,7 +59,7 @@ class DjangoAnalyzer(Analyzer):
         class_type = None
 
         if self.class_definitions is not None:
-            LOGGER.info(f'Checking class {node.name} for Django class type')
+            LOGGER.debug(f'Checking class {node.name} for Django class type')
             class_type = self.view_detection_service.get_django_class_type(node, self.class_definitions)
 
         if class_type == 'django_model':
@@ -73,14 +74,14 @@ class DjangoAnalyzer(Analyzer):
                 is_reserved=False
             ))
             self.current_django_class_type = 'django_model'
-        elif class_type == 'django_class_view':
+        elif class_type == DjangoViewType.CLASS_VIEW:
             issue = self.complexity_analyzer.run_complexity_analysis(node)
-            LOGGER.info(f"Ran complexity analysis on {node.name}")
+            LOGGER.debug(f"Ran complexity analysis on {node.name}")
             if issue:
                 LOGGER.info(f'Complexity issue detected for view class {node.name}: {issue}')
                 comments = self.get_related_comments(node)
                 self.symbols.append(self._create_symbol_dict(
-                    type='django_class_view',
+                    type=DjangoViewType.CLASS_VIEW,
                     name=node.name,
                     message=issue.message,
                     severity=issue.severity,
@@ -91,7 +92,7 @@ class DjangoAnalyzer(Analyzer):
                     end_col_offset=node.col_offset + len(node.name),
                     is_reserved=False
                 ))
-            self.current_django_class_type = 'django_class_view'
+            self.current_django_class_type = DjangoViewType.CLASS_VIEW
         else:
             self.current_django_class_type = None
 
@@ -125,7 +126,7 @@ class DjangoAnalyzer(Analyzer):
             symbol_type = f'{self.current_django_class_type}_method'
         elif self.view_detection_service.is_django_view_function(node):
             try:
-                symbol_type = 'django_func_view'
+                symbol_type = DjangoViewType.FUNCTIONAL_VIEW
                 issue = self.complexity_analyzer.run_complexity_analysis(node)
                 if issue:
                     issue_code = issue.code
@@ -133,6 +134,9 @@ class DjangoAnalyzer(Analyzer):
                     severity = issue.severity
             except RecursionError:
                 LOGGER.error(f"Caught Recursion error while running complexity analysis on {node.name}")
+                symbol_type = DjangoViewType.FUNCTIONAL_VIEW
+                message = "Encountered error occurred during complexity analysis"
+                severity = IssueSeverity.INFORMATION
         else:
             symbol_type = 'function'
 

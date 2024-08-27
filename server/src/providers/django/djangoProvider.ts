@@ -665,7 +665,7 @@ export class DjangoProvider extends LanguageProvider {
             end = start + symbol.name.length;
 		} else if (symbol.type === "class" || symbol.type === "django_class_view") {
 			start += "class ".length;
-			end = symbol.end_col_offset || (start + symbol.name.length);
+			end = start + symbol.name.length;
 		} else if (/(ForeignKey|TextField|CharField)/.test(symbol.value) && symbol?.full_line_length) {
             end = symbol.full_line_length;
         }  

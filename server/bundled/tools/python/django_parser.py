@@ -58,6 +58,7 @@ class DjangoAnalyzer(Analyzer):
         self.in_class = True
         class_type = None
 
+        # FIXME: code isn't working right now because the class definitions are None on first pass
         if self.class_definitions is not None:
             LOGGER.debug(f'Checking class {node.name} for Django class type')
             class_type = self.view_detection_service.get_django_class_type(node, self.class_definitions)

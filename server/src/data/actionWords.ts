@@ -4,6 +4,7 @@ export const verbDictionary: { [key: string]: string } = {
 	remove: "remove",
 	create: "create",
 	count: "count",
+	collect: "collect",
 	delete: "delete",
 	debounce: "debounce",
 	debounced: "debounced",

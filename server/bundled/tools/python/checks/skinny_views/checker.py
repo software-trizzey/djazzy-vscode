@@ -27,13 +27,20 @@ class ViewComplexityAnalyzer:
         """
         Run complexity analysis on the given view function or class and return issues if detected.
         """
-        LOGGER.debug(f'Analyzing view: {node.name}')
-        metrics = self.analyze_view(node)
-        score = self.complexity_scorer.score_view(metrics)
-        LOGGER.debug(f'Score for {node.name}: {score}')
+        try:
+            LOGGER.debug(f'Analyzing view: {node.name}')
+            metrics = self.analyze_view(node)
+            score = self.complexity_scorer.score_view(metrics)
+            LOGGER.debug(f'Score for {node.name}: {score}')
 
-        _, _, issue = self.complexity_scorer.interpret_score(score, node, metrics)
-        return issue
+            _, _, issue = self.complexity_scorer.interpret_score(score, node, metrics)
+            return issue
+        except SyntaxError as e:
+            LOGGER.error(f'Error parsing view {node.name}: {e}')
+            return None
+        except Exception as e:
+            LOGGER.error(f'Error analyzing view {node.name}: {e}')
+            return None
 
     def get_line_count(self, node):
         """

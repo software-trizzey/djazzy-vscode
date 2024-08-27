@@ -1,6 +1,7 @@
 import ast
 
 from log import LOGGER
+from issue import IssueSeverity
 
 from .constants import ComplexityIssue, ScoreInterpretationEnum, ScoreWeightEnum
 
@@ -75,10 +76,12 @@ class ViewComplexityScorer:
 
         if complexity_level in [ScoreInterpretationEnum.COMPLEX, ScoreInterpretationEnum.MODERATE]:
             issue = ComplexityIssue(
+                view_name=node.name,
                 lineno=node.lineno,
                 col=node.col_offset,
                 line_count=metrics['line_count'],
                 operation_count=metrics['operation_count'],
+                severity=IssueSeverity.WARNING #TODO: make this configurable
             )
             LOGGER.info(f'Complexity issue detected {issue.message}')
             return complexity_level, score, issue

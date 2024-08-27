@@ -18,16 +18,17 @@ class ScoreWeightEnum:
 class ComplexityIssue(Issue):
     code = 'CMPX01' #TODO: align this to Djangoly code rule structure
     description = (
-        'This view seems overly complex with {line_count} lines and {operation_count} operations. '
-        'Consider breaking it up and refactoring the business logic using one of the following approaches:\n'
-        f'- {Messages.FAT_MODELS}\n'
-        f'- {Messages.SERVICE_LAYER}'
+        '"{name}" seems overly complex with {line_count} lines and {operation_count} operations.\n\n'
+        'Consider breaking it up and refactoring the business logic using one of the following approaches:\n\n'
+        f'- {Messages.FAT_MODELS}\n\n'
+        f'- {Messages.SERVICE_LAYER}\n\n'
     )
 
-    def __init__(self, lineno, col, line_count, operation_count):
+    def __init__(self, view_name, lineno, col, line_count, operation_count, severity=IssueSeverity.WARNING):
         parameters = {
+            'name': view_name,
             'line_count': line_count,
             'operation_count': operation_count,
-            'severity': IssueSeverity.WARNING
+            'severity': severity
         }
         super().__init__(lineno, col, parameters)

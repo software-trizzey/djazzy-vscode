@@ -424,9 +424,19 @@ export class DjangoProvider extends LanguageProvider {
 
                 this.checkDjangoFieldConventions(symbol, diagnostics);
                 break;
-            case "django_view":
-                console.log("symbol", symbol);
-                console.log(`View ${name} has ${symbol.body.length} lines of code`);
+            case "django_class_view":
+            case "django_func_view":
+                if (symbol.message && symbol.issue_code === "CMPX01") {
+                    const mappedSeverity = this.mapSeverity(symbol.severity);
+                    this.addDiagnostic(
+                        diagnostics,
+                        symbol,
+                        symbol.message,
+                        mappedSeverity,
+                        DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE
+                    );
+                }
+                break;
         }
     
         if (result && result.violates) {
@@ -649,15 +659,16 @@ export class DjangoProvider extends LanguageProvider {
 		let start = symbol.col_offset;
 		let end = symbol.end_col_offset || (start + symbol.name.length);
 	
-		if (symbol.type === "function" || symbol.type.startsWith("django_") && symbol.type.endsWith("_method")) {
+		if (
+            symbol.type === "function" || symbol.type === "django_func_view" || symbol.type.startsWith("django_") && symbol.type.endsWith("_method")) {
 			start += "def ".length;
             end = start + symbol.name.length;
-		} else if (symbol.type === "class") {
+		} else if (symbol.type === "class" || symbol.type === "django_class_view") {
 			start += "class ".length;
 			end = symbol.end_col_offset || (start + symbol.name.length);
 		} else if (/(ForeignKey|TextField|CharField)/.test(symbol.value) && symbol?.full_line_length) {
             end = symbol.full_line_length;
-        }        
+        }  
 	
 		start = Math.max(0, start);
 		end = Math.max(start, end);

@@ -1,13 +1,10 @@
 import ast
 import json
 import sys
+from typing import Optional
 
 from log import LOGGER
-from constants import (
-    QUERY_METHODS,
-    DJANGO_COMPONENTS,
-    DJANGO_IGNORE_FUNCTIONS,
-)
+from constants import DJANGO_IGNORE_FUNCTIONS
 
 from ast_parser import Analyzer
 from nplusone.nplusone_analyzer import NPlusOneDetector
@@ -17,7 +14,10 @@ from checks.security import SecurityCheckService
 from checks.model_fields import ModelFieldCheckService
 from checks.skinny_views.checker import ViewComplexityAnalyzer
 from checks.skinny_views.scorer import ViewComplexityScorer, ScoreThresholds
-from util import serialize_file_data, is_django_model_class
+
+from services.view_detector import DjangoViewDetectionService
+
+from util import serialize_file_data
 
 
 class DjangoAnalyzer(Analyzer):
@@ -25,11 +25,14 @@ class DjangoAnalyzer(Analyzer):
         super().__init__(source_code)
         self.current_django_class_type = None
         self.model_cache = self.parse_model_cache(model_cache_json)
+        self.class_type_cache = {}
+        self.class_definitions = None
         self.nplusone_analyzer = NPlusOneDetector(source_code)
         self.nplusone_issues = []
         self.security_service = SecurityCheckService(source_code)
         self.security_issues = []
         self.model_field_check_service = ModelFieldCheckService(source_code)
+        self.view_detection_service = DjangoViewDetectionService()
         # TODO: make configurable based on user settings
         self.complexity_scorer = ViewComplexityScorer(ScoreThresholds(line_threshold=50, operation_threshold=10))
         self.complexity_analyzer = ViewComplexityAnalyzer(source_code, self.complexity_scorer)
@@ -40,17 +43,25 @@ class DjangoAnalyzer(Analyzer):
         except json.JSONDecodeError as e:
             LOGGER.error(f"Error parsing model cache JSON: {e}")
             return {}
+        
+    def get_model_info(self, model_name: str) -> Optional[dict]:
+        model_info = self.model_cache.get(model_name)
+        if model_info:
+            LOGGER.debug(f"Found model info for {model_name}: {model_info}")
+            return model_info
+        else:
+            LOGGER.debug(f"Model info for {model_name} not found in cache")
+            return None
 
     def visit_ClassDef(self, node):
         self.in_class = True
-        class_definitions = None
-        if self.tree:
-            class_definitions = {
-                class_node.name: class_node for class_node in ast.walk(self.tree) if isinstance(class_node, ast.ClassDef)
-            }
+        class_type = None
 
-        # Check if this class or any of its parent classes inherit from models.Model
-        if is_django_model_class(node, class_definitions, self.model_cache):
+        if self.class_definitions is not None:
+            LOGGER.info(f'Checking class {node.name} for Django class type')
+            class_type = self.view_detection_service.get_django_class_type(node, self.class_definitions)
+
+        if class_type == 'django_model':
             comments = self.get_related_comments(node)
             self.symbols.append(self._create_symbol_dict(
                 type='django_model',
@@ -62,31 +73,32 @@ class DjangoAnalyzer(Analyzer):
                 is_reserved=False
             ))
             self.current_django_class_type = 'django_model'
-        else:
-            self.current_django_class_type = None
-
-        if self.is_django_view_class(node):
+        elif class_type == 'django_class_view':
             issue = self.complexity_analyzer.run_complexity_analysis(node)
+            LOGGER.info(f"Ran complexity analysis on {node.name}")
             if issue:
-                LOGGER.debug(f'Complexity issue detected for view class {node.name.value}: {issue}')
-                # TODO: add issue properties as fields to symbol
+                LOGGER.info(f'Complexity issue detected for view class {node.name}: {issue}')
+                comments = self.get_related_comments(node)
                 self.symbols.append(self._create_symbol_dict(
-                    type='django_view',
-                    name=node.name.value,
+                    type='django_class_view',
+                    name=node.name,
                     message=issue.message,
                     severity=issue.severity,
+                    issue_code=issue.code,
                     comments=comments,
                     line=node.lineno,
                     col_offset=node.col_offset,
-                    end_col_offset=node.col_offset + len(node.name.value),
+                    end_col_offset=node.col_offset + len(node.name),
                     is_reserved=False
                 ))
-                LOGGER.info()
-            self.current_django_class_type = 'django_view'
+            self.current_django_class_type = 'django_class_view'
         else:
-            self.generic_visit(node)
-            self.in_class = False
             self.current_django_class_type = None
+
+        self.generic_visit(node)
+
+        self.in_class = False
+        self.current_django_class_type = None
 
     def visit_FunctionDef(self, node):
         comments = self.get_related_comments(node)
@@ -111,12 +123,16 @@ class DjangoAnalyzer(Analyzer):
         severity = None
         if self.in_class and self.current_django_class_type:
             symbol_type = f'{self.current_django_class_type}_method'
-        elif self.is_django_view_function(node):
-            symbol_type = 'django_view'
-            issue = self.complexity_analyzer.run_complexity_analysis(node)
-            if issue:
-                message = issue.message
-                severity = issue.severity
+        elif self.view_detection_service.is_django_view_function(node):
+            try:
+                symbol_type = 'django_func_view'
+                issue = self.complexity_analyzer.run_complexity_analysis(node)
+                if issue:
+                    issue_code = issue.code
+                    message = issue.message
+                    severity = issue.severity
+            except RecursionError:
+                LOGGER.error(f"Caught Recursion error while running complexity analysis on {node.name}")
         else:
             symbol_type = 'function'
 
@@ -125,6 +141,7 @@ class DjangoAnalyzer(Analyzer):
             name=node.name,
             message=message,
             severity=severity,
+            issue_code=issue_code,
             comments=comments,
             line=function_start_line,
             col_offset=function_start_col,
@@ -177,53 +194,22 @@ class DjangoAnalyzer(Analyzer):
         
         self.generic_visit(node)
 
-    def _get_django_class_type(self, bases):
-        for base in bases:
-            if isinstance(base, ast.Name) and self._is_django_component(base.id):
-                return self._get_component_type(base.id)
-            elif isinstance(base, ast.Attribute) and self._is_django_component(base.attr):
-                return self._get_component_type(base.attr)
-        return None
-
-    def _is_django_component(self, name):
-        return any(name in components for components in DJANGO_COMPONENTS.values())
-
-    def _get_component_type(self, name):
-        for component, names in DJANGO_COMPONENTS.items():
-            if name in names:
-                return f'django_{component}'
-        return None
-
-    def contains_query_method(self, node):
-        if isinstance(node, ast.Call):
-            if isinstance(node.func, ast.Attribute):
-                return node.func.attr in QUERY_METHODS
-        return any(self.contains_query_method(child) for child in ast.iter_child_nodes(node))
-    
-    def is_django_view_function(self, node):
-        """
-        Simple check to see if the function is a Django view function based on its location or decorators.
-        """
-        return any(decorator.id == 'view' for decorator in node.decorator_list if isinstance(decorator, ast.Name)) or 'views' in self.source_code
-
-    def is_django_view_class(self, node):
-        """
-        Check if the class is a Django view class based on inheritance or its location.
-        """
-        return any(base.attr == 'View' for base in node.bases if isinstance(base, ast.Attribute)) or 'views' in self.source_code
-
-    def get_nplusone_issues(self):
-        return self.nplusone_analyzer.analyze()
-
     def parse_code(self):
         try:
             LOGGER.info("Parsing Django code")
             result = super().parse_code()
 
+            self.view_detection_service.initialize(self.tree)
+
+            if self.tree:
+                self.class_definitions = {
+                    class_node.name: class_node for class_node in ast.walk(self.tree) if isinstance(class_node, ast.ClassDef)
+                }
+
             self.security_service.run_security_checks()
             self.security_issues = self.security_service.get_formatted_security_issues()
 
-            nplusone_issues = self.get_nplusone_issues()
+            nplusone_issues = self.nplusone_analyzer.analyze()
             scored_issues = NPlusOneScorer.calculate_issue_scores(nplusone_issues)
 
             return {

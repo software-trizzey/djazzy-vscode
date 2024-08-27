@@ -3,8 +3,8 @@
 
 class IssueSeverity:
     ERROR = 'ERROR'
-    INFORMATION = 'INFORMATION'
     WARNING = 'WARNING'
+    INFORMATION = 'INFORMATION'
     HINT = 'HINT'
 
 class IssueDocLinks:
@@ -35,12 +35,12 @@ class Issue(object):
         Return issue message.
         """
         message = self.description.format(**self.parameters)
-        return '{code} {message}'.format(code=self.code, message=message)
+        return message
     
     @property
     def severity(self):
         """
         Return issue severity.
         """
-        severity = self.severity.format(**self.parameters)
+        severity = self.parameters["severity"]
         return severity

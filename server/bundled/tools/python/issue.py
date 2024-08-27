@@ -28,6 +28,8 @@ class Issue(object):
         self.parameters = {} if parameters is None else parameters
         self.col = col
         self.lineno = lineno
+        if 'severity' in self.parameters:
+            self.severity = self.parameters['severity']
 
     @property
     def message(self):
@@ -36,11 +38,3 @@ class Issue(object):
         """
         message = self.description.format(**self.parameters)
         return message
-    
-    @property
-    def severity(self):
-        """
-        Return issue severity.
-        """
-        severity = self.parameters["severity"]
-        return severity

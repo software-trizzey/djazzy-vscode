@@ -1,6 +1,5 @@
 import ast
 
-from log import LOGGER
 from issue import IssueSeverity
 
 from .constants import ComplexityIssue, ScoreInterpretationEnum, ScoreWeightEnum

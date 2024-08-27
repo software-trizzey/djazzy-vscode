@@ -25,7 +25,7 @@ class TestViewComplexityScorer(unittest.TestCase):
             'operation_count': 5
         }
         score = self.scorer.score_view(metrics)
-        complexity_level, interpreted_score, issue = self.scorer.interpret_score(score, self.node, metrics)
+        complexity_level, _, issue = self.scorer.interpret_score(score, self.node, metrics)
         
         self.assertEqual(complexity_level, ScoreInterpretationEnum.SIMPLE)
         self.assertEqual(score, 0)
@@ -86,7 +86,7 @@ class TestViewComplexityScorer(unittest.TestCase):
             'operation_count': 0
         }
         score = self.scorer.score_view(metrics)
-        complexity_level, interpreted_score, issue = self.scorer.interpret_score(score, self.node, metrics)
+        complexity_level, _, issue = self.scorer.interpret_score(score, self.node, metrics)
         
         self.assertEqual(complexity_level, ScoreInterpretationEnum.SIMPLE)
         self.assertEqual(score, 0)
@@ -106,7 +106,7 @@ class TestViewComplexityScorer(unittest.TestCase):
             'operation_count': EXPECTED_OPERATION_COUNT
         }
         score = self.scorer.score_view(metrics)
-        complexity_level, interpreted_score, issue = self.scorer.interpret_score(score, self.node, metrics)
+        complexity_level, _, issue = self.scorer.interpret_score(score, self.node, metrics)
         
         self.assertEqual(complexity_level, ScoreInterpretationEnum.COMPLEX)
         self.assertEqual(score, MAX_SCORE)

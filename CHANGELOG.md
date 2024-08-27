@@ -2,7 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+
 ## [Version 0.1.12] - 2024-08-24
+
+### Added
+- [Feature] Rule: flag complex views and recommend refactoring them based on service or fat model design patterns.
+- [Feature] Check whether python exists on host machine before starting extension.
 
 ### Changed
 

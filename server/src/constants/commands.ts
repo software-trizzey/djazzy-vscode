@@ -1,4 +1,8 @@
+import projectPackageJson from "../../package.json";
+
 const EXTENSION_ID = "djangoly";
+
+export const DJANGOLY_ID = projectPackageJson.publisher + "." + EXTENSION_ID;
 
 export const FIX_NAME = `${EXTENSION_ID}.fixNamingConvention`;
 export const GET_CHANGED_LINES = `${EXTENSION_ID}.getGitDiff`;

@@ -39,7 +39,7 @@ import { checkForPythonAndVenv } from './utils/checkForPython';
 
 import { DiagnosticQueue } from "./services/diagnostics";
 
-import COMMANDS, { COMMANDS_LIST } from "./constants/commands";
+import COMMANDS, { COMMANDS_LIST, DJANGOLY_ID } from "./constants/commands";
 import LOGGER, { rollbar } from "./common/logs";
 import { SOURCE_NAME } from './constants/diagnostics';
 
@@ -117,9 +117,10 @@ connection.onInitialized(async () => {
 	const logContext = {
 		routeId,
 		extensionVersion: projectPackageJson.version,
+		vscode: { extension: DJANGOLY_ID },
 	};
 
-	if (process.env.NODE_ENV !== "development") {
+	if (process.env.NODE_ENV !== "development" || !!process.env.NODE_ENV) {
 		rollbar.configure({
 			logLevel: "warning",
 			payload: { environment: "production", context: logContext },

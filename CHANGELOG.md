@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 
-## [Version 0.1.12] - 2024-08-24
+## [Version 0.1.12] - 2024-08-27
 
 ### Added
 - [Feature] Rule: flag complex views and recommend refactoring them based on service or fat model design patterns.
@@ -14,6 +14,7 @@ All notable changes to this project will be documented in this file.
 - [Enhancement] Refactored security checks to service class and added unit tests.
 - [Enhancement] Refactored model field checks to service class and added unit tests.
 - [Enhancement] Simplified PR template format.
+- [Enhancement] Improve logger context and try to filter out errors from other sources (not Djangoly).
 
 ## [Version 0.1.11] - 2024-08-23
 

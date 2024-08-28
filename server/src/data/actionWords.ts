@@ -1,6 +1,7 @@
 export const verbDictionary: { [key: string]: string } = {
 	add: "add",
 	activate: "activate",
+	assert: "assert",
 	remove: "remove",
 	create: "create",
 	count: "count",

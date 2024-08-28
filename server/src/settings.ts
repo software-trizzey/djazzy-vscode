@@ -8,6 +8,7 @@ import { WorkspaceFolder } from 'vscode-languageserver';
 export let workspaceRoot = '';
 export let settingsVersion: number = 0;
 export let cachedUserToken: string | null = null;
+export let pythonExecutable: string = '';
 
 export  function setWorkspaceRoot(workspaceFolders: WorkspaceFolder[]): void {
 	if (workspaceFolders && workspaceFolders.length > 0) {
@@ -24,7 +25,11 @@ export function incrementSettingsVersion() {
 
 export function updateCachedUserToken(token: string): void {
 	cachedUserToken = token;
-  }
+}
+
+export function updatePythonExecutablePath(executablePath: string): void {
+	pythonExecutable = executablePath;
+}
   
 
 export interface ExtensionSettings {

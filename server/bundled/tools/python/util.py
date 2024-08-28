@@ -1,5 +1,6 @@
 import ast
 
+
 def serialize_file_data(obj):
     if isinstance(obj, ast.AST):
         return {k: serialize_file_data(v) for k, v in ast.iter_fields(obj)}
@@ -9,3 +10,4 @@ def serialize_file_data(obj):
         return {k: serialize_file_data(v) for k, v in obj.items()}
     else:
         return str(obj)
+    

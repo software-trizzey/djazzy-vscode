@@ -20,7 +20,7 @@ import {
 	REDUNDANT_COMMENT_VIOLATION_SOURCE_TYPE,
     DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE
 } from "../../constants/diagnostics";
-import { ExtensionSettings, defaultConventions } from "../../settings";
+import { ExtensionSettings, defaultConventions, pythonExecutable } from "../../settings";
 import LOGGER from '../../common/logs';
 import COMMANDS, { ACCESS_FORBIDDEN_NOTIFICATION_ID, FIX_NAME, RATE_LIMIT_NOTIFICATION_ID } from '../../constants/commands';
 import { Issue, Models, Severity, SymbolFunctionTypes } from '../../llm/types';
@@ -215,7 +215,7 @@ export class DjangoProvider extends LanguageProvider {
             const modelCacheJson = JSON.stringify(modelCacheObject);
 	
 			return new Promise((resolve, reject) => {
-				const process = spawn("python3", [parserFilePath, modelCacheJson]);
+				const process = spawn(pythonExecutable, [parserFilePath, modelCacheJson]);
 				let output = "";
 				let error = "";
 	
@@ -310,7 +310,6 @@ export class DjangoProvider extends LanguageProvider {
         isDjangoProject: boolean
     ): Promise<void> {
         const cacheKey = this.generateCacheKey(document.getText(), document);
-    
         const cachedResult = this.getCachedResult(cacheKey);
         if (cachedResult) {
             console.log("Using cached result for Django diagnostics");
@@ -331,7 +330,7 @@ export class DjangoProvider extends LanguageProvider {
         }
     
         this.setCachedResult(cacheKey, diagnostics);
-    }
+    }    
 
     private async processSymbol(
         symbol: any,
@@ -424,6 +423,19 @@ export class DjangoProvider extends LanguageProvider {
                 }
 
                 this.checkDjangoFieldConventions(symbol, diagnostics);
+                break;
+            case "django_class_view":
+            case "django_func_view":
+                if (symbol.message && symbol.issue_code === "CMPX01") {
+                    const mappedSeverity = this.mapSeverity(symbol.severity);
+                    this.addDiagnostic(
+                        diagnostics,
+                        symbol,
+                        symbol.message,
+                        mappedSeverity,
+                        DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE
+                    );
+                }
                 break;
         }
     
@@ -647,15 +659,16 @@ export class DjangoProvider extends LanguageProvider {
 		let start = symbol.col_offset;
 		let end = symbol.end_col_offset || (start + symbol.name.length);
 	
-		if (symbol.type === "function" || symbol.type.startsWith("django_") && symbol.type.endsWith("_method")) {
+		if (
+            symbol.type === "function" || symbol.type === "django_func_view" || symbol.type.startsWith("django_") && symbol.type.endsWith("_method")) {
 			start += "def ".length;
             end = start + symbol.name.length;
-		} else if (symbol.type === "class") {
+		} else if (symbol.type === "class" || symbol.type === "django_class_view") {
 			start += "class ".length;
-			end = symbol.end_col_offset || (start + symbol.name.length);
+			end = start + symbol.name.length;
 		} else if (/(ForeignKey|TextField|CharField)/.test(symbol.value) && symbol?.full_line_length) {
             end = symbol.full_line_length;
-        }        
+        }  
 	
 		start = Math.max(0, start);
 		end = Math.max(start, end);

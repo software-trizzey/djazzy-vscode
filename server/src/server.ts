@@ -32,12 +32,14 @@ import {
 	setWorkspaceRoot,
 	updateCachedUserToken,
 	cachedUserToken,
+	updatePythonExecutablePath,
 } from "./settings";
 import { checkForTestFile, debounce } from "./utils";
+import { checkForPythonAndVenv } from './utils/checkForPython';
 
 import { DiagnosticQueue } from "./services/diagnostics";
 
-import COMMANDS, { COMMANDS_LIST } from "./constants/commands";
+import COMMANDS, { COMMANDS_LIST, DJANGOLY_ID } from "./constants/commands";
 import LOGGER, { rollbar } from "./common/logs";
 import { SOURCE_NAME } from './constants/diagnostics';
 
@@ -58,6 +60,15 @@ connection.onInitialize((params: InitializeParams) => {
 	console.log(extensionNameMessage);
 	console.log(extensionVersionMessage);
 	console.log(`Running Node.js version: ${process.version}`);
+
+    const pythonEnv = checkForPythonAndVenv();
+    if (!pythonEnv) {
+        const errorMessage = 'Python environment setup failed. Ensure that Python is installed and the virtual environment is bundled correctly.';
+        connection.console.error(errorMessage);
+        throw new Error(errorMessage);
+    } else {
+		updatePythonExecutablePath(pythonEnv.pythonExecutable);
+	}
 
 	const capabilities = params.capabilities;
 
@@ -106,9 +117,10 @@ connection.onInitialized(async () => {
 	const logContext = {
 		routeId,
 		extensionVersion: projectPackageJson.version,
+		vscode: { extension: DJANGOLY_ID },
 	};
 
-	if (process.env.NODE_ENV !== "development") {
+	if (process.env.NODE_ENV !== "development" || !!process.env.NODE_ENV) {
 		rollbar.configure({
 			logLevel: "warning",
 			payload: { environment: "production", context: logContext },

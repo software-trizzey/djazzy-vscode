@@ -10,9 +10,9 @@ from constants import (
     DEBUG,
     SECRET_KEY,
     SESSION_COOKIE,
-    IssueDocLinks,
-    IssueSeverity
 )
+
+from issue import IssueDocLinks, IssueSeverity
 
 class RawSqlIssueMessages:
     RAW_SQL_USAGE = (

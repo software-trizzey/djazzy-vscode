@@ -15,6 +15,7 @@ Djangoly is a VS Code extension built for Django developers (surprise, surprise)
 
 - **Django N+1 Query Detection**: Identifies potential N+1 query issues in Django projects, flagging instances where related field access occurs within loops without proper optimization.
 - **Django-Specific Linting**: Automatically check your Django code against best practices and common pitfalls, including:
+  - **Complex View Detection**: Flags Django views with high complexity and suggests that they be refactored to follow the **Fat Model, Thin View** or **Services** design patterns. This rule reduces view complexity and promotes maintainability and scalability.
   - **ForeignKey Validation**: Ensures all `ForeignKey` fields have a `related_name` and `on_delete` argument specified to avoid common pitfalls in query relationships and data management.
   - **Raw SQL Query Detection**: Flags direct usage of raw SQL queries, including `raw()` and `connection.cursor()`. These can bypass Django ORM protections and introduce security vulnerabilities. Djangoly suggests safer alternatives using Django's ORM.
   - **CharField and TextField Nullability**: Ensures `CharField` and `TextField` fields are not incorrectly marked as `null=True`, which can lead to inconsistencies in data integrity.

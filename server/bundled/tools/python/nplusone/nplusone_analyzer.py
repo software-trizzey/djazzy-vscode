@@ -35,6 +35,7 @@ class NPlusOneDetector:
         self.source_code = source_code
         self.issues: List[Dict[str, Any]] = []
         self.global_context = GlobalContext()
+        self.detected_chains_global = set() 
 
     def analyze(self) -> List[Dict[str, Any]]:
         tree = ast.parse(self.source_code)
@@ -85,7 +86,7 @@ class NPlusOneDetector:
                 self.analyze_loop(subnode)
 
     def analyze_loop(self, loop: ast.For):
-        detected_outermost_chains = set() 
+        detected_outermost_chains = set()
 
         if isinstance(loop.target, ast.Name) and isinstance(loop.iter, ast.Name):
             # Loop variable (e.g., "user") is linked to the iterable (e.g., "users")
@@ -102,16 +103,14 @@ class NPlusOneDetector:
             if isinstance(node, ast.Attribute):
                 full_chain = self.get_full_attribute_chain(node)
                 print("Full chain:", full_chain)
-                print("detected chains:", detected_outermost_chains)
 
-                if not any(full_chain == detected_chain or detected_chain.startswith(full_chain) for detected_chain in detected_outermost_chains):
+                # Check if this chain has already been flagged in a previous loop
+                if full_chain not in self.detected_chains_global:
                     root_queryset_name = self.get_root_queryset_name(node)
-                    print("Root node:", node)
-                    print("Root queryset:", root_queryset_name)
-                    
+                    print("Root queryset name:", root_queryset_name)
                     if root_queryset_name and not self.is_queryset_or_variable_optimized(node):
                         print("Found issue for chain:", full_chain)
-                        detected_outermost_chains.add(full_chain)
+                        self.detected_chains_global.add(full_chain)
                         self.add_issue(loop, node, full_chain)
 
     def track_variable_assignment(self, node: ast.AST, queryset_name: str):

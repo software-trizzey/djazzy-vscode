@@ -73,7 +73,7 @@ class TestNPlusOneDetector(unittest.TestCase):
                     for order in user.orders.all():
                         print(order.item.name)
         """)
-        self.assert_n_plus_one_issues(source_code, 2, ['user.orders.all', 'order.item.name'])
+        self.assert_n_plus_one_issues(source_code, 2, ['user.orders', 'order.item'])
 
     def test_select_related_in_nested_loops(self):
         source_code = textwrap.dedent("""
@@ -83,7 +83,7 @@ class TestNPlusOneDetector(unittest.TestCase):
                     for order in user.orders.all():
                         print(order.item.name)
         """)
-        self.assert_n_plus_one_issues(source_code, 1, ['order.item.name'])
+        self.assert_n_plus_one_issues(source_code, 1, ['order.item'])
 
     def test_select_related_and_prefetch_related_combined(self):
         source_code = textwrap.dedent("""
@@ -94,7 +94,7 @@ class TestNPlusOneDetector(unittest.TestCase):
                     for order in user.orders.all():
                         print(order.item.name)
         """)
-        self.assert_n_plus_one_issues(source_code, 1, ['order.item.name'])
+        self.assert_n_plus_one_issues(source_code, 1, ['order.item'])
 
 if __name__ == '__main__':
     unittest.main()

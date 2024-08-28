@@ -28,7 +28,7 @@ class DjangoAnalyzer(Analyzer):
         self.model_cache = self.parse_model_cache(model_cache_json)
         self.class_type_cache = {}
         self.class_definitions = {}
-        self.nplusone_analyzer = NPlusOneDetector(source_code)
+        self.nplusone_analyzer = NPlusOneDetector(source_code, self.model_cache)
         self.nplusone_issues = []
         self.security_service = SecurityCheckService(source_code)
         self.security_issues = []

@@ -33,11 +33,14 @@ class GlobalContext:
         return self.optimized_variables.get(var_node.id)
 
 class NPlusOneDetector:
-    def __init__(self, source_code: str):
+    def __init__(self, source_code: str, model_cache: Dict[str, Any] = None):
         self.source_code = source_code
+        self.model_cache = model_cache
         self.issues: List[Dict[str, Any]] = []
         self.global_context = GlobalContext()
-        self.detected_chains_global = set() 
+        self.detected_chains_global = set()
+
+        LOGGER.info(f"Initializing N+1 detector with models: {model_cache}")
 
     def analyze(self) -> List[Dict[str, Any]]:
         tree = ast.parse(self.source_code)
@@ -50,6 +53,13 @@ class NPlusOneDetector:
 
         LOGGER.info(f"Analysis complete. Total issues found: {len(self.issues)}")
         return self.issues
+    
+    def is_valid_queryset(self, queryset_name: str) -> bool:
+        """
+        Check if the root queryset corresponds to a known model in the model cache.
+        """
+        print("Checking if valid queryset:", queryset_name)
+        return queryset_name in self.model_cache
 
     def find_optimized_querysets(self, tree: ast.AST):
         LOGGER.info("Finding optimized querysets...")
@@ -61,7 +71,7 @@ class NPlusOneDetector:
                     queryset_name = self.get_queryset_name(node)
                     if queryset_name:
                         self.global_context.add_optimized_queryset(node)
-                        LOGGER.debug("Optimized query set node with name:", node, queryset_name)
+                        LOGGER.debug(f"Optimized query set node with name: {node} {queryset_name}")
         
         # Second pass: Process variable assignments after optimizations are known
         LOGGER.debug("\nProcessing queryset variable assignments...")
@@ -70,9 +80,9 @@ class NPlusOneDetector:
                 target = node.targets[0]
                 if isinstance(target, ast.Name) and isinstance(node.value, ast.Call):
                     queryset_name = self.get_queryset_name(node.value)
-                    LOGGER.debug("Checking variable assignment:", target, node.value, queryset_name)
+                    LOGGER.debug(f"Checking variable assignment: {target} {node.value} {queryset_name}")
                     if self.global_context.is_queryset_optimized(node.value):
-                        LOGGER.debug("Found optimized queryset for variable:", node)
+                        LOGGER.debug(f"Found optimized queryset for variable: {node}")
                         self.global_context.add_optimized_variable(target, node.value)
 
     def analyze_usage(self, tree: ast.AST):
@@ -92,6 +102,12 @@ class NPlusOneDetector:
             # Loop variable (e.g., "user") is linked to the iterable (e.g., "users")
             queryset_name = loop.iter.id
             loop_var_name = loop.target.id
+
+            if not self.is_valid_queryset(queryset_name):
+                LOGGER.info(f"Skipping loop analysis for non-model queryset: {queryset_name}")
+                print(f"Skipping loop analysis for non-model queryset: {queryset_name}")
+                return
+
             LOGGER.debug(f"Linking loop variable '{loop_var_name}' to queryset '{queryset_name}'")
             LOGGER.debug(f"Loop iter node {loop.iter} and variable node {loop.target}")
             queryset_node = self.global_context.get_queryset_for_variable(loop.iter)

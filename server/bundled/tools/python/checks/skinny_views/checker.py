@@ -23,7 +23,7 @@ class ViewComplexityAnalyzer:
             'operation_count': operation_count
         }
 
-    def run_complexity_analysis(self, node) -> ComplexityIssue | None:
+    def run_complexity_analysis(self, node) -> ComplexityIssue:
         """
         Run complexity analysis on the given view function or class and return issues if detected.
         """

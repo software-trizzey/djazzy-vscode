@@ -1,15 +1,40 @@
 import unittest
 import textwrap
-
-from unittest import skip
 from typing import List
+
+from log import LOGGER
 
 from nplusone.nplusone_analyzer import NPlusOneDetector
 
 class TestNPlusOneDetector(unittest.TestCase):
 
+    def setUp(self):
+        self.logger = LOGGER
+        self.model_cache = {
+            'User': {
+                'fields': {'username': 'CharField', 'profile': 'ForeignKey'},
+                'relationships': {'profile': {'type': 'ForeignKey', 'properties': {'on_delete': 'models.CASCADE'}}},
+                'parent_models': ['models.Model']
+            },
+            'Profile': {
+                'fields': {'name': 'CharField'},
+                'relationships': {},
+                'parent_models': ['models.Model']
+            },
+            'Order': {
+                'fields': {'item': 'ForeignKey'},
+                'relationships': {'user': {'type': 'ForeignKey', 'properties': {'related_name': '"orders"', 'on_delete': 'models.CASCADE'}}},
+                'parent_models': ['models.Model']
+            },
+            'Item': {
+                'fields': {'name': 'CharField'},
+                'relationships': {},
+                'parent_models': ['models.Model']
+            },
+        }
+
     def assert_n_plus_one_issues(self, source_code: str, expected_issues_count: int, expected_issue_chains: List[str]):
-        detector = NPlusOneDetector(source_code)
+        detector = NPlusOneDetector(source_code, model_cache=self.model_cache)
         issues = detector.analyze()
         self.assertEqual(len(issues), expected_issues_count, f"Expected {expected_issues_count} N+1 issues, but found {len(issues)}")
         found_chains = [issue['message'].split(': ')[-1] for issue in issues]
@@ -45,7 +70,7 @@ class TestNPlusOneDetector(unittest.TestCase):
         """)
         self.assert_n_plus_one_issues(source_code, 1, ['user.profile'])
 
-    @skip("Tracking optimized querysets across functions is not supported yet")
+    @unittest.skip("Tracking optimized querysets across functions is not supported yet")
     def test_optimized_across_functions(self):
         source_code = textwrap.dedent("""
             def get_users():

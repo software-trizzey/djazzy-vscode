@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch
-from constants import IssueSeverity
+from issue import IssueSeverity
 from checks.security import SecurityCheckService, RawSqlIssueMessages
 
 

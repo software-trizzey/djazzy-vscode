@@ -32,8 +32,10 @@ import {
 	setWorkspaceRoot,
 	updateCachedUserToken,
 	cachedUserToken,
+	updatePythonExecutablePath,
 } from "./settings";
 import { checkForTestFile, debounce } from "./utils";
+import { checkForPythonAndVenv } from './utils/checkForPython';
 
 import { DiagnosticQueue } from "./services/diagnostics";
 
@@ -58,6 +60,15 @@ connection.onInitialize((params: InitializeParams) => {
 	console.log(extensionNameMessage);
 	console.log(extensionVersionMessage);
 	console.log(`Running Node.js version: ${process.version}`);
+
+    const pythonEnv = checkForPythonAndVenv();
+    if (!pythonEnv) {
+        const errorMessage = 'Python environment setup failed. Ensure that Python is installed and the virtual environment is bundled correctly.';
+        connection.console.error(errorMessage);
+        throw new Error(errorMessage);
+    } else {
+		updatePythonExecutablePath(pythonEnv.pythonExecutable);
+	}
 
 	const capabilities = params.capabilities;
 

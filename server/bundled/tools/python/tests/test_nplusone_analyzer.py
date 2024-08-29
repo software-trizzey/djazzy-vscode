@@ -124,5 +124,32 @@ class TestNPlusOneDetector(unittest.TestCase):
         """)
         self.assert_n_plus_one_issues(source_code, 1, ['order.item'])
 
+    def test_no_n_plus_one_with_non_queryset_dict(self):
+        source_code = textwrap.dedent("""
+            def process_data():
+                data = {'key1': 'value1', 'key2': 'value2'}
+                for key in data:
+                    print(data[key])
+        """)
+        self.assert_n_plus_one_issues(source_code, 0, [])
+
+    def test_no_n_plus_one_with_non_queryset_list(self):
+        source_code = textwrap.dedent("""
+            def process_objects():
+                objects = [Profile(name='Profile1'), Profile(name='Profile2')]
+                for obj in objects:
+                    print(obj.name)
+        """)
+        self.assert_n_plus_one_issues(source_code, 0, [])
+
+    def test_no_n_plus_one_with_single_object(self):
+        source_code = textwrap.dedent("""
+            def process_single_object():
+                obj = Profile(name='Profile1')
+                print(obj.name)
+        """)
+        self.assert_n_plus_one_issues(source_code, 0, [])
+
+
 if __name__ == '__main__':
     unittest.main()

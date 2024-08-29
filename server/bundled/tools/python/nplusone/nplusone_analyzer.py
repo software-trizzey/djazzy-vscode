@@ -124,6 +124,11 @@ class NPlusOneDetector:
             if assigned_value:
                 complete_queryset = self.get_complete_queryset(assigned_value)
                 LOGGER.debug(f"Found assigned value for loop variable: {loop.iter.id} -> {assigned_value} -> {complete_queryset}")
+
+                if isinstance(assigned_value, ast.List) or isinstance(assigned_value, ast.Dict):
+                    LOGGER.info(f"Skipping loop analysis for non-queryset iterable: {loop.iter.id}")
+                    return
+                
                 if complete_queryset and not self.is_valid_model_queryset(complete_queryset):
                     LOGGER.info(f"Skipping loop analysis for non-model queryset: {complete_queryset}")
                     return

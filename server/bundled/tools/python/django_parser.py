@@ -8,7 +8,6 @@ from constants import DJANGO_IGNORE_FUNCTIONS
 
 from ast_parser import Analyzer
 from nplusone.nplusone_analyzer import NPlusOneDetector
-from nplusone.scorer import NPlusOneScorer
 
 from checks.security import SecurityCheckService
 from checks.model_fields import ModelFieldCheckService
@@ -219,12 +218,11 @@ class DjangoAnalyzer(Analyzer):
             self.security_issues = self.security_service.get_formatted_security_issues()
 
             nplusone_issues = self.nplusone_analyzer.analyze()
-            scored_issues = NPlusOneScorer.calculate_issue_scores(nplusone_issues)
 
             return {
                 "symbols": self.symbols,
                 "security_issues": self.security_issues,
-                "nplusone_issues": scored_issues,
+                "nplusone_issues": nplusone_issues,
             }
         except SyntaxError as e:
             LOGGER.warning(f'Syntax error in Django code: {e}. Continuing with partial analysis.')

@@ -1,7 +1,11 @@
 import ast
+import uuid
+
 from typing import List, Dict, Any, Set
 
 from log import LOGGER
+
+from nplusone.scorer import NPlusOneScorer
 
 class GlobalContext:
     def __init__(self):
@@ -59,6 +63,8 @@ class NPlusOneDetector:
 
         # Second pass: analyze the usage of querysets in loops and other parts
         self.analyze_usage(tree)
+
+        self.issues = NPlusOneScorer.calculate_issue_scores(self.issues)
 
         LOGGER.info(f"Analysis complete. Total issues found: {len(self.issues)}")
         return self.issues
@@ -245,13 +251,45 @@ class NPlusOneDetector:
             return arg.id
         return ast.dump(arg)
 
-
     def add_issue(self, loop: ast.AST, node: ast.AST, attr_chain: str):
+        """
+        Add a detailed N+1 query issue to the list of issues.
+        """
         issue = {
-            'line': loop.lineno,
-            'col': loop.col_offset,
+            'id': str(uuid.uuid4()),
+            'line': node.lineno,
+            'start_line': loop.lineno,
+            'end_line': node.end_lineno if hasattr(node, 'end_lineno') else node.lineno,
+            'col_offset': loop.col_offset,
+            'end_col_offset': node.end_col_offset if hasattr(node, 'end_col_offset') else node.col_offset,
             'message': f"Potential N+1 query detected at line {node.lineno}: {attr_chain}",
-            'suggestion': "Consider using select_related() or prefetch_related() to optimize this query."
+            'problematic_code': self.get_problematic_code(node),
+            'suggestion': "Consider using select_related() or prefetch_related() to optimize this query.",
         }
         LOGGER.debug(f"Adding issue: {issue}")
         self.issues.append(issue)
+
+    def get_enclosing_function_name(self, node: ast.AST) -> str:
+        """
+        Get the name of the function enclosing the node, if available.
+        """
+        current_node = node
+        while current_node:
+            if isinstance(current_node, ast.FunctionDef):
+                return current_node.name
+            current_node = getattr(current_node, 'parent', None)
+        return "Unknown"
+
+    def get_problematic_code(self, node: ast.AST) -> str:
+        """
+        Get the code snippet that is considered problematic.
+        Extracts the exact line(s) of code from the source code based on the node's location.
+        """
+        start_line = node.lineno
+        end_line = getattr(node, 'end_lineno', start_line)
+        source_lines = self.source_code.splitlines()
+        
+        problematic_code_lines = source_lines[start_line - 1:end_line]
+        problematic_code = '\n'.join(problematic_code_lines).strip()
+
+        return problematic_code

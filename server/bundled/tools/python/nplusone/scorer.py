@@ -1,12 +1,13 @@
 from constants import WRITE_METHODS
 from issue import IssueSeverity
 
+
 class NPlusOneScorer:
     MAX_SCORE = 100
     SCORE_THRESHOLDS = {
         'LOW': 40,
         'MEDIUM': 70,
-        'HIGH': 95 # reserve this tier for issues that will likely block developer commits
+        'HIGH': 95  # reserve this tier for issues that will likely block developer commits
     }
     SCORE_WEIGHTS = {
         'IN_LOOP': 25,

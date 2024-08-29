@@ -751,10 +751,9 @@ export class DjangoProvider extends LanguageProvider {
         diagnostics: Diagnostic[],
         changedLines?: Set<number>
     ): void {
-        const uniqueIssues = this.deduplicateIssues(issues);
-        console.log(`Detected ${issues.length} N+1 issues, ${uniqueIssues.size} after deduplication`);
+        console.log(`Detected ${issues.length} N+1 issues`);
 
-        for (const issue of uniqueIssues.values()) {
+        for (const issue of issues) {
             if (!this.shouldShowIssue(issue.score)) continue;
 
             if (changedLines && !this.isIssueInChangedLines(issue, changedLines)) {
@@ -782,16 +781,11 @@ export class DjangoProvider extends LanguageProvider {
                 data: {
                     id: issue.id,
                     score: issue.score,
-                    contextualInfo: {
-                        query_type: this.inferQueryType(issue.problematic_code),
-                    },
                 },
             };
 
             diagnostics.push(diagnostic);
         }
-
-        console.log(`Processed ${uniqueIssues.size} unique N+1 issues`);
     }
 
     private checkDjangoFieldConventions(symbol: any, diagnostics: Diagnostic[]): void {
@@ -845,42 +839,6 @@ export class DjangoProvider extends LanguageProvider {
         }
         return DiagnosticSeverity.Information;
     }
-    
-    private inferQueryType(code: string): string {
-        if (code.includes('filter') || code.includes('get') || code.includes('all')) {
-            return 'read';
-        }
-        return 'unknown';
-    }
-
-    private deduplicateIssues(issues: Issue[]): Map<string, Issue> {
-        const uniqueIssues = new Map<string, Issue>();
-
-        for (const issue of issues) {
-            const issueKey = this.generateIssueKey(issue);
-            const existingIssue = uniqueIssues.get(issueKey);
-
-            if (!existingIssue || this.shouldReplaceExistingIssue(existingIssue, issue)) {
-                uniqueIssues.set(issueKey, issue);
-            }
-        }
-
-        return uniqueIssues;
-    }
-
-    private generateIssueKey(issue: Issue): string {
-        // Create a unique key based on the issue's properties
-        return `${issue.line}-${issue.col_offset}-${issue.contextual_info?.query_type}-${issue.contextual_info?.is_in_loop}`;
-    }
-
-    /**
-    *  Replace if the new issue has a higher score or more detailed information
-    */
-    private shouldReplaceExistingIssue(existing: Issue, newIssue: Issue): boolean {
-        if (newIssue.score > existing.score) return true;
-        if (newIssue.score === existing.score && newIssue.message.length > existing.message.length) return true;
-        return false;
-    }
 
     private isIssueInChangedLines(issue: Issue, changedLines: Set<number>): boolean {
         for (let line = issue.start_line; line <= issue.end_line; line++) {
@@ -907,39 +865,6 @@ export class DjangoProvider extends LanguageProvider {
         return message;
     }
 
-    private generateContextInfo(issue: Issue): string {
-        if (!issue.contextual_info) return 'Potential inefficient database query';
-
-        const { query_type, related_field, is_in_loop, loop_start_line, is_bulk_operation, is_related_field_access } = issue.contextual_info;
-        const fieldDescription = related_field || 'a queryset';
-        let contextInfo = `Detected in function "${issue.function_name}"`;
-
-        if (is_related_field_access) {
-            contextInfo += `, accessing the related field "${fieldDescription}"`;
-        } else {
-            switch (query_type) {
-                case 'write':
-                    contextInfo += `, performing a write operation on ${fieldDescription}`;
-                    break;
-                case 'read':
-                    contextInfo += `, performing a read operation (e.g., filter(), get()) on ${fieldDescription}`;
-                    break;
-                default:
-                    contextInfo += `, using .${query_type}() on ${fieldDescription}`;
-            }
-        }
-
-        if (is_in_loop) {
-            contextInfo += ` in a loop (starts at line ${loop_start_line})`;
-        }
-
-        if (is_bulk_operation) {
-            contextInfo += ` (Bulk operation detected)`;
-        }
-
-        return contextInfo;
-    }
-    
     private sendRateLimitNotification(): void {
         this.connection.sendNotification(RATE_LIMIT_NOTIFICATION_ID, {
             message: "Daily limit for N+1 query detection has been reached. Your quota for this feature will reset tomorrow."

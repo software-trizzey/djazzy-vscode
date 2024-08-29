@@ -4,6 +4,7 @@ import uuid
 from typing import List, Dict, Any, Set
 
 from log import LOGGER
+from constants import QUERY_METHODS
 
 from nplusone.scorer import NPlusOneScorer
 
@@ -122,43 +123,9 @@ class NPlusOneDetector:
 
     def analyze_loop(self, loop: ast.For):
         if isinstance(loop.target, ast.Name) and isinstance(loop.iter, ast.Name):
-            # Loop variable (e.g., "user") is linked to the iterable (e.g., "users")
-            queryset_name = loop.iter.id
-            loop_var_name = loop.target.id
+            self.process_loop_target_and_iterable(loop.target, loop.iter)
 
-            assigned_value = self.global_context.get_variable_assignment(loop.iter)
-            if assigned_value:
-                complete_queryset = self.get_complete_queryset(assigned_value)
-                LOGGER.debug(f"Found assigned value for loop variable: {loop.iter.id} -> {assigned_value} -> {complete_queryset}")
-
-                if isinstance(assigned_value, ast.List) or isinstance(assigned_value, ast.Dict):
-                    LOGGER.info(f"Skipping loop analysis for non-queryset iterable: {loop.iter.id}")
-                    return
-                
-                if complete_queryset and not self.is_valid_model_queryset(complete_queryset):
-                    LOGGER.info(f"Skipping loop analysis for non-model queryset: {complete_queryset}")
-                    return
-
-            LOGGER.debug(f"Linking loop variable '{loop_var_name}' to queryset '{queryset_name}'")
-            LOGGER.debug(f"Loop iter node {loop.iter} and variable node {loop.target}")
-            queryset_node = self.global_context.get_queryset_for_variable(loop.iter)
-            LOGGER.debug(f"Loop Queryset node: {queryset_node}")
-            if queryset_node:
-                self.global_context.add_optimized_variable(loop.target, queryset_node)
-
-        for node in ast.walk(loop):
-            if isinstance(node, ast.Attribute):
-                full_chain = self.get_full_attribute_chain(node)
-                LOGGER.debug(f"Full chain: {full_chain}")
-
-                # Check if this chain has already been flagged in a previous loop
-                if full_chain not in self.detected_chains_global:
-                    root_queryset_name = self.get_root_queryset_name(node)
-                    LOGGER.debug(f"Root queryset name: {root_queryset_name}")
-                    if root_queryset_name and not self.is_queryset_or_variable_optimized(node):
-                        LOGGER.debug(f"Found issue for chain: {full_chain}")
-                        self.detected_chains_global.add(full_chain)
-                        self.add_issue(loop, node, full_chain)
+        self.process_loop_nodes(loop)
 
     def track_variable_assignment(self, node: ast.AST, queryset_name: str):
         if queryset_name:
@@ -240,6 +207,24 @@ class NPlusOneDetector:
             return node.id
         
         return ''
+    
+    def get_function_name(self, node: ast.Call) -> str:
+        """
+        Extracts the name of the function being called from an ast.Call node.
+        
+        :param node: The ast.Call node representing the function call.
+        :return: The name of the function being called as a string.
+        """
+        if isinstance(node.func, ast.Name):
+            # The function is directly called (e.g., func())
+            LOGGER.debug(f"Function name: {node.func.id}")
+            return node.func.id
+        elif isinstance(node.func, ast.Attribute):
+            LOGGER.debug(f"Function name: {node.func.attr}")
+            return node.func.attr
+        else:
+            LOGGER.debug(f"Function name might be too complex for this check: {ast.dump(node.func)}")
+            return ""
 
     def get_argument_value(self, arg: ast.AST) -> str:
         """
@@ -250,6 +235,70 @@ class NPlusOneDetector:
         elif isinstance(arg, ast.Name):
             return arg.id
         return ast.dump(arg)
+    
+    def process_loop_target_and_iterable(self, loop_target: ast.Name, loop_iter: ast.Name):
+        queryset_name = loop_iter.id
+        loop_var_name = loop_target.id
+
+        assigned_value = self.global_context.get_variable_assignment(loop_iter)
+        if assigned_value:
+            complete_queryset = self.get_complete_queryset(assigned_value)
+            LOGGER.debug(f"Found assigned value for loop variable: {loop_iter.id} -> {assigned_value} -> {complete_queryset}")
+
+            if isinstance(assigned_value, ast.List) or isinstance(assigned_value, ast.Dict):
+                LOGGER.info(f"Skipping loop analysis for non-queryset iterable: {loop_iter.id}")
+                return
+            
+            if complete_queryset and not self.is_valid_model_queryset(complete_queryset):
+                LOGGER.info(f"Skipping loop analysis for non-model queryset: {complete_queryset}")
+                return
+
+        LOGGER.debug(f"Linking loop variable '{loop_var_name}' to queryset '{queryset_name}'")
+        LOGGER.debug(f"Loop iter node {loop_iter} and variable node {loop_target}")
+        queryset_node = self.global_context.get_queryset_for_variable(loop_iter)
+        LOGGER.debug(f"Loop Queryset node: {queryset_node}")
+        if queryset_node:
+            self.global_context.add_optimized_variable(loop_target, queryset_node)
+
+    def process_loop_nodes(self, loop: ast.For):
+        for node in ast.walk(loop):
+            if isinstance(node, ast.Call):
+                function_name = self.get_function_name(node)
+                LOGGER.debug(f"Processing function call: {function_name}")
+
+                if function_name in QUERY_METHODS:
+                    LOGGER.debug(f"Found query method: {function_name}")
+                    queryset_chain = self.get_full_attribute_chain(node.func)
+                    LOGGER.debug(f"Queryset chain: {queryset_chain}")
+                    # Filter out more general chains ("Product.objects") before adding a more specific one ("Product.objects.filter()"")
+                    is_redundant = any(existing_chain.startswith(queryset_chain) for existing_chain in self.detected_chains_global)
+                    if not is_redundant:
+                        LOGGER.debug(f"Identified new queryset chain: {queryset_chain}")
+                        self.detected_chains_global.add(queryset_chain)
+                        self.add_issue(loop, node, queryset_chain)
+
+            if isinstance(node, ast.Assign):
+                LOGGER.debug(f"Checking assignment in loop: {ast.dump(node, annotate_fields=True)}")
+                if not isinstance(node.value, (ast.Call, ast.Subscript)):
+                    LOGGER.debug(f"Skipping non-call assignment: {node.targets[0].value.id}")
+                    continue
+
+            if isinstance(node, ast.Attribute):
+                full_chain = self.get_full_attribute_chain(node)
+                LOGGER.debug(f"Full chain: {full_chain}")
+                LOGGER.debug(f"Current chains: {self.detected_chains_global}")
+
+                is_redundant = any(existing_chain.startswith(full_chain) for existing_chain in self.detected_chains_global)
+                if is_redundant:
+                    LOGGER.debug(f"Skipping chain: {full_chain} as it is redundant")
+                    continue
+
+                root_queryset_name = self.get_root_queryset_name(node)
+                LOGGER.debug(f"Root queryset name: {root_queryset_name}")
+                if root_queryset_name and not self.is_queryset_or_variable_optimized(node):
+                    LOGGER.debug(f"Found issue for chain: {full_chain}")
+                    self.detected_chains_global.add(full_chain)
+                    self.add_issue(loop, node, full_chain)
 
     def add_issue(self, loop: ast.AST, node: ast.AST, attr_chain: str):
         """

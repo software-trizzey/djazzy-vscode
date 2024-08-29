@@ -122,10 +122,10 @@ class NPlusOneDetector:
 
             assigned_value = self.global_context.get_variable_assignment(loop.iter)
             if assigned_value:
-                queryset_name = self.get_queryset_name(assigned_value)
-                LOGGER.debug(f"Found assigned value for loop variable: {loop.iter} -> {assigned_value} -> {queryset_name}")
-                if queryset_name and not self.is_valid_model_queryset(queryset_name):
-                    LOGGER.info(f"Skipping loop analysis for non-model queryset: {queryset_name}")
+                complete_queryset = self.get_complete_queryset(assigned_value)
+                LOGGER.debug(f"Found assigned value for loop variable: {loop.iter.id} -> {assigned_value} -> {complete_queryset}")
+                if complete_queryset and not self.is_valid_model_queryset(complete_queryset):
+                    LOGGER.info(f"Skipping loop analysis for non-model queryset: {complete_queryset}")
                     return
 
             LOGGER.debug(f"Linking loop variable '{loop_var_name}' to queryset '{queryset_name}'")
@@ -211,6 +211,35 @@ class NPlusOneDetector:
             return node.func.id
         
         return ''
+    
+    def get_complete_queryset(self, node: ast.AST) -> str:
+        """
+        Recursively traverses the AST to reconstruct the full queryset expression.
+        """
+        if isinstance(node, ast.Call):
+            func_str = self.get_complete_queryset(node.func)
+            args_str = ', '.join([self.get_argument_value(arg) for arg in node.args])
+            return f"{func_str}({args_str})"
+        
+        elif isinstance(node, ast.Attribute):
+            value_str = self.get_complete_queryset(node.value)
+            return f"{value_str}.{node.attr}"
+        
+        elif isinstance(node, ast.Name):
+            return node.id
+        
+        return ''
+
+    def get_argument_value(self, arg: ast.AST) -> str:
+        """
+        Converts AST argument nodes into readable strings.
+        """
+        if isinstance(arg, ast.Constant):  # Python 3.8+
+            return repr(arg.value)  # Handles strings, numbers, etc.
+        elif isinstance(arg, ast.Name):
+            return arg.id
+        return ast.dump(arg)
+
 
     def add_issue(self, loop: ast.AST, node: ast.AST, attr_chain: str):
         issue = {

@@ -202,7 +202,6 @@ class TestNPlusOneDetector(unittest.TestCase):
         """)
         self.assert_n_plus_one_issues(source_code, 2, ['Product.objects.get', 'product.category'])
 
-    # FIXME: we should differentiate between related fields and non-related fields (order.status should not be flagged)
     def test_get_orders_by_status_n_plus_one(self):
         source_code = textwrap.dedent("""
             def get_orders_by_status(status):

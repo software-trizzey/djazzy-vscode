@@ -101,6 +101,18 @@ class NPlusOneDetector:
         
         root_model_name = root_model_name[0]
         return root_model_name in self.model_cache
+    
+    def is_related_field(self, model_name: str, field_name: str) -> bool:
+        """
+        Check if the field is a related field based on the model cache.
+        """
+        capitalized_model_name = model_name.capitalize()
+        LOGGER.debug(f"Checking if field is related: {field_name} in {capitalized_model_name}")
+        model_info = self.model_cache.get(capitalized_model_name)
+        if model_info:
+            LOGGER.debug(f"Checking if field {field_name} is in {model_info.get('relationships', {})}")
+            return field_name in model_info.get('relationships', {})
+        return False
 
     def find_optimized_querysets(self, tree: ast.AST):
         LOGGER.info("Finding optimized querysets...")
@@ -313,16 +325,24 @@ class NPlusOneDetector:
                     continue
 
                 full_chain = self.get_full_attribute_chain(node)
+                root_queryset_name = self.get_root_queryset_name(node)
                 LOGGER.debug(f"Full chain: {full_chain}")
                 LOGGER.debug(f"Current chains: {self.detected_chains_global}")
+                LOGGER.debug(f"Root queryset name: {root_queryset_name}")
+
+                if root_queryset_name and self.is_related_field(root_queryset_name, node.attr):
+                    LOGGER.debug(f"Found related field chain: {full_chain}")
+                    self.detected_chains_global.add(full_chain)
+                    self.add_issue(loop, node, full_chain)
+                else:
+                    LOGGER.debug(f"Field {node.attr} is not related and should not trigger N+1 issue.")
+                    continue
 
                 is_redundant = any(existing_chain.startswith(full_chain) for existing_chain in self.detected_chains_global)
                 if is_redundant:
                     LOGGER.debug(f"Skipping chain: {full_chain} as it is redundant")
                     continue
 
-                root_queryset_name = self.get_root_queryset_name(node)
-                LOGGER.debug(f"Root queryset name: {root_queryset_name}")
                 if root_queryset_name and not self.is_queryset_or_variable_optimized(node):
                     LOGGER.debug(f"Found issue for chain: {full_chain}")
                     self.detected_chains_global.add(full_chain)

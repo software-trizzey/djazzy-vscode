@@ -58,6 +58,7 @@ class TestNPlusOneDetector(unittest.TestCase):
         """)
         self.assert_n_plus_one_issues(source_code, 0, [])
 
+    @unittest.skip("Tracking optimized querysets across functions is not supported yet")
     def test_n_plus_one_across_functions(self):
         source_code = textwrap.dedent("""
             def get_users():

@@ -7,11 +7,6 @@ METHOD_NAMES = [
     "django_testcase_method",
 ]
 
-QUERY_METHODS = [
-    "all", "filter", "get", "count", "exists", "aggregate",
-    "annotate", "values", "values_list", "first", "last",
-]
-
 OPTIMIZATION_METHODS = {"select_related", "prefetch_related"}
 
 DJANGO_IGNORE_FUNCTIONS = {
@@ -44,6 +39,26 @@ QUERY_METHODS = {
     "filter",
     "all",
     "get",
+	"exclude",
+    "count",
+    "exists",
+    "aggregate",
+    "annotate",
+    "values",
+    "values_list",
+    "first",
+    "last",
+    "latest",
+    "earliest",
+    "create",
+    "update",
+    "delete",
+    "save",
+    "bulk_create",
+    "bulk_update",
+    "bulk_delete",
+    "select_related",
+    "prefetch_related",
 }
 
 WRITE_METHODS = {

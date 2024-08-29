@@ -43,8 +43,26 @@ class GlobalContext:
         self.variable_assignments[var_node.id] = assigned_value
         LOGGER.debug(f"Variable assignments: {self.variable_assignments}")
 
-    def get_variable_assignment(self, var_node: ast.Name) -> ast.AST:
-        return self.variable_assignments.get(var_node.id)
+    def get_variable_assignment(self, var_node: ast.AST) -> ast.AST:
+        if isinstance(var_node, ast.Name):
+            return self.variable_assignments.get(var_node.id)
+        LOGGER.debug(f"Variable assignment lookup skipped for non-Name node: {ast.dump(var_node)}")
+        return None
+
+
+class ParentAwareNodeVisitor(ast.NodeVisitor):
+    def __init__(self):
+        self.parent_map = {}
+
+    def visit(self, node):
+        for child in ast.iter_child_nodes(node):
+            self.parent_map[child] = node
+            self.visit(child)
+        super().visit(node)
+
+    def get_parent(self, node):
+        return self.parent_map.get(node)
+
 
 class NPlusOneDetector:
     def __init__(self, source_code: str, model_cache: Dict[str, Any] = None):
@@ -217,10 +235,10 @@ class NPlusOneDetector:
         """
         if isinstance(node.func, ast.Name):
             # The function is directly called (e.g., func())
-            LOGGER.debug(f"Function name: {node.func.id}")
+            LOGGER.debug(f"Function name (name): {node.func.id}")
             return node.func.id
         elif isinstance(node.func, ast.Attribute):
-            LOGGER.debug(f"Function name: {node.func.attr}")
+            LOGGER.debug(f"Function name (attribute): {node.func.attr}")
             return node.func.attr
         else:
             LOGGER.debug(f"Function name might be too complex for this check: {ast.dump(node.func)}")
@@ -261,6 +279,9 @@ class NPlusOneDetector:
             self.global_context.add_optimized_variable(loop_target, queryset_node)
 
     def process_loop_nodes(self, loop: ast.For):
+        visitor = ParentAwareNodeVisitor()
+        visitor.visit(loop)
+
         for node in ast.walk(loop):
             if isinstance(node, ast.Call):
                 function_name = self.get_function_name(node)
@@ -277,13 +298,20 @@ class NPlusOneDetector:
                         self.detected_chains_global.add(queryset_chain)
                         self.add_issue(loop, node, queryset_chain)
 
-            if isinstance(node, ast.Assign):
-                LOGGER.debug(f"Checking assignment in loop: {ast.dump(node, annotate_fields=True)}")
-                if not isinstance(node.value, (ast.Call, ast.Subscript)):
-                    LOGGER.debug(f"Skipping non-call assignment: {node.targets[0].value.id}")
+            if isinstance(node, ast.Attribute):
+                parent_node = visitor.get_parent(node)
+                LOGGER.debug(f"Parent node {ast.dump(parent_node, annotate_fields=True)} type {type(parent_node)} of attribute node {node.attr}")
+                if (isinstance(parent_node, ast.keyword) and isinstance(node.ctx, ast.Load)):
+                    LOGGER.debug(f"Skipping attribute {node.attr} as it's part of a function call: {ast.dump(parent_node)}")
+                    continue
+                elif (isinstance(parent_node, ast.Assign) and isinstance(node.ctx, ast.Store)):
+                    LOGGER.debug(f"Skipping attribute {node.attr} as it's part of an assignment: {ast.dump(parent_node)}")
                     continue
 
-            if isinstance(node, ast.Attribute):
+                if self.global_context.get_variable_assignment(loop.iter) and isinstance(self.global_context.get_variable_assignment(loop.iter), ast.List):
+                    LOGGER.debug(f"Skipping attribute {node.attr} since it belongs to a non-queryset iterable.")
+                    continue
+
                 full_chain = self.get_full_attribute_chain(node)
                 LOGGER.debug(f"Full chain: {full_chain}")
                 LOGGER.debug(f"Current chains: {self.detected_chains_global}")

@@ -31,7 +31,7 @@ class GlobalContext:
     
     def is_variable_optimized(self, var_node: ast.AST) -> bool:
         is_optimized = var_node in self.optimized_variables
-        LOGGER.debug(f"Checking if variable is optimized: {var_node} {is_optimized}")
+        LOGGER.debug(f"Checking if variable is optimized: {var_node.value} {is_optimized}")
         return is_optimized
 
     def get_queryset_for_variable(self, var_node: ast.AST) -> ast.AST:
@@ -107,7 +107,7 @@ class NPlusOneDetector:
         Check if the field is a related field based on the model cache.
         """
         capitalized_model_name = model_name.capitalize()
-        LOGGER.debug(f"Checking if field is related: {field_name} in {capitalized_model_name}")
+        LOGGER.debug(f"Checking if '{field_name}' is a related field in {capitalized_model_name} model")
         model_info = self.model_cache.get(capitalized_model_name)
         if model_info:
             LOGGER.debug(f"Checking if field {field_name} is in {model_info.get('relationships', {})}")
@@ -191,6 +191,10 @@ class NPlusOneDetector:
         return queryset_node and self.global_context.is_queryset_optimized(queryset_node)
 
     def get_root_queryset_name(self, node: ast.Attribute) -> str:
+        """
+        Extracts the root queryset name from an ast.Attribute node. E.g., "user.profile" -> "user"
+        """
+        LOGGER.debug(f"Getting root queryset name: {ast.dump(node, annotate_fields=True)}")
         while isinstance(node, ast.Attribute):
             node = node.value
             if isinstance(node, ast.Name):
@@ -201,9 +205,11 @@ class NPlusOneDetector:
         chain = []
         current_node = node
         while isinstance(current_node, ast.Attribute):
+            LOGGER.debug(f"Getting full attribute chain (Attribute): {chain}")
             chain.append(current_node.attr)
             current_node = current_node.value
         if isinstance(current_node, ast.Name):
+            LOGGER.debug(f"Getting full attribute chain (Name): {chain}")
             chain.append(current_node.id)
         return '.'.join(reversed(chain))
 
@@ -302,7 +308,13 @@ class NPlusOneDetector:
                 if function_name in QUERY_METHODS:
                     LOGGER.debug(f"Found query method: {function_name}")
                     queryset_chain = self.get_full_attribute_chain(node.func)
-                    LOGGER.debug(f"Queryset chain: {queryset_chain}")
+                    LOGGER.debug(f"Queryset chain (str): {queryset_chain}")
+
+                    variable_node = node.func.value
+                    if self.is_queryset_or_variable_optimized(variable_node):
+                        LOGGER.debug(f"Skipping chain: {queryset_chain} as it is already optimized")
+                        continue
+
                     # Filter out more general chains ("Product.objects") before adding a more specific one ("Product.objects.filter()"")
                     is_redundant = any(existing_chain.startswith(queryset_chain) for existing_chain in self.detected_chains_global)
                     if not is_redundant:
@@ -330,8 +342,17 @@ class NPlusOneDetector:
                 LOGGER.debug(f"Current chains: {self.detected_chains_global}")
                 LOGGER.debug(f"Root queryset name: {root_queryset_name}")
 
+                # FIXME: this check is buggy as I don't entirely trust "get_root_queryset_name()" yet
                 if root_queryset_name and self.is_related_field(root_queryset_name, node.attr):
                     LOGGER.debug(f"Found related field chain: {full_chain}")
+                    is_redundant = any(existing_chain.startswith(full_chain) for existing_chain in self.detected_chains_global)
+                    if is_redundant:
+                        LOGGER.debug(f"Skipping related field chain: {full_chain} as it is redundant")
+                        continue
+                    if self.is_queryset_or_variable_optimized(node):
+                        LOGGER.debug(f"Skipping chain: {full_chain} as it is already optimized")
+                        continue
+
                     self.detected_chains_global.add(full_chain)
                     self.add_issue(loop, node, full_chain)
                 else:

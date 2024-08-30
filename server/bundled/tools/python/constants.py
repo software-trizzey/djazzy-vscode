@@ -1,19 +1,4 @@
 
-METHOD_NAMES = [
-    "function",
-    "django_model_method",
-    "django_serializer_method",
-    "django_view_method",
-    "django_testcase_method",
-]
-
-QUERY_METHODS = [
-    "all", "filter", "get", "count", "exists", "aggregate",
-    "annotate", "values", "values_list", "first", "last",
-]
-
-OPTIMIZATION_METHODS = {"select_related", "prefetch_related"}
-
 DJANGO_IGNORE_FUNCTIONS = {
     "save": True,
     "delete": True,
@@ -32,14 +17,6 @@ DJANGO_IGNORE_FUNCTIONS = {
     "perform_create": True,
 }
 
-REVERSE_FOREIGN_KEY_PATTERN = r"\.[\w]+_set\."
-FOREIGN_KEY_OR_ONE_TO_ONE_PATTERN = r"\.[\w]+\."
-
-RELATED_FIELD_PATTERNS = [
-    REVERSE_FOREIGN_KEY_PATTERN,
-    FOREIGN_KEY_OR_ONE_TO_ONE_PATTERN
-]
-
 QUERY_METHODS = {
     "filter",
     "all",
@@ -55,25 +32,9 @@ WRITE_METHODS = {
     "bulk_update",
 }
 
-BULK_METHODS = {
-    "bulk_create",
-    "bulk_update",
-    "bulk_delete"
-}
-
-AGGREGATE_METHODS = {'annotate', 'count', 'first', 'last', 'latest', 'earliest'}
-
 DEBUG = 'DEBUG'
 SECRET_KEY = 'SECRET_KEY'
 ALLOWED_HOSTS = 'ALLOWED_HOSTS'
 WILD_CARD = '*'
 CSRF_COOKIE_SECURE = 'CSRF_COOKIE_SECURE'
 SESSION_COOKIE = 'SESSION_COOKIE_SECURE'
-
-
-DJANGO_COMPONENTS = {
-    'model': ['Model', 'BaseModel'],
-    'serializer': ['Serializer', 'BaseSerializer'],
-    'view': ['View', 'BaseView'],
-    'testcase': ['TestCase', 'BaseTestCase']
-}

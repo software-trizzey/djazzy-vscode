@@ -8,7 +8,7 @@ import sys
 # 	format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 # )
 
-LOG_LEVEL = logging.INFO
+LOG_LEVEL = logging.DEBUG
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(LOG_LEVEL)

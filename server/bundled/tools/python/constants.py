@@ -17,21 +17,6 @@ DJANGO_IGNORE_FUNCTIONS = {
     "perform_create": True,
 }
 
-QUERY_METHODS = {
-    "filter",
-    "all",
-    "get",
-}
-
-WRITE_METHODS = {
-    "create",
-    "update",
-    "delete",
-    "save",
-    "bulk_create",
-    "bulk_update",
-}
-
 DEBUG = 'DEBUG'
 SECRET_KEY = 'SECRET_KEY'
 ALLOWED_HOSTS = 'ALLOWED_HOSTS'

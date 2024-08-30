@@ -6,10 +6,9 @@ from checks.skinny_views.scorer import ViewComplexityScorer
 from checks.skinny_views.constants import ComplexityIssue
 
 class ViewComplexityAnalyzer:
-    def __init__(self, source_code, complexity_scorer: ViewComplexityScorer):
+    def __init__(self, source_code: str, complexity_scorer: ViewComplexityScorer):
         self.source_code = source_code
         self.complexity_scorer = complexity_scorer
-        self.tree = ast.parse(source_code)
 
     def analyze_view(self, node):
         """

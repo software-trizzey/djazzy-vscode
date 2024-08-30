@@ -14,7 +14,6 @@ import { createHash } from 'crypto';
 
 import {
 	SOURCE_NAME,
-	DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE,
 	DJANGO_SECURITY_VIOLATION_SOURCE_TYPE,
 	NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
 	REDUNDANT_COMMENT_VIOLATION_SOURCE_TYPE,
@@ -22,7 +21,7 @@ import {
 } from "../../constants/diagnostics";
 import { ExtensionSettings, defaultConventions, pythonExecutable } from "../../settings";
 import LOGGER from '../../common/logs';
-import COMMANDS, { ACCESS_FORBIDDEN_NOTIFICATION_ID, FIX_NAME, RATE_LIMIT_NOTIFICATION_ID } from '../../constants/commands';
+import { ACCESS_FORBIDDEN_NOTIFICATION_ID, FIX_NAME, RATE_LIMIT_NOTIFICATION_ID } from '../../constants/commands';
 import { Issue, Models, Severity, SymbolFunctionTypes } from '../../llm/types';
 import { spawn } from 'child_process';
 import path from 'path';
@@ -245,7 +244,6 @@ export class DjangoProvider extends LanguageProvider {
 						const results = JSON.parse(jsonString);
 						const symbols = results.symbols || [];
 						const securityIssues = results.security_issues || [];
-						const nPlusOneIssues = results.nplusone_issues || [];
 						
 						if (symbols.length === 0) return resolve(symbols);
 	
@@ -255,7 +253,6 @@ export class DjangoProvider extends LanguageProvider {
 							changedLines,
 							document,
 							securityIssues,
-							nPlusOneIssues,
                             isDjangProject
 						);
 	
@@ -306,7 +303,6 @@ export class DjangoProvider extends LanguageProvider {
         changedLines: Set<number> | undefined,
         document: TextDocument,
         securityIssues: any[],
-        nPlusOneIssues: any[],
         isDjangoProject: boolean
     ): Promise<void> {
         const cacheKey = this.generateCacheKey(document.getText(), document);
@@ -326,7 +322,6 @@ export class DjangoProvider extends LanguageProvider {
     
         if (isDjangoProject) {
             this.processDjangoSecurityIssues(securityIssues, diagnostics);
-            this.processNPlusOneIssues(nPlusOneIssues, diagnostics);
         }
     
         this.setCachedResult(cacheKey, diagnostics);
@@ -686,37 +681,10 @@ export class DjangoProvider extends LanguageProvider {
         const codeActions: CodeAction[] = [];
 		for (const diagnostic of diagnostics) {
             if (diagnostic.message.includes("exceeds the maximum length of")) continue;
-
-			if (diagnostic.code === DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE) {
-                const actions = this.getNPlusOneDiagnosticActions(document, diagnostic);
-                codeActions.push(...actions);
-            }
 		}
 
         const filteredActions = codeActions.filter(action => action !== undefined);
 		return filteredActions;
-	}
-
-	protected getNPlusOneDiagnosticActions(document: TextDocument, diagnostic: Diagnostic): CodeAction[] {
-		const actions: CodeAction[] = [];
-
-		if (diagnostic.code === DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE) {
-			const title = 'Report as false positive';
-			const reportAction = CodeAction.create(
-				title,
-				{
-					title: title,
-					command: COMMANDS.REPORT_FALSE_POSITIVE,
-					arguments: [document.uri, diagnostic]
-				},
-				CodeActionKind.QuickFix
-			);
-			reportAction.diagnostics = [diagnostic];
-			reportAction.isPreferred = true;
-			actions.push(reportAction);
-		}
-
-		return actions;
 	}
 
     private processDjangoSecurityIssues(
@@ -744,54 +712,6 @@ export class DjangoProvider extends LanguageProvider {
 
             diagnostics.push(diagnostic);
         }
-    }
-
-    private processNPlusOneIssues(
-        issues: Issue[],
-        diagnostics: Diagnostic[],
-        changedLines?: Set<number>
-    ): void {
-        const uniqueIssues = this.deduplicateIssues(issues);
-        console.log(`Detected ${issues.length} N+1 issues, ${uniqueIssues.size} after deduplication`);
-
-        for (const issue of uniqueIssues.values()) {
-            if (!this.shouldShowIssue(issue.score)) continue;
-
-            if (changedLines && !this.isIssueInChangedLines(issue, changedLines)) {
-                console.log(`Skipping N+1 issue at lines ${issue.start_line}-${issue.end_line} due to no changes`);
-                continue;
-            }
-
-            const range: Range = {
-                start: { line: issue.start_line - 1, character: issue.col_offset },
-                end: { line: issue.end_line - 1, character: issue.end_col_offset },
-            };
-
-            const severity = this.mapSeverity(issue.severity);
-            const diagnosticMessage = this.createStructuredDiagnosticMessage(issue, severity);
-            
-            const diagnostic: Diagnostic = {
-                range,
-                message: diagnosticMessage,
-                severity: severity,
-                source: SOURCE_NAME,
-                code: DJANGO_NPLUSONE_VIOLATION_SOURCE_TYPE,
-                codeDescription: {
-                    href: 'https://docs.djangoproject.com/en/stable/topics/db/optimization/',
-                },
-                data: {
-                    id: issue.id,
-                    score: issue.score,
-                    contextualInfo: {
-                        query_type: this.inferQueryType(issue.problematic_code),
-                    },
-                },
-            };
-
-            diagnostics.push(diagnostic);
-        }
-
-        console.log(`Processed ${uniqueIssues.size} unique N+1 issues`);
     }
 
     private checkDjangoFieldConventions(symbol: any, diagnostics: Diagnostic[]): void {
@@ -853,35 +773,6 @@ export class DjangoProvider extends LanguageProvider {
         return 'unknown';
     }
 
-    private deduplicateIssues(issues: Issue[]): Map<string, Issue> {
-        const uniqueIssues = new Map<string, Issue>();
-
-        for (const issue of issues) {
-            const issueKey = this.generateIssueKey(issue);
-            const existingIssue = uniqueIssues.get(issueKey);
-
-            if (!existingIssue || this.shouldReplaceExistingIssue(existingIssue, issue)) {
-                uniqueIssues.set(issueKey, issue);
-            }
-        }
-
-        return uniqueIssues;
-    }
-
-    private generateIssueKey(issue: Issue): string {
-        // Create a unique key based on the issue's properties
-        return `${issue.line}-${issue.col_offset}-${issue.contextual_info?.query_type}-${issue.contextual_info?.is_in_loop}`;
-    }
-
-    /**
-    *  Replace if the new issue has a higher score or more detailed information
-    */
-    private shouldReplaceExistingIssue(existing: Issue, newIssue: Issue): boolean {
-        if (newIssue.score > existing.score) return true;
-        if (newIssue.score === existing.score && newIssue.message.length > existing.message.length) return true;
-        return false;
-    }
-
     private isIssueInChangedLines(issue: Issue, changedLines: Set<number>): boolean {
         for (let line = issue.start_line; line <= issue.end_line; line++) {
             if (changedLines.has(line - 1)) {  // changedLines are 0-indexed
@@ -907,39 +798,6 @@ export class DjangoProvider extends LanguageProvider {
         return message;
     }
 
-    private generateContextInfo(issue: Issue): string {
-        if (!issue.contextual_info) return 'Potential inefficient database query';
-
-        const { query_type, related_field, is_in_loop, loop_start_line, is_bulk_operation, is_related_field_access } = issue.contextual_info;
-        const fieldDescription = related_field || 'a queryset';
-        let contextInfo = `Detected in function "${issue.function_name}"`;
-
-        if (is_related_field_access) {
-            contextInfo += `, accessing the related field "${fieldDescription}"`;
-        } else {
-            switch (query_type) {
-                case 'write':
-                    contextInfo += `, performing a write operation on ${fieldDescription}`;
-                    break;
-                case 'read':
-                    contextInfo += `, performing a read operation (e.g., filter(), get()) on ${fieldDescription}`;
-                    break;
-                default:
-                    contextInfo += `, using .${query_type}() on ${fieldDescription}`;
-            }
-        }
-
-        if (is_in_loop) {
-            contextInfo += ` in a loop (starts at line ${loop_start_line})`;
-        }
-
-        if (is_bulk_operation) {
-            contextInfo += ` (Bulk operation detected)`;
-        }
-
-        return contextInfo;
-    }
-    
     private sendRateLimitNotification(): void {
         this.connection.sendNotification(RATE_LIMIT_NOTIFICATION_ID, {
             message: "Daily limit for N+1 query detection has been reached. Your quota for this feature will reset tomorrow."
@@ -991,6 +849,7 @@ export class DjangoProvider extends LanguageProvider {
     }
 
     private shouldShowIssue(score: number): boolean {
+        // TODO: can repurpose this for any issue instead of just N+1
         const minScore = this.getMinScoreForSeverity(this.settings.general.nPlusOneMinimumSeverityThreshold);
         return score >= minScore;
     }

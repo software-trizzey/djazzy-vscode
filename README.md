@@ -13,7 +13,6 @@ Djangoly is a VS Code extension built for Django developers (surprise, surprise)
 
 ## Features ✨
 
-- **Django N+1 Query Detection**: Identifies potential N+1 query issues in Django projects, flagging instances where related field access occurs within loops without proper optimization.
 - **Django-Specific Linting**: Automatically check your Django code against best practices and common pitfalls, including:
   - **Complex View Detection**: Flags Django views with high complexity and suggests that they be refactored to follow the **Fat Model, Thin View** or **Services** design patterns. This rule reduces view complexity and promotes maintainability and scalability.
   - **ForeignKey Validation**: Ensures all `ForeignKey` fields have a `related_name` and `on_delete` argument specified to avoid common pitfalls in query relationships and data management.
@@ -39,29 +38,7 @@ Djangoly is a VS Code extension built for Django developers (surprise, surprise)
 
 ## How Djangoly Improves Your Code 🧑‍🏫
 
-### 1. N+1 Query Detection and Optimization
-
-Before:
-
-```python
-def list_books(request):
-    books = Book.objects.all()
-    for book in books:
-        print(f"{book.title} by {book.author.name}")  # This causes N+1 queries
-```
-
-After:
-
-```python
-def list_books(request):
-    books = Book.objects.select_related('author').all()
-    for book in books:
-        print(f"{book.title} by {book.author.name}")  # No additional queries
-```
-
-Djangoly detects the potential N+1 query issue and suggests using `select_related()` to optimize the database queries.
-
-### 2. Security Settings Check
+### 1. Security Settings Check
 
 Before (in settings.py):
 
@@ -81,23 +58,14 @@ ALLOWED_HOSTS = ['example.com', 'www.example.com']  # Djangoly: Specify allowed 
 
 Djangoly identifies potential security risks in your Django settings and suggests safer alternatives.
 
-### 3. Test Suite Conventions
+### 2. Test Suite Conventions
 
 ![Djangoly untested code demo](https://raw.githubusercontent.com/software-trizzey/images/main/assets/images/flag-untested-api-code.gif)
 Djangoly reminds you to create and update test files when you modify your Django views or models.
 
-## Django N+1 Query Detection 🕵️‍♂️
-
-![Djangoly N+1 demo gif](https://raw.githubusercontent.com/software-trizzey/images/main/assets/images/djangoly-nplusone-query-fix-demo.gif)
-
-Djangoly includes a powerful static analysis tool to help identify potential N+1 query issues in your Django projects. This feature examines your code to flag instances where database queries might be inefficiently executed within loops.
-
-For more information about how the scoring system works, please see the [N+1 Query Detection Scoring System](./nplusone-scoring.md).
-
 ## Known Issues & Limitations 🐞
 
 - **False Positives**: As an MVP undergoing rapid development, Djangoly may generate inaccurate diagnostics and recommendations. If you encounter any issues, please report them to [support@djangoly.com](mailto:support@djangoly.com).
-- **Django N+1 Query Detection**: The current implementation focuses on simple loop structures and may not catch all complex scenarios. It may produce some false positives in cases where optimizations are applied outside the immediate function scope. The detection is based on static analysis and may not account for dynamic query optimizations.
 
 ## Contribution Guidelines 👯‍♀️
 

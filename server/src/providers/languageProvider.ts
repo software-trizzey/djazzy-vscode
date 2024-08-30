@@ -52,7 +52,6 @@ export abstract class LanguageProvider extends BaseProvider {
     protected abstract runDiagnostics(document: TextDocument, diagnostics: Diagnostic[], changedLines: Set<number> | undefined): Promise<Diagnostic[]>;
     abstract generateFixForNamingConventionViolation(document: TextDocument, diagnostic: Diagnostic, userToken: string): Promise<CodeAction | undefined>;
     abstract provideCodeActions(document: TextDocument, userToken: string): Promise<CodeAction[]>;
-    protected abstract clearNPlusOneCache(): void;
 
     public useDiagnosticManager() {
       return this.diagnosticsManager;
@@ -73,13 +72,6 @@ export abstract class LanguageProvider extends BaseProvider {
     public updateConfiguration(updatedSettings: ExtensionSettings): void {
       this.settings = updatedSettings;
       this.updateConventions(updatedSettings);
-
-      if (
-        updatedSettings.general.nPlusOneMinimumSeverityThreshold !== 
-        this.getSettings().general.nPlusOneMinimumSeverityThreshold
-      ) {
-        this.clearNPlusOneCache();
-      }
     }
 
     private sendNotSupportedMessage(languageId: string): void {

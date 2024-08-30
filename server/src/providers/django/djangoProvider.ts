@@ -1,3 +1,6 @@
+import { spawn } from 'child_process';
+import path from 'path';
+
 import {
     Diagnostic,
     DiagnosticSeverity,
@@ -10,8 +13,6 @@ import {
 } from "vscode-languageserver/node";
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
-import { createHash } from 'crypto';
-
 import {
 	SOURCE_NAME,
 	DJANGO_SECURITY_VIOLATION_SOURCE_TYPE,
@@ -22,9 +23,8 @@ import {
 import { ExtensionSettings, defaultConventions, pythonExecutable } from "../../settings";
 import LOGGER from '../../common/logs';
 import { ACCESS_FORBIDDEN_NOTIFICATION_ID, FIX_NAME, RATE_LIMIT_NOTIFICATION_ID } from '../../constants/commands';
-import { Issue, Models, Severity, SymbolFunctionTypes } from '../../llm/types';
-import { spawn } from 'child_process';
-import path from 'path';
+import { Models, Severity, SymbolFunctionTypes } from '../../llm/types';
+
 import { RULE_MESSAGES } from '../../constants/rules';
 import { LanguageConventions, CeleryTaskDecoratorSettings } from '../../languageConventions';
 import { debounce, getChangedLinesFromClient, validatePythonFunctionName } from '../../utils';
@@ -32,12 +32,6 @@ import { LanguageProvider } from '../languageProvider';
 import { DjangoProjectDetector, ModelCache } from './djangoProjectDetector';
 
 
-interface CachedResult {
-    diagnostics: Diagnostic[];
-    timestamp: number;
-}
-
-const FIVE_MINUTES = 5 * 60 * 1000;
 const symbolFunctionTypeList = Object.values(SymbolFunctionTypes);
 
 export class DjangoProvider extends LanguageProvider {
@@ -46,8 +40,6 @@ export class DjangoProvider extends LanguageProvider {
 
 	private symbols: any[] = [];
 	private codeActionsMessageCache: Map<string, CodeAction> = new Map();
-    private nPlusOnecache: Map<string, CachedResult> = new Map();
-    private cacheTTL: number = FIVE_MINUTES;
     private isDjangoProject: boolean = false;
     private modelCache: ModelCache = new Map();
     private djangoProjectDetectionPromise: Promise<boolean>;
@@ -305,13 +297,6 @@ export class DjangoProvider extends LanguageProvider {
         securityIssues: any[],
         isDjangoProject: boolean
     ): Promise<void> {
-        const cacheKey = this.generateCacheKey(document.getText(), document);
-        const cachedResult = this.getCachedResult(cacheKey);
-        if (cachedResult) {
-            console.log("Using cached result for Django diagnostics");
-            diagnostics.push(...cachedResult.diagnostics);
-            return;
-        }
     
         const conventions = this.getConventions();
         this.symbols = symbols;
@@ -323,8 +308,6 @@ export class DjangoProvider extends LanguageProvider {
         if (isDjangoProject) {
             this.processDjangoSecurityIssues(securityIssues, diagnostics);
         }
-    
-        this.setCachedResult(cacheKey, diagnostics);
     }    
 
     private async processSymbol(
@@ -765,38 +748,6 @@ export class DjangoProvider extends LanguageProvider {
         }
         return DiagnosticSeverity.Information;
     }
-    
-    private inferQueryType(code: string): string {
-        if (code.includes('filter') || code.includes('get') || code.includes('all')) {
-            return 'read';
-        }
-        return 'unknown';
-    }
-
-    private isIssueInChangedLines(issue: Issue, changedLines: Set<number>): boolean {
-        for (let line = issue.start_line; line <= issue.end_line; line++) {
-            if (changedLines.has(line - 1)) {  // changedLines are 0-indexed
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private createStructuredDiagnosticMessage(issue: Issue, severity: DiagnosticSeverity): string {
-        const severityIndicator = this.getSeverityIndicator(severity);
-        // TODO: 
-        // const contextInfo = this.generateContextInfo(issue);
-        
-        let message = `${severityIndicator} N+1 Query Detected (Score: ${issue.score})
-        \n[Issue]\n${issue.message}
-        \n[Problematic Code]\n${issue.problematic_code}`;
-
-        if (issue.suggestion) {
-            message += `\n\n[Suggested Fix]\n${issue.suggestion}\n`;
-        }
-
-        return message;
-    }
 
     private sendRateLimitNotification(): void {
         this.connection.sendNotification(RATE_LIMIT_NOTIFICATION_ID, {
@@ -808,29 +759,6 @@ export class DjangoProvider extends LanguageProvider {
         this.connection.sendNotification(ACCESS_FORBIDDEN_NOTIFICATION_ID, {
             message: "You do not have permission to use the N+1 query detection feature. Please check your authentication."
         });
-    }
-
-    private generateCacheKey(documentText: string, document: TextDocument): string {
-        const normalizedText = documentText || "";
-        const functionBodyHash = createHash('md5').update(normalizedText).digest('hex');
-        return `${document.uri}:${functionBodyHash}`;
-    }
-    
-    private getCachedResult(key: string): CachedResult | null {
-        const cached = this.nPlusOnecache.get(key);
-        if (cached && Date.now() - cached.timestamp < this.cacheTTL) {
-            return cached;
-        }
-        return null;
-    }    
-
-    private setCachedResult(key: string, diagnostics: Diagnostic[]): void {
-        this.nPlusOnecache.set(key, { diagnostics, timestamp: Date.now() });
-    }      
-
-    clearNPlusOneCache(): void {
-        this.nPlusOnecache.clear();
-        console.log('N+1 query detection cache cleared due to severity threshold change');
     }
 
     private mapSeverity(severity: Severity): DiagnosticSeverity {
@@ -846,12 +774,6 @@ export class DjangoProvider extends LanguageProvider {
             default:
                 return DiagnosticSeverity.Hint;
         }
-    }
-
-    private shouldShowIssue(score: number): boolean {
-        // TODO: can repurpose this for any issue instead of just N+1
-        const minScore = this.getMinScoreForSeverity(this.settings.general.nPlusOneMinimumSeverityThreshold);
-        return score >= minScore;
     }
 
     private getMinScoreForSeverity(severity: Severity): number {

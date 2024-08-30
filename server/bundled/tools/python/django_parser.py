@@ -7,8 +7,6 @@ from log import LOGGER
 from constants import DJANGO_IGNORE_FUNCTIONS
 
 from ast_parser import Analyzer
-from nplusone.nplusone_analyzer import NPlusOneDetector
-from nplusone.scorer import NPlusOneScorer
 
 from checks.security import SecurityCheckService
 from checks.model_fields import ModelFieldCheckService
@@ -28,8 +26,6 @@ class DjangoAnalyzer(Analyzer):
         self.model_cache = self.parse_model_cache(model_cache_json)
         self.class_type_cache = {}
         self.class_definitions = {}
-        self.nplusone_analyzer = NPlusOneDetector(source_code)
-        self.nplusone_issues = []
         self.security_service = SecurityCheckService(source_code)
         self.security_issues = []
         self.model_field_check_service = ModelFieldCheckService(source_code)
@@ -170,7 +166,6 @@ class DjangoAnalyzer(Analyzer):
         ))
 
         self.generic_visit(node)
-        self.nplusone_analyzer.analyze_function(node)
 
     def visit_Assign(self, node):
         for target in node.targets:
@@ -218,20 +213,15 @@ class DjangoAnalyzer(Analyzer):
             self.security_service.run_security_checks()
             self.security_issues = self.security_service.get_formatted_security_issues()
 
-            nplusone_issues = self.nplusone_analyzer.analyze()
-            scored_issues = NPlusOneScorer.calculate_issue_scores(nplusone_issues)
-
             return {
                 "symbols": self.symbols,
                 "security_issues": self.security_issues,
-                "nplusone_issues": scored_issues,
             }
         except SyntaxError as e:
             LOGGER.warning(f'Syntax error in Django code: {e}. Continuing with partial analysis.')
             return {
                 "symbols": self.symbols,
                 "security_issues": self.security_issues,
-                "nplusone_issues": self.nplusone_issues,
                 "error": "Syntax error detected",
                 "details": str(e)
             }
@@ -240,7 +230,6 @@ class DjangoAnalyzer(Analyzer):
             return {
                 "symbols": self.symbols,
                 "security_issues": self.security_issues,
-                "nplusone_issues": self.nplusone_issues,
                 "error": "General error detected",
                 "details": str(e)
             }

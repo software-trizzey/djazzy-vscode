@@ -57,7 +57,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		clientOptions
 	);
 
-	registerCommands(context);
+	registerCommands(context, client);
 
 	await client.start();
 	activateClientNotifications(client);

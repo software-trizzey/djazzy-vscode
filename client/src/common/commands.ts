@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { LanguageClient } from "vscode-languageclient/node";
 
 import { UserSession } from "./auth/github";
 import { COMMANDS, EXTENSION_ID, EXTENSION_NAME, PUBLISHER, SESSION_USER } from "./constants";
@@ -11,8 +12,8 @@ const WORKBENCH_ACTIONS = {
 
 export function registerCommands(
     context: vscode.ExtensionContext,
+    client: LanguageClient
 ): void {
-
     const suggestionExceptionCommand = vscode.commands.registerCommand(COMMANDS.SUGGEST_EXCEPTIONS, async () => {
         const editor = vscode.window.activeTextEditor;
         if (!editor) return;
@@ -20,7 +21,6 @@ export function registerCommands(
         const document = editor.document;
         const position = editor.selection.active;
     
-        // Get the function name at the current position
         const lineText = document.lineAt(position.line).text;
         const functionNameMatch = lineText.match(/def\s+(\w+)\s*\(/);
     
@@ -33,22 +33,24 @@ export function registerCommands(
         const lineNumber = position.line;
         console.log('Function name:', functionName, 'Line number:', lineNumber);
     
-        // Send function name and line number to the LSP server
-        const result = await vscode.commands.executeCommand<string>(
+       const completionItems = await client.sendRequest<vscode.CompletionItem[]>(
             COMMANDS.PROVIDE_EXCEPTION_HANDLING,
-            { functionName, lineNumber }
+            { functionName, lineNumber, uri: document.uri.toString() }
         );
-        console.log('Result:', result);
-    
-        if (result) {
-            vscode.window.showInformationMessage(result);
+
+        if (completionItems) {
+            console.log("Received completion items:", completionItems);
+            vscode.window.showInformationMessage('Exception suggestions are available. 🚀', {
+                title: 'View suggestions',
+                action: () => {
+                    vscode.commands.executeCommand('editor.action.triggerSuggest');
+                }
+            });
         } else {
             vscode.window.showWarningMessage('No exception suggestions available.');
         }
-    });
-    
+    });    
     context.subscriptions.push(suggestionExceptionCommand);
-
 
     const addCustomRuleCommand = vscode.commands.registerCommand(
         COMMANDS.ADD_CUSTOM_RULE,

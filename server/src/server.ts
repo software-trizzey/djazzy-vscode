@@ -17,12 +17,16 @@ import {
 	WorkspaceFolder,
 	ShowMessageNotification,
 	MessageType,
+	CompletionItem,
+    CompletionItemKind,
 } from "vscode-languageserver/node";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
 import {
 	LanguageProvider,
 	DjangoProvider,
+	PythonProvider,
+	FunctionDetails,
 } from "./providers";
 import {
 	ExtensionSettings,
@@ -45,6 +49,7 @@ import { SOURCE_NAME } from './constants/diagnostics';
 
 const connection = createConnection(ProposedFeatures.all);
 const providerCache: Record<string, LanguageProvider> = {};
+const pythonProviderCache: Record<string, PythonProvider> = {};
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 const diagnosticQueue = new DiagnosticQueue();
 
@@ -97,6 +102,9 @@ connection.onInitialize((params: InitializeParams) => {
 			executeCommandProvider: {
 				commands: COMMANDS_LIST,
 			},
+			completionProvider: {
+                resolveProvider: true
+            }
 		},
 	};
 	if (hasWorkspaceFolderCapability) {
@@ -315,21 +323,57 @@ connection.onRequest(COMMANDS.UPDATE_CACHED_USER_TOKEN, (token: string) => {
 });
 
 
-async function getExceptionSuggestions(functionName: string, lineNumber: number): Promise<string | null> {
-	// TODO: Example suggestion logic (replace with actual LLM call)
-	console.log('Function name:', functionName, 'Line number:', lineNumber);
-	return null;
+connection.onRequest(COMMANDS.PROVIDE_EXCEPTION_HANDLING, async (params) => {
+    const { functionName, lineNumber, uri } = params;
+    const document = documents.get(uri);
+
+    if (!document) {
+        return [];
+    }
+    const functionNode = await findFunctionInDocument(document, functionName, lineNumber);
+	console.log("Function node: ", functionNode);
+
+    if (!functionNode) {
+        return [];
+    }
+
+	const functionText = functionNode.raw_body;
+	console.log("Function text: ", functionText);
+    const suggestions = generateExceptionHandlingSuggestions(functionText);
+	console.log("Suggestions: ", suggestions);
+
+    const completionItems = suggestions.map((suggestion, index) => {
+        const item = CompletionItem.create(`Suggestion ${index + 1}`);
+        item.kind = CompletionItemKind.Snippet;
+        item.insertText = suggestion;
+        item.detail = `Exception handling suggestion ${index + 1}`;
+        return item;
+    });
+    return completionItems;
+});
+
+async function findFunctionInDocument(document: TextDocument, functionName: string, lineNumber: number): Promise<FunctionDetails | null> {
+	const settings = await getDocumentSettings(document.uri);
+	const languageId = document.languageId;
+	if (languageId !== 'python') {
+		console.log("File is not a Python document. Skipping function extraction.");
+		return null;
+	}
+	const provider = new PythonProvider(languageId, connection, settings, document);
+	const functionNode = await provider.findFunctionNode(document, functionName, lineNumber);
+    return functionNode;
 }
 
-connection.onRequest(COMMANDS.PROVIDE_EXCEPTION_HANDLING, async (params) => {
-	const { functionName, lineNumber } = params;
+// Example: Generate multiple exception handling suggestions
+function generateExceptionHandlingSuggestions(functionText: string): string[] {
+    // Replace this with actual LLM calls or other logic
+    return [
+        'try:\n    ' + functionText + '\nexcept SomeSpecificException as e:\n    handle_exception(e)',
+        'try:\n    ' + functionText + '\nexcept Exception as e:\n    handle_generic_exception(e)',
+        'try:\n    ' + functionText + '\nfinally:\n    clean_up_resources()'
+    ];
+}
   
-	// Here, you would integrate with your LLM or logic to suggest exceptions
-	const suggestion = await getExceptionSuggestions(functionName, lineNumber);
-	return suggestion || 'No suggestions available';
-});
-  
-
 
 connection.onCodeAction(async (params) => {
 	const document = documents.get(params.textDocument.uri);

@@ -46,6 +46,7 @@ import { DiagnosticQueue } from "./services/diagnostics";
 import COMMANDS, { COMMANDS_LIST, DJANGOLY_ID } from "./constants/commands";
 import LOGGER, { rollbar } from "./common/logs";
 import { SOURCE_NAME } from './constants/diagnostics';
+import { API_SERVER_URL } from './constants/api';
 
 const connection = createConnection(ProposedFeatures.all);
 const providerCache: Record<string, LanguageProvider> = {};
@@ -336,8 +337,17 @@ connection.onRequest(COMMANDS.PROVIDE_EXCEPTION_HANDLING, async (params) => {
         return [];
     }
 
-	const functionText = functionNode.raw_body;
-    const suggestions = generateExceptionHandlingSuggestions(functionText);
+	const payload = {
+        functionCode: functionNode.raw_body,
+        args: functionNode.args,
+        decorators: functionNode.decorators,
+        imports: functionNode.context.imports,
+        callSites: functionNode.context.call_sites,
+        returns: functionNode.returns,
+        apiKey: "test-key-2" // TODO: use actual api key from user cache settings
+    };
+
+    const suggestions = await generateExceptionHandlingSuggestions(payload);
 
     const completionItems = suggestions.map((suggestion, index) => {
         const item = CompletionItem.create(`Suggestion ${index + 1}`);
@@ -346,7 +356,7 @@ connection.onRequest(COMMANDS.PROVIDE_EXCEPTION_HANDLING, async (params) => {
         item.detail = `Exception handling suggestion ${index + 1}`;
         return item;
     });
-    return completionItems;
+    return { completionItems, functionNode };
 });
 
 async function findFunctionInDocument(document: TextDocument, functionName: string, lineNumber: number): Promise<FunctionDetails | null> {
@@ -361,14 +371,52 @@ async function findFunctionInDocument(document: TextDocument, functionName: stri
     return functionNode;
 }
 
-// Example: Generate multiple exception handling suggestions
-function generateExceptionHandlingSuggestions(functionText: string): string[] {
-    // Replace this with actual LLM calls or other logic
-    return [
-        'try:\n    ' + functionText + '\nexcept SomeSpecificException as e:\n    handle_exception(e)',
-        'try:\n    ' + functionText + '\nexcept Exception as e:\n    handle_generic_exception(e)',
-        'try:\n    ' + functionText + '\nfinally:\n    clean_up_resources()'
-    ];
+async function generateExceptionHandlingSuggestions(payload: any): Promise<string[]> {
+    const url = 'http://localhost:8000/chat/refactor/'; // TODO: use the API_SERVER_URL
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            if (response.status === 403) {
+                console.error(`Forbidden: Invalid API key for ${url}`);
+                return [];
+            } else if (response.status === 429) {
+                console.error(`Too Many Requests: Rate limit exceeded for ${url}`);
+                return [];
+            } else if (response.status === 500) {
+                console.error(`Server Error: Internal server error on ${url}`);
+                return [];
+            } else {
+                console.error(`Error in API call to ${url}: ${response.statusText} (HTTP ${response.status})`);
+                return [];
+            }
+        }
+
+        let responseData: any;
+        try {
+            responseData = await response.json();
+        } catch (jsonError: any) {
+            console.error(`Error parsing JSON response from ${url}: ${jsonError.message}`);
+            return [];
+        }
+
+        if (!responseData || !Array.isArray(responseData.refactoredFunctions)) {
+            console.error(`Error in API call to ${url}: Invalid response data`);
+            return [];
+        }
+
+        return responseData.refactoredFunctions;
+    } catch (error: any) {
+        console.error(`Network error in API call to ${url}: ${error.message}`);
+        return [];
+    }
 }
   
 

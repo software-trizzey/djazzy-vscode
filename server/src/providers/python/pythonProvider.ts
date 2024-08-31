@@ -17,6 +17,10 @@ interface FunctionBodyNode {
 	start_col: number;
 }
 
+export interface FunctionCallSite {
+	line: number;
+	col: number;
+}
 
 export interface FunctionDetails {
     name: string;
@@ -26,10 +30,12 @@ export interface FunctionDetails {
 	raw_body: string;
     decorators: string[];
 	context: {
-		start: number,
-		end: number,
-		start_col: number,
-		end_col: number,
+		start: number;
+		end: number;
+		start_col: number;
+		end_col: number;
+		imports: string[];
+		call_sites: FunctionCallSite[];
 	}
 }
 

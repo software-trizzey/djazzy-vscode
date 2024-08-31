@@ -49,8 +49,21 @@
 			{
 				"command": "djangoly.openSettings",
 				"title": "Djangoly: Open Settings"
+			},
+			{
+				"command": "djangoly.suggestExceptions",
+				"title": "Suggest Exception Handling"
 			}
 		],
+		"menus": {
+			"editor/context": [
+			  {
+				"command": "djangoly.suggestExceptions",
+				"when": "editorLangId == python",
+				"group": "1_modification"
+			  }
+			]
+		  },
 		"walkthroughs": [
 			{
 				"id": "djangoly.gettingStarted",

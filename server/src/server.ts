@@ -312,7 +312,24 @@ connection.onRequest(COMMANDS.CHECK_TESTS_EXISTS, async (relativePath: string) =
 
 connection.onRequest(COMMANDS.UPDATE_CACHED_USER_TOKEN, (token: string) => {
 	updateCachedUserToken(token);
-  });
+});
+
+
+async function getExceptionSuggestions(functionName: string, lineNumber: number): Promise<string | null> {
+	// TODO: Example suggestion logic (replace with actual LLM call)
+	console.log('Function name:', functionName, 'Line number:', lineNumber);
+	return null;
+}
+
+connection.onRequest(COMMANDS.PROVIDE_EXCEPTION_HANDLING, async (params) => {
+	const { functionName, lineNumber } = params;
+  
+	// Here, you would integrate with your LLM or logic to suggest exceptions
+	const suggestion = await getExceptionSuggestions(functionName, lineNumber);
+	return suggestion || 'No suggestions available';
+});
+  
+
 
 connection.onCodeAction(async (params) => {
 	const document = documents.get(params.textDocument.uri);

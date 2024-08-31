@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+
 import { UserSession } from "./auth/github";
 import { COMMANDS, EXTENSION_ID, EXTENSION_NAME, PUBLISHER, SESSION_USER } from "./constants";
 import { trackUserInterestInCustomRules } from "./logs";
@@ -11,6 +12,44 @@ const WORKBENCH_ACTIONS = {
 export function registerCommands(
     context: vscode.ExtensionContext,
 ): void {
+
+    const suggestionExceptionCommand = vscode.commands.registerCommand(COMMANDS.SUGGEST_EXCEPTIONS, async () => {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) return;
+    
+        const document = editor.document;
+        const position = editor.selection.active;
+    
+        // Get the function name at the current position
+        const lineText = document.lineAt(position.line).text;
+        const functionNameMatch = lineText.match(/def\s+(\w+)\s*\(/);
+    
+        if (!functionNameMatch) {
+            vscode.window.showWarningMessage('No function detected at the current position.');
+            return;
+        }
+    
+        const functionName = functionNameMatch[1];
+        const lineNumber = position.line;
+        console.log('Function name:', functionName, 'Line number:', lineNumber);
+    
+        // Send function name and line number to the LSP server
+        const result = await vscode.commands.executeCommand<string>(
+            COMMANDS.PROVIDE_EXCEPTION_HANDLING,
+            { functionName, lineNumber }
+        );
+        console.log('Result:', result);
+    
+        if (result) {
+            vscode.window.showInformationMessage(result);
+        } else {
+            vscode.window.showWarningMessage('No exception suggestions available.');
+        }
+    });
+    
+    context.subscriptions.push(suggestionExceptionCommand);
+
+
     const addCustomRuleCommand = vscode.commands.registerCommand(
         COMMANDS.ADD_CUSTOM_RULE,
         () => {

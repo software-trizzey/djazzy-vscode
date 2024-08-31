@@ -40,7 +40,7 @@ export class ExceptionHandlingCodeActionProvider implements vscode.CodeActionPro
         vscode.CodeActionKind.RefactorRewrite
     ];
 
-	private lastRequest: Thenable<vscode.CodeAction[]> | undefined;
+    private lastRequest: Promise<vscode.CodeAction[]> | undefined;
     private lastTokenSource: vscode.CancellationTokenSource | undefined;
 
     constructor(private client: LanguageClient) {}
@@ -61,17 +61,37 @@ export class ExceptionHandlingCodeActionProvider implements vscode.CodeActionPro
         const functionName = functionNameMatch[1];
         const lineNumber = range.start.line;
 
-        return this.client.sendRequest<{ completionItems: vscode.CompletionItem[], functionNode: FunctionDetails }>(
-            COMMANDS.PROVIDE_EXCEPTION_HANDLING,
-            { functionName, lineNumber, uri: document.uri.toString() }
-        ).then(response => {
-            const { completionItems, functionNode } = response;
-            if (completionItems && completionItems.length > 0 && functionNode) {
-                console.log("Received items:", completionItems);
-                return completionItems.map(item => this.createRefactorAction(document, functionNode, item, functionName));
+        if (this.lastTokenSource) {
+			console.log('Cancelling previous exception action request');
+            this.lastTokenSource.cancel();
+        }
+
+        this.lastTokenSource = new vscode.CancellationTokenSource();
+
+        this.lastRequest = Promise.resolve(
+			this.client.sendRequest<{ completionItems: vscode.CompletionItem[], functionNode: FunctionDetails }>(
+				COMMANDS.PROVIDE_EXCEPTION_HANDLING,
+				{ functionName, lineNumber, uri: document.uri.toString() },
+				this.lastTokenSource.token
+			).then(response => {
+				const { completionItems, functionNode } = response;
+				if (completionItems && completionItems.length > 0 && functionNode) {
+					console.log("Received items:", completionItems);
+					return completionItems.map(item => this.createRefactorAction(document, functionNode, item, functionName));
+				}
+				return [];
+			})
+		);
+
+        this.lastRequest.catch((err) => {
+            if (err && err.code === 'REQUEST_CANCELLED') {
+                console.log('Request was cancelled.');
+            } else {
+                console.error('Request failed:', err);
             }
-            return [];
         });
+
+        return this.lastRequest;
     }
 
     private createRefactorAction(

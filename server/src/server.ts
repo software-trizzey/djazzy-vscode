@@ -19,6 +19,7 @@ import {
 	MessageType,
 	CompletionItem,
     CompletionItemKind,
+	CancellationTokenSource
 } from "vscode-languageserver/node";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
@@ -218,6 +219,14 @@ function getDocumentSettings(resource: string): Thenable<ExtensionSettings> {
 }
 
 documents.onDidChangeContent((change) => {
+	// Invalidate the cache for this document when its content changes
+	const documentUri = change.document.uri;
+	cache.forEach((_value, key) => {
+		if (key.startsWith(documentUri)) {
+			cache.delete(key);
+		}
+	});
+
 	debouncedValidateTextDocument(change.document);
 });
 
@@ -277,6 +286,18 @@ function getOrCreateProvider(
 	return providerCache[languageId];
 }
 
+function getOrCreatePythonProvider(
+	settings: ExtensionSettings,
+	textDocument: TextDocument,
+): PythonProvider {
+	const pythonId = 'python1';
+
+	if (!pythonProviderCache[pythonId]) {
+		pythonProviderCache[pythonId] = new PythonProvider("python", connection, settings, textDocument);
+	} 
+	return pythonProviderCache[pythonId];
+}
+
 export async function validateTextDocument(textDocument: TextDocument): Promise<Diagnostic[]> {
 	return await diagnosticQueue.queueDiagnosticRequest(textDocument, async (document) => {
 		const languageId = document.languageId;
@@ -324,6 +345,10 @@ connection.onRequest(COMMANDS.UPDATE_CACHED_USER_TOKEN, (token: string) => {
 });
 
 
+const cache = new Map<string, { functionNode: FunctionDetails, suggestions: string[] }>();
+let lastTokenSource: CancellationTokenSource | undefined;
+
+
 connection.onRequest(COMMANDS.PROVIDE_EXCEPTION_HANDLING, async (params) => {
     const { functionName, lineNumber, uri } = params;
     const document = documents.get(uri);
@@ -331,6 +356,21 @@ connection.onRequest(COMMANDS.PROVIDE_EXCEPTION_HANDLING, async (params) => {
     if (!document) {
         return [];
     }
+
+	const cacheKey = `${uri}-${functionName}-${lineNumber}`;
+	const cachedData = cache.get(cacheKey);
+	if (cachedData) {
+		console.log('Using cached data for suggestions');
+		return { completionItems:  cachedData.suggestions.map((suggestion, index) => {
+			const item = CompletionItem.create(`Suggestion ${index + 1}`);
+			item.kind = CompletionItemKind.Snippet;
+			item.insertText = suggestion;
+			item.detail = `Exception handling suggestion ${index + 1}`;
+			return item;
+		}), functionNode:  cachedData.functionNode };
+	}
+	
+
     const functionNode = await findFunctionInDocument(document, functionName, lineNumber);
 
     if (!functionNode) {
@@ -347,6 +387,13 @@ connection.onRequest(COMMANDS.PROVIDE_EXCEPTION_HANDLING, async (params) => {
         apiKey: "test-key-2" // TODO: use actual api key from user cache settings
     };
 
+	if (lastTokenSource) {
+		console.log('Cancelling previous server request', lastTokenSource.token.isCancellationRequested);
+		lastTokenSource.cancel();
+	}
+
+	lastTokenSource = new CancellationTokenSource();
+
     const suggestions = await generateExceptionHandlingSuggestions(payload);
 
     const completionItems = suggestions.map((suggestion, index) => {
@@ -356,6 +403,10 @@ connection.onRequest(COMMANDS.PROVIDE_EXCEPTION_HANDLING, async (params) => {
         item.detail = `Exception handling suggestion ${index + 1}`;
         return item;
     });
+
+	console.log('Caching suggestions for future use');
+	cache.set(cacheKey, { functionNode, suggestions });
+
     return { completionItems, functionNode };
 });
 
@@ -366,7 +417,7 @@ async function findFunctionInDocument(document: TextDocument, functionName: stri
 		console.log("File is not a Python document. Skipping function extraction.");
 		return null;
 	}
-	const provider = new PythonProvider(languageId, connection, settings, document);
+	const provider = getOrCreatePythonProvider(settings, document);
 	const functionNode = await provider.findFunctionNode(document, functionName, lineNumber);
     return functionNode;
 }

@@ -22,6 +22,7 @@ import { trackActivation, trackDeactivation } from './common/logs';
 let client: LanguageClient;
 
 export async function activate(context: vscode.ExtensionContext) {
+	// FIXME: remove this when adding back auth and API keys
 	if (context.globalState.get(COMMANDS.USER_API_KEY)){
 		await context.globalState.update(COMMANDS.USER_API_KEY, undefined);
 		console.log("Cleared cached key", context.globalState.get(COMMANDS.USER_API_KEY));
@@ -58,12 +59,14 @@ export async function activate(context: vscode.ExtensionContext) {
 		clientOptions
 	);
 
-	registerCommands(context, client);
-	registerActions(context, client);
-
 	await client.start();
+	
 	activateClientNotifications(client);
 	trackActivation(context);
+
+	
+	registerCommands(context, client);
+	registerActions(context, client);
 
 	client.onRequest(COMMANDS.GET_GIT_DIFF, getChangedLines);
 

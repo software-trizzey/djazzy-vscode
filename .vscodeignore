@@ -39,7 +39,6 @@ node_modules/**
 # Server runtime dependencies (I need to figure out which of these are actually needed)
 !server/bundled/tools/python/.venv/**
 !server/node_modules/**
-!server/node_modules/lru-cache/**
 !server/node_modules/rollbar/**
 !server/node_modules/uuid/**
 !server/node_modules/vscode-languageserver-textdocument/**

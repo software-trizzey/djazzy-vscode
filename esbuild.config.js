@@ -37,7 +37,6 @@ async function main() {
 		platform: 'node',
 		external: [
 		  'vscode', 
-		  'lru-cache', 
 		  'rollbar', 
 		  'uuid', 
 		  'vscode-languageserver', 

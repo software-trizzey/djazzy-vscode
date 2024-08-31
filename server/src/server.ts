@@ -97,14 +97,14 @@ connection.onInitialize((params: InitializeParams) => {
 				workspaceDiagnostics: false,
 			},
 			codeActionProvider: {
-				codeActionKinds: [CodeActionKind.QuickFix],
+				codeActionKinds: [CodeActionKind.QuickFix, CodeActionKind.RefactorRewrite],
 			},
 			executeCommandProvider: {
 				commands: COMMANDS_LIST,
 			},
 			completionProvider: {
                 resolveProvider: true
-            }
+            },
 		},
 	};
 	if (hasWorkspaceFolderCapability) {
@@ -331,16 +331,13 @@ connection.onRequest(COMMANDS.PROVIDE_EXCEPTION_HANDLING, async (params) => {
         return [];
     }
     const functionNode = await findFunctionInDocument(document, functionName, lineNumber);
-	console.log("Function node: ", functionNode);
 
     if (!functionNode) {
         return [];
     }
 
 	const functionText = functionNode.raw_body;
-	console.log("Function text: ", functionText);
     const suggestions = generateExceptionHandlingSuggestions(functionText);
-	console.log("Suggestions: ", suggestions);
 
     const completionItems = suggestions.map((suggestion, index) => {
         const item = CompletionItem.create(`Suggestion ${index + 1}`);

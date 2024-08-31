@@ -14,44 +14,6 @@ export function registerCommands(
     context: vscode.ExtensionContext,
     client: LanguageClient
 ): void {
-    const suggestionExceptionCommand = vscode.commands.registerCommand(COMMANDS.SUGGEST_EXCEPTIONS, async () => {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) return;
-    
-        const document = editor.document;
-        const position = editor.selection.active;
-    
-        const lineText = document.lineAt(position.line).text;
-        const functionNameMatch = lineText.match(/def\s+(\w+)\s*\(/);
-    
-        if (!functionNameMatch) {
-            vscode.window.showWarningMessage('No function detected at the current position.');
-            return;
-        }
-    
-        const functionName = functionNameMatch[1];
-        const lineNumber = position.line;
-        console.log('Function name:', functionName, 'Line number:', lineNumber);
-    
-       const completionItems = await client.sendRequest<vscode.CompletionItem[]>(
-            COMMANDS.PROVIDE_EXCEPTION_HANDLING,
-            { functionName, lineNumber, uri: document.uri.toString() }
-        );
-
-        if (completionItems) {
-            console.log("Received completion items:", completionItems);
-            vscode.window.showInformationMessage('Exception suggestions are available. 🚀', {
-                title: 'View suggestions',
-                action: () => {
-                    vscode.commands.executeCommand('editor.action.triggerSuggest');
-                }
-            });
-        } else {
-            vscode.window.showWarningMessage('No exception suggestions available.');
-        }
-    });    
-    context.subscriptions.push(suggestionExceptionCommand);
-
     const addCustomRuleCommand = vscode.commands.registerCommand(
         COMMANDS.ADD_CUSTOM_RULE,
         () => {

@@ -14,6 +14,7 @@ import {
 	getChangedLines,
 } from "./common/utils/git";
 import { registerCommands } from './common/commands';
+import { registerActions } from './common/actions';
 import { setupFileWatchers } from './common/utils/fileWatchers';
 import { trackActivation, trackDeactivation } from './common/logs';
 
@@ -58,6 +59,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	);
 
 	registerCommands(context, client);
+	registerActions(context, client);
 
 	await client.start();
 	activateClientNotifications(client);

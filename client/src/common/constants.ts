@@ -21,6 +21,7 @@ export const COMMANDS = {
 	GET_API_KEY: `${EXTENSION_ID}.getApiKey`,
 	PROVIDE_EXCEPTION_HANDLING: `${EXTENSION_ID}.provideExceptionHandling`,
 	SUGGEST_EXCEPTIONS: `${EXTENSION_ID}.suggestExceptions`,
+	PREVIEW_AND_APPLY_SUGGESTION: `${EXTENSION_ID}.previewAndApplySuggestion`,
 };
 
 export const RATE_LIMIT_NOTIFICATION_ID = `${EXTENSION_ID}/rateLimitReached`;

@@ -74,7 +74,7 @@ export class ExceptionHandlingCodeActionProvider implements vscode.CodeActionPro
 				const { completionItems, functionNode } = response;
 				if (completionItems && completionItems.length > 0 && functionNode) {
 					console.log("Received items:", completionItems);
-                    this.notifyUserWithSuggestions(completionItems);
+                    this.notifyUserWithSuggestions(document, functionNode, completionItems);
 
 					return completionItems.map(item => this.createRefactorAction(document, functionNode, item, functionName));
 				}
@@ -108,21 +108,86 @@ export class ExceptionHandlingCodeActionProvider implements vscode.CodeActionPro
         const start = new vscode.Position(functionNode.context.start - 1, functionNode.context.start_col);
         const end = new vscode.Position(functionNode.context.end - 1, functionNode.context.end_col);
 
-        action.edit = new vscode.WorkspaceEdit();
-        action.edit.replace(document.uri, new vscode.Range(start, end), completionItem.insertText?.toString() || '');
+        action.command = {
+            title: 'Preview and Apply',
+            command: COMMANDS.PREVIEW_AND_APPLY_SUGGESTION,
+            arguments: [document, functionNode, completionItem, new vscode.Range(start, end)]
+        };
+
         action.isPreferred = true;
         return action;
     }
 
-    private notifyUserWithSuggestions(completionItems: vscode.CompletionItem[] = []): void {
-		const completionTitles = completionItems.map(item => item.label).join(", ");
-		const action = "View suggestions";
-        vscode.window.showInformationMessage(
-            `Exception handling suggestions are available: ${completionTitles}`,
-            action
-        ).then(selection => {
-            if (selection === action) {
-				console.log("User selected to view suggestions");
+    private async notifyUserWithSuggestions(
+        originalDocument: vscode.TextDocument,
+        functionNode: FunctionDetails,
+        completionItems: vscode.CompletionItem[] = []
+    ): Promise<void> {
+        const quickPickItems = completionItems.map(item => ({
+            label: item.label.toString(),
+            description: item.detail || '',
+            item
+        }));
+
+        const selectedItem = await vscode.window.showQuickPick(quickPickItems, {
+            placeHolder: 'Select an exception handling suggestion to view',
+            canPickMany: false
+        });
+
+        if (selectedItem) {
+            await this.showSuggestionInNewEditor(originalDocument, functionNode, selectedItem.item);
+        }
+    }
+
+	private async showSuggestionInNewEditor(
+		originalDocument: vscode.TextDocument,
+		functionNode: FunctionDetails,
+		completionItem: vscode.CompletionItem
+	): Promise<void> {
+		const previewDocument = await vscode.workspace.openTextDocument({
+			content: completionItem.insertText?.toString() || '',
+			language: 'python'
+		});
+	
+		const previewEditor = await vscode.window.showTextDocument(previewDocument, {
+			preview: true,
+			viewColumn: vscode.ViewColumn.Beside // Open beside the current editor
+		});
+	
+		const applyAction = 'Apply';
+		const userChoice = await vscode.window.showInformationMessage(
+			`Apply the selected exception handling suggestion to the original document?`,
+			applyAction,
+			'Cancel'
+		);
+	
+		if (userChoice === applyAction) {
+			this.applySuggestionToOriginalDocument(originalDocument, functionNode, completionItem);
+		}
+	
+		await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+	}	
+
+    private applySuggestionToOriginalDocument(
+        originalDocument: vscode.TextDocument,
+        functionNode: FunctionDetails,
+        completionItem: vscode.CompletionItem
+    ): void {
+        const editor = vscode.window.visibleTextEditors.find(editor => editor.document === originalDocument);
+        if (!editor) {
+            return;
+        }
+
+        const start = new vscode.Position(functionNode.context.start - 1, functionNode.context.start_col);
+        const end = new vscode.Position(functionNode.context.end - 1, functionNode.context.end_col);
+
+        editor.edit(editBuilder => {
+            editBuilder.replace(new vscode.Range(start, end), completionItem.insertText?.toString() || '');
+        }).then(success => {
+            if (success) {
+                vscode.window.showInformationMessage(`Applied suggestion: ${completionItem.label}`);
+            } else {
+                vscode.window.showErrorMessage('Failed to apply the suggestion');
             }
         });
     }

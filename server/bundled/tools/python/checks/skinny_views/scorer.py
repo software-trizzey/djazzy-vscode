@@ -6,7 +6,7 @@ from .constants import ComplexityIssue, ScoreInterpretationEnum, ScoreWeightEnum
 
 
 class ScoreThresholds:
-    def __init__(self, line_threshold=50, operation_threshold=10, max_score=100):
+    def __init__(self, line_threshold=100, operation_threshold=25, max_score=100):
         """
         Initialize threshold values for complexity scoring.
         :param line_threshold: The number of lines beyond which the view is considered complex.

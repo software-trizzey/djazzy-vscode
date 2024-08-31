@@ -31,7 +31,7 @@ class DjangoAnalyzer(Analyzer):
         self.model_field_check_service = ModelFieldCheckService(source_code)
         self.view_detection_service = DjangoViewDetectionService()
         # TODO: make configurable based on user settings
-        self.complexity_scorer = ViewComplexityScorer(ScoreThresholds(line_threshold=50, operation_threshold=10))
+        self.complexity_scorer = ViewComplexityScorer(ScoreThresholds(line_threshold=100, operation_threshold=25))
         self.complexity_analyzer = ViewComplexityAnalyzer(source_code, self.complexity_scorer)
 
     def parse_model_cache(self, model_cache_json):

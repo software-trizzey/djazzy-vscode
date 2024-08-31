@@ -359,18 +359,20 @@ connection.onRequest(COMMANDS.PROVIDE_EXCEPTION_HANDLING, async (params) => {
 
 	const cacheKey = `${uri}-${functionName}-${lineNumber}`;
 	const cachedData = cache.get(cacheKey);
-	if (cachedData) {
-		console.log('Using cached data for suggestions');
-		return { completionItems:  cachedData.suggestions.map((suggestion, index) => {
-			const item = CompletionItem.create(`Suggestion ${index + 1}`);
-			item.kind = CompletionItemKind.Snippet;
-			item.insertText = suggestion;
-			item.detail = `Exception handling suggestion ${index + 1}`;
-			return item;
-		}), functionNode:  cachedData.functionNode };
-	}
+    if (cachedData) {
+        console.log('Using cached data for suggestions');
+        return {
+            completionItems: cachedData.suggestions.map((suggestion: any, index) => {
+                const item = CompletionItem.create(suggestion.title || `Suggestion ${index + 1}`);
+                item.kind = CompletionItemKind.Snippet;
+                item.insertText = suggestion.variation;
+                item.detail = suggestion.title ? `Refactored version: ${suggestion.title}` : `Exception handling suggestion ${index + 1}`;
+                return item;
+            }),
+            functionNode: cachedData.functionNode
+        };
+    }
 	
-
     const functionNode = await findFunctionInDocument(document, functionName, lineNumber);
 
     if (!functionNode) {
@@ -395,14 +397,16 @@ connection.onRequest(COMMANDS.PROVIDE_EXCEPTION_HANDLING, async (params) => {
 	lastTokenSource = new CancellationTokenSource();
 
     const suggestions = await generateExceptionHandlingSuggestions(payload);
+	console.log('Received suggestions:', suggestions);
 
-    const completionItems = suggestions.map((suggestion, index) => {
-        const item = CompletionItem.create(`Suggestion ${index + 1}`);
+    const completionItems = suggestions.map((suggestion: any, index) => {
+        const item = CompletionItem.create(suggestion.title || `Suggestion ${index + 1}`);
         item.kind = CompletionItemKind.Snippet;
-        item.insertText = suggestion;
-        item.detail = `Exception handling suggestion ${index + 1}`;
+        item.insertText = suggestion.variation;
+        item.detail = suggestion.title ? `Refactored version: ${suggestion.title}` : `Exception handling suggestion ${index + 1}`;
         return item;
     });
+
 
 	console.log('Caching suggestions for future use');
 	cache.set(cacheKey, { functionNode, suggestions });

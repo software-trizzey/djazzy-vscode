@@ -1,8 +1,6 @@
 import * as vscode from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
-
 import { COMMANDS } from '../constants';
-
 
 interface FunctionBodyNode {
 	absolute_line_number: number;
@@ -34,7 +32,6 @@ export interface FunctionDetails {
 	}
 }
 
-
 export class ExceptionHandlingCodeActionProvider implements vscode.CodeActionProvider {
     static providedCodeActionKinds = [
         vscode.CodeActionKind.RefactorRewrite
@@ -62,7 +59,7 @@ export class ExceptionHandlingCodeActionProvider implements vscode.CodeActionPro
         const lineNumber = range.start.line;
 
         if (this.lastTokenSource) {
-			console.log('Cancelling previous exception action request');
+            console.log('Cancelling previous exception action request');
             this.lastTokenSource.cancel();
         }
 
@@ -77,6 +74,8 @@ export class ExceptionHandlingCodeActionProvider implements vscode.CodeActionPro
 				const { completionItems, functionNode } = response;
 				if (completionItems && completionItems.length > 0 && functionNode) {
 					console.log("Received items:", completionItems);
+                    this.notifyUserWithSuggestions(completionItems);
+
 					return completionItems.map(item => this.createRefactorAction(document, functionNode, item, functionName));
 				}
 				return [];
@@ -100,8 +99,9 @@ export class ExceptionHandlingCodeActionProvider implements vscode.CodeActionPro
         completionItem: vscode.CompletionItem,
         functionName: string
     ): vscode.CodeAction {
+        const title = completionItem.label.toString();
         const action = new vscode.CodeAction(
-            `Add exception handling: ${completionItem.label} for function: ${functionName}`,
+            title || `Add exception handling for function: ${functionName}`,
             vscode.CodeActionKind.RefactorRewrite
         );
 
@@ -112,5 +112,18 @@ export class ExceptionHandlingCodeActionProvider implements vscode.CodeActionPro
         action.edit.replace(document.uri, new vscode.Range(start, end), completionItem.insertText?.toString() || '');
         action.isPreferred = true;
         return action;
+    }
+
+    private notifyUserWithSuggestions(completionItems: vscode.CompletionItem[] = []): void {
+		const completionTitles = completionItems.map(item => item.label).join(", ");
+		const action = "View suggestions";
+        vscode.window.showInformationMessage(
+            `Exception handling suggestions are available: ${completionTitles}`,
+            action
+        ).then(selection => {
+            if (selection === action) {
+				console.log("User selected to view suggestions");
+            }
+        });
     }
 }

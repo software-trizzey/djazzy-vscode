@@ -31,10 +31,6 @@ export class PythonProvider extends LanguageProvider {
 		throw new Error('Method not implemented.');
 	}
 
-	clearNPlusOneCache(): void {
-		throw new Error('Method not implemented.');
-	}
-
 	getConventions(): LanguageConventions {
 		throw new Error('Method not implemented.');
 	}

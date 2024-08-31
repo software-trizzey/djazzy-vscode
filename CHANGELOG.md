@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Version 0.1.13] - 2024-08-27
+
+### Removed
+
+- [Removal] Removed support for N+1 static analysis. This was a tough decision but I found that the tool was creating too many false-positives and noise in the IDE. LLMs also aren't amazing at static analysis and I found that both the costs and latency were too much of an issue. Perhaps a private, fine-tuned model will be a better option in the future.
+
 
 ## [Version 0.1.12] - 2024-08-27
 

@@ -121,18 +121,6 @@
 					"description": "Check only new or modified code.",
 					"order": 1
 				},
-				"djangoly.general.nPlusOneMinimumSeverityThreshold": {
-					"type": "string",
-					"default": "INFORMATION",
-					"description": "Set the minimum severity threshold for N+1 query detection.",
-					"enum": [
-						"ERROR",
-						"WARNING",
-						"INFORMATION",
-						"HINT"
-					],
-					"order": 2
-				},
 				"djangoly.general.isDevMode": {
 					"type": "boolean",
 					"default": false,

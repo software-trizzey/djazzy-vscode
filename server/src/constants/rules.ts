@@ -19,5 +19,4 @@ export const RULE_MESSAGES = {
     URL_PATTERN_INCONSISTENT_TRAILING_SLASH: "Use consistent trailing slashes in URL patterns",
     URL_PATTERN_MISSING_VIEW: "Ensure view is provided for URL pattern",
     URL_PATTERN_MISSING_ROUTE: "URL pattern is missing a route",
-    N_PLUS_ONE_QUERY: "Detected N+1 query detected in function \"{name}\".",
 };

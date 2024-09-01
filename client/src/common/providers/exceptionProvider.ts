@@ -115,8 +115,10 @@ export class ExceptionHandlingCommandProvider {
         functionNode: FunctionDetails,
         completionItem: vscode.CompletionItem
     ): Promise<void> {
+        const previewContent = `\n\n# Read-Only Preview: You can review this suggestion but changes won't be saved\n\n${completionItem.insertText?.toString() || ''}`;
+
         const previewDocument = await vscode.workspace.openTextDocument({
-            content: completionItem.insertText?.toString() || '',
+            content: previewContent,
             language: 'python'
         });
 
@@ -124,6 +126,22 @@ export class ExceptionHandlingCommandProvider {
             preview: true,
             viewColumn: vscode.ViewColumn.Beside
         });
+
+        const readOnlyDecorationType = vscode.window.createTextEditorDecorationType({
+            isWholeLine: true,
+            backgroundColor: new vscode.ThemeColor('editorWarning.background'),
+            overviewRulerColor: new vscode.ThemeColor('editorWarning.foreground'),
+            overviewRulerLane: vscode.OverviewRulerLane.Right,
+            before: {
+                contentText: 'Read-Only Preview',
+                margin: '0 1rem 0 0',
+                color: new vscode.ThemeColor('editorWarning.foreground'),
+            }
+        });
+        
+        previewEditor.setDecorations(readOnlyDecorationType, [
+            { range: new vscode.Range(0, 0, previewDocument.lineCount, 0) }
+        ]);
 
         const applyAction = 'Apply';
         const userChoice = await vscode.window.showInformationMessage(

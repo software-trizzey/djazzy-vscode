@@ -41,7 +41,7 @@ import {
 	updatePythonExecutablePath,
 } from "./settings";
 import { checkForTestFile, debounce } from "./utils";
-import { checkForPythonAndVenv } from './utils/checkForPython';
+import { getPythonExecutableIfSupported } from './utils/checkForPython';
 
 import { DiagnosticQueue } from "./services/diagnostics";
 
@@ -70,14 +70,15 @@ connection.onInitialize((params: InitializeParams) => {
 	console.log(extensionVersionMessage);
 	console.log(`Running Node.js version: ${process.version}`);
 
-    const pythonEnv = checkForPythonAndVenv();
-    if (!pythonEnv) {
-        const errorMessage = 'Python environment setup failed. Ensure that Python is installed and the virtual environment is bundled correctly.';
+    const pythonExecutable = getPythonExecutableIfSupported();
+    if (!pythonExecutable) {
+        const errorMessage = 'Unsupported Python version or Python not found. Please ensure that Python 3.9 or higher is installed.';
         connection.console.error(errorMessage);
         throw new Error(errorMessage);
-    } else {
-		updatePythonExecutablePath(pythonEnv.pythonExecutable);
-	}
+    }
+
+    console.log(`Using Python executable: ${pythonExecutable}`);
+	updatePythonExecutablePath(pythonExecutable);
 
 	const capabilities = params.capabilities;
 

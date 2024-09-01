@@ -56,7 +56,7 @@ export class ExceptionHandlingCommandProvider {
             let response = null;
             await vscode.window.withProgress({
                 location: vscode.ProgressLocation.Notification,
-                title: "Improve Function Exception Handling",
+                title: "Djangoly",
                 cancellable: true
             }, async (progress, token) => {
                 token.onCancellationRequested(() => {
@@ -164,7 +164,7 @@ export class ExceptionHandlingCommandProvider {
             editBuilder.replace(new vscode.Range(start, end), completionItem.insertText?.toString() || '');
         }).then(success => {
             if (success) {
-                vscode.window.showInformationMessage(`Applied suggestion: ${completionItem.label}`, 'Cool');
+                vscode.window.showInformationMessage(`Applied suggestion: ${completionItem.label}`, 'Okay');
             } else {
                 vscode.window.showErrorMessage('Failed to apply the suggestion');
             }

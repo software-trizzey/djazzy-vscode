@@ -20,7 +20,7 @@ export const COMMANDS = {
 	REMOVE_API_KEY: `${EXTENSION_ID}.removeApiKey`,
 	GET_API_KEY: `${EXTENSION_ID}.getApiKey`,
 	PROVIDE_EXCEPTION_HANDLING: `${EXTENSION_ID}.provideExceptionHandling`,
-	SUGGEST_EXCEPTIONS: `${EXTENSION_ID}.suggestExceptions`,
+	ANALYZE_EXCEPTION_HANDLING: `${EXTENSION_ID}.analyzeExceptionHandling`,
 	PREVIEW_AND_APPLY_SUGGESTION: `${EXTENSION_ID}.previewAndApplySuggestion`,
 };
 

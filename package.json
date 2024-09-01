@@ -51,14 +51,14 @@
 				"title": "Djangoly: Open Settings"
 			},
 			{
-				"command": "djangoly.suggestExceptions",
-				"title": "Djangoly: Suggest Exception Handling"
+				"command": "djangoly.analyzeExceptionHandling",
+				"title": "Djangoly: Analyze Exception Handling"
 			}
 		],
 		"menus": {
 			"editor/context": [
 			  {
-				"command": "djangoly.suggestExceptions",
+				"command": "djangoly.analyzeExceptionHandling",
 				"when": "editorLangId == python",
 				"group": "1_modification"
 			  }

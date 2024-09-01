@@ -45,7 +45,7 @@ export async function registerCommands(
 
     
     context.subscriptions.push(vscode.commands.registerCommand(
-        COMMANDS.SUGGEST_EXCEPTIONS, async (uri: vscode.Uri, range: vscode.Range | undefined) => {
+        COMMANDS.ANALYZE_EXCEPTION_HANDLING, async (uri: vscode.Uri, range: vscode.Range | undefined) => {
             const editor = vscode.window.activeTextEditor;
 
             if (!editor || editor.document.uri.toString() !== uri.toString()) {

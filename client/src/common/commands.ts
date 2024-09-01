@@ -3,6 +3,8 @@ import { LanguageClient } from "vscode-languageclient/node";
 
 import { UserSession } from "./auth/github";
 import { COMMANDS, EXTENSION_ID, EXTENSION_NAME, PUBLISHER, SESSION_USER } from "./constants";
+
+import { ExceptionHandlingCommandProvider } from './providers/exceptionProvider';
 import { trackUserInterestInCustomRules } from "./logs";
 
 const WORKBENCH_ACTIONS = {
@@ -10,10 +12,10 @@ const WORKBENCH_ACTIONS = {
 	OPEN_SETTINGS: 'workbench.action.openSettings'
 };
 
-export function registerCommands(
+export async function registerCommands(
     context: vscode.ExtensionContext,
     client: LanguageClient
-): void {
+): Promise<void> {
     const addCustomRuleCommand = vscode.commands.registerCommand(
         COMMANDS.ADD_CUSTOM_RULE,
         () => {
@@ -40,4 +42,34 @@ export function registerCommands(
         () => vscode.commands.executeCommand(WORKBENCH_ACTIONS.OPEN_SETTINGS, `@ext:${PUBLISHER}.${EXTENSION_NAME}`)
     );
     context.subscriptions.push(openSettingsCommand);
+
+    
+    context.subscriptions.push(vscode.commands.registerCommand(
+        COMMANDS.SUGGEST_EXCEPTIONS, async (uri: vscode.Uri, range: vscode.Range | undefined) => {
+            const editor = vscode.window.activeTextEditor;
+
+            if (!editor || editor.document.uri.toString() !== uri.toString()) {
+                vscode.window.showErrorMessage('Could not find the active editor for the selected file.');
+                return;
+            }
+    
+            if (!range) {
+                range = editor.selection;
+            }
+
+            const commandProvider = new ExceptionHandlingCommandProvider(client);
+            const document = await vscode.workspace.openTextDocument(uri);
+            const lineText = document.lineAt(range.start.line).text;
+            const functionNameMatch = lineText.match(/def\s+(\w+)\s*\(/);
+
+            if (!functionNameMatch) {
+                vscode.window.showErrorMessage('No function detected at the selected line.', 'Got it');
+                return;
+            }
+
+            const functionName = functionNameMatch[1];
+            const lineNumber = range.start.line;
+            await commandProvider.provideExceptionHandling(document, functionName, lineNumber);
+        })
+    );
 }

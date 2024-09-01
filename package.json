@@ -52,7 +52,7 @@
 			},
 			{
 				"command": "djangoly.suggestExceptions",
-				"title": "Suggest Exception Handling"
+				"title": "Djangoly: Suggest Exception Handling"
 			}
 		],
 		"menus": {
@@ -63,7 +63,7 @@
 				"group": "1_modification"
 			  }
 			]
-		  },
+		},
 		"walkthroughs": [
 			{
 				"id": "djangoly.gettingStarted",

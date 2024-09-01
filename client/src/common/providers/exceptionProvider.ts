@@ -1,0 +1,183 @@
+import * as vscode from 'vscode';
+import { LanguageClient } from 'vscode-languageclient/node';
+import { COMMANDS } from '../constants';
+
+
+
+interface FunctionBodyNode {
+	absolute_line_number: number;
+	content: string;
+	end_col: number;
+	relative_line_number: number;
+	start_col: number;
+}
+
+interface FunctionCallSite {
+	line: number;
+	col: number;
+}
+
+export interface FunctionDetails {
+    name: string;
+    args: string[];
+    returns: string | null;
+    body: FunctionBodyNode[];
+	raw_body: string;
+    decorators: string[];
+	context: {
+		start: number;
+		end: number;
+		start_col: number;
+		end_col: number;
+		imports: string[];
+		call_sites: FunctionCallSite[];
+	}
+}
+
+
+export class ExceptionHandlingCommandProvider {
+    private lastTokenSource: vscode.CancellationTokenSource | undefined;
+
+    constructor(private client: LanguageClient) {}
+
+    public async provideExceptionHandling(
+        document: vscode.TextDocument,
+        functionName: string,
+        lineNumber: number
+    ): Promise<void> {
+        if (this.lastTokenSource) {
+            console.log('Cancelling previous exception action request');
+            this.lastTokenSource.cancel();
+        }
+    
+        this.lastTokenSource = new vscode.CancellationTokenSource();
+    
+        try {
+            let response = null;
+            await vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                title: "Improve Function Exception Handling",
+                cancellable: true
+            }, async (progress, token) => {
+                token.onCancellationRequested(() => {
+                    console.log('User cancelled the exception handling request');
+                    this.lastTokenSource.cancel();
+                });
+    
+                progress.report({ message: "Analyzing function..." });
+    
+                response = await this.client.sendRequest<
+                    { completionItems: vscode.CompletionItem[], functionNode: FunctionDetails }
+                >(
+                    COMMANDS.PROVIDE_EXCEPTION_HANDLING,
+                    { functionName, lineNumber, uri: document.uri.toString() },
+                    this.lastTokenSource.token
+                );
+                progress.report({ message: "Suggestions received. Preparing to display..." });
+            });
+
+            const { completionItems, functionNode } = response;
+            if (completionItems && completionItems.length > 0 && functionNode) {
+                await this.notifyUserWithSuggestions(document, functionNode, completionItems);
+            }
+        } catch (err) {
+            if (err && err.code === 'REQUEST_CANCELLED') {
+                console.log('Request was cancelled.');
+            } else {
+                console.error('Request failed:', err);
+            }
+        }
+    }    
+
+    private async notifyUserWithSuggestions(
+        originalDocument: vscode.TextDocument,
+        functionNode: FunctionDetails,
+        completionItems: vscode.CompletionItem[] = []
+    ): Promise<void> {
+        const quickPickItems = completionItems.map(item => ({
+            label: item.label.toString(),
+            description: item.detail || '',
+            item
+        }));
+
+        const selectedItem = await vscode.window.showQuickPick(quickPickItems, {
+            placeHolder: 'Select an exception handling suggestion to view',
+            canPickMany: false
+        });
+
+        if (selectedItem) {
+            await this.showSuggestionInNewEditor(originalDocument, functionNode, selectedItem.item);
+        }
+    }
+
+    private async showSuggestionInNewEditor(
+        originalDocument: vscode.TextDocument,
+        functionNode: FunctionDetails,
+        completionItem: vscode.CompletionItem
+    ): Promise<void> {
+        const previewDocument = await vscode.workspace.openTextDocument({
+            content: completionItem.insertText?.toString() || '',
+            language: 'python'
+        });
+
+        const previewEditor = await vscode.window.showTextDocument(previewDocument, {
+            preview: true,
+            viewColumn: vscode.ViewColumn.Beside
+        });
+
+        const applyAction = 'Apply';
+        const userChoice = await vscode.window.showInformationMessage(
+            `Apply the selected exception handling suggestion to the original document?`,
+            applyAction,
+            'Cancel'
+        );
+
+        if (userChoice === applyAction) {
+            this.applySuggestionToOriginalDocument(originalDocument, functionNode, completionItem);
+        }
+
+        const previewEditorGroup = vscode.window.tabGroups.activeTabGroup;
+        const previewEditorTab = previewEditorGroup.tabs.find(tab => tab.isActive);
+
+        if (previewEditorTab) {
+            if (previewEditorTab.isDirty) {
+                await this.clearEditorContent(previewEditor);
+            }
+            await vscode.window.tabGroups.close(previewEditorTab, false);
+        }
+    }
+
+    private applySuggestionToOriginalDocument(
+        originalDocument: vscode.TextDocument,
+        functionNode: FunctionDetails,
+        completionItem: vscode.CompletionItem
+    ): void {
+        const editor = vscode.window.visibleTextEditors.find(editor => editor.document === originalDocument);
+        if (!editor) {
+            return;
+        }
+
+        const start = new vscode.Position(functionNode.context.start - 1, functionNode.context.start_col);
+        const end = new vscode.Position(functionNode.context.end - 1, functionNode.context.end_col);
+
+        editor.edit(editBuilder => {
+            editBuilder.replace(new vscode.Range(start, end), completionItem.insertText?.toString() || '');
+        }).then(success => {
+            if (success) {
+                vscode.window.showInformationMessage(`Applied suggestion: ${completionItem.label}`, 'Cool');
+            } else {
+                vscode.window.showErrorMessage('Failed to apply the suggestion');
+            }
+        });
+    }
+
+    private async clearEditorContent(editor: vscode.TextEditor): Promise<void> {
+        await editor.edit(editBuilder => {
+            const fullRange = new vscode.Range(
+                editor.document.positionAt(0),
+                editor.document.positionAt(editor.document.getText().length)
+            );
+            editBuilder.delete(fullRange);
+        });
+    }
+}

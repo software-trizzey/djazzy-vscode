@@ -27,6 +27,6 @@ export const COMMANDS = {
 export const RATE_LIMIT_NOTIFICATION_ID = `${EXTENSION_ID}/rateLimitReached`;
 export const ACCESS_FORBIDDEN_NOTIFICATION_ID = `${EXTENSION_ID}/forbidden`;
 
-export const API_SERVER_URL = process.env.NODE_ENV === "development" ?  "http://localhost:8000" : "https://rome-django-auth.onrender.com";
+export const API_SERVER_URL = process.env.NODE_ENV === "development" ?  "http://localhost:8000" : "https://djangoly-api.onrender.com";
 
 export const API_KEY_SIGNUP_URL = "https://forms.gle/gEEZdfhWpQyQh2qVA";

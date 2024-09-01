@@ -361,6 +361,8 @@ connection.onRequest(COMMANDS.PROVIDE_EXCEPTION_HANDLING, async (params) => {
 		);
     }
 
+	LOGGER.info(`User ${cachedUserToken} triggered exception handling feature.`);
+
     const { functionName, lineNumber, uri } = params;
     const document = documents.get(uri);
 

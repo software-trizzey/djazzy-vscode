@@ -1,5 +1,6 @@
 import projectPackageJson from "../../package.json";
 
+import { ResponseError } from 'vscode-languageserver';
 import {
 	createConnection,
 	TextDocuments,
@@ -48,6 +49,7 @@ import COMMANDS, { COMMANDS_LIST, DJANGOLY_ID } from "./constants/commands";
 import LOGGER, { rollbar } from "./common/logs";
 import { SOURCE_NAME } from './constants/diagnostics';
 import { API_SERVER_URL } from './constants/api';
+import { ERROR_CODES } from './constants/errors';
 
 const connection = createConnection(ProposedFeatures.all);
 const providerCache: Record<string, LanguageProvider> = {};
@@ -350,6 +352,14 @@ let lastTokenSource: CancellationTokenSource | undefined;
 
 
 connection.onRequest(COMMANDS.PROVIDE_EXCEPTION_HANDLING, async (params) => {
+    if (!cachedUserToken) {
+        throw new ResponseError(
+			ERROR_CODES.UNAUTHENTICATED,
+			'User is not authenticated. Token not found.',
+			{ code: ERROR_CODES.UNAUTHENTICATED }
+		);
+    }
+
     const { functionName, lineNumber, uri } = params;
     const document = documents.get(uri);
 
@@ -386,7 +396,7 @@ connection.onRequest(COMMANDS.PROVIDE_EXCEPTION_HANDLING, async (params) => {
         imports: functionNode.context.imports,
         callSites: functionNode.context.call_sites,
         returns: functionNode.returns,
-        apiKey: "test-key-2" // TODO: use actual api key from user cache settings
+        apiKey: cachedUserToken,
     };
 
 	if (lastTokenSource) {
@@ -434,7 +444,7 @@ async function generateExceptionHandlingSuggestions(payload: any): Promise<strin
         });
 
         if (!response.ok) {
-            if (response.status === 403) {
+            if (response.status === ERROR_CODES.UNAUTHENTICATED) {
                 console.error(`Forbidden: Invalid API key for ${url}`);
                 return [];
             } else if (response.status === 429) {

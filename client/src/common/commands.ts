@@ -6,6 +6,7 @@ import { COMMANDS, EXTENSION_ID, EXTENSION_NAME, PUBLISHER, SESSION_USER } from 
 
 import { ExceptionHandlingCommandProvider } from './providers/exceptionProvider';
 import { trackUserInterestInCustomRules } from "./logs";
+import { authenticateUser, removeApiKey } from './auth/api';
 
 const WORKBENCH_ACTIONS = {
 	OPEN_WALKTHROUGH: 'workbench.action.openWalkthrough',
@@ -14,8 +15,21 @@ const WORKBENCH_ACTIONS = {
 
 export async function registerCommands(
     context: vscode.ExtensionContext,
-    client: LanguageClient
+    client: LanguageClient,
+    activate: (context: vscode.ExtensionContext) => Promise<void>,
+    deactivate: (context: vscode.ExtensionContext) => Thenable<void> | undefined
 ): Promise<void> {
+
+    context.subscriptions.push(vscode.commands.registerCommand(
+        COMMANDS.SIGN_IN,
+        () => authenticateUser(context, activate)
+    ));
+
+    context.subscriptions.push(vscode.commands.registerCommand(
+        COMMANDS.SIGN_OUT,
+        () => removeApiKey(context, client, () => deactivate(context))
+    ));
+
     const addCustomRuleCommand = vscode.commands.registerCommand(
         COMMANDS.ADD_CUSTOM_RULE,
         () => {

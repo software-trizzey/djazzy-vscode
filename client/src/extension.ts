@@ -17,16 +17,14 @@ import { registerCommands } from './common/commands';
 import { registerActions } from './common/actions';
 import { setupFileWatchers } from './common/utils/fileWatchers';
 import { trackActivation, trackDeactivation } from './common/logs';
+import { authenticateUser } from './common/auth/api';
 
 
 let client: LanguageClient;
 
 export async function activate(context: vscode.ExtensionContext) {
-	// FIXME: remove this when adding back auth and API keys
-	if (context.globalState.get(COMMANDS.USER_API_KEY)){
-		await context.globalState.update(COMMANDS.USER_API_KEY, undefined);
-		console.log("Cleared cached key", context.globalState.get(COMMANDS.USER_API_KEY));
-	}
+	const isAuthenticated = await authenticateUser(context, activate);
+	if (!isAuthenticated) return;
 
 	const serverModule = context.asAbsolutePath(
 		path.join("server", "out", "server.js")
@@ -65,7 +63,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	trackActivation(context);
 
 	
-	registerCommands(context, client);
+	registerCommands(context, client, activate, deactivate);
 	registerActions(context, client);
 
 	client.onRequest(COMMANDS.GET_GIT_DIFF, getChangedLines);

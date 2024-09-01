@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
 import { COMMANDS } from '../constants';
-
+import { ERROR_CODES, ERROR_MESSAGES } from '../constants/errors';
 
 
 interface FunctionBodyNode {
@@ -72,8 +72,20 @@ export class ExceptionHandlingCommandProvider {
                     COMMANDS.PROVIDE_EXCEPTION_HANDLING,
                     { functionName, lineNumber, uri: document.uri.toString() },
                     this.lastTokenSource.token
-                );
+                ).catch((error) => {
+                    const errorCode = error?.data?.code;
+                    if (errorCode === ERROR_CODES.UNAUTHENTICATED) {
+                        vscode.window.showErrorMessage(ERROR_MESSAGES.FEATURE_GATED);
+                    } else {
+                        vscode.window.showErrorMessage(error.message || 'An unexpected error occurred.');
+                    }
+                    return null;
+                });
+                
+                if (!response) return;
+
                 progress.report({ message: "Suggestions received. Preparing to display..." });
+                
             });
 
             const { completionItems, functionNode } = response;

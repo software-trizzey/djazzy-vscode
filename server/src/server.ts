@@ -395,9 +395,7 @@ connection.onRequest(COMMANDS.PROVIDE_EXCEPTION_HANDLING, async (params) => {
 	}
 
 	lastTokenSource = new CancellationTokenSource();
-
     const suggestions = await generateExceptionHandlingSuggestions(payload);
-	console.log('Received suggestions:', suggestions);
 
     const completionItems = suggestions.map((suggestion: any, index) => {
         const item = CompletionItem.create(suggestion.title || `Suggestion ${index + 1}`);
@@ -407,10 +405,7 @@ connection.onRequest(COMMANDS.PROVIDE_EXCEPTION_HANDLING, async (params) => {
         return item;
     });
 
-
-	console.log('Caching suggestions for future use');
 	cache.set(cacheKey, { functionNode, suggestions });
-
     return { completionItems, functionNode };
 });
 

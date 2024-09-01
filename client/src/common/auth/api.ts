@@ -173,8 +173,7 @@ export const authenticateUser = async (context, activate): Promise<boolean> => {
                 continue;
             } else if (action === REQUEST_KEY) {
                 vscode.env.openExternal(vscode.Uri.parse(API_KEY_SIGNUP_URL));
-                // Re-activate the extension and register commands
-                await activate(context);
+                await activate(context); // Re-activate the extension and register commands
             }
             return false;
         }
@@ -191,8 +190,7 @@ export const authenticateUser = async (context, activate): Promise<boolean> => {
                 continue;
             } else if (action === REQUEST_KEY) {
                 vscode.env.openExternal(vscode.Uri.parse(API_KEY_SIGNUP_URL));
-                // Re-activate the extension and register commands
-                await activate(context);
+                await activate(context);  // Re-activate the extension and register commands
             }
             return false;
         }

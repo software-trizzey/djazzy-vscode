@@ -1,0 +1,3 @@
+export enum ERROR_CODES  {
+    UNAUTHENTICATED = 403,
+}

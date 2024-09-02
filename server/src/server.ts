@@ -435,7 +435,7 @@ async function findFunctionInDocument(document: TextDocument, functionName: stri
 }
 
 async function generateExceptionHandlingSuggestions(payload: any): Promise<string[]> {
-    const url = 'http://localhost:8000/chat/refactor/'; // TODO: use the API_SERVER_URL
+    const url = `${API_SERVER_URL}/chat/refactor/`;
 
     try {
         const response = await fetch(url, {

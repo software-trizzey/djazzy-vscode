@@ -65,8 +65,7 @@ def get_function_details(source_code: str, function_name: str, line_number: int)
                     }
                 }
 
-    except SyntaxError as e:
-        LOGGER.warning(f"Syntax error in {source_code}: {e}")
+    except SyntaxError:
         return None
     except Exception as e:
         LOGGER.warning(f"Error in {source_code}: {e}")

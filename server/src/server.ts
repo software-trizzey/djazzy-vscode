@@ -113,9 +113,6 @@ connection.onInitialize((params: InitializeParams) => {
 			executeCommandProvider: {
 				commands: COMMANDS_LIST,
 			},
-			completionProvider: {
-                resolveProvider: true
-            },
 		},
 	};
 	if (hasWorkspaceFolderCapability) {

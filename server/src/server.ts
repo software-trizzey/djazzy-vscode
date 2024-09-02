@@ -71,15 +71,20 @@ connection.onInitialize((params: InitializeParams) => {
 	console.log(extensionVersionMessage);
 	console.log(`Running Node.js version: ${process.version}`);
 
-    const pythonExecutable = getPythonExecutableIfSupported();
-    if (!pythonExecutable) {
-        const errorMessage = 'Unsupported Python version or Python not found. Please ensure that Python 3.9 or higher is installed.';
-        connection.console.error(errorMessage);
-        throw new Error(errorMessage);
-    }
-
-    console.log(`Using Python executable: ${pythonExecutable}`);
-	updatePythonExecutablePath(pythonExecutable);
+	const pythonCheckResult = getPythonExecutableIfSupported();
+	if (pythonCheckResult.error) {
+		connection.console.error(pythonCheckResult.error);
+		throw new Error(pythonCheckResult.error);
+	} else if (pythonCheckResult.executable) {
+		console.log(`Using Python executable: ${pythonCheckResult.executable}`);
+		updatePythonExecutablePath(pythonCheckResult.executable);
+	} else {
+		// NOTE: This branch should theoretically never be hit due to the logic, 
+		// but it's good to handle all cases to satisfy TypeScript.
+		const errorMessage = 'Unexpected error: Python executable is null without an error message.';
+		connection.console.error(errorMessage);
+		throw new Error(errorMessage);
+	}
 
 	const capabilities = params.capabilities;
 

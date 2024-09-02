@@ -18,7 +18,7 @@ import { registerCommands } from './common/commands';
 import { registerActions } from './common/actions';
 import { setupFileWatchers } from './common/utils/fileWatchers';
 import { trackActivation, trackDeactivation } from './common/logs';
-import { authenticateUser } from './common/auth/api';
+import { authenticateUser, validateApiKey } from './common/auth/api';
 
 
 let client: LanguageClient;
@@ -26,8 +26,17 @@ let client: LanguageClient;
 export async function activate(context: vscode.ExtensionContext) {
     const signIn = "Sign In";
     const requestAPIKey = "Request API Key";
-    let isAuthenticated = false;
+    let apiKey: string | undefined = context.globalState.get(COMMANDS.USER_API_KEY);
 
+    if (apiKey) {
+        const isValidApiKey = await validateApiKey(apiKey);
+        if (!isValidApiKey) {
+            vscode.window.showWarningMessage(AUTH_MESSAGES.INVALID_API_KEY);
+            apiKey = undefined;
+        }
+    }
+
+    let isAuthenticated: boolean = !!apiKey;
     while (!isAuthenticated) {
         const action = await vscode.window.showInformationMessage(
             AUTH_MESSAGES.FREE_API_KEY_PROMPT,
@@ -45,10 +54,10 @@ export async function activate(context: vscode.ExtensionContext) {
                 vscode.window.showWarningMessage(AUTH_MESSAGES.AUTHENTICATION_REQUIRED);
             }
         } else {
-			vscode.window.showInformationMessage(AUTH_MESSAGES.SIGN_OUT);
-			deactivate(context);
-			return;
-		}
+            vscode.window.showInformationMessage(AUTH_MESSAGES.SIGN_OUT);
+            deactivate(context);
+            return;
+        }
     }
 
 	const serverModule = context.asAbsolutePath(

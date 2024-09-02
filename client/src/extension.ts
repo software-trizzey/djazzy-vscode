@@ -103,11 +103,6 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate(context: vscode.ExtensionContext): Thenable<void> | undefined {
-	vscode.window.showInformationMessage(
-		"Thank you for using Djangoly! If you have any feedback or suggestions, please let us know. See you later! 👋",
-		"Bye"
-	);
-
 	if (!client) {
 		return undefined;
 	}

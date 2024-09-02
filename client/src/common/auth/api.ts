@@ -200,7 +200,12 @@ export const authenticateUser = async (context, activate): Promise<boolean> => {
         apiKey = inputApiKey;
     }
 
-	vscode.window.showInformationMessage(AUTH_MESSAGES.WELCOME_BETA_MESSAGE);
+	const termsAction = "Accept & Continue";
+	const termsResult = await vscode.window.showInformationMessage(AUTH_MESSAGES.WELCOME_BETA_MESSAGE, termsAction);
+	if (termsResult !== termsAction) {
+		vscode.window.showErrorMessage(AUTH_MESSAGES.MUST_AGREE_TO_TERMS);
+		return false;
+	}
 
     return true;
 };

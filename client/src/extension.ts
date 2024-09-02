@@ -8,7 +8,8 @@ import {
 	TransportKind,
 } from "vscode-languageclient/node";
 
-import { EXTENSION_ID, EXTENSION_DISPLAY_NAME, COMMANDS, RATE_LIMIT_NOTIFICATION_ID, ACCESS_FORBIDDEN_NOTIFICATION_ID } from "./common/constants";
+import { EXTENSION_ID, EXTENSION_DISPLAY_NAME, COMMANDS, RATE_LIMIT_NOTIFICATION_ID, ACCESS_FORBIDDEN_NOTIFICATION_ID, API_KEY_SIGNUP_URL } from "./common/constants";
+import { AUTH_MESSAGES } from './common/constants/messages';
 
 import {
 	getChangedLines,
@@ -23,8 +24,22 @@ import { authenticateUser } from './common/auth/api';
 let client: LanguageClient;
 
 export async function activate(context: vscode.ExtensionContext) {
-	const isAuthenticated = await authenticateUser(context, activate);
-	if (!isAuthenticated) return;
+	const signIn = "Sign In";
+	const requestAPIKey = "Request API Key";
+    const action = await vscode.window.showInformationMessage(
+        AUTH_MESSAGES.FREE_API_KEY_PROMPT,
+        signIn,
+        requestAPIKey
+    );
+
+    if (action === requestAPIKey) {
+        vscode.env.openExternal(vscode.Uri.parse(API_KEY_SIGNUP_URL));
+        await activate(context);
+        return;
+    } else if (action === signIn) {
+        const isAuthenticated = await authenticateUser(context, activate);
+        if (!isAuthenticated) return;
+    }
 
 	const serverModule = context.asAbsolutePath(
 		path.join("server", "out", "server.js")

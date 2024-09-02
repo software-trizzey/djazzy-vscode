@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 
 import logger from "../logs";
 import { API_KEY_SIGNUP_URL, API_SERVER_URL, COMMANDS, SESSION_TOKEN_KEY, SESSION_USER } from "../constants";
+import { AUTH_MESSAGES } from '../constants/messages';
 
 import { Credentials } from "./github";
 import { LanguageClient } from 'vscode-languageclient/node';
@@ -164,7 +165,7 @@ export const authenticateUser = async (context, activate): Promise<boolean> => {
 
         if (!inputApiKey) {
             const action = await vscode.window.showErrorMessage(
-                "A valid API key is required to use Djangoly. If you don't have an API key, you can request one by completing the form.",
+                AUTH_MESSAGES.FREE_API_KEY_PROMPT,
                 retryAction,
                 REQUEST_KEY
             );
@@ -181,7 +182,7 @@ export const authenticateUser = async (context, activate): Promise<boolean> => {
         const isValidApiKey = await validateApiKey(inputApiKey);
         if (!isValidApiKey) {
             const action = await vscode.window.showErrorMessage(
-                "Invalid API key. Please try again or request a new API key using the form.",
+                AUTH_MESSAGES.INVALID_API_KEY,
                 retryAction,
                 REQUEST_KEY
             );
@@ -196,9 +197,10 @@ export const authenticateUser = async (context, activate): Promise<boolean> => {
         }
 
         await context.globalState.update(COMMANDS.USER_API_KEY, inputApiKey);
-        vscode.window.showInformationMessage("Welcome to Djangoly (Beta)! 👋");
         apiKey = inputApiKey;
     }
+
+	vscode.window.showInformationMessage("Welcome to Djangoly (Beta)! 👋");
 
     return true;
 };

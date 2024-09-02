@@ -44,7 +44,11 @@ export async function activate(context: vscode.ExtensionContext) {
             if (!isAuthenticated) {
                 vscode.window.showWarningMessage(AUTH_MESSAGES.AUTHENTICATION_REQUIRED);
             }
-        }
+        } else {
+			vscode.window.showInformationMessage(AUTH_MESSAGES.SIGN_OUT);
+			deactivate(context);
+			return;
+		}
     }
 
 	const serverModule = context.asAbsolutePath(

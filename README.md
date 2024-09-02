@@ -4,6 +4,7 @@
 >
 > - The extension is under active development and subject to changes.
 > - You may encounter bugs or unexpected behavior.
+> - Certain features are subject to daily usage limits to prevent abuse.
 > - We greatly appreciate your feedback to help improve the extension.
 
 # Djangoly: Write Cleaner, Faster, Scalable Django Code
@@ -66,14 +67,3 @@ Djangoly reminds you to create and update test files when you modify your Django
 ## Known Issues & Limitations 🐞
 
 - **False Positives**: As an MVP undergoing rapid development, Djangoly may generate inaccurate diagnostics and recommendations. If you encounter any issues, please report them to [support@djangoly.com](mailto:support@djangoly.com).
-
-## Contribution Guidelines 👯‍♀️
-
-If you're interested in helping out you can do one of the following:
-
-- Open a PR (see our instructions on developing PostHog locally)
-- Submit a feature request or bug report
-
-## Open-source License 👮‍♂️
-
-This repo is available under the MIT expat license. We plan to add paid features at some point that will be covered under another commercial license. Stay tuned.

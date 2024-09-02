@@ -3,6 +3,8 @@ import { LanguageClient } from 'vscode-languageclient/node';
 import { COMMANDS } from '../constants';
 import { ERROR_CODES, ERROR_MESSAGES } from '../constants/errors';
 
+import { trackExceptionHandlingResultFeedback }  from '../logs';
+
 
 interface FunctionBodyNode {
 	absolute_line_number: number;
@@ -38,7 +40,7 @@ export interface FunctionDetails {
 export class ExceptionHandlingCommandProvider {
     private lastTokenSource: vscode.CancellationTokenSource | undefined;
 
-    constructor(private client: LanguageClient) {}
+    constructor(private client: LanguageClient, private context: vscode.ExtensionContext) {}
 
     public async provideExceptionHandling(
         document: vscode.TextDocument,
@@ -194,7 +196,26 @@ export class ExceptionHandlingCommandProvider {
             editBuilder.replace(new vscode.Range(start, end), completionItem.insertText?.toString() || '');
         }).then(success => {
             if (success) {
-                vscode.window.showInformationMessage(`Applied suggestion: ${completionItem.label}`, 'Okay');
+                const feedbackPrompt = 'How would you rate this suggestion?';
+                const feedbackActions = {
+                    positive: 'Good',
+                    negative: 'Bad',
+                    neutral: 'Not sure'
+                };
+
+                vscode.window.showInformationMessage(
+                    `Applied suggestion: ${completionItem.label}.\n\n${feedbackPrompt}`,
+                    feedbackActions.positive, feedbackActions.neutral, feedbackActions.negative
+                ).then(feedback => {
+                    if (feedback) {
+                        const token = this.context.globalState.get(COMMANDS.USER_API_KEY);
+                        if (!token) {
+                            console.log('User is not signed in. Skipping feedback tracking.');
+                            return;
+                        }
+                        trackExceptionHandlingResultFeedback(token as string, feedback);
+                    }
+                });
             } else {
                 vscode.window.showErrorMessage('Failed to apply the suggestion');
             }

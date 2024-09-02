@@ -5,7 +5,7 @@ import { UserSession } from "./auth/github";
 import { COMMANDS, EXTENSION_ID, EXTENSION_NAME, PUBLISHER, SESSION_USER } from "./constants";
 
 import { ExceptionHandlingCommandProvider } from './providers/exceptionProvider';
-import { trackUserInterestInCustomRules } from "./logs";
+import { trackFeatureUsage, trackUserInterestInCustomRules } from "./logs";
 import { authenticateUser, removeApiKey } from './auth/api';
 
 const WORKBENCH_ACTIONS = {
@@ -60,6 +60,14 @@ export async function registerCommands(
     
     context.subscriptions.push(vscode.commands.registerCommand(
         COMMANDS.ANALYZE_EXCEPTION_HANDLING, async (uri: vscode.Uri, range: vscode.Range | undefined) => {
+            const token = context.globalState.get(COMMANDS.USER_API_KEY);
+            if (!token) {
+                vscode.window.showErrorMessage('Please sign in to use this feature.');
+                return;
+            }
+
+            trackFeatureUsage(token as string, 'analyzeExceptionHandling');
+
             const editor = vscode.window.activeTextEditor;
 
             if (!editor || editor.document.uri.toString() !== uri.toString()) {
@@ -71,7 +79,7 @@ export async function registerCommands(
                 range = editor.selection;
             }
 
-            const commandProvider = new ExceptionHandlingCommandProvider(client);
+            const commandProvider = new ExceptionHandlingCommandProvider(client, context);
             const document = await vscode.workspace.openTextDocument(uri);
             const lineText = document.lineAt(range.start.line).text;
             const functionNameMatch = lineText.match(/def\s+(\w+)\s*\(/);

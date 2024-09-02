@@ -45,11 +45,12 @@ import { getPythonExecutableIfSupported } from './utils/checkForPython';
 
 import { DiagnosticQueue } from "./services/diagnostics";
 
-import COMMANDS, { COMMANDS_LIST, DJANGOLY_ID } from "./constants/commands";
+import COMMANDS, { ACCESS_FORBIDDEN_NOTIFICATION_ID, COMMANDS_LIST, DJANGOLY_ID, RATE_LIMIT_NOTIFICATION_ID } from "./constants/commands";
 import LOGGER, { rollbar } from "./common/logs";
 import { SOURCE_NAME } from './constants/diagnostics';
 import { API_SERVER_URL } from './constants/api';
 import { ERROR_CODES } from './constants/errors';
+import { ForbiddenError, RateLimitError } from './llm/helpers';
 
 const connection = createConnection(ProposedFeatures.all);
 const providerCache: Record<string, LanguageProvider> = {};
@@ -448,11 +449,9 @@ async function generateExceptionHandlingSuggestions(payload: any): Promise<strin
 
         if (!response.ok) {
             if (response.status === ERROR_CODES.UNAUTHENTICATED) {
-                console.error(`Forbidden: Invalid API key for ${url}`);
-                return [];
+                throw new ForbiddenError('User is not authenticated. Token not found.');
             } else if (response.status === 429) {
-                console.error(`Too Many Requests: Rate limit exceeded for ${url}`);
-                return [];
+                throw new RateLimitError('Daily request limit exceeded. Please try again tomorrow.');
             } else if (response.status === 500) {
                 console.error(`Server Error: Internal server error on ${url}`);
                 return [];
@@ -477,7 +476,17 @@ async function generateExceptionHandlingSuggestions(payload: any): Promise<strin
 
         return responseData.refactoredFunctions;
     } catch (error: any) {
-        console.error(`Network error in API call to ${url}: ${error.message}`);
+        if (error instanceof RateLimitError) {
+            connection.sendNotification(RATE_LIMIT_NOTIFICATION_ID, {
+                message: error.message,
+            });
+        } else if (error instanceof ForbiddenError) {
+			connection.sendNotification(ACCESS_FORBIDDEN_NOTIFICATION_ID, {
+                message: error.message,
+            });
+		} else {
+			throw error;
+		}
         return [];
     }
 }

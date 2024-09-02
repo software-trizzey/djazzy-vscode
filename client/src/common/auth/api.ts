@@ -16,7 +16,7 @@ export async function signInWithGitHub(
 ) {
 	const action = "Sign in with GitHub";
 	const response = await vscode.window.showInformationMessage(
-		"Sign in to continue using Djangoly. By using this extension you agree to our Terms of Service and Privacy Policy.",
+		AUTH_MESSAGES.GITHUB_SIGN_IN,
 		action,
 		"Cancel"
 	);
@@ -24,7 +24,7 @@ export async function signInWithGitHub(
 		console.log("User cancelled sign in.");
 		deactivate();
 		vscode.window.showInformationMessage(
-			"Djangoly extension has been disabled. Bye! 👋"
+			AUTH_MESSAGES.SIGN_OUT
 		);
 		return;
 	}
@@ -142,11 +142,11 @@ export async function removeApiKey(
             await client.start();
             await client.sendRequest(COMMANDS.UPDATE_CACHED_USER_TOKEN, null);
         } catch (error) {
-            vscode.window.showWarningMessage("Client is not running and could not be started. Please try reloading your developer window and try again.");
+            vscode.window.showWarningMessage("Client is not running and could not be started. Please try reloadingthe IDE and try again.");
         }
     }
 
-    vscode.window.showInformationMessage("You have deactivated Djangoly. See ya! 👋");
+    vscode.window.showInformationMessage(AUTH_MESSAGES.SIGN_OUT);
     deactivate();
 }
 
@@ -200,7 +200,7 @@ export const authenticateUser = async (context, activate): Promise<boolean> => {
         apiKey = inputApiKey;
     }
 
-	vscode.window.showInformationMessage("Welcome to Djangoly (Beta)! 👋");
+	vscode.window.showInformationMessage(AUTH_MESSAGES.WELCOME_BETA_MESSAGE);
 
     return true;
 };

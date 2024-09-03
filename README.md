@@ -13,6 +13,12 @@ Djangoly is a VS Code extension built for Django developers (surprise, surprise)
 
 >Note: Djangoly requires _Python 3.9_ or higher to function properly. Please ensure your environment meets this requirement before using the extension.
 
+### 🔑 API Key Required
+
+Access to Djangoly currently requires an API key. To obtain an API key and participate in our beta program, you can [signup here](https://forms.gle/gEEZdfhWpQyQh2qVA).
+
+We appreciate your interest in being an early adopter and helping us shape Djangoly. Thank you for your support, and we look forward to having you on board!
+
 ## Features ✨
 
 - **Django-Specific Linting**: Automatically check your Django code against best practices and common pitfalls, including:
@@ -30,11 +36,12 @@ Djangoly is a VS Code extension built for Django developers (surprise, surprise)
 
 ## Quick Start 🏃‍♂️💨
 
-1. **Install the Extension**: [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Alchemized.djangoly)
-2. **Set Up Your Django Project**: If you haven't already, set up a Django project in your workspace.
-3. **Configure Django Settings**: Open the extension settings in VS Code and configure your Django-specific settings.
-4. **Start Coding**: Begin developing your Django project. The extension will automatically start analyzing your code.
-5. **Review Suggestions**: Check the Problems panel in VS Code for Django best practice suggestions and quick fixes.
+1. **Get an API Key**: If you don't already have an API key, you can signup for one via this [form](https://forms.gle/gEEZdfhWpQyQh2qVA).
+2. **Install the Extension**: [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Alchemized.djangoly)
+3. **Set Up Your Django Project**: If you haven't already, set up a Django project in your workspace.
+4. **Configure Django Settings**: Open the extension settings in VS Code and configure your Django-specific settings.
+5. **Start Coding**: Begin developing your Django project. The extension will automatically start analyzing your code.
+6. **Review Suggestions**: Check the Problems panel in VS Code for Django best practice suggestions and quick fixes.
 
 **Note**: To modify the extension rules, access these settings by going to `Preferences → Settings → Extensions → Djangoly`.
 

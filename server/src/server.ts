@@ -1,5 +1,6 @@
 import projectPackageJson from "../../package.json";
 
+import { ResponseError } from 'vscode-languageserver';
 import {
 	createConnection,
 	TextDocuments,
@@ -17,12 +18,17 @@ import {
 	WorkspaceFolder,
 	ShowMessageNotification,
 	MessageType,
+	CompletionItem,
+    CompletionItemKind,
+	CancellationTokenSource
 } from "vscode-languageserver/node";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
 import {
 	LanguageProvider,
 	DjangoProvider,
+	PythonProvider,
+	FunctionDetails,
 } from "./providers";
 import {
 	ExtensionSettings,
@@ -35,16 +41,20 @@ import {
 	updatePythonExecutablePath,
 } from "./settings";
 import { checkForTestFile, debounce } from "./utils";
-import { checkForPythonAndVenv } from './utils/checkForPython';
+import { getPythonExecutableIfSupported } from './utils/checkForPython';
 
 import { DiagnosticQueue } from "./services/diagnostics";
 
-import COMMANDS, { COMMANDS_LIST, DJANGOLY_ID } from "./constants/commands";
+import COMMANDS, { ACCESS_FORBIDDEN_NOTIFICATION_ID, COMMANDS_LIST, DJANGOLY_ID, RATE_LIMIT_NOTIFICATION_ID } from "./constants/commands";
 import LOGGER, { rollbar } from "./common/logs";
 import { SOURCE_NAME } from './constants/diagnostics';
+import { API_SERVER_URL } from './constants/api';
+import { ERROR_CODES } from './constants/errors';
+import { ForbiddenError, RateLimitError } from './llm/helpers';
 
 const connection = createConnection(ProposedFeatures.all);
 const providerCache: Record<string, LanguageProvider> = {};
+const pythonProviderCache: Record<string, PythonProvider> = {};
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 const diagnosticQueue = new DiagnosticQueue();
 
@@ -61,13 +71,19 @@ connection.onInitialize((params: InitializeParams) => {
 	console.log(extensionVersionMessage);
 	console.log(`Running Node.js version: ${process.version}`);
 
-    const pythonEnv = checkForPythonAndVenv();
-    if (!pythonEnv) {
-        const errorMessage = 'Python environment setup failed. Ensure that Python is installed and the virtual environment is bundled correctly.';
-        connection.console.error(errorMessage);
-        throw new Error(errorMessage);
-    } else {
-		updatePythonExecutablePath(pythonEnv.pythonExecutable);
+	const pythonCheckResult = getPythonExecutableIfSupported();
+	if (pythonCheckResult.error) {
+		connection.console.error(pythonCheckResult.error);
+		throw new Error(pythonCheckResult.error);
+	} else if (pythonCheckResult.executable) {
+		console.log(`Using Python executable: ${pythonCheckResult.executable}`);
+		updatePythonExecutablePath(pythonCheckResult.executable);
+	} else {
+		// NOTE: This branch should theoretically never be hit due to the logic, 
+		// but it's good to handle all cases to satisfy TypeScript.
+		const errorMessage = 'Unexpected error: Python executable is null without an error message.';
+		connection.console.error(errorMessage);
+		throw new Error(errorMessage);
 	}
 
 	const capabilities = params.capabilities;
@@ -92,7 +108,7 @@ connection.onInitialize((params: InitializeParams) => {
 				workspaceDiagnostics: false,
 			},
 			codeActionProvider: {
-				codeActionKinds: [CodeActionKind.QuickFix],
+				codeActionKinds: [CodeActionKind.QuickFix, CodeActionKind.RefactorRewrite],
 			},
 			executeCommandProvider: {
 				commands: COMMANDS_LIST,
@@ -209,6 +225,14 @@ function getDocumentSettings(resource: string): Thenable<ExtensionSettings> {
 }
 
 documents.onDidChangeContent((change) => {
+	// Invalidate the cache for this document when its content changes
+	const documentUri = change.document.uri;
+	cache.forEach((_value, key) => {
+		if (key.startsWith(documentUri)) {
+			cache.delete(key);
+		}
+	});
+
 	debouncedValidateTextDocument(change.document);
 });
 
@@ -268,6 +292,18 @@ function getOrCreateProvider(
 	return providerCache[languageId];
 }
 
+function getOrCreatePythonProvider(
+	settings: ExtensionSettings,
+	textDocument: TextDocument,
+): PythonProvider {
+	const pythonId = 'python1';
+
+	if (!pythonProviderCache[pythonId]) {
+		pythonProviderCache[pythonId] = new PythonProvider("python", connection, settings, textDocument);
+	} 
+	return pythonProviderCache[pythonId];
+}
+
 export async function validateTextDocument(textDocument: TextDocument): Promise<Diagnostic[]> {
 	return await diagnosticQueue.queueDiagnosticRequest(textDocument, async (document) => {
 		const languageId = document.languageId;
@@ -312,7 +348,151 @@ connection.onRequest(COMMANDS.CHECK_TESTS_EXISTS, async (relativePath: string) =
 
 connection.onRequest(COMMANDS.UPDATE_CACHED_USER_TOKEN, (token: string) => {
 	updateCachedUserToken(token);
-  });
+});
+
+
+const cache = new Map<string, { functionNode: FunctionDetails, suggestions: string[] }>();
+let lastTokenSource: CancellationTokenSource | undefined;
+
+
+connection.onRequest(COMMANDS.PROVIDE_EXCEPTION_HANDLING, async (params) => {
+    if (!cachedUserToken) {
+        throw new ResponseError(
+			ERROR_CODES.UNAUTHENTICATED,
+			'User is not authenticated. Token not found.',
+			{ code: ERROR_CODES.UNAUTHENTICATED }
+		);
+    }
+
+	LOGGER.info(`User ${cachedUserToken} triggered exception handling feature.`);
+
+    const { functionName, lineNumber, uri } = params;
+    const document = documents.get(uri);
+
+    if (!document) {
+        return [];
+    }
+
+	const cacheKey = `${uri}-${functionName}-${lineNumber}`;
+	const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+        console.log('Using cached data for suggestions');
+        return {
+            completionItems: cachedData.suggestions.map((suggestion: any, index) => {
+                const item = CompletionItem.create(suggestion.title || `Suggestion ${index + 1}`);
+                item.kind = CompletionItemKind.Snippet;
+                item.insertText = suggestion.variation;
+                item.detail = suggestion.title ? `Refactored version: ${suggestion.title}` : `Exception handling suggestion ${index + 1}`;
+                return item;
+            }),
+            functionNode: cachedData.functionNode
+        };
+    }
+	
+    const functionNode = await findFunctionInDocument(document, functionName, lineNumber);
+
+    if (!functionNode) {
+        return [];
+    }
+
+	const payload = {
+        functionCode: functionNode.raw_body,
+        args: functionNode.args,
+        decorators: functionNode.decorators,
+        imports: functionNode.context.imports,
+        callSites: functionNode.context.call_sites,
+        returns: functionNode.returns,
+        apiKey: cachedUserToken,
+    };
+
+	if (lastTokenSource) {
+		console.log('Cancelling previous server request', lastTokenSource.token.isCancellationRequested);
+		lastTokenSource.cancel();
+	}
+
+	lastTokenSource = new CancellationTokenSource();
+    const suggestions = await generateExceptionHandlingSuggestions(payload);
+
+    const completionItems = suggestions.map((suggestion: any, index) => {
+        const item = CompletionItem.create(suggestion.title || `Suggestion ${index + 1}`);
+        item.kind = CompletionItemKind.Snippet;
+        item.insertText = suggestion.variation;
+        item.detail = suggestion.title ? `Refactored version: ${suggestion.title}` : `Exception handling suggestion ${index + 1}`;
+        return item;
+    });
+
+	cache.set(cacheKey, { functionNode, suggestions });
+    return { completionItems, functionNode };
+});
+
+async function findFunctionInDocument(document: TextDocument, functionName: string, lineNumber: number): Promise<FunctionDetails | null> {
+	const settings = await getDocumentSettings(document.uri);
+	const languageId = document.languageId;
+	if (languageId !== 'python') {
+		console.log("File is not a Python document. Skipping function extraction.");
+		return null;
+	}
+	const provider = getOrCreatePythonProvider(settings, document);
+	const functionNode = await provider.findFunctionNode(document, functionName, lineNumber);
+    return functionNode;
+}
+
+async function generateExceptionHandlingSuggestions(payload: any): Promise<string[]> {
+    const url = `${API_SERVER_URL}/chat/refactor/`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            if (response.status === ERROR_CODES.UNAUTHENTICATED) {
+                throw new ForbiddenError('User is not authenticated. Token not found.');
+            } else if (response.status === 429) {
+                throw new RateLimitError('Daily request limit exceeded. Please try again tomorrow.');
+            } else if (response.status === 500) {
+                console.error(`Server Error: Internal server error on ${url}`);
+                return [];
+            } else {
+                console.error(`Error in API call to ${url}: ${response.statusText} (HTTP ${response.status})`);
+                return [];
+            }
+        }
+
+        let responseData: any;
+        try {
+            responseData = await response.json();
+        } catch (jsonError: any) {
+            console.error(`Error parsing JSON response from ${url}: ${jsonError.message}`);
+            return [];
+        }
+
+        if (!responseData || !Array.isArray(responseData.refactoredFunctions)) {
+            console.error(`Error in API call to ${url}: Invalid response data`);
+            return [];
+        }
+
+        return responseData.refactoredFunctions;
+    } catch (error: any) {
+        if (error instanceof RateLimitError) {
+            connection.sendNotification(RATE_LIMIT_NOTIFICATION_ID, {
+                message: error.message,
+            });
+        } else if (error instanceof ForbiddenError) {
+			connection.sendNotification(ACCESS_FORBIDDEN_NOTIFICATION_ID, {
+                message: error.message,
+            });
+		} else {
+			throw error;
+		}
+        return [];
+    }
+}
+  
 
 connection.onCodeAction(async (params) => {
 	const document = documents.get(params.textDocument.uri);

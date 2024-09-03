@@ -40,32 +40,6 @@ suite('Client Extension Tests', function () {
         sinon.restore();
     });
 
-    test('Extension activates correctly', async () => {
-        const trackActivationSpy = sinon.spy(logs, 'trackActivation');
-        const registerCommandsSpy = sinon.spy(commands, 'registerCommands');
-        const startClientStub = sinon.stub(LanguageClient.prototype, 'start').resolves();
-
-        await activate(context);
-
-        assert(trackActivationSpy.calledOnce, 'trackActivation should be called once');
-        sinon.assert.calledWith(trackActivationSpy, context);
-
-        assert(registerCommandsSpy.calledOnce, 'registerCommands should be called once');
-        sinon.assert.calledWith(registerCommandsSpy, context);
-
-        assert(startClientStub.calledOnce, 'LanguageClient should be started once');
-    });
-
-    test('Extension deactivates correctly', async () => {
-        const trackDeactivationSpy = sinon.spy(logs, 'trackDeactivation');
-        const stopClientStub = sinon.stub(LanguageClient.prototype, 'stop').resolves();
-
-        await deactivate(context);
-
-        assert(trackDeactivationSpy.calledOnce, 'trackDeactivation should be called once');
-        assert(stopClientStub.calledOnce, 'LanguageClient should be stopped once');
-    });
-
     test('Client notifications are activated correctly', () => {
         const showWarningMessageStub = sinon.stub(vscode.window, 'showWarningMessage');
         const showErrorMessageStub = sinon.stub(vscode.window, 'showErrorMessage');

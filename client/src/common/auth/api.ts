@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 
 import logger from "../logs";
 import { API_KEY_SIGNUP_URL, API_SERVER_URL, COMMANDS, SESSION_TOKEN_KEY, SESSION_USER } from "../constants";
+import { AUTH_MESSAGES } from '../constants/messages';
 
 import { Credentials } from "./github";
 import { LanguageClient } from 'vscode-languageclient/node';
@@ -15,7 +16,7 @@ export async function signInWithGitHub(
 ) {
 	const action = "Sign in with GitHub";
 	const response = await vscode.window.showInformationMessage(
-		"Sign in to continue using Djangoly. By using this extension you agree to our Terms of Service and Privacy Policy.",
+		AUTH_MESSAGES.GITHUB_SIGN_IN,
 		action,
 		"Cancel"
 	);
@@ -23,7 +24,7 @@ export async function signInWithGitHub(
 		console.log("User cancelled sign in.");
 		deactivate();
 		vscode.window.showInformationMessage(
-			"Djangoly extension has been disabled. Bye! 👋"
+			AUTH_MESSAGES.SIGN_OUT
 		);
 		return;
 	}
@@ -141,11 +142,11 @@ export async function removeApiKey(
             await client.start();
             await client.sendRequest(COMMANDS.UPDATE_CACHED_USER_TOKEN, null);
         } catch (error) {
-            vscode.window.showWarningMessage("Client is not running and could not be started. Please try reloading your developer window and try again.");
+            vscode.window.showWarningMessage("Client is not running and could not be started. Please try reloadingthe IDE and try again.");
         }
     }
 
-    vscode.window.showInformationMessage("You have deactivated Djangoly. See ya! 👋");
+    vscode.window.showInformationMessage(AUTH_MESSAGES.SIGN_OUT);
     deactivate();
 }
 
@@ -164,7 +165,7 @@ export const authenticateUser = async (context, activate): Promise<boolean> => {
 
         if (!inputApiKey) {
             const action = await vscode.window.showErrorMessage(
-                "A valid API key is required to use Djangoly. If you don't have an API key, you can request one by completing the form.",
+                AUTH_MESSAGES.FREE_API_KEY_PROMPT,
                 retryAction,
                 REQUEST_KEY
             );
@@ -173,8 +174,7 @@ export const authenticateUser = async (context, activate): Promise<boolean> => {
                 continue;
             } else if (action === REQUEST_KEY) {
                 vscode.env.openExternal(vscode.Uri.parse(API_KEY_SIGNUP_URL));
-                // Re-activate the extension and register commands
-                await activate(context);
+                await activate(context); // Re-activate the extension and register commands
             }
             return false;
         }
@@ -182,7 +182,7 @@ export const authenticateUser = async (context, activate): Promise<boolean> => {
         const isValidApiKey = await validateApiKey(inputApiKey);
         if (!isValidApiKey) {
             const action = await vscode.window.showErrorMessage(
-                "Invalid API key. Please try again or request a new API key using the form.",
+                AUTH_MESSAGES.INVALID_API_KEY,
                 retryAction,
                 REQUEST_KEY
             );
@@ -191,16 +191,21 @@ export const authenticateUser = async (context, activate): Promise<boolean> => {
                 continue;
             } else if (action === REQUEST_KEY) {
                 vscode.env.openExternal(vscode.Uri.parse(API_KEY_SIGNUP_URL));
-                // Re-activate the extension and register commands
-                await activate(context);
+                await activate(context);  // Re-activate the extension and register commands
             }
             return false;
         }
 
         await context.globalState.update(COMMANDS.USER_API_KEY, inputApiKey);
-        vscode.window.showInformationMessage("Welcome to Djangoly (Beta)! 👋");
         apiKey = inputApiKey;
     }
+
+	const termsAction = "Accept & Continue";
+	const termsResult = await vscode.window.showInformationMessage(AUTH_MESSAGES.WELCOME_BETA_MESSAGE, termsAction);
+	if (termsResult !== termsAction) {
+		vscode.window.showErrorMessage(AUTH_MESSAGES.MUST_AGREE_TO_TERMS);
+		return false;
+	}
 
     return true;
 };

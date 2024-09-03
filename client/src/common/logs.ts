@@ -52,4 +52,14 @@ export function trackDeactivation(context: vscode.ExtensionContext) {
 	}
 }
 
+export function trackFeatureUsage(userId: string, featureName: string) {
+	const message = `User ${userId} used feature ${featureName}`;
+	logger.info(message);
+}
+
+export function trackExceptionHandlingResultFeedback(userId: string, feedback: string) {
+	const message = `User ${userId} provided feedback for exception handling suggestion: ${feedback}`;
+	logger.info(message);
+}
+
 export default logger;

@@ -34,8 +34,7 @@ class ViewComplexityAnalyzer:
 
             _, _, issue = self.complexity_scorer.interpret_score(score, node, metrics)
             return issue
-        except SyntaxError as e:
-            LOGGER.error(f'Error parsing view {node.name}: {e}')
+        except SyntaxError:
             return None
         except Exception as e:
             LOGGER.error(f'Error analyzing view {node.name}: {e}')

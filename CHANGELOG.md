@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Version 0.1.14] - 2024-09-02
+
+### Added
+
+- [Feature] Add command that allows users to add exception handling to a selected function. The goal is to improve code quality by making the function more robust.
+- [Feature] Enable API key access to track users and block API from abuse.
+
+### Changed
+
+- [Enhancement] Refine python check. It now determines the current python version and whether python exists. Python versions +3.9 are supported.
+
+
 ## [Version 0.1.13] - 2024-08-27
 
 ### Removed
@@ -12,6 +24,7 @@ All notable changes to this project will be documented in this file.
 ## [Version 0.1.12] - 2024-08-27
 
 ### Added
+
 - [Feature] Rule: flag complex views and recommend refactoring them based on service or fat model design patterns.
 - [Feature] Check whether python exists on host machine before starting extension.
 

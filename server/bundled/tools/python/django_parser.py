@@ -218,7 +218,6 @@ class DjangoAnalyzer(Analyzer):
                 "security_issues": self.security_issues,
             }
         except SyntaxError as e:
-            LOGGER.warning(f'Syntax error in Django code: {e}. Continuing with partial analysis.')
             return {
                 "symbols": self.symbols,
                 "security_issues": self.security_issues,

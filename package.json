@@ -47,10 +47,31 @@
 		],
 		"commands": [
 			{
+				"command": "djangoly.signIn",
+				"title": "Djangoly: Sign In"
+			},
+			{
+				"command": "djangoly.signOut",
+				"title": "Djangoly: Sign Out"
+			},
+			{
 				"command": "djangoly.openSettings",
 				"title": "Djangoly: Open Settings"
+			},
+			{
+				"command": "djangoly.analyzeExceptionHandling",
+				"title": "Djangoly: Analyze Exception Handling"
 			}
 		],
+		"menus": {
+			"editor/context": [
+			  {
+				"command": "djangoly.analyzeExceptionHandling",
+				"when": "editorLangId == python",
+				"group": "1_modification"
+			  }
+			]
+		},
 		"walkthroughs": [
 			{
 				"id": "djangoly.gettingStarted",

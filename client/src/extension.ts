@@ -8,23 +8,57 @@ import {
 	TransportKind,
 } from "vscode-languageclient/node";
 
-import { EXTENSION_ID, EXTENSION_DISPLAY_NAME, COMMANDS, RATE_LIMIT_NOTIFICATION_ID, ACCESS_FORBIDDEN_NOTIFICATION_ID } from "./common/constants";
+import { EXTENSION_ID, EXTENSION_DISPLAY_NAME, COMMANDS, RATE_LIMIT_NOTIFICATION_ID, ACCESS_FORBIDDEN_NOTIFICATION_ID, API_KEY_SIGNUP_URL } from "./common/constants";
+import { AUTH_MESSAGES } from './common/constants/messages';
 
 import {
 	getChangedLines,
 } from "./common/utils/git";
 import { registerCommands } from './common/commands';
+import { registerActions } from './common/actions';
 import { setupFileWatchers } from './common/utils/fileWatchers';
 import { trackActivation, trackDeactivation } from './common/logs';
+import { authenticateUser, validateApiKey } from './common/auth/api';
 
 
 let client: LanguageClient;
 
 export async function activate(context: vscode.ExtensionContext) {
-	if (context.globalState.get(COMMANDS.USER_API_KEY)){
-		await context.globalState.update(COMMANDS.USER_API_KEY, undefined);
-		console.log("Cleared cached key", context.globalState.get(COMMANDS.USER_API_KEY));
-	}
+    const signIn = "Sign In";
+    const requestAPIKey = "Request API Key";
+    let apiKey: string | undefined = context.globalState.get(COMMANDS.USER_API_KEY);
+
+    if (apiKey) {
+        const isValidApiKey = await validateApiKey(apiKey);
+        if (!isValidApiKey) {
+            vscode.window.showWarningMessage(AUTH_MESSAGES.INVALID_API_KEY);
+            apiKey = undefined;
+        }
+    }
+
+    let isAuthenticated: boolean = !!apiKey;
+    while (!isAuthenticated) {
+        const action = await vscode.window.showInformationMessage(
+            AUTH_MESSAGES.FREE_API_KEY_PROMPT,
+            signIn,
+            requestAPIKey
+        );
+
+        if (action === requestAPIKey) {
+            vscode.env.openExternal(vscode.Uri.parse(API_KEY_SIGNUP_URL));
+            await activate(context);
+            return;
+        } else if (action === signIn) {
+            isAuthenticated = await authenticateUser(context, activate);
+            if (!isAuthenticated) {
+                vscode.window.showWarningMessage(AUTH_MESSAGES.AUTHENTICATION_REQUIRED);
+            }
+        } else {
+            vscode.window.showInformationMessage(AUTH_MESSAGES.SIGN_OUT);
+            deactivate(context);
+            return;
+        }
+    }
 
 	const serverModule = context.asAbsolutePath(
 		path.join("server", "out", "server.js")
@@ -57,11 +91,14 @@ export async function activate(context: vscode.ExtensionContext) {
 		clientOptions
 	);
 
-	registerCommands(context);
-
 	await client.start();
+	
 	activateClientNotifications(client);
 	trackActivation(context);
+
+	
+	registerCommands(context, client, activate, deactivate);
+	registerActions(context, client);
 
 	client.onRequest(COMMANDS.GET_GIT_DIFF, getChangedLines);
 
@@ -75,11 +112,6 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate(context: vscode.ExtensionContext): Thenable<void> | undefined {
-	vscode.window.showInformationMessage(
-		"Thank you for using Djangoly! If you have any feedback or suggestions, please let us know. See you later! 👋",
-		"Bye"
-	);
-
 	if (!client) {
 		return undefined;
 	}

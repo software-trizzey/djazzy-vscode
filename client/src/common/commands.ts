@@ -1,16 +1,35 @@
 import * as vscode from "vscode";
+import { LanguageClient } from "vscode-languageclient/node";
+
 import { UserSession } from "./auth/github";
 import { COMMANDS, EXTENSION_ID, EXTENSION_NAME, PUBLISHER, SESSION_USER } from "./constants";
-import { trackUserInterestInCustomRules } from "./logs";
+
+import { ExceptionHandlingCommandProvider } from './providers/exceptionProvider';
+import { trackFeatureUsage, trackUserInterestInCustomRules } from "./logs";
+import { authenticateUser, removeApiKey } from './auth/api';
 
 const WORKBENCH_ACTIONS = {
 	OPEN_WALKTHROUGH: 'workbench.action.openWalkthrough',
 	OPEN_SETTINGS: 'workbench.action.openSettings'
 };
 
-export function registerCommands(
+export async function registerCommands(
     context: vscode.ExtensionContext,
-): void {
+    client: LanguageClient,
+    activate: (context: vscode.ExtensionContext) => Promise<void>,
+    deactivate: (context: vscode.ExtensionContext) => Thenable<void> | undefined
+): Promise<void> {
+
+    context.subscriptions.push(vscode.commands.registerCommand(
+        COMMANDS.SIGN_IN,
+        () => authenticateUser(context, activate)
+    ));
+
+    context.subscriptions.push(vscode.commands.registerCommand(
+        COMMANDS.SIGN_OUT,
+        () => removeApiKey(context, client, () => deactivate(context))
+    ));
+
     const addCustomRuleCommand = vscode.commands.registerCommand(
         COMMANDS.ADD_CUSTOM_RULE,
         () => {
@@ -37,4 +56,42 @@ export function registerCommands(
         () => vscode.commands.executeCommand(WORKBENCH_ACTIONS.OPEN_SETTINGS, `@ext:${PUBLISHER}.${EXTENSION_NAME}`)
     );
     context.subscriptions.push(openSettingsCommand);
+
+    
+    context.subscriptions.push(vscode.commands.registerCommand(
+        COMMANDS.ANALYZE_EXCEPTION_HANDLING, async (uri: vscode.Uri, range: vscode.Range | undefined) => {
+            const token = context.globalState.get(COMMANDS.USER_API_KEY);
+            if (!token) {
+                vscode.window.showErrorMessage('Please sign in to use this feature.');
+                return;
+            }
+
+            trackFeatureUsage(token as string, 'analyzeExceptionHandling');
+
+            const editor = vscode.window.activeTextEditor;
+
+            if (!editor || editor.document.uri.toString() !== uri.toString()) {
+                vscode.window.showErrorMessage('Could not find the active editor for the selected file.');
+                return;
+            }
+    
+            if (!range) {
+                range = editor.selection;
+            }
+
+            const commandProvider = new ExceptionHandlingCommandProvider(client, context);
+            const document = await vscode.workspace.openTextDocument(uri);
+            const lineText = document.lineAt(range.start.line).text;
+            const functionNameMatch = lineText.match(/def\s+(\w+)\s*\(/);
+
+            if (!functionNameMatch) {
+                vscode.window.showErrorMessage('No function detected at the selected line.', 'Got it');
+                return;
+            }
+
+            const functionName = functionNameMatch[1];
+            const lineNumber = range.start.line;
+            await commandProvider.provideExceptionHandling(document, functionName, lineNumber);
+        })
+    );
 }

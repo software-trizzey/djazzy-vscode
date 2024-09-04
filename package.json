@@ -32,6 +32,7 @@
 	"server": "./server/out/server",
 	"contributes": {
 		"activationEvents": [
+			"onLanguage:python",
 			"onCommand:djangoly.addCustomRule",
 			"onCommand:djangoly.openWalkthrough"
 		],

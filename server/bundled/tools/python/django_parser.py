@@ -68,7 +68,7 @@ class DjangoAnalyzer(Analyzer):
         """Check for complexity and exception handling issues."""
         message, severity, issue_code = None, None, None
 
-        if symbol_type == DjangoViewType.FUNCTIONAL_VIEW:
+        if symbol_type == DjangoViewType.FUNCTIONAL_VIEW or symbol_type == f'{DjangoViewType.CLASS_VIEW}_method':
             try:
                 complexity_issue = self.complexity_analyzer.run_complexity_analysis(node)
                 if complexity_issue:
@@ -84,14 +84,15 @@ class DjangoAnalyzer(Analyzer):
             if exception_handling_issue:
                 # We're intentionally creating a separate issue for exception handling
                 self.symbols.append(self._create_symbol_dict(
-                    type=DjangoViewType.FUNCTIONAL_VIEW,
+                    type=symbol_type,
                     name=node.name,
+                    issue_code=exception_handling_issue.code,
                     message=exception_handling_issue.message,
                     severity=exception_handling_issue.severity,
                     line=node.lineno,
                     col_offset=node.col_offset,
                     end_col_offset=node.col_offset + len(node.name),
-                    is_reserved=is_reserved,
+                    is_reserved=False,
                     body=body,
                     body_with_lines=body_with_lines,
                     function_start_line=function_start_line,
@@ -242,6 +243,7 @@ class DjangoAnalyzer(Analyzer):
                 "security_issues": self.security_issues,
             }
         except SyntaxError as e:
+            LOGGER.warning(f"Syntax error detected while parsing Django code: {e}")
             return {
                 "symbols": self.symbols,
                 "security_issues": self.security_issues,

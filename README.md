@@ -23,9 +23,15 @@ We appreciate your interest in being an early adopter and helping us shape Djang
 
 - **Django-Specific Linting**: Automatically check your Django code against best practices and common pitfalls, including:
   - **Complex View Detection**: Flags Django views with high complexity and suggests that they be refactored to follow the **Fat Model, Thin View** or **Services** design patterns. This rule reduces view complexity and promotes maintainability and scalability.
+
   - **ForeignKey Validation**: Ensures all `ForeignKey` fields have a `related_name` and `on_delete` argument specified to avoid common pitfalls in query relationships and data management.
+
   - **Raw SQL Query Detection**: Flags direct usage of raw SQL queries, including `raw()` and `connection.cursor()`. These can bypass Django ORM protections and introduce security vulnerabilities. Djangoly suggests safer alternatives using Django's ORM.
+
   - **CharField and TextField Nullability**: Ensures `CharField` and `TextField` fields are not incorrectly marked as `null=True`, which can lead to inconsistencies in data integrity.
+
+  - **Missing Exception Handling Detection**: Flags Django functional views and methods in class-based views that lack exception handling. This feature helps you ensure that error handling is properly implemented, improving the robustness and stability of your Django application.
+
 - **Security Checks**: Includes several security checks to help ensure your Django project follows best practices for security:
   - **DEBUG Setting:** Checks if `DEBUG` is set to `True`. This setting should be `False` in production environments.
   - **SECRET_KEY Protection:** Verifies that the `SECRET_KEY` is not hardcoded in your settings file.
@@ -47,7 +53,15 @@ We appreciate your interest in being an early adopter and helping us shape Djang
 
 ## How Djangoly Improves Your Code 🧑‍🏫
 
-### 1. Security Settings Check
+### 1. Missing Exception Handling Detection
+
+![Djangoly exception handler demo](https://raw.githubusercontent.com/software-trizzey/images/main/assets/images/djangoly-exception-handler-demo.gif)
+
+Djangoly ensures that your Django views and methods have proper error handling. It flags functions that lack try-except blocks, helping you avoid unhandled exceptions that can lead to application crashes or poor user experience.
+
+
+
+### 2. Security Settings Check
 
 Before (in settings.py):
 

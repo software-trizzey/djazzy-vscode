@@ -1,11 +1,15 @@
 {
 	"name": "djangoly",
 	"displayName": "Djangoly",
-	"description": "Streamline your development with automated best practice checks. Improve code quality and performance with intelligent, Django-specific insights",
+	"description": "Write Cleaner, Faster, Scalable Django Code",
 	"author": "Tristan Deane",
 	"version": "0.1.14",
 	"publisher": "alchemized",
 	"preview": true,
+	"bugs": {
+		"email": "support@djangoly.com"
+	},
+	"license": "Proprietary",
 	"icon": "assets/images/logo-v2.png",
 	"galleryBanner": {
 		"color": "#20232D",

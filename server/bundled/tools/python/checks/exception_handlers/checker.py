@@ -1,7 +1,6 @@
 import ast
 
 from log import LOGGER
-from issue import IssueSeverity
 from checks.exception_handlers.constants import ExceptionHandlingIssue
 
 

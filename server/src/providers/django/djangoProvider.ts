@@ -25,7 +25,7 @@ import LOGGER from '../../common/logs';
 import { ACCESS_FORBIDDEN_NOTIFICATION_ID, FIX_NAME, RATE_LIMIT_NOTIFICATION_ID } from '../../constants/commands';
 import { Models, Severity, SymbolFunctionTypes } from '../../llm/types';
 
-import { RULE_MESSAGES } from '../../constants/rules';
+import { RULE_MESSAGES, RuleCodes } from '../../constants/rules';
 import { LanguageConventions, CeleryTaskDecoratorSettings } from '../../languageConventions';
 import { debounce, getChangedLinesFromClient, validatePythonFunctionName } from '../../utils';
 import { LanguageProvider } from '../languageProvider';
@@ -404,7 +404,13 @@ export class DjangoProvider extends LanguageProvider {
                 break;
             case "django_class_view":
             case "django_func_view":
-                if (symbol.message && symbol.issue_code === "CMPX01") {
+            case "django_class_view_method":
+                if (
+                    symbol.message && 
+                    ( symbol.issue_code === RuleCodes.COMPLEX_VIEW ||
+                        symbol.issue_code === RuleCodes.NO_EXCEPTION_HANDLER
+                    )
+                ) {
                     const mappedSeverity = this.mapSeverity(symbol.severity);
                     this.addDiagnostic(
                         diagnostics,

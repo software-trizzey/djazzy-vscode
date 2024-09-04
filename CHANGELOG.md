@@ -2,12 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Version 0.1.14] - 2024-09-02
+## [Version 0.1.14] - 2024-09-03
 
 ### Added
 
 - [Feature] Add command that allows users to add exception handling to a selected function. The goal is to improve code quality by making the function more robust.
 - [Feature] Enable API key access to track users and block API from abuse.
+- [Feature] Create rule that flags Django functional/class-based views without exception handling.
 
 ### Changed
 

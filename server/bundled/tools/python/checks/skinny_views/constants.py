@@ -16,7 +16,7 @@ class ScoreWeightEnum:
     
 
 class ComplexityIssue(Issue):
-    code = 'CMPX01' #TODO: align this to Djangoly code rule structure
+    code = 'CMP01' #TODO: align this to Djangoly code rule structure
     description = (
         '"{name}" seems overly complex with {line_count} lines and {operation_count} operations.\n\n'
         'Consider breaking it up and refactoring the business logic using one of the following approaches:\n\n'

@@ -12,9 +12,11 @@ from checks.security import SecurityCheckService
 from checks.model_fields import ModelFieldCheckService
 from checks.skinny_views.checker import ViewComplexityAnalyzer
 from checks.skinny_views.scorer import ViewComplexityScorer, ScoreThresholds
+from checks.exception_handlers.checker import ExceptionHandlingCheckService
 
 from issue import IssueSeverity
 from services.view_detector import DjangoViewDetectionService, DjangoViewType
+from services.function_node import FunctionNodeService
 
 from util import serialize_file_data
 
@@ -33,6 +35,8 @@ class DjangoAnalyzer(Analyzer):
         # TODO: make configurable based on user settings
         self.complexity_scorer = ViewComplexityScorer(ScoreThresholds(line_threshold=100, operation_threshold=25))
         self.complexity_analyzer = ViewComplexityAnalyzer(source_code, self.complexity_scorer)
+        self.exception_handler_service = ExceptionHandlingCheckService(source_code)
+        self.function_node_service = FunctionNodeService()
 
     def parse_model_cache(self, model_cache_json):
         try:
@@ -50,7 +54,7 @@ class DjangoAnalyzer(Analyzer):
             LOGGER.debug(f"Model info for {model_name} not found in cache")
             return None
         
-    def collect_class_definitions(self):
+    def get_class_definitions(self):
         """
         Collect class definitions in the AST.
         """
@@ -59,6 +63,48 @@ class DjangoAnalyzer(Analyzer):
             if isinstance(node, ast.ClassDef):
                 self.class_definitions[node.name] = node
         LOGGER.debug(f"Collected {len(self.class_definitions)} class definitions.")
+
+    def check_function_node_for_issues(self, node, symbol_type, body, body_with_lines, function_start_line, function_end_line, function_start_col, function_end_col, decorators, calls, arguments, is_reserved):
+        """Check for complexity and exception handling issues."""
+        message, severity, issue_code = None, None, None
+
+        if symbol_type == DjangoViewType.FUNCTIONAL_VIEW or symbol_type == f'{DjangoViewType.CLASS_VIEW}_method':
+            try:
+                complexity_issue = self.complexity_analyzer.run_complexity_analysis(node)
+                if complexity_issue:
+                    issue_code = complexity_issue.code
+                    message = complexity_issue.message
+                    severity = complexity_issue.severity
+            except RecursionError:
+                LOGGER.error(f"Caught Recursion error while running complexity analysis on {node.name}")
+                message = "Encountered error occurred during complexity analysis"
+                severity = IssueSeverity.INFORMATION
+
+            exception_handling_issue = self.exception_handler_service.run_check(node)
+            if exception_handling_issue:
+                # We're intentionally creating a separate issue for exception handling
+                self.symbols.append(self._create_symbol_dict(
+                    type=symbol_type,
+                    name=node.name,
+                    issue_code=exception_handling_issue.code,
+                    message=exception_handling_issue.message,
+                    severity=exception_handling_issue.severity,
+                    line=node.lineno,
+                    col_offset=node.col_offset,
+                    end_col_offset=node.col_offset + len(node.name),
+                    is_reserved=False,
+                    body=body,
+                    body_with_lines=body_with_lines,
+                    function_start_line=function_start_line,
+                    function_end_line=function_end_line,
+                    function_start_col=function_start_col,
+                    function_end_col=function_end_col,
+                    decorators=decorators,
+                    calls=calls,
+                    arguments=arguments,
+                ))
+
+        return message, severity, issue_code
 
     def visit_ClassDef(self, node):
         self.in_class = True
@@ -106,42 +152,21 @@ class DjangoAnalyzer(Analyzer):
     def visit_FunctionDef(self, node):
         comments = self.get_related_comments(node)
         is_reserved = DJANGO_IGNORE_FUNCTIONS.get(node.name, False) or self.is_python_reserved(node.name)
-        function_start_line = node.lineno
-        function_start_col = node.col_offset
-        
-        function_end_line = node.body[-1].end_lineno if hasattr(node.body[-1], 'end_lineno') else node.body[-1].lineno
-        function_end_col = node.body[-1].end_col_offset if hasattr(node.body[-1], 'end_col_offset') else len(self.source_code.splitlines()[function_end_line - 1])
-        
+        function_start_line, function_start_col = node.lineno, node.col_offset
+
+        function_end_line, function_end_col = self.function_node_service.get_function_end_position(node, self.source_code)
         if not node.body:
-            function_end_line = function_start_line
-            function_end_col = function_start_col + len('def ' + node.name + '():')
+            function_end_line, function_end_col = self.function_node_service.get_empty_function_position(function_start_line, function_start_col, node.name)
+
         body_with_lines, body = self.get_function_body(node)
         decorators = [ast.get_source_segment(self.source_code, decorator) for decorator in node.decorator_list]
         calls = []
         arguments = self.extract_arguments(node.args)
-        
+
         self.visit_FunctionBody(node.body, calls)
 
-        message = None
-        severity = None
-        issue_code = None
-        if self.in_class and self.current_django_class_type:
-            symbol_type = f'{self.current_django_class_type}_method'
-        elif self.view_detection_service.is_django_view_function(node):
-            try:
-                symbol_type = DjangoViewType.FUNCTIONAL_VIEW
-                issue = self.complexity_analyzer.run_complexity_analysis(node)
-                if issue:
-                    issue_code = issue.code
-                    message = issue.message
-                    severity = issue.severity
-            except RecursionError:
-                LOGGER.error(f"Caught Recursion error while running complexity analysis on {node.name}")
-                symbol_type = DjangoViewType.FUNCTIONAL_VIEW
-                message = "Encountered error occurred during complexity analysis"
-                severity = IssueSeverity.INFORMATION
-        else:
-            symbol_type = 'function'
+        symbol_type = self.function_node_service.get_symbol_type(node, self.in_class, self.current_django_class_type, self.view_detection_service)
+        message, severity, issue_code = self.check_function_node_for_issues(node, symbol_type, body, body_with_lines, function_start_line, function_end_line, function_start_col, function_end_col, decorators, calls, arguments, is_reserved)
 
         self.symbols.append(self._create_symbol_dict(
             type=symbol_type,
@@ -205,7 +230,7 @@ class DjangoAnalyzer(Analyzer):
             LOGGER.info("Parsing Django code")
             self.get_comments()
             self.tree = ast.parse(self.source_code)
-            self.collect_class_definitions()
+            self.get_class_definitions()
 
             super().visit(self.tree)
             self.view_detection_service.initialize(self.tree)
@@ -218,6 +243,7 @@ class DjangoAnalyzer(Analyzer):
                 "security_issues": self.security_issues,
             }
         except SyntaxError as e:
+            LOGGER.warning(f"Syntax error detected while parsing Django code: {e}")
             return {
                 "symbols": self.symbols,
                 "security_issues": self.security_issues,

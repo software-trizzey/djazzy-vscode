@@ -25,7 +25,7 @@ import LOGGER from '../../common/logs';
 import { ACCESS_FORBIDDEN_NOTIFICATION_ID, FIX_NAME, RATE_LIMIT_NOTIFICATION_ID } from '../../constants/commands';
 import { Models, Severity, SymbolFunctionTypes } from '../../llm/types';
 
-import { RULE_MESSAGES } from '../../constants/rules';
+import { RULE_MESSAGES, RuleCodes } from '../../constants/rules';
 import { LanguageConventions, CeleryTaskDecoratorSettings } from '../../languageConventions';
 import { debounce, getChangedLinesFromClient, validatePythonFunctionName } from '../../utils';
 import { LanguageProvider } from '../languageProvider';
@@ -404,14 +404,21 @@ export class DjangoProvider extends LanguageProvider {
                 break;
             case "django_class_view":
             case "django_func_view":
-                if (symbol.message && symbol.issue_code === "CMPX01") {
+            case "django_class_view_method":
+                if (
+                    symbol.message && 
+                    (
+                        symbol.issue_code === RuleCodes.COMPLEX_VIEW ||
+                        symbol.issue_code === RuleCodes.NO_EXCEPTION_HANDLER
+                    )
+                ) {
                     const mappedSeverity = this.mapSeverity(symbol.severity);
                     this.addDiagnostic(
                         diagnostics,
                         symbol,
                         symbol.message,
                         mappedSeverity,
-                        DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE
+                        symbol.issue_code
                     );
                 }
                 break;
@@ -646,7 +653,16 @@ export class DjangoProvider extends LanguageProvider {
 			end = start + symbol.name.length;
 		} else if (/(ForeignKey|TextField|CharField)/.test(symbol.value) && symbol?.full_line_length) {
             end = symbol.full_line_length;
-        }  
+        }
+
+        if (
+            symbol.issue_code === RuleCodes.NO_EXCEPTION_HANDLER && (
+                symbol.type === "django_func_view" || symbol.type === "django_class_view_method"
+            )
+         ) {
+            start = symbol.col_offset;
+            end = symbol.function_end_line;
+        }
 	
 		start = Math.max(0, start);
 		end = Math.max(start, end);

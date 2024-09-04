@@ -20,3 +20,10 @@ export const RULE_MESSAGES = {
     URL_PATTERN_MISSING_VIEW: "Ensure view is provided for URL pattern",
     URL_PATTERN_MISSING_ROUTE: "URL pattern is missing a route",
 };
+
+
+// TODO: this is currently incomplete but will begin adding more rules here
+export enum RuleCodes {
+    COMPLEX_VIEW = "CMP01",
+    NO_EXCEPTION_HANDLER = "CDQ01",
+}

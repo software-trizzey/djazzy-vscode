@@ -407,7 +407,8 @@ export class DjangoProvider extends LanguageProvider {
             case "django_class_view_method":
                 if (
                     symbol.message && 
-                    ( symbol.issue_code === RuleCodes.COMPLEX_VIEW ||
+                    (
+                        symbol.issue_code === RuleCodes.COMPLEX_VIEW ||
                         symbol.issue_code === RuleCodes.NO_EXCEPTION_HANDLER
                     )
                 ) {
@@ -417,7 +418,7 @@ export class DjangoProvider extends LanguageProvider {
                         symbol,
                         symbol.message,
                         mappedSeverity,
-                        DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE
+                        symbol.issue_code
                     );
                 }
                 break;
@@ -652,7 +653,16 @@ export class DjangoProvider extends LanguageProvider {
 			end = start + symbol.name.length;
 		} else if (/(ForeignKey|TextField|CharField)/.test(symbol.value) && symbol?.full_line_length) {
             end = symbol.full_line_length;
-        }  
+        }
+
+        if (
+            symbol.issue_code === RuleCodes.NO_EXCEPTION_HANDLER && (
+                symbol.type === "django_func_view" || symbol.type === "django_class_view_method"
+            )
+         ) {
+            start = symbol.col_offset;
+            end = symbol.function_end_line;
+        }
 	
 		start = Math.max(0, start);
 		end = Math.max(start, end);

@@ -54,7 +54,7 @@ class DjangoAnalyzer(Analyzer):
             LOGGER.debug(f"Model info for {model_name} not found in cache")
             return None
         
-    def collect_class_definitions(self):
+    def get_class_definitions(self):
         """
         Collect class definitions in the AST.
         """
@@ -229,7 +229,7 @@ class DjangoAnalyzer(Analyzer):
             LOGGER.info("Parsing Django code")
             self.get_comments()
             self.tree = ast.parse(self.source_code)
-            self.collect_class_definitions()
+            self.get_class_definitions()
 
             super().visit(self.tree)
             self.view_detection_service.initialize(self.tree)

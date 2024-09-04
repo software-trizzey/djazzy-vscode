@@ -1,4 +1,4 @@
-from services.view_detector import DjangoViewType
+from services.view_detector import DjangoViewDetectionService, DjangoViewType
 
 class FunctionNodeService:
     @staticmethod
@@ -16,7 +16,7 @@ class FunctionNodeService:
         return end_line, end_col
 
     @staticmethod
-    def get_symbol_type(node, in_class, current_django_class_type, view_detection_service):
+    def get_symbol_type(node, in_class, current_django_class_type, view_detection_service: DjangoViewDetectionService):
         """Determine the symbol type based on the context."""
         if in_class and current_django_class_type:
             return f'{current_django_class_type}_method'

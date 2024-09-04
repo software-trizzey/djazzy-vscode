@@ -82,6 +82,8 @@ class DjangoAnalyzer(Analyzer):
 
             exception_handling_issue = self.exception_handler_service.run_check(node)
             if exception_handling_issue:
+                full_line_text = self.source_code.splitlines()[node.lineno - 1]
+                full_line_length = len(full_line_text)
                 # We're intentionally creating a separate issue for exception handling
                 self.symbols.append(self._create_symbol_dict(
                     type=symbol_type,
@@ -102,6 +104,7 @@ class DjangoAnalyzer(Analyzer):
                     decorators=decorators,
                     calls=calls,
                     arguments=arguments,
+                    full_line_length=full_line_length
                 ))
 
         return message, severity, issue_code

@@ -660,8 +660,8 @@ export class DjangoProvider extends LanguageProvider {
                 symbol.type === "django_func_view" || symbol.type === "django_class_view_method"
             )
          ) {
-            start = symbol.col_offset;
-            end = symbol.function_end_line;
+            start = symbol.col_offset;  
+            end = symbol.full_line_length || (start + symbol.name.length);
         }
 	
 		start = Math.max(0, start);

@@ -16,7 +16,7 @@ from checks.exception_handlers.checker import ExceptionHandlingCheckService
 
 from issue import IssueSeverity
 from services.view_detector import DjangoViewDetectionService, DjangoViewType
-from server.bundled.tools.python.services.function_node import FunctionNodeService
+from services.function_node import FunctionNodeService
 
 from util import serialize_file_data
 

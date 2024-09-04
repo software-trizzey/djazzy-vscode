@@ -1,3 +1,5 @@
+
+from log import LOGGER
 from services.view_detector import DjangoViewDetectionService, DjangoViewType
 
 class FunctionNodeService:
@@ -18,9 +20,11 @@ class FunctionNodeService:
     @staticmethod
     def get_symbol_type(node, in_class, current_django_class_type, view_detection_service: DjangoViewDetectionService):
         """Determine the symbol type based on the context."""
-        if in_class and current_django_class_type:
-            return f'{current_django_class_type}_method'
+        if in_class and current_django_class_type == DjangoViewType.CLASS_VIE:
+            LOGGER.debug(f"{node.name} is a Django class view method")
+            return f'{DjangoViewType.CLASS_VIEW}_method'
         elif view_detection_service.is_django_view_function(node):
+            LOGGER.debug(f"{node.name} is a Django view function")
             return DjangoViewType.FUNCTIONAL_VIEW
         else:
             return 'function'

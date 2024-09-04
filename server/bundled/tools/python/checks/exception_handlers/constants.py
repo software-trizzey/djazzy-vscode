@@ -6,11 +6,10 @@ class ExceptionHandlingIssue(Issue):
     description = (
         '"{name}" does not contain any exception handling.\n\n'
         'Consider adding try-except blocks to handle potential errors and improve the robustness of your code.\n\n'
-        'To quickly address this issue, right-click the function name and select "{command_title}" from the context menu:\n'
-        'Command: {command}'
+        '👋 Djangoly can handle this for you!\n\nRight-click the function name and select: "{command_title}"\n'
     )
 
-    def __init__(self, view_name, lineno, col, severity=IssueSeverity.WARNING):
+    def __init__(self, view_name, lineno, col, severity=IssueSeverity.INFORMATION):
         parameters = {
             'name': view_name,
             'severity': severity,

@@ -41,7 +41,6 @@ class ExceptionHandlingCheckService:
                         view_name=node.name,
                         lineno=node.lineno,
                         col=node.col_offset,
-                        severity=IssueSeverity.WARNING
                     )
                     return issue
             return None

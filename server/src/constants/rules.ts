@@ -26,4 +26,5 @@ export const RULE_MESSAGES = {
 export enum RuleCodes {
     COMPLEX_VIEW = "CMP01",
     NO_EXCEPTION_HANDLER = "CDQ01",
+    NPLUSONE = "PER01",
 }

@@ -20,7 +20,7 @@ import {
 	REDUNDANT_COMMENT_VIOLATION_SOURCE_TYPE,
     DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE
 } from "../../constants/diagnostics";
-import { ExtensionSettings, defaultConventions, pythonExecutable } from "../../settings";
+import { ExtensionSettings, cachedUserToken, defaultConventions, pythonExecutable } from "../../settings";
 import LOGGER from '../../common/logs';
 import { ACCESS_FORBIDDEN_NOTIFICATION_ID, FIX_NAME, RATE_LIMIT_NOTIFICATION_ID } from '../../constants/commands';
 import { Models, Severity, SymbolFunctionTypes } from '../../llm/types';
@@ -30,6 +30,7 @@ import { LanguageConventions, CeleryTaskDecoratorSettings } from '../../language
 import { debounce, getChangedLinesFromClient, validatePythonFunctionName } from '../../utils';
 import { LanguageProvider } from '../languageProvider';
 import { DjangoProjectDetector, ModelCache } from './djangoProjectDetector';
+import { API_SERVER_URL } from '../../constants/api';
 
 
 const symbolFunctionTypeList = Object.values(SymbolFunctionTypes);
@@ -119,6 +120,13 @@ export class DjangoProvider extends LanguageProvider {
 			diagnostics,
 			changedLines
 		);
+
+        const isDjangoProject = await this.djangoProjectDetectionPromise;
+        if (isDjangoProject) {
+            const nplusOneDiagnostics = await this.runNPlusOneQueryAnalysis(document);
+            diagnostics.push(...nplusOneDiagnostics);
+        }
+
 		this.diagnosticsManager.setDiagnostic(document.uri, document.version, diagnostics);
 		return diagnostics;
 	}
@@ -453,11 +461,11 @@ export class DjangoProvider extends LanguageProvider {
         }
     }
 
-	private getParserFilePath(): string {
+	private getParserFilePath(filename: string = 'django_parser.py'): string {
         const basePath = process.env.PYTHON_TOOLS_PATH || path.resolve(
             __dirname, '..', 'bundled', 'tools', 'python'
         );
-        const parserFilePath = path.join(basePath, 'django_parser.py');
+        const parserFilePath = path.join(basePath, filename);
 
         console.log(`Resolved parser file path: ${parserFilePath}`);
     
@@ -713,6 +721,82 @@ export class DjangoProvider extends LanguageProvider {
         }
     }
 
+    private async runNPlusOneQueryAnalysis(document: TextDocument): Promise<Diagnostic[]> {
+        const diagnostics: Diagnostic[] = [];
+        const modelCacheObject = Object.fromEntries(this.modelCache);
+        const modelCacheJson = JSON.stringify(modelCacheObject);
+        const documentText = document.getText();
+    
+        const connectionInfo = {
+            user_api_key: cachedUserToken,
+            server_url: `${API_SERVER_URL}/chat/nplusone/`,
+        };
+        const connectionInfoJson = JSON.stringify(connectionInfo);
+    
+        return new Promise((resolve, reject) => {
+            const nplusoneServicePath = this.getParserFilePath('detect_nplusone.py');
+            const process = spawn(pythonExecutable, [nplusoneServicePath, documentText, modelCacheJson, connectionInfoJson]);
+    
+            let output = '';
+            let error = '';
+    
+            process.stdout.on('data', (data) => {
+                output += data.toString();
+            });
+    
+            process.stderr.on('data', (data) => {
+                error += data.toString();
+                console.log(`[N+1 DETECT] ${error}`);
+            });
+    
+            process.on('close', (code) => {
+                if (code !== 0) {
+                    LOGGER.error(`N+1 query analysis process exited with code ${code}: ${error}`);
+                    return reject(new Error(`N+1 query analysis process failed: ${error}`));
+                }
+            
+                try {
+                    const analysisResults = JSON.parse(output);
+                    
+                    if (analysisResults.n_plus_one_detected && analysisResults.results) {
+                        for (const result of analysisResults.results) {
+                            const range = Range.create(
+                                Position.create(result.location.start.line - 1, result.location.start.column - 1),
+                                Position.create(result.location.end.line - 1, result.location.end.column - 1)
+                            );
+                    
+                            const diagnostic: Diagnostic = {
+                                range,
+                                message: result.issue,
+                                severity: DiagnosticSeverity.Warning,
+                                source: SOURCE_NAME,
+                                code: RuleCodes.NPLUSONE,
+                                relatedInformation: []
+                            };
+                    
+                            if (result.recommendation && result.code_example && diagnostic.relatedInformation) {
+                                diagnostic.relatedInformation.push({
+                                    location: {
+                                        uri: document.uri,
+                                        range: range
+                                    },
+                                    message: `Recommendation: ${result.recommendation}\n\nExample:\n${result.code_example}`
+                                });
+                            }
+                    
+                            diagnostics.push(diagnostic);
+                        }
+                    }
+            
+                    resolve(diagnostics);
+                } catch (error: any) {
+                    LOGGER.error(`Error parsing N+1 query analysis output: ${error}`);
+                    reject(new Error(`Failed to parse N+1 query analysis output: ${error.message}`));
+                }
+            });
+        });
+    }
+    
     private checkDjangoFieldConventions(symbol: any, diagnostics: Diagnostic[]): void {
         let djangoModelAndSerializerFieldMessage: string | undefined;
     

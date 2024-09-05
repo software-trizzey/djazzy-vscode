@@ -51,7 +51,7 @@ class NPlusOneQueryService:
 
             if response['status'] == 200:
                 analysis_results = json.loads(response['data'])
-                LOGGER.info(f"N+1 query analysis completed: {analysis_results}")
+                LOGGER.info("N+1 query analysis complete.")
                 return analysis_results
             else:
                 LOGGER.warning(f"Failed to analyze N+1 queries. Status: {response['status']} - {response['data']}")

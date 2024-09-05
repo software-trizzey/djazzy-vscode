@@ -764,10 +764,12 @@ export class DjangoProvider extends LanguageProvider {
                                 Position.create(result.location.start.line - 1, result.location.start.column - 1),
                                 Position.create(result.location.end.line - 1, result.location.end.column - 1)
                             );
+
+                            const formattedMessage = this.diagnosticsManager.formatNPlusOneDiagnosticMessage(result);
                     
                             const diagnostic: Diagnostic = {
                                 range,
-                                message: result.issue,
+                                message: formattedMessage,
                                 severity: DiagnosticSeverity.Warning,
                                 source: SOURCE_NAME,
                                 code: RuleCodes.NPLUSONE,
@@ -780,7 +782,7 @@ export class DjangoProvider extends LanguageProvider {
                                         uri: document.uri,
                                         range: range
                                     },
-                                    message: `Recommendation: ${result.recommendation}\n\nExample:\n${result.code_example}`
+                                    message: `Recommendation: ${result.recommendation}`
                                 });
                             }
                     

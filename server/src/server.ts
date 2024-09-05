@@ -24,6 +24,7 @@ import {
 } from "vscode-languageserver/node";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
+import { TextDocumentChangeEvent } from 'vscode-languageserver';
 import {
 	LanguageProvider,
 	DjangoProvider,
@@ -305,33 +306,17 @@ function getOrCreatePythonProvider(
 }
 
 export async function validateTextDocument(textDocument: TextDocument): Promise<Diagnostic[]> {
-	return await diagnosticQueue.queueDiagnosticRequest(textDocument, async (document) => {
-		const languageId = document.languageId;
-		const settings = await getDocumentSettings(document.uri);
-		const workspaceFolders = await connection.workspace.getWorkspaceFolders();
-		const provider = getOrCreateProvider(languageId, settings, textDocument, workspaceFolders);
-		provider.updateSettings(settings);
-		
-		const diagnosticsManager = provider.useDiagnosticManager();
-
-		let diagnostics = await diagnosticsManager.getDiagnostic(
-			document.uri,
-			document.version
-		) || [];
-
-		console.info(`Validating file: ${document.uri}`, {
-			context: "server#validateTextDocument",
-		});
-
-		const diagnosticsOutdated = !diagnostics || diagnosticsManager.isDiagnosticsOutdated(document);
-		if (diagnosticsOutdated) {
-			diagnosticsManager.deleteDiagnostic(document.uri);
-			diagnosticsManager.clearDiagnostics(document.uri);
-
-			diagnostics = await provider.provideDiagnostics(document);
-		}
-		return diagnostics;
-	});
+    return await diagnosticQueue.queueDiagnosticRequest(textDocument, async (document) => {
+        const languageId = document.languageId;
+        const settings = await getDocumentSettings(document.uri);
+        const workspaceFolders = await connection.workspace.getWorkspaceFolders();
+        const provider = getOrCreateProvider(languageId, settings, textDocument, workspaceFolders);
+        provider.updateSettings(settings);
+        
+        const diagnostics = await provider.provideDiagnostics(document, false);
+        connection.sendDiagnostics({ uri: document.uri, diagnostics });
+        return diagnostics;
+    });
 }
 
 const debouncedValidateTextDocument = debounce(
@@ -557,6 +542,19 @@ connection.onExecuteCommand(async (params) => {
 	}
 });
 
+documents.onDidSave(async (saveEvent: TextDocumentChangeEvent<TextDocument>) => {
+    const document = saveEvent.document;
+    
+    const languageId = document.languageId;
+    const settings = await getDocumentSettings(document.uri);
+    const workspaceFolders = await connection.workspace.getWorkspaceFolders();
+    const provider = getOrCreateProvider(languageId, settings, document, workspaceFolders);
+
+    if (provider instanceof DjangoProvider) {
+        const diagnostics = await provider.provideDiagnostics(document, true);
+        connection.sendDiagnostics({ uri: document.uri, diagnostics });
+    }
+});
 
 documents.listen(connection);
 connection.listen();

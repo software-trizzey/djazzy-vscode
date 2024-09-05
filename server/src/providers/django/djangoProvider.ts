@@ -96,7 +96,8 @@ export class DjangoProvider extends LanguageProvider {
     }
 
     public async provideDiagnostics(
-		document: TextDocument
+		document: TextDocument,
+        isOnSave: boolean = false
 	): Promise<Diagnostic[]> {
 		const conventions = this.getConventions();
 		this.diagnosticsManager.deleteDiagnostic(document.uri);
@@ -122,9 +123,9 @@ export class DjangoProvider extends LanguageProvider {
 		);
 
         const isDjangoProject = await this.djangoProjectDetectionPromise;
-        if (isDjangoProject) {
+        if (isDjangoProject && isOnSave) {
             const nplusOneDiagnostics = await this.runNPlusOneQueryAnalysis(document);
-            diagnostics.push(...nplusOneDiagnostics);
+            diagnostics = [...diagnostics, ...nplusOneDiagnostics];
         }
 
 		this.diagnosticsManager.setDiagnostic(document.uri, document.version, diagnostics);

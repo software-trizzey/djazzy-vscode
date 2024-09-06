@@ -24,17 +24,29 @@ We appreciate your interest in being an early adopter and helping us shape Djang
 - **Django-Specific Linting**: Automatically check your Django code against best practices and common pitfalls, including:
 
   - **Complex View Detection**: Flags Django views with high complexity and suggests that they be refactored to follow the **Fat Model, Thin View** or **Services** design patterns. This rule reduces view complexity and promotes maintainability and scalability.
+  
   - **ForeignKey Validation**: Ensures all `ForeignKey` fields have a `related_name` and `on_delete` argument specified to avoid common pitfalls in query relationships and data management.
+  
   - **Raw SQL Query Detection**: Flags direct usage of raw SQL queries, including `raw()` and `connection.cursor()`. These can bypass Django ORM protections and introduce security vulnerabilities. Djangoly suggests safer alternatives using Django's ORM.
+  
   - **CharField and TextField Nullability**: Ensures `CharField` and `TextField` fields are not incorrectly marked as `null=True`, which can lead to inconsistencies in data integrity.
+  
   - **Missing Exception Handling Detection**: Flags Django functional views and methods in class-based views that lack exception handling. This feature helps you ensure that error handling is properly implemented, improving the robustness and stability of your Django application.
+  
+  - **Static N+1 Query Analysis**: Detects potential N+1 query patterns in your Django code. This feature identifies when multiple database queries are being executed within loops and suggests optimizations to minimize query counts and improve performance.
+
 - **Security Checks**: Includes several security checks to help ensure your Django project follows best practices for security:
 
-  - **DEBUG Setting:** Checks if `DEBUG` is set to `True`. This setting should be `False` in production environments.
-  - **SECRET_KEY Protection:** Verifies that the `SECRET_KEY` is not hardcoded in your settings file.
+  - **DEBUG Setting**: Checks if `DEBUG` is set to `True`. This setting should be `False` in production environments.
+  
+  - **SECRET_KEY Protection**: Verifies that the `SECRET_KEY` is not hardcoded in your settings file.
+  
   - **ALLOWED_HOSTS Configuration**: Checks the `ALLOWED_HOSTS` setting for potential security issues.
+  
   - **COOKIE Settings**: Ensures the `CSRF_COOKIE_SECURE` and `SESSION_COOKIE_SECURE` settings are set to `True` for production environments.
+
 - **Test Suite Conventions**: Notify developers to add or update test files when changes are detected in Django views or models.
+
 - **Redundant Comment Detection**: Flags comments that do not contribute additional information or context to the code.
 
 ## Quick Start 🏃‍♂️💨

@@ -563,8 +563,16 @@ documents.onDidSave(async (saveEvent: TextDocumentChangeEvent<TextDocument>) => 
     const provider = getOrCreateProvider(languageId, settings, document, workspaceFolders);
 
     if (provider instanceof DjangoProvider) {
+		connection.sendNotification(ShowMessageNotification.type, {
+            type: MessageType.Info,
+            message: "👋 Save detected. Running N+1 analysis on current file..."
+        });
         const diagnostics = await provider.provideDiagnostics(document, true);
         connection.sendDiagnostics({ uri: document.uri, diagnostics });
+		connection.sendNotification(ShowMessageNotification.type, {
+            type: MessageType.Info,
+            message: `✅ Analysis complete. Found ${diagnostics?.length} issues.`
+        });
     }
 });
 

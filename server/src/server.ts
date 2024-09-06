@@ -243,6 +243,7 @@ documents.onDidClose((e) => {
 	const provider = providerCache[e.document.languageId];
 	documentSettings.delete(documentUri);
 	provider.useDiagnosticManager().deleteDiagnostic(documentUri);
+	openedDocuments.delete(e.document.uri);
 });
 
 connection.languages.diagnostics.on(async (params) => {
@@ -305,7 +306,7 @@ function getOrCreatePythonProvider(
 	return pythonProviderCache[pythonId];
 }
 
-export async function validateTextDocument(textDocument: TextDocument): Promise<Diagnostic[]> {
+export async function validateTextDocument(textDocument: TextDocument, includeNPlusOne: boolean = false): Promise<Diagnostic[]> {
     return await diagnosticQueue.queueDiagnosticRequest(textDocument, async (document) => {
         const languageId = document.languageId;
         const settings = await getDocumentSettings(document.uri);
@@ -313,8 +314,7 @@ export async function validateTextDocument(textDocument: TextDocument): Promise<
         const provider = getOrCreateProvider(languageId, settings, textDocument, workspaceFolders);
         provider.updateSettings(settings);
         
-        const diagnostics = await provider.provideDiagnostics(document, false);
-        connection.sendDiagnostics({ uri: document.uri, diagnostics });
+        const diagnostics = await provider.provideDiagnostics(document, includeNPlusOne);
         return diagnostics;
     });
 }
@@ -540,6 +540,18 @@ connection.onExecuteCommand(async (params) => {
 			],
 		});
 	}
+});
+
+const openedDocuments = new Set<string>();
+
+documents.onDidOpen(async (event: TextDocumentChangeEvent<TextDocument>) => {
+    const document = event.document;
+    
+    if (!openedDocuments.has(document.uri)) {
+        openedDocuments.add(document.uri);
+        const diagnostics = await validateTextDocument(document, true);
+		connection.sendDiagnostics({ uri: document.uri, diagnostics });
+    }
 });
 
 documents.onDidSave(async (saveEvent: TextDocumentChangeEvent<TextDocument>) => {

@@ -138,25 +138,8 @@ export class DiagnosticsManager {
         let message = `🚨 N+1 Issue Detected (${RuleCodes.NPLUSONE}):\n`;
         message += `${result.issue}\n\n`;
     
-        message += `Impact:\n`;
-        message += `Multiple queries executed, potentially affecting performance.\n\n`;
-    
-        if (result.recommendation) {
-            message += `Recommendation:\n`;
-            message += `${result.recommendation}\n\n`;
-        }
-    
-        if (result.code_example) {
-            message += `Example fix:\n`;
-            message += `\`\`\`\n${result.code_example}\n\`\`\`\n\n`;
-        }
-    
-        const noteMatch = result.recommendation?.match(/Note:?\s*(.+)/i);
-        if (noteMatch) {
-            message += `Note:\n`;
-            message += `${noteMatch[1]}\n`;
-        }
-    
+        message += `Recommendation:\n`;
+        message += "Try optimizing your query using `select_related()` or `prefetch_related()` to reduce the number of queries.\n\n";
         return message;
     }
 }

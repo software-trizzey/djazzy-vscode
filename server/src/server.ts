@@ -554,10 +554,11 @@ documents.onDidOpen(async (event: TextDocumentChangeEvent<TextDocument>) => {
             const diagnostics = await validateTextDocument(document, true);
             connection.sendDiagnostics({ uri: document.uri, diagnostics });
         } catch (error: any) {
-            console.error('Error during document open diagnostics:', error);
+            const errorMessage = typeof error === 'string' ? error : error.message || 'Unknown error';
+            console.error('Error during document open diagnostics:', errorMessage);
             connection.sendNotification(ShowMessageNotification.type, {
                 type: MessageType.Error,
-                message: `Error running diagnostics on document open: ${error.message}`
+                message: `Error running diagnostics on document open: ${errorMessage}`
             });
         }
     }
@@ -591,10 +592,11 @@ documents.onDidSave(async (saveEvent: TextDocumentChangeEvent<TextDocument>) => 
                 message: `✅ Analysis complete. Found ${nplusOneDiagnostics?.length} issues.`
             });
         } catch (error: any) {
-            console.error('Error running N+1 analysis:', error);
+            const errorMessage = typeof error === 'string' ? error : error.message || 'Unknown error';
+            console.error('Error running N+1 analysis:', errorMessage);
             connection.sendNotification(ShowMessageNotification.type, {
                 type: MessageType.Error,
-                message: `🥲 Error running N+1 analysis: ${error.message}`
+                message: `🥲 Error running N+1 analysis: ${errorMessage}`
             });
         }
     }

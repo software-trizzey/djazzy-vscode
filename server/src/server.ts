@@ -308,6 +308,11 @@ function getOrCreatePythonProvider(
 }
 
 export async function validateTextDocument(textDocument: TextDocument, includeNPlusOne: boolean = false): Promise<Diagnostic[]> {
+    connection.sendDiagnostics({
+        uri: textDocument.uri,
+        diagnostics: []
+    });
+    
     return await diagnosticQueue.queueDiagnosticRequest(textDocument, async (document) => {
         const languageId = document.languageId;
         const settings = await getDocumentSettings(document.uri);

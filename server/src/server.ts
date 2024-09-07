@@ -563,6 +563,7 @@ documents.onDidSave(async (saveEvent: TextDocumentChangeEvent<TextDocument>) => 
     const workspaceFolders = await connection.workspace.getWorkspaceFolders();
     const provider = getOrCreateProvider(languageId, settings, document, workspaceFolders);
 
+	// TODO: we should check if this is django file or not before running
     if (provider instanceof DjangoProvider) {
 		connection.sendNotification(ShowMessageNotification.type, {
             type: MessageType.Info,

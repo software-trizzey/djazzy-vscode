@@ -743,21 +743,74 @@ export class DjangoProvider extends LanguageProvider {
         }
     }
 
+    private async sendNPlusOneRequestToApi(parsedData: any, documentUri: string): Promise<Diagnostic[]> {
+        const diagnostics: Diagnostic[] = [];
+        const connectionInfo = {
+            user_api_key: cachedUserToken,
+            server_url: `${API_SERVER_URL}/chat/nplusone/`,
+        };
+    
+        const payload = {
+            functionCode: parsedData.functionCode,
+            modelDefinitions: parsedData.modelDefinitions,
+            querysetDefinitions: parsedData.querysetDefinitions,
+            loopDefinitions: parsedData.loopDefinitions,
+            optimizationMethods: "", // Any optimization methods
+            apiKey: connectionInfo.user_api_key
+        };
+    
+        const response = await fetch(connectionInfo.server_url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${connectionInfo.user_api_key}`
+            },
+            body: JSON.stringify(payload)
+        });
+    
+        if (response.ok) {
+            const analysisResults = await response.json();
+            if (analysisResults && analysisResults.n_plus_one_detected && analysisResults.results) {
+                LOGGER.info(`[User] ${cachedUserToken} N+1 query analysis results: ${JSON.stringify(analysisResults.results)}`);
+    
+                for (const result of analysisResults.results) {
+                    const range = Range.create(
+                        Position.create(result.location.start.line - 1, result.location.start.column - 1),
+                        Position.create(result.location.end.line - 1, result.location.end.column - 1)
+                    );
+    
+                    const formattedMessage = this.diagnosticsManager.formatNPlusOneDiagnosticMessage(result);
+    
+                    const diagnostic: Diagnostic = {
+                        range,
+                        message: formattedMessage,
+                        severity: DiagnosticSeverity.Warning,
+                        source: SOURCE_NAME,
+                        code: RuleCodes.NPLUSONE,
+                        relatedInformation: []
+                    };
+    
+                    diagnostics.push(diagnostic);
+                }
+            }
+        } else {
+            const errorMessage = await response.text();
+            LOGGER.error(`N+1 API request failed with status ${response.status}: ${errorMessage}`);
+            throw new Error(`N+1 API request failed with status ${response.status}: ${errorMessage}`);
+        }
+    
+        return diagnostics;
+    }    
+
     private async runNPlusOneQueryAnalysis(document: TextDocument): Promise<Diagnostic[]> {
         const diagnostics: Diagnostic[] = [];
         const modelCacheObject = Object.fromEntries(this.modelCache);
         const modelCacheJson = JSON.stringify(modelCacheObject);
         const documentText = document.getText();
     
-        const connectionInfo = {
-            user_api_key: cachedUserToken,
-            server_url: `${API_SERVER_URL}/chat/nplusone/`,
-        };
-        const connectionInfoJson = JSON.stringify(connectionInfo);
-    
         return new Promise((resolve, reject) => {
             const nplusoneServicePath = this.getParserFilePath('detect_nplusone.py');
-            const process = spawn(pythonExecutable, [nplusoneServicePath, documentText, modelCacheJson, connectionInfoJson]);
+            const process = spawn(pythonExecutable, [nplusoneServicePath, documentText, modelCacheJson]);
     
             let output = '';
             let error = '';
@@ -777,45 +830,19 @@ export class DjangoProvider extends LanguageProvider {
                     console.error(error);
                     return reject(new Error(`N+1 query analysis process failed: ${error}`));
                 }
-            
+    
                 try {
-                    LOGGER.info(`[User] ${cachedUserToken} triggered N+1 query analysis`);
-                    const analysisResults = JSON.parse(output);
-                    
-                    if (analysisResults && analysisResults.n_plus_one_detected && analysisResults.results) {
-                        LOGGER.info(`[User] ${cachedUserToken} N+1 query analysis results: ${JSON.stringify(analysisResults.results)}`);
-                        for (const result of analysisResults.results) {
-                            const range = Range.create(
-                                Position.create(result.location.start.line - 1, result.location.start.column - 1),
-                                Position.create(result.location.end.line - 1, result.location.end.column - 1)
-                            );
-
-                            const formattedMessage = this.diagnosticsManager.formatNPlusOneDiagnosticMessage(result);
-                    
-                            const diagnostic: Diagnostic = {
-                                range,
-                                message: formattedMessage,
-                                severity: DiagnosticSeverity.Warning,
-                                source: SOURCE_NAME,
-                                code: RuleCodes.NPLUSONE,
-                                relatedInformation: []
-                            };
-                    
-                            if (result.recommendation && result.code_example && diagnostic.relatedInformation) {
-                                diagnostic.relatedInformation.push({
-                                    location: {
-                                        uri: document.uri,
-                                        range: range
-                                    },
-                                    message: `Recommendation: ${result.recommendation}`
-                                });
-                            }
-                    
-                            diagnostics.push(diagnostic);
-                        }
-                    }
-            
-                    resolve(diagnostics);
+                    const parsedData = JSON.parse(output);
+                    LOGGER.info(`[User] ${cachedUserToken} parsed N+1 query data: ${JSON.stringify(parsedData)}`);
+                    this.sendNPlusOneRequestToApi(parsedData, document.uri)
+                        .then((apiDiagnostics) => {
+                            resolve(apiDiagnostics);
+                        })
+                        .catch((apiError) => {
+                            LOGGER.error(`N+1 query analysis API error: ${apiError}`);
+                            reject(apiError);
+                        });
+    
                 } catch (error: any) {
                     LOGGER.error(`Error parsing N+1 query analysis output: ${error}`);
                     reject(new Error(`Failed to parse N+1 query analysis output: ${error.message}`));
@@ -823,7 +850,7 @@ export class DjangoProvider extends LanguageProvider {
             });
         });
     }
-    
+        
     private checkDjangoFieldConventions(symbol: any, diagnostics: Diagnostic[]): void {
         let djangoModelAndSerializerFieldMessage: string | undefined;
     

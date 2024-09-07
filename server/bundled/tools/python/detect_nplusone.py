@@ -74,15 +74,24 @@ class NPlusOneQueryService:
                 'X-Request-ID': str(uuid.uuid4())
             }
 
+            LOGGER.info(f"Sending POST request to {url}")
+            LOGGER.info(f"Headers: {headers}")
+            LOGGER.info(f"Payload: {json.dumps(payload)}")
+
             connection.request("POST", parsed_url.path, body=json.dumps(payload), headers=headers)
             response = connection.getresponse()
             data = response.read().decode()
 
-            # Handle 307 Temporary Redirect
+            LOGGER.info(f"Response status: {response.status}")
+            LOGGER.info(f"Response data: {data}")
+
             if response.status == 307:
                 redirect_url = response.getheader('Location')
                 LOGGER.info(f"Redirected to {redirect_url}")
-                return self._send_post_request(redirect_url, payload)  # Recursively follow the redirect
+                return {
+                    'status': response.status,
+                    'data': f"Redirected to {redirect_url}"
+                }
 
             return {
                 'status': response.status,

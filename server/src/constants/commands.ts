@@ -14,6 +14,7 @@ export const PROVIDE_EXCEPTION_HANDLING = `${EXTENSION_ID}.provideExceptionHandl
 
 export const RATE_LIMIT_NOTIFICATION_ID = `${EXTENSION_ID}/rateLimitReached`;
 export const ACCESS_FORBIDDEN_NOTIFICATION_ID = `${EXTENSION_ID}/forbidden`;
+export const NPLUSONE_FEEDBACK = `${EXTENSION_ID}.provideFeedbackNPlusOne`;
 
 const COMMANDS = { 
 	FIX_NAME,

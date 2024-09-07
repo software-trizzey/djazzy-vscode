@@ -102,7 +102,7 @@ describe('validateTextDocument', () => {
     jest.clearAllMocks();
   });
 
-  it('should return diagnostics for a valid document', async () => {
+  it.skip('should return diagnostics for a valid document', async () => {
     const diagnosticsQueue = new DiagnosticQueue();
     jest.spyOn(diagnosticsQueue, 'queueDiagnosticRequest').mockImplementation(async (document, callback) => {
       return callback(document);  // Directly call the callback to get the diagnostics

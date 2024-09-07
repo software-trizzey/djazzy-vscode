@@ -4,6 +4,18 @@ import { Severity } from '../../llm/types';
 import { cachedUserToken, settingsVersion } from '../../settings';
 import { NAMING_CONVENTION_VIOLATION_SOURCE_TYPE, SOURCE_NAME } from '../../constants/diagnostics';
 import LOGGER from '../../common/logs';
+import { RuleCodes } from '../../constants/rules';
+
+
+interface NPlusOneQueryResult {
+    issue: string;
+    location: {
+        start: { line: number; column: number };
+        end: { line: number; column: number };
+    };
+    recommendation?: string;
+    code_example?: string;
+}
 
 
 export class DiagnosticsManager {
@@ -120,5 +132,14 @@ export class DiagnosticsManager {
             timestamp: new Date().toISOString()
         });
         // TODO: Additional logic for handling false positive reports
+    }
+
+    public formatNPlusOneDiagnosticMessage(result: NPlusOneQueryResult): string {
+        let message = `🚨 N+1 Issue Detected (${RuleCodes.NPLUSONE}):\n`;
+        message += `${result.issue}\n\n`;
+    
+        message += `Recommendation:\n`;
+        message += "Try optimizing your query using `select_related()` or `prefetch_related()` to reduce the number of queries.\n\n";
+        return message;
     }
 }

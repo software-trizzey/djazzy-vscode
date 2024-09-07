@@ -24,6 +24,7 @@ import {
 } from "vscode-languageserver/node";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
+import { TextDocumentChangeEvent } from 'vscode-languageserver';
 import {
 	LanguageProvider,
 	DjangoProvider,
@@ -51,6 +52,7 @@ import { SOURCE_NAME } from './constants/diagnostics';
 import { API_SERVER_URL } from './constants/api';
 import { ERROR_CODES } from './constants/errors';
 import { ForbiddenError, RateLimitError } from './llm/helpers';
+import { RuleCodes } from './constants/rules';
 
 const connection = createConnection(ProposedFeatures.all);
 const providerCache: Record<string, LanguageProvider> = {};
@@ -242,6 +244,7 @@ documents.onDidClose((e) => {
 	const provider = providerCache[e.document.languageId];
 	documentSettings.delete(documentUri);
 	provider.useDiagnosticManager().deleteDiagnostic(documentUri);
+	openedDocuments.delete(e.document.uri);
 });
 
 connection.languages.diagnostics.on(async (params) => {
@@ -304,34 +307,17 @@ function getOrCreatePythonProvider(
 	return pythonProviderCache[pythonId];
 }
 
-export async function validateTextDocument(textDocument: TextDocument): Promise<Diagnostic[]> {
-	return await diagnosticQueue.queueDiagnosticRequest(textDocument, async (document) => {
-		const languageId = document.languageId;
-		const settings = await getDocumentSettings(document.uri);
-		const workspaceFolders = await connection.workspace.getWorkspaceFolders();
-		const provider = getOrCreateProvider(languageId, settings, textDocument, workspaceFolders);
-		provider.updateSettings(settings);
-		
-		const diagnosticsManager = provider.useDiagnosticManager();
-
-		let diagnostics = await diagnosticsManager.getDiagnostic(
-			document.uri,
-			document.version
-		) || [];
-
-		console.info(`Validating file: ${document.uri}`, {
-			context: "server#validateTextDocument",
-		});
-
-		const diagnosticsOutdated = !diagnostics || diagnosticsManager.isDiagnosticsOutdated(document);
-		if (diagnosticsOutdated) {
-			diagnosticsManager.deleteDiagnostic(document.uri);
-			diagnosticsManager.clearDiagnostics(document.uri);
-
-			diagnostics = await provider.provideDiagnostics(document);
-		}
-		return diagnostics;
-	});
+export async function validateTextDocument(textDocument: TextDocument, includeNPlusOne: boolean = false): Promise<Diagnostic[]> {
+    return await diagnosticQueue.queueDiagnosticRequest(textDocument, async (document) => {
+        const languageId = document.languageId;
+        const settings = await getDocumentSettings(document.uri);
+        const workspaceFolders = await connection.workspace.getWorkspaceFolders();
+        const provider = getOrCreateProvider(languageId, settings, textDocument, workspaceFolders);
+        provider.updateSettings(settings);
+        
+        const diagnostics = await provider.provideDiagnostics(document, includeNPlusOne);
+        return diagnostics;
+    });
 }
 
 const debouncedValidateTextDocument = debounce(
@@ -555,6 +541,52 @@ connection.onExecuteCommand(async (params) => {
 			],
 		});
 	}
+});
+
+const openedDocuments = new Set<string>();
+
+documents.onDidOpen(async (event: TextDocumentChangeEvent<TextDocument>) => {
+    const document = event.document;
+    
+    if (!openedDocuments.has(document.uri)) {
+        openedDocuments.add(document.uri);
+        const diagnostics = await validateTextDocument(document, true);
+		connection.sendDiagnostics({ uri: document.uri, diagnostics });
+    }
+});
+
+documents.onDidSave(async (saveEvent: TextDocumentChangeEvent<TextDocument>) => {
+    const document = saveEvent.document;
+    
+    const languageId = document.languageId;
+    const settings = await getDocumentSettings(document.uri);
+    const workspaceFolders = await connection.workspace.getWorkspaceFolders();
+    const provider = getOrCreateProvider(languageId, settings, document, workspaceFolders);
+
+    if (provider instanceof DjangoProvider) {
+        try {
+			const isDjangoProject = await provider.djangoProjectDetectionPromise;
+			if (!isDjangoProject) return;
+			
+			connection.sendNotification(ShowMessageNotification.type, {
+				type: MessageType.Info,
+				message: "👋 Save detected. Running N+1 analysis on current file..."
+			});
+            const diagnostics = await provider.runNPlusOneQueryAnalysis(document);
+            connection.sendDiagnostics({ uri: document.uri, diagnostics });
+            const nplusOneDiagnostics = diagnostics.filter((diagnostic) => diagnostic.code === RuleCodes.NPLUSONE);
+            
+            connection.sendNotification(ShowMessageNotification.type, {
+                type: MessageType.Info,
+                message: `✅ Analysis complete. Found ${nplusOneDiagnostics?.length} issues.`
+            });
+        } catch (error: any) {
+            connection.sendNotification(ShowMessageNotification.type, {
+                type: MessageType.Error,
+                message: `🥲 Error running N+1 analysis: ${error.message}`
+            });
+        }
+    }
 });
 
 

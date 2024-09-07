@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Version 0.1.15] - 2024-09-06
+
+### Added
+
+- [Feature] Reintroduce N+1 static query analysis. This feature identifies potential N+1 query patterns in Django code and suggests optimizations to minimize unnecessary database queries.
+- [Feature] Add N+1 code action for feedback after static analysis to gather user input on whether suggestions were useful or not.
+
 ## [Version 0.1.14] - 2024-09-03
 
 ### Added

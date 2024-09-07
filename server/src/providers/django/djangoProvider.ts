@@ -20,9 +20,14 @@ import {
 	REDUNDANT_COMMENT_VIOLATION_SOURCE_TYPE,
     DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE
 } from "../../constants/diagnostics";
-import { ExtensionSettings, defaultConventions, pythonExecutable } from "../../settings";
+import { ExtensionSettings, cachedUserToken, defaultConventions, pythonExecutable } from "../../settings";
 import LOGGER from '../../common/logs';
-import { ACCESS_FORBIDDEN_NOTIFICATION_ID, FIX_NAME, RATE_LIMIT_NOTIFICATION_ID } from '../../constants/commands';
+import {
+    ACCESS_FORBIDDEN_NOTIFICATION_ID,
+    FIX_NAME,
+    RATE_LIMIT_NOTIFICATION_ID,
+    NPLUSONE_FEEDBACK 
+} from '../../constants/commands';
 import { Models, Severity, SymbolFunctionTypes } from '../../llm/types';
 
 import { RULE_MESSAGES, RuleCodes } from '../../constants/rules';
@@ -30,6 +35,7 @@ import { LanguageConventions, CeleryTaskDecoratorSettings } from '../../language
 import { debounce, getChangedLinesFromClient, validatePythonFunctionName } from '../../utils';
 import { LanguageProvider } from '../languageProvider';
 import { DjangoProjectDetector, ModelCache } from './djangoProjectDetector';
+import { API_SERVER_URL } from '../../constants/api';
 
 
 const symbolFunctionTypeList = Object.values(SymbolFunctionTypes);
@@ -42,7 +48,7 @@ export class DjangoProvider extends LanguageProvider {
 	private codeActionsMessageCache: Map<string, CodeAction> = new Map();
     private isDjangoProject: boolean = false;
     private modelCache: ModelCache = new Map();
-    private djangoProjectDetectionPromise: Promise<boolean>;
+    public djangoProjectDetectionPromise: Promise<boolean>;
 
 
     constructor(
@@ -95,7 +101,8 @@ export class DjangoProvider extends LanguageProvider {
     }
 
     public async provideDiagnostics(
-		document: TextDocument
+		document: TextDocument,
+        isOnSave: boolean = false
 	): Promise<Diagnostic[]> {
 		const conventions = this.getConventions();
 		this.diagnosticsManager.deleteDiagnostic(document.uri);
@@ -119,6 +126,13 @@ export class DjangoProvider extends LanguageProvider {
 			diagnostics,
 			changedLines
 		);
+
+        const isDjangoProject = await this.djangoProjectDetectionPromise;
+        if (isDjangoProject && isOnSave) {
+            const nplusOneDiagnostics = await this.runNPlusOneQueryAnalysis(document);
+            diagnostics = [...diagnostics, ...nplusOneDiagnostics];
+        }
+
 		this.diagnosticsManager.setDiagnostic(document.uri, document.version, diagnostics);
 		return diagnostics;
 	}
@@ -453,11 +467,11 @@ export class DjangoProvider extends LanguageProvider {
         }
     }
 
-	private getParserFilePath(): string {
+	private getParserFilePath(filename: string = 'django_parser.py'): string {
         const basePath = process.env.PYTHON_TOOLS_PATH || path.resolve(
             __dirname, '..', 'bundled', 'tools', 'python'
         );
-        const parserFilePath = path.join(basePath, 'django_parser.py');
+        const parserFilePath = path.join(basePath, filename);
 
         console.log(`Resolved parser file path: ${parserFilePath}`);
     
@@ -670,21 +684,37 @@ export class DjangoProvider extends LanguageProvider {
 		return { line, start, end };
 	}
 
-	public async provideCodeActions(document: TextDocument, userToken: string): Promise<CodeAction[]> {
-		const diagnostics = document.uri
-			? this.diagnosticsManager.getDiagnostic(document.uri, document.version)
-			: [];
-
-		if (!diagnostics) return [];
-
+    public async provideCodeActions(document: TextDocument, userToken: string): Promise<CodeAction[]> {
+        const diagnostics = document.uri
+            ? this.diagnosticsManager.getDiagnostic(document.uri, document.version)
+            : [];
+    
+        if (!diagnostics) return [];
+    
         const codeActions: CodeAction[] = [];
-		for (const diagnostic of diagnostics) {
-            if (diagnostic.message.includes("exceeds the maximum length of")) continue;
-		}
-
+        
+        for (const diagnostic of diagnostics) {
+            if (diagnostic.code === RuleCodes.NPLUSONE) {
+                const feedbackAction = CodeAction.create(
+                    `Provide feedback: ${diagnostic.message}`,
+                    Command.create(
+                        'Provide feedback',
+                        NPLUSONE_FEEDBACK,
+                        document.uri,
+                        diagnostic
+                    ),
+                    CodeActionKind.QuickFix
+                );
+                feedbackAction.diagnostics = [diagnostic];
+                feedbackAction.isPreferred = true;
+    
+                codeActions.push(feedbackAction);
+            }
+        }
+    
         const filteredActions = codeActions.filter(action => action !== undefined);
-		return filteredActions;
-	}
+        return filteredActions;
+    }
 
     private processDjangoSecurityIssues(
         securityIssues: any[],
@@ -713,6 +743,113 @@ export class DjangoProvider extends LanguageProvider {
         }
     }
 
+    private async sendNPlusOneRequestToApi(parsedData: any, documentUri: string): Promise<Diagnostic[]> {
+        const diagnostics: Diagnostic[] = [];
+        const connectionInfo = {
+            user_api_key: cachedUserToken,
+            server_url: `${API_SERVER_URL}/chat/nplusone/`,
+        };
+    
+        const payload = {
+            functionCode: parsedData.functionCode,
+            modelDefinitions: parsedData.modelDefinitions,
+            querysetDefinitions: parsedData.querysetDefinitions,
+            loopDefinitions: parsedData.loopDefinitions,
+            optimizationMethods: "", // TODO: Any optimization methods
+            apiKey: connectionInfo.user_api_key
+        };
+    
+        const response = await fetch(connectionInfo.server_url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${connectionInfo.user_api_key}`
+            },
+            body: JSON.stringify(payload)
+        });
+    
+        if (response.ok) {
+            const analysisResults = await response.json();
+            if (analysisResults && analysisResults.n_plus_one_detected && analysisResults.results) {
+                LOGGER.info(`[User] ${cachedUserToken} N+1 query analysis found ${analysisResults.results.length} issues.`);
+    
+                for (const result of analysisResults.results) {
+                    const range = Range.create(
+                        Position.create(result.location.start.line - 1, result.location.start.column - 1),
+                        Position.create(result.location.end.line - 1, result.location.end.column - 1)
+                    );
+    
+                    const formattedMessage = this.diagnosticsManager.formatNPlusOneDiagnosticMessage(result);
+    
+                    const diagnostic: Diagnostic = {
+                        range,
+                        message: formattedMessage,
+                        severity: DiagnosticSeverity.Warning,
+                        source: SOURCE_NAME,
+                        code: RuleCodes.NPLUSONE,
+                        relatedInformation: []
+                    };
+    
+                    diagnostics.push(diagnostic);
+                }
+            }
+        } else {
+            const errorMessage = await response.text();
+            LOGGER.error(`N+1 API request failed with status ${response.status}: ${errorMessage}`);
+            throw new Error(`N+1 API request failed with status ${response.status}: ${errorMessage}`);
+        }
+    
+        return diagnostics;
+    }    
+
+    public async runNPlusOneQueryAnalysis(document: TextDocument): Promise<Diagnostic[]> {
+        const modelCacheObject = Object.fromEntries(this.modelCache);
+        const modelCacheJson = JSON.stringify(modelCacheObject);
+        const documentText = document.getText();
+    
+        return new Promise((resolve, reject) => {
+            const nplusoneServicePath = this.getParserFilePath('detect_nplusone.py');
+            const process = spawn(pythonExecutable, [nplusoneServicePath, documentText, modelCacheJson]);
+    
+            let output = '';
+            let error = '';
+    
+            process.stdout.on('data', (data) => {
+                output += data.toString();
+            });
+    
+            process.stderr.on('data', (data) => {
+                error += data.toString();
+                console.log(`[N+1 DETECT] ${error}`);
+            });
+    
+            process.on('close', (code) => {
+                if (code !== 0) {
+                    LOGGER.error(`N+1 query analysis process exited with code ${code}: ${error}`);
+                    console.error(error);
+                    return reject(new Error(`N+1 query analysis process failed: ${error}`));
+                }
+    
+                try {
+                    const parsedData = JSON.parse(output);
+                    LOGGER.info(`[User] ${cachedUserToken} N+1 parsing complete.`);
+                    this.sendNPlusOneRequestToApi(parsedData, document.uri)
+                        .then((apiDiagnostics) => {
+                            resolve(apiDiagnostics);
+                        })
+                        .catch((apiError) => {
+                            LOGGER.error(`N+1 query analysis API error: ${apiError}`);
+                            reject(apiError);
+                        });
+    
+                } catch (error: any) {
+                    LOGGER.error(`Error parsing N+1 query analysis output: ${error}`);
+                    reject(new Error(`Failed to parse N+1 query analysis output: ${error.message}`));
+                }
+            });
+        });
+    }
+        
     private checkDjangoFieldConventions(symbol: any, diagnostics: Diagnostic[]): void {
         let djangoModelAndSerializerFieldMessage: string | undefined;
     

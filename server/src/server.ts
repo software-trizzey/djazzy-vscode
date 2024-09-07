@@ -308,6 +308,11 @@ function getOrCreatePythonProvider(
 }
 
 export async function validateTextDocument(textDocument: TextDocument, includeNPlusOne: boolean = false): Promise<Diagnostic[]> {
+    connection.sendDiagnostics({
+        uri: textDocument.uri,
+        diagnostics: []
+    });
+    
     return await diagnosticQueue.queueDiagnosticRequest(textDocument, async (document) => {
         const languageId = document.languageId;
         const settings = await getDocumentSettings(document.uri);
@@ -550,8 +555,17 @@ documents.onDidOpen(async (event: TextDocumentChangeEvent<TextDocument>) => {
     
     if (!openedDocuments.has(document.uri)) {
         openedDocuments.add(document.uri);
-        const diagnostics = await validateTextDocument(document, true);
-		connection.sendDiagnostics({ uri: document.uri, diagnostics });
+        try {
+            const diagnostics = await validateTextDocument(document, true);
+            connection.sendDiagnostics({ uri: document.uri, diagnostics });
+        } catch (error: any) {
+            const errorMessage = typeof error === 'string' ? error : error.message || 'Unknown error';
+            console.error('Error during document open diagnostics:', errorMessage);
+            connection.sendNotification(ShowMessageNotification.type, {
+                type: MessageType.Error,
+                message: `Error running diagnostics on document open: ${errorMessage}`
+            });
+        }
     }
 });
 
@@ -565,15 +579,17 @@ documents.onDidSave(async (saveEvent: TextDocumentChangeEvent<TextDocument>) => 
 
     if (provider instanceof DjangoProvider) {
         try {
-			const isDjangoProject = await provider.djangoProjectDetectionPromise;
-			if (!isDjangoProject) return;
-			
-			connection.sendNotification(ShowMessageNotification.type, {
-				type: MessageType.Info,
-				message: "👋 Save detected. Running N+1 analysis on current file..."
-			});
+            const isDjangoProject = await provider.djangoProjectDetectionPromise;
+            if (!isDjangoProject) return;
+            
+            connection.sendNotification(ShowMessageNotification.type, {
+                type: MessageType.Info,
+                message: "👋 Save detected. Running N+1 analysis on current file..."
+            });
+
             const diagnostics = await provider.runNPlusOneQueryAnalysis(document);
             connection.sendDiagnostics({ uri: document.uri, diagnostics });
+
             const nplusOneDiagnostics = diagnostics.filter((diagnostic) => diagnostic.code === RuleCodes.NPLUSONE);
             
             connection.sendNotification(ShowMessageNotification.type, {
@@ -581,9 +597,11 @@ documents.onDidSave(async (saveEvent: TextDocumentChangeEvent<TextDocument>) => 
                 message: `✅ Analysis complete. Found ${nplusOneDiagnostics?.length} issues.`
             });
         } catch (error: any) {
+            const errorMessage = typeof error === 'string' ? error : error.message || 'Unknown error';
+            console.error('Error running N+1 analysis:', errorMessage);
             connection.sendNotification(ShowMessageNotification.type, {
                 type: MessageType.Error,
-                message: `🥲 Error running N+1 analysis: ${error.message}`
+                message: `🥲 Error running N+1 analysis: ${errorMessage}`
             });
         }
     }

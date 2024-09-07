@@ -1,27 +1,42 @@
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Diagnostic } from 'vscode-languageserver/node';
-
+import { Diagnostic, CancellationTokenSource } from 'vscode-languageserver/node';
 
 export class DiagnosticQueue {
-	private queues: Map<string, Promise<Diagnostic[]>> = new Map();
-  
+	private queues: Map<string, { promise: Promise<Diagnostic[]>, cancelToken: CancellationTokenSource }> = new Map();
+
 	async queueDiagnosticRequest(
 		document: TextDocument,
 		diagnosticFunction: (document: TextDocument) => Promise<Diagnostic[]>
 	): Promise<Diagnostic[]> {
 		const uri = document.uri;
 
+		const existingRequest = this.queues.get(uri);
+		if (existingRequest) {
+			existingRequest.cancelToken.cancel();  // Cancel outdated request
+		}
+
+		const cancelToken = new CancellationTokenSource();
+
 		const diagnosticPromise = (async () => {
-			await this.queues.get(uri);
-			return await diagnosticFunction(document);
+			await existingRequest?.promise;
+
+			if (!cancelToken.token.isCancellationRequested) {
+				return await diagnosticFunction(document);
+			}
+
+			return [];
 		})();
 
-		// Replace any existing promise in the queue with this new one
-		this.queues.set(uri, diagnosticPromise);
+		this.queues.set(uri, { promise: diagnosticPromise, cancelToken });
+
 		return await diagnosticPromise;
 	}
 
 	clearQueue(uri: string) {
+		const existingRequest = this.queues.get(uri);
+		if (existingRequest) {
+			existingRequest.cancelToken.cancel();
+		}
 		this.queues.delete(uri);
 	}
 }

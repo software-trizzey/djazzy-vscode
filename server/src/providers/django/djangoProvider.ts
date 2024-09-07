@@ -774,6 +774,7 @@ export class DjangoProvider extends LanguageProvider {
             process.on('close', (code) => {
                 if (code !== 0) {
                     LOGGER.error(`N+1 query analysis process exited with code ${code}: ${error}`);
+                    console.error(error);
                     return reject(new Error(`N+1 query analysis process failed: ${error}`));
                 }
             

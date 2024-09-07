@@ -5,7 +5,7 @@ import { UserSession } from "./auth/github";
 import { COMMANDS, EXTENSION_ID, EXTENSION_NAME, PUBLISHER, SESSION_USER } from "./constants";
 
 import { ExceptionHandlingCommandProvider } from './providers/exceptionProvider';
-import { trackFeatureUsage, trackUserInterestInCustomRules } from "./logs";
+import { trackExceptionHandlingResultFeedback, trackFeatureUsage, trackUserInterestInCustomRules } from "./logs";
 import { authenticateUser, removeApiKey } from './auth/api';
 
 const WORKBENCH_ACTIONS = {
@@ -94,4 +94,21 @@ export async function registerCommands(
             await commandProvider.provideExceptionHandling(document, functionName, lineNumber);
         })
     );
+
+    context.subscriptions.push(vscode.commands.registerCommand(
+        COMMANDS.NPLUSONE_FEEDBACK,
+        async (uri: vscode.Uri, diagnostic: vscode.Diagnostic) => {
+            const feedback = await vscode.window.showQuickPick(['Good', 'Bad', 'False Positive'], {
+                placeHolder: 'How would you rate this N+1 suggestion?'
+            });
+
+            if (feedback) {
+                vscode.window.showInformationMessage('Thank you for your response!');
+                const token = context.globalState.get(COMMANDS.USER_API_KEY) || "Anonymous";
+                trackExceptionHandlingResultFeedback(token as string, feedback);
+                // Don't send to server
+                // client.sendRequest(COMMANDS.NPLUSONE_FEEDBACK, { uri: uri.toString(), diagnostic, feedback });
+            }
+        }
+    ));
 }

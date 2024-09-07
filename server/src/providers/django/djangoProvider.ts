@@ -22,7 +22,12 @@ import {
 } from "../../constants/diagnostics";
 import { ExtensionSettings, cachedUserToken, defaultConventions, pythonExecutable } from "../../settings";
 import LOGGER from '../../common/logs';
-import { ACCESS_FORBIDDEN_NOTIFICATION_ID, FIX_NAME, RATE_LIMIT_NOTIFICATION_ID } from '../../constants/commands';
+import {
+    ACCESS_FORBIDDEN_NOTIFICATION_ID,
+    FIX_NAME,
+    RATE_LIMIT_NOTIFICATION_ID,
+    NPLUSONE_FEEDBACK 
+} from '../../constants/commands';
 import { Models, Severity, SymbolFunctionTypes } from '../../llm/types';
 
 import { RULE_MESSAGES, RuleCodes } from '../../constants/rules';
@@ -679,21 +684,37 @@ export class DjangoProvider extends LanguageProvider {
 		return { line, start, end };
 	}
 
-	public async provideCodeActions(document: TextDocument, userToken: string): Promise<CodeAction[]> {
-		const diagnostics = document.uri
-			? this.diagnosticsManager.getDiagnostic(document.uri, document.version)
-			: [];
-
-		if (!diagnostics) return [];
-
+    public async provideCodeActions(document: TextDocument, userToken: string): Promise<CodeAction[]> {
+        const diagnostics = document.uri
+            ? this.diagnosticsManager.getDiagnostic(document.uri, document.version)
+            : [];
+    
+        if (!diagnostics) return [];
+    
         const codeActions: CodeAction[] = [];
-		for (const diagnostic of diagnostics) {
-            if (diagnostic.message.includes("exceeds the maximum length of")) continue;
-		}
-
+        
+        for (const diagnostic of diagnostics) {
+            if (diagnostic.code === RuleCodes.NPLUSONE) {
+                const feedbackAction = CodeAction.create(
+                    `Provide feedback: ${diagnostic.message}`,
+                    Command.create(
+                        'Provide feedback',
+                        NPLUSONE_FEEDBACK,
+                        document.uri,
+                        diagnostic
+                    ),
+                    CodeActionKind.QuickFix
+                );
+                feedbackAction.diagnostics = [diagnostic];
+                feedbackAction.isPreferred = true;
+    
+                codeActions.push(feedbackAction);
+            }
+        }
+    
         const filteredActions = codeActions.filter(action => action !== undefined);
-		return filteredActions;
-	}
+        return filteredActions;
+    }
 
     private processDjangoSecurityIssues(
         securityIssues: any[],

@@ -22,6 +22,7 @@ export const COMMANDS = {
 	PROVIDE_EXCEPTION_HANDLING: `${EXTENSION_ID}.provideExceptionHandling`,
 	ANALYZE_EXCEPTION_HANDLING: `${EXTENSION_ID}.analyzeExceptionHandling`,
 	PREVIEW_AND_APPLY_SUGGESTION: `${EXTENSION_ID}.previewAndApplySuggestion`,
+	NPLUSONE_FEEDBACK: `${EXTENSION_ID}.provideFeedbackNPlusOne`,
 };
 
 export const RATE_LIMIT_NOTIFICATION_ID = `${EXTENSION_ID}/rateLimitReached`;

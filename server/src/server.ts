@@ -550,8 +550,16 @@ documents.onDidOpen(async (event: TextDocumentChangeEvent<TextDocument>) => {
     
     if (!openedDocuments.has(document.uri)) {
         openedDocuments.add(document.uri);
-        const diagnostics = await validateTextDocument(document, true);
-		connection.sendDiagnostics({ uri: document.uri, diagnostics });
+        try {
+            const diagnostics = await validateTextDocument(document, true);
+            connection.sendDiagnostics({ uri: document.uri, diagnostics });
+        } catch (error: any) {
+            console.error('Error during document open diagnostics:', error);
+            connection.sendNotification(ShowMessageNotification.type, {
+                type: MessageType.Error,
+                message: `Error running diagnostics on document open: ${error.message}`
+            });
+        }
     }
 });
 
@@ -565,15 +573,17 @@ documents.onDidSave(async (saveEvent: TextDocumentChangeEvent<TextDocument>) => 
 
     if (provider instanceof DjangoProvider) {
         try {
-			const isDjangoProject = await provider.djangoProjectDetectionPromise;
-			if (!isDjangoProject) return;
-			
-			connection.sendNotification(ShowMessageNotification.type, {
-				type: MessageType.Info,
-				message: "👋 Save detected. Running N+1 analysis on current file..."
-			});
+            const isDjangoProject = await provider.djangoProjectDetectionPromise;
+            if (!isDjangoProject) return;
+            
+            connection.sendNotification(ShowMessageNotification.type, {
+                type: MessageType.Info,
+                message: "👋 Save detected. Running N+1 analysis on current file..."
+            });
+
             const diagnostics = await provider.runNPlusOneQueryAnalysis(document);
             connection.sendDiagnostics({ uri: document.uri, diagnostics });
+
             const nplusOneDiagnostics = diagnostics.filter((diagnostic) => diagnostic.code === RuleCodes.NPLUSONE);
             
             connection.sendNotification(ShowMessageNotification.type, {
@@ -581,6 +591,7 @@ documents.onDidSave(async (saveEvent: TextDocumentChangeEvent<TextDocument>) => 
                 message: `✅ Analysis complete. Found ${nplusOneDiagnostics?.length} issues.`
             });
         } catch (error: any) {
+            console.error('Error running N+1 analysis:', error);
             connection.sendNotification(ShowMessageNotification.type, {
                 type: MessageType.Error,
                 message: `🥲 Error running N+1 analysis: ${error.message}`

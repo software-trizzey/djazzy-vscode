@@ -778,9 +778,11 @@ export class DjangoProvider extends LanguageProvider {
                 }
             
                 try {
+                    LOGGER.info(`[User] ${cachedUserToken} triggered N+1 query analysis`);
                     const analysisResults = JSON.parse(output);
                     
                     if (analysisResults && analysisResults.n_plus_one_detected && analysisResults.results) {
+                        LOGGER.info(`[User] ${cachedUserToken} N+1 query analysis results: ${JSON.stringify(analysisResults.results)}`);
                         for (const result of analysisResults.results) {
                             const range = Range.create(
                                 Position.create(result.location.start.line - 1, result.location.start.column - 1),

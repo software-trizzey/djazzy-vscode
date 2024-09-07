@@ -52,6 +52,7 @@ import { SOURCE_NAME } from './constants/diagnostics';
 import { API_SERVER_URL } from './constants/api';
 import { ERROR_CODES } from './constants/errors';
 import { ForbiddenError, RateLimitError } from './llm/helpers';
+import { RuleCodes } from './constants/rules';
 
 const connection = createConnection(ProposedFeatures.all);
 const providerCache: Record<string, LanguageProvider> = {};
@@ -568,10 +569,11 @@ documents.onDidSave(async (saveEvent: TextDocumentChangeEvent<TextDocument>) => 
             message: "👋 Save detected. Running N+1 analysis on current file..."
         });
         const diagnostics = await provider.provideDiagnostics(document, true);
+		const nplusOneDiagnostics = diagnostics.filter((diagnostic) => diagnostic.code === RuleCodes.NPLUSONE);
         connection.sendDiagnostics({ uri: document.uri, diagnostics });
 		connection.sendNotification(ShowMessageNotification.type, {
             type: MessageType.Info,
-            message: `✅ Analysis complete. Found ${diagnostics?.length} issues.`
+            message: `✅ Analysis complete. Found ${nplusOneDiagnostics?.length} issues.`
         });
     }
 });

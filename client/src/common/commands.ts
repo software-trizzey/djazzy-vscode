@@ -106,8 +106,6 @@ export async function registerCommands(
                 vscode.window.showInformationMessage('Thank you for your response!');
                 const token = context.globalState.get(COMMANDS.USER_API_KEY) || "Anonymous";
                 trackExceptionHandlingResultFeedback(token as string, feedback);
-                // Don't send to server
-                // client.sendRequest(COMMANDS.NPLUSONE_FEEDBACK, { uri: uri.toString(), diagnostic, feedback });
             }
         }
     ));

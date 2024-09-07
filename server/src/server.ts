@@ -563,21 +563,32 @@ documents.onDidSave(async (saveEvent: TextDocumentChangeEvent<TextDocument>) => 
     const workspaceFolders = await connection.workspace.getWorkspaceFolders();
     const provider = getOrCreateProvider(languageId, settings, document, workspaceFolders);
 
-	// TODO: we should check if this is django file or not before running
     if (provider instanceof DjangoProvider) {
-		connection.sendNotification(ShowMessageNotification.type, {
-            type: MessageType.Info,
-            message: "👋 Save detected. Running N+1 analysis on current file..."
-        });
-        const diagnostics = await provider.provideDiagnostics(document, true);
-		const nplusOneDiagnostics = diagnostics.filter((diagnostic) => diagnostic.code === RuleCodes.NPLUSONE);
-        connection.sendDiagnostics({ uri: document.uri, diagnostics });
-		connection.sendNotification(ShowMessageNotification.type, {
-            type: MessageType.Info,
-            message: `✅ Analysis complete. Found ${nplusOneDiagnostics?.length} issues.`
-        });
+        try {
+			const isDjangoProject = await provider.djangoProjectDetectionPromise;
+			if (!isDjangoProject) return;
+			
+			connection.sendNotification(ShowMessageNotification.type, {
+				type: MessageType.Info,
+				message: "👋 Save detected. Running N+1 analysis on current file..."
+			});
+            const diagnostics = await provider.runNPlusOneQueryAnalysis(document);
+            connection.sendDiagnostics({ uri: document.uri, diagnostics });
+            const nplusOneDiagnostics = diagnostics.filter((diagnostic) => diagnostic.code === RuleCodes.NPLUSONE);
+            
+            connection.sendNotification(ShowMessageNotification.type, {
+                type: MessageType.Info,
+                message: `✅ Analysis complete. Found ${nplusOneDiagnostics?.length} issues.`
+            });
+        } catch (error: any) {
+            connection.sendNotification(ShowMessageNotification.type, {
+                type: MessageType.Error,
+                message: `🥲 Error running N+1 analysis: ${error.message}`
+            });
+        }
     }
 });
+
 
 documents.listen(connection);
 connection.listen();

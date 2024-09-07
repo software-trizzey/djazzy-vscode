@@ -48,7 +48,7 @@ export class DjangoProvider extends LanguageProvider {
 	private codeActionsMessageCache: Map<string, CodeAction> = new Map();
     private isDjangoProject: boolean = false;
     private modelCache: ModelCache = new Map();
-    private djangoProjectDetectionPromise: Promise<boolean>;
+    public djangoProjectDetectionPromise: Promise<boolean>;
 
 
     constructor(
@@ -755,7 +755,7 @@ export class DjangoProvider extends LanguageProvider {
             modelDefinitions: parsedData.modelDefinitions,
             querysetDefinitions: parsedData.querysetDefinitions,
             loopDefinitions: parsedData.loopDefinitions,
-            optimizationMethods: "", // Any optimization methods
+            optimizationMethods: "", // TODO: Any optimization methods
             apiKey: connectionInfo.user_api_key
         };
     
@@ -771,7 +771,7 @@ export class DjangoProvider extends LanguageProvider {
         if (response.ok) {
             const analysisResults = await response.json();
             if (analysisResults && analysisResults.n_plus_one_detected && analysisResults.results) {
-                LOGGER.info(`[User] ${cachedUserToken} N+1 query analysis results: ${JSON.stringify(analysisResults.results)}`);
+                LOGGER.info(`[User] ${cachedUserToken} N+1 query analysis found ${analysisResults.results.length} issues.`);
     
                 for (const result of analysisResults.results) {
                     const range = Range.create(
@@ -802,8 +802,7 @@ export class DjangoProvider extends LanguageProvider {
         return diagnostics;
     }    
 
-    private async runNPlusOneQueryAnalysis(document: TextDocument): Promise<Diagnostic[]> {
-        const diagnostics: Diagnostic[] = [];
+    public async runNPlusOneQueryAnalysis(document: TextDocument): Promise<Diagnostic[]> {
         const modelCacheObject = Object.fromEntries(this.modelCache);
         const modelCacheJson = JSON.stringify(modelCacheObject);
         const documentText = document.getText();
@@ -833,7 +832,7 @@ export class DjangoProvider extends LanguageProvider {
     
                 try {
                     const parsedData = JSON.parse(output);
-                    LOGGER.info(`[User] ${cachedUserToken} parsed N+1 query data: ${JSON.stringify(parsedData)}`);
+                    LOGGER.info(`[User] ${cachedUserToken} N+1 parsing complete.`);
                     this.sendNPlusOneRequestToApi(parsedData, document.uri)
                         .then((apiDiagnostics) => {
                             resolve(apiDiagnostics);

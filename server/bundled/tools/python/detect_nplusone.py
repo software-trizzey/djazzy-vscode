@@ -1,4 +1,5 @@
 import ast
+import uuid
 import sys
 import http.client
 import json
@@ -64,17 +65,24 @@ class NPlusOneQueryService:
             return None
 
     def _send_post_request(self, url, payload):
-        """
-        Helper method to send POST request using http.client
-        """
         try:
             parsed_url = urlparse(url)
             connection = http.client.HTTPConnection(parsed_url.hostname, parsed_url.port)
-            headers = {'Content-type': 'application/json'}
+            headers = {
+                'Content-type': 'application/json',
+                'User-Agent': 'NPlusOneQueryService/1.0',
+                'X-Request-ID': str(uuid.uuid4())
+            }
 
             connection.request("POST", parsed_url.path, body=json.dumps(payload), headers=headers)
             response = connection.getresponse()
             data = response.read().decode()
+
+            # Handle 307 Temporary Redirect
+            if response.status == 307:
+                redirect_url = response.getheader('Location')
+                LOGGER.info(f"Redirected to {redirect_url}")
+                return self._send_post_request(redirect_url, payload)  # Recursively follow the redirect
 
             return {
                 'status': response.status,

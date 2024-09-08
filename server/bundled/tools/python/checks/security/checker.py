@@ -23,18 +23,6 @@ from issue import IssueSeverity
 from .security_issue import SecurityIssue
 from .security_rules import SecurityRules
 
-class RawSqlIssueMessages:
-    RAW_SQL_USAGE = (
-        "Avoid using 'raw' queries to execute raw SQL queries directly. "
-        "This can bypass Django's ORM protections against SQL injection and reduce database portability. "
-        "Consider using Django's ORM instead."
-    )
-    RAW_SQL_USAGE_WITH_CURSOR = (
-        "Avoid using 'connection.cursor()' to execute raw SQL queries directly. "
-        "This can bypass Django's ORM protections against SQL injection and reduce database portability. "
-        "Consider using Django's ORM instead."
-    )
-
 
 class SecurityCheckService(ast.NodeVisitor):
     def __init__(self, source_code: str, flag_cursor_detection=True):

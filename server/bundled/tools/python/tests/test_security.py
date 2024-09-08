@@ -3,7 +3,7 @@ import textwrap
 from unittest.mock import patch
 
 from issue import IssueSeverity
-from checks.security.checker import SecurityCheckService, RawSqlIssueMessages
+from checks.security.checker import SecurityCheckService
 from checks.security.security_rules import SecurityRules
 
 
@@ -89,7 +89,7 @@ class TestSecurityCheckService(unittest.TestCase):
         self.assertEqual(len(issues), 1)
         self.assertEqual(issues[0].code, SecurityRules.RAW_SQL_USAGE.code)
         self.assertEqual(issues[0].severity, IssueSeverity.INFORMATION)
-        self.assertIn(RawSqlIssueMessages.RAW_SQL_USAGE, issues[0].message)
+        self.assertIn(SecurityRules.RAW_SQL_USAGE.description, issues[0].message)
 
     @patch('log.LOGGER')
     def test_no_raw_sql_query_not_detected(self, mock_logger):
@@ -111,7 +111,7 @@ class TestSecurityCheckService(unittest.TestCase):
         self.assertEqual(len(issues), 1)
         self.assertEqual(issues[0].code, SecurityRules.RAW_SQL_USAGE_WITH_CURSOR.code)
         self.assertEqual(issues[0].severity, IssueSeverity.INFORMATION)
-        self.assertIn(RawSqlIssueMessages.RAW_SQL_USAGE_WITH_CURSOR, issues[0].message)
+        self.assertIn(SecurityRules.RAW_SQL_USAGE_WITH_CURSOR.description, issues[0].message)
 
     def test_no_raw_sql_with_cursor_not_detected(self):
         source_code = """from django.db import connection\nconnection.cursor().close()"""

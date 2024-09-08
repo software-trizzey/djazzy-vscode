@@ -8,7 +8,7 @@ from constants import DJANGO_IGNORE_FUNCTIONS
 
 from ast_parser import Analyzer
 
-from checks.security import SecurityCheckService
+from checks.security.checker import SecurityCheckService
 from checks.model_fields import ModelFieldCheckService
 from checks.skinny_views.checker import ViewComplexityAnalyzer
 from checks.skinny_views.scorer import ViewComplexityScorer, ScoreThresholds

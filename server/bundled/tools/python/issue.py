@@ -1,6 +1,3 @@
-
-
-
 class IssueSeverity:
     ERROR = 'ERROR'
     WARNING = 'WARNING'
@@ -14,6 +11,10 @@ class IssueDocLinks:
     CSRF_COOKIE_SECURE = 'https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/#csrf-cookie-secure'
     SESSION_COOKIE_SECURE = 'https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/#session-cookie-secure'
     RAW_SQL_USAGE = 'https://docs.djangoproject.com/en/5.0/topics/security/#sql-injection-protection'
+    SECURE_SSL_REDIRECT = 'https://docs.djangoproject.com/en/5.0/ref/settings/#secure-ssl-redirect'
+    X_FRAME_OPTIONS = 'https://docs.djangoproject.com/en/5.0/ref/clickjacking/'
+    SECURE_HSTS_SECONDS = 'https://docs.djangoproject.com/en/5.0/ref/settings/#secure-hsts-seconds'
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = 'https://docs.djangoproject.com/en/5.0/ref/settings/#secure-hsts-include-subdomains'
 
 
 class Issue(object):

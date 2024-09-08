@@ -1,8 +1,10 @@
 import unittest
 import textwrap
 from unittest.mock import patch
+
 from issue import IssueSeverity
-from checks.security import SecurityCheckService, RawSqlIssueMessages
+from checks.security.checker import SecurityCheckService, RawSqlIssueMessages
+from checks.security.security_rules import SecurityRules
 
 
 class TestSecurityCheckService(unittest.TestCase):
@@ -16,7 +18,7 @@ class TestSecurityCheckService(unittest.TestCase):
         
         issues = service.get_security_issues()
         self.assertEqual(len(issues), 1)
-        self.assertEqual(issues[0].issue_type, 'debug_true')
+        self.assertEqual(issues[0].code, SecurityRules.DEBUG_TRUE.code)
         self.assertEqual(issues[0].severity, IssueSeverity.WARNING)
         self.assertIn('DEBUG is set to True', issues[0].message)
 
@@ -39,7 +41,7 @@ class TestSecurityCheckService(unittest.TestCase):
         
         issues = service.get_security_issues()
         self.assertEqual(len(issues), 1)
-        self.assertEqual(issues[0].issue_type, 'hardcoded_secret_key')
+        self.assertEqual(issues[0].code, SecurityRules.HARDCODED_SECRET_KEY.code)
         self.assertEqual(issues[0].severity, IssueSeverity.WARNING)
         self.assertIn('SECRET_KEY appears to be hardcoded', issues[0].message)
 
@@ -62,7 +64,7 @@ class TestSecurityCheckService(unittest.TestCase):
         
         issues = service.get_security_issues()
         self.assertEqual(len(issues), 1)
-        self.assertEqual(issues[0].issue_type, 'wildcard_allowed_hosts')
+        self.assertEqual(issues[0].code, SecurityRules.WILDCARD_ALLOWED_HOSTS.code)
         self.assertEqual(issues[0].severity, IssueSeverity.WARNING)
         self.assertIn('ALLOWED_HOSTS contains a wildcard', issues[0].message)
 
@@ -85,8 +87,8 @@ class TestSecurityCheckService(unittest.TestCase):
         
         issues = service.get_security_issues()
         self.assertEqual(len(issues), 1)
-        self.assertEqual(issues[0].issue_type, 'raw_sql_usage')
-        self.assertEqual(issues[0].severity, IssueSeverity.WARNING)
+        self.assertEqual(issues[0].code, SecurityRules.RAW_SQL_USAGE.code)
+        self.assertEqual(issues[0].severity, IssueSeverity.INFORMATION)
         self.assertIn(RawSqlIssueMessages.RAW_SQL_USAGE, issues[0].message)
 
     @patch('log.LOGGER')
@@ -107,7 +109,7 @@ class TestSecurityCheckService(unittest.TestCase):
         
         issues = service.get_security_issues()
         self.assertEqual(len(issues), 1)
-        self.assertEqual(issues[0].issue_type, 'raw_sql_usage')
+        self.assertEqual(issues[0].code, SecurityRules.RAW_SQL_USAGE_WITH_CURSOR.code)
         self.assertEqual(issues[0].severity, IssueSeverity.INFORMATION)
         self.assertIn(RawSqlIssueMessages.RAW_SQL_USAGE_WITH_CURSOR, issues[0].message)
 
@@ -129,7 +131,7 @@ class TestSecurityCheckService(unittest.TestCase):
         
         issues = service.get_security_issues()
         self.assertEqual(len(issues), 1)
-        self.assertEqual(issues[0].issue_type, 'csrf_cookie_secure_false')
+        self.assertEqual(issues[0].code, SecurityRules.CSRF_COOKIE_SECURE_FALSE.code)
         self.assertEqual(issues[0].severity, IssueSeverity.WARNING)
         self.assertIn('CSRF_COOKIE_SECURE is False', issues[0].message)
 
@@ -152,7 +154,7 @@ class TestSecurityCheckService(unittest.TestCase):
         
         issues = service.get_security_issues()
         self.assertEqual(len(issues), 1)
-        self.assertEqual(issues[0].issue_type, 'session_cookie_secure_false')
+        self.assertEqual(issues[0].code, SecurityRules.SESSION_COOKIE_SECURE_FALSE.code)
         self.assertEqual(issues[0].severity, IssueSeverity.WARNING)
         self.assertIn('SESSION_COOKIE_SECURE is False', issues[0].message)
 
@@ -175,7 +177,7 @@ class TestSecurityCheckService(unittest.TestCase):
         
         issues = service.get_security_issues()
         self.assertEqual(len(issues), 1)
-        self.assertEqual(issues[0].issue_type, 'secure_ssl_redirect_false')
+        self.assertEqual(issues[0].code, SecurityRules.SECURE_SSL_REDIRECT_FALSE.code)
         self.assertEqual(issues[0].severity, IssueSeverity.WARNING)
         self.assertIn('SECURE_SSL_REDIRECT is set to False', issues[0].message)
 
@@ -203,7 +205,7 @@ class TestSecurityCheckService(unittest.TestCase):
         
         issues = service.get_security_issues()
         self.assertEqual(len(issues), 1)
-        self.assertEqual(issues[0].issue_type, 'x_frame_options_not_set')
+        self.assertEqual(issues[0].code, SecurityRules.X_FRAME_OPTIONS_NOT_SET.code)
         self.assertEqual(issues[0].severity, IssueSeverity.WARNING)
         self.assertIn('X_FRAME_OPTIONS is not set', issues[0].message)
 
@@ -221,7 +223,7 @@ class TestSecurityCheckService(unittest.TestCase):
         
         issues = service.get_security_issues()
         self.assertEqual(len(issues), 1)
-        self.assertEqual(issues[0].issue_type, 'x_frame_options_not_set')
+        self.assertEqual(issues[0].code, SecurityRules.X_FRAME_OPTIONS_NOT_SET.code)
         self.assertEqual(issues[0].severity, IssueSeverity.WARNING)
         self.assertIn('X_FRAME_OPTIONS is not set', issues[0].message)
 
@@ -275,7 +277,7 @@ class TestSecurityCheckService(unittest.TestCase):
         
         issues = service.get_security_issues()
         self.assertEqual(len(issues), 1)
-        self.assertEqual(issues[0].issue_type, 'x_frame_options_middleware_missing')
+        self.assertEqual(issues[0].code, SecurityRules.X_FRAME_OPTIONS_MISSING_MIDDLEWARE.code)
         self.assertIn('X_FRAME_OPTIONS is set, but the "django.middleware.clickjacking.XFrameOptionsMiddleware" is missing', issues[0].message)
 
 
@@ -288,7 +290,7 @@ class TestSecurityCheckService(unittest.TestCase):
         
         issues = service.get_security_issues()
         self.assertEqual(len(issues), 1)
-        self.assertEqual(issues[0].issue_type, 'secure_hsts_seconds_not_set')
+        self.assertEqual(issues[0].code, SecurityRules.SECURE_HSTS_SECONDS_NOT_SET.code)
         self.assertEqual(issues[0].severity, IssueSeverity.WARNING)
         self.assertIn('SECURE_HSTS_SECONDS is set to 0', issues[0].message)
 
@@ -316,7 +318,7 @@ class TestSecurityCheckService(unittest.TestCase):
         
         issues = service.get_security_issues()
         self.assertEqual(len(issues), 1)
-        self.assertEqual(issues[0].issue_type, 'secure_hsts_include_subdomains_false')
+        self.assertEqual(issues[0].code, SecurityRules.SECURE_HSTS_INCLUDE_SUBDOMAINS_FALSE.code)
         self.assertEqual(issues[0].severity, IssueSeverity.WARNING)
         self.assertIn('SECURE_HSTS_INCLUDE_SUBDOMAINS is set to False', issues[0].message)
 
@@ -349,10 +351,10 @@ class TestSecurityCheckService(unittest.TestCase):
         
         issues = service.get_security_issues()
         self.assertEqual(len(issues), 2)  # Both HSTS_SECONDS and HSTS_INCLUDE_SUBDOMAINS should be flagged
-        self.assertEqual(issues[0].issue_type, 'secure_hsts_seconds_not_set')
+        self.assertEqual(issues[0].code, SecurityRules.SECURE_HSTS_SECONDS_NOT_SET.code)
         self.assertEqual(issues[0].severity, IssueSeverity.WARNING)
         self.assertIn('SECURE_HSTS_SECONDS is set to 0', issues[0].message)
-        self.assertEqual(issues[1].issue_type, 'secure_hsts_include_subdomains_ignored')
+        self.assertEqual(issues[1].code, SecurityRules.SECURE_HSTS_INCLUDE_SUBDOMAINS_IGNORED.code)
         self.assertEqual(issues[1].severity, IssueSeverity.WARNING)
         self.assertIn(
             'SECURE_HSTS_INCLUDE_SUBDOMAINS is set to True, but it has no effect because SECURE_HSTS_SECONDS is 0.',

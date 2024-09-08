@@ -77,7 +77,7 @@ class SecurityCheckService(ast.NodeVisitor):
         return [
             {
                 'issue_type': issue.code,
-                'line': issue.line,
+                'line': issue.lineno,
                 'message': issue.message,
                 'severity': issue.severity,
                 'doc_link': issue.doc_link

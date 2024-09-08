@@ -55,7 +55,7 @@
 			},
 			{
 				"command": "djangoly.analyzeExceptionHandling",
-				"title": "Djangoly: Analyze Exception Handling"
+				"title": "Code boost: Improve Exception Handling"
 			}
 		],
 		"menus": {

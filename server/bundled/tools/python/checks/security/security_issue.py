@@ -17,7 +17,7 @@ class SecurityIssue(Issue):
         """
         Return the issue message with the code prefixed.
         """
-        return f"[{self.code}] {super().message}"
+        return super().message
 
     def __str__(self):
         return f'{self.code} - {self.description}'

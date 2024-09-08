@@ -742,7 +742,7 @@ export class DjangoProvider extends LanguageProvider {
                 message: issue.message,
                 severity: severity,
                 source: SOURCE_NAME,
-                code: DJANGO_SECURITY_VIOLATION_SOURCE_TYPE,
+                code: issue.issue_type || DJANGO_SECURITY_VIOLATION_SOURCE_TYPE,
                 codeDescription: {
                     href: issue.doc_link
                 }

@@ -203,7 +203,20 @@ class TestSecurityCheckService(unittest.TestCase):
         self.assertIn('X_FRAME_OPTIONS is not set', issues[0].message)
 
     @patch('log.LOGGER')
-    def test_x_frame_options_set_to_sameorigin_not_detected(self, mock_logger):
+    def test_x_frame_options_set_to_invalid_value_should_raise_issue(self, mock_logger):
+        source_code = "X_FRAME_OPTIONS = 'hello'"
+        service = SecurityCheckService(source_code)
+        
+        service.run_security_checks()
+        
+        issues = service.get_security_issues()
+        self.assertEqual(len(issues), 1)
+        self.assertEqual(issues[0].issue_type, 'x_frame_options_not_set')
+        self.assertEqual(issues[0].severity, IssueSeverity.WARNING)
+        self.assertIn('X_FRAME_OPTIONS is not set', issues[0].message)
+
+    @patch('log.LOGGER')
+    def test_x_frame_options_with_sameorigin_value_should_not_create_issue(self, mock_logger):
         source_code = "X_FRAME_OPTIONS = 'SAMEORIGIN'"
         service = SecurityCheckService(source_code)
         
@@ -213,7 +226,17 @@ class TestSecurityCheckService(unittest.TestCase):
         self.assertEqual(len(issues), 0)
 
     @patch('log.LOGGER')
-    def test_secure_hsts_seconds_not_set_detected(self, mock_logger):
+    def test_x_frame_options_with_deny_value_should_not_create_issue(self, mock_logger):
+        source_code = "X_FRAME_OPTIONS = 'DENY'"
+        service = SecurityCheckService(source_code)
+        
+        service.run_security_checks()
+        
+        issues = service.get_security_issues()
+        self.assertEqual(len(issues), 0)
+
+    @patch('log.LOGGER')
+    def test_secure_hsts_seconds_with_zero_value_raises_an_issue(self, mock_logger):
         source_code = "SECURE_HSTS_SECONDS = 0"
         service = SecurityCheckService(source_code)
         
@@ -226,7 +249,7 @@ class TestSecurityCheckService(unittest.TestCase):
         self.assertIn('SECURE_HSTS_SECONDS is set to 0', issues[0].message)
 
     @patch('log.LOGGER')
-    def test_secure_hsts_seconds_set_properly_not_detected(self, mock_logger):
+    def test_secure_hsts_seconds_set_properly_and_issue_not_detected(self, mock_logger):
         source_code = "SECURE_HSTS_SECONDS = 31536000"
         service = SecurityCheckService(source_code)
         
@@ -236,8 +259,13 @@ class TestSecurityCheckService(unittest.TestCase):
         self.assertEqual(len(issues), 0)
 
     @patch('log.LOGGER')
-    def test_secure_hsts_include_subdomains_false_detected(self, mock_logger):
-        source_code = "SECURE_HSTS_INCLUDE_SUBDOMAINS = False"
+    def test_secure_hsts_include_subdomains_false_and_issue_detected(self, mock_logger):
+        source_code = textwrap.dedent(
+            """
+            SECURE_HSTS_SECONDS = 31536000
+            SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+            """
+        )
         service = SecurityCheckService(source_code)
         
         service.run_security_checks()
@@ -249,8 +277,13 @@ class TestSecurityCheckService(unittest.TestCase):
         self.assertIn('SECURE_HSTS_INCLUDE_SUBDOMAINS is set to False', issues[0].message)
 
     @patch('log.LOGGER')
-    def test_secure_hsts_include_subdomains_true_not_detected(self, mock_logger):
-        source_code = "SECURE_HSTS_INCLUDE_SUBDOMAINS = True"
+    def test_secure_hsts_include_subdomains_true_and_issue_not_detected(self, mock_logger):
+        source_code = textwrap.dedent(
+            """
+            SECURE_HSTS_SECONDS = 31536000
+            SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+            """
+        )
         service = SecurityCheckService(source_code)
         
         service.run_security_checks()
@@ -277,7 +310,11 @@ class TestSecurityCheckService(unittest.TestCase):
         self.assertIn('SECURE_HSTS_SECONDS is set to 0', issues[0].message)
         self.assertEqual(issues[1].issue_type, 'secure_hsts_include_subdomains_ignored')
         self.assertEqual(issues[1].severity, IssueSeverity.WARNING)
-        self.assertIn('SECURE_HSTS_INCLUDE_SUBDOMAINS has no effect since SECURE_HSTS_SECONDS is 0', issues[1].message)
+        self.assertIn(
+            'SECURE_HSTS_INCLUDE_SUBDOMAINS is set to True, but it has no effect because SECURE_HSTS_SECONDS is 0.',
+            issues[1].message
+        )
+
 
 
 if __name__ == '__main__':

@@ -10,6 +10,10 @@ from constants import (
     DEBUG,
     SECRET_KEY,
     SESSION_COOKIE,
+    SECURE_SSL_REDIRECT,
+    X_FRAME_OPTIONS,
+    SECURE_HSTS_SECONDS,
+    SECURE_HSTS_INCLUDE_SUBDOMAINS,
 )
 
 from issue import IssueDocLinks, IssueSeverity
@@ -60,6 +64,24 @@ class SecurityCheckService(ast.NodeVisitor):
 
     def get_formatted_security_issues(self) -> List[Dict[str, Any]]:
         return self._convert_security_issues_to_dict()
+    
+    def issue_already_exists(self, issue_type: str) -> bool:
+        return any(issue.issue_type == issue_type for issue in self.security_issues)
+    
+    def get_setting_value(self, setting_name: str):
+        """
+        Extracts the value of a setting from the source code.
+        """
+        try:
+            tree = ast.parse(self.source_code)
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Assign):
+                    for target in node.targets:
+                        if isinstance(target, ast.Name) and target.id == setting_name:
+                            return ast.literal_eval(node.value)
+        except Exception as e:
+            LOGGER.error(f"Error parsing setting {setting_name}: {e}")
+        return None
 
     def _convert_security_issues_to_dict(self):
         return [
@@ -135,6 +157,16 @@ class SecurityCheckService(ast.NodeVisitor):
             self.check_csrf_cookie(value_str, line)
         elif name == SESSION_COOKIE:
             self.check_session_cookie(value_str, line)
+        elif name == SECURE_SSL_REDIRECT:
+            self.check_ssl_redirect(value_str, line)
+        elif name == X_FRAME_OPTIONS:
+            self.check_x_frame_options(value_str, line)
+
+        # Fetch both HSTS settings and pass them to the unified check method
+        if name == SECURE_HSTS_SECONDS or name == SECURE_HSTS_INCLUDE_SUBDOMAINS:
+            hsts_seconds_value = self.get_setting_value(SECURE_HSTS_SECONDS)
+            hsts_subdomains_value = self.get_setting_value(SECURE_HSTS_INCLUDE_SUBDOMAINS)
+            self.check_hsts_settings(hsts_seconds_value, hsts_subdomains_value, line)
 
     def check_debug_setting(self, value: str, line: int):
         if value.lower() == 'true':
@@ -193,4 +225,67 @@ class SecurityCheckService(ast.NodeVisitor):
                 f'SESSION_COOKIE_SECURE is False. Set this to True to avoid transmitting the session cookie over HTTP accidentally.\n\n{IssueDocLinks.SESSION_COOKIE_SECURE}\n',
                 IssueSeverity.WARNING,
                 IssueDocLinks.SESSION_COOKIE_SECURE
+            )
+
+    def check_ssl_redirect(self, value: str, line: int):
+        if value.lower() == 'false':
+            self.add_security_issue(
+                'secure_ssl_redirect_false',
+                line,
+                'SECURE_SSL_REDIRECT is set to False. It should be True in production to enforce HTTPS.\n\n'
+                f'{IssueDocLinks.SECURE_SSL_REDIRECT}',
+                IssueSeverity.WARNING,
+                IssueDocLinks.SECURE_SSL_REDIRECT
+            )
+
+    def check_x_frame_options(self, value: ast.expr, line: int):
+        try:
+            value_str = ast.literal_eval(value).strip().lower()
+        except (ValueError, SyntaxError):
+            # If literal eval fails, assume it's not a valid string
+            value_str = ''
+        
+        if not value_str or value_str not in ['deny', 'sameorigin']:
+            self.add_security_issue(
+                'x_frame_options_not_set',
+                line,
+                'X_FRAME_OPTIONS is not set to a valid value. It should be either "DENY" or "SAMEORIGIN" to prevent clickjacking.\n\n'
+                f'{IssueDocLinks.X_FRAME_OPTIONS}',
+                IssueSeverity.WARNING,
+                IssueDocLinks.X_FRAME_OPTIONS
+            )
+
+    def check_hsts_settings(self, hsts_seconds_value: Any, hsts_subdomains_value: Any, line: int):
+        """
+        Ensure that both SECURE_HSTS_SECONDS and SECURE_HSTS_INCLUDE_SUBDOMAINS are checked together.
+        """
+        if hsts_seconds_value == 0 and not self.issue_already_exists('secure_hsts_seconds_not_set'):
+            self.add_security_issue(
+                'secure_hsts_seconds_not_set',
+                line,
+                'SECURE_HSTS_SECONDS is set to 0. Set it to a positive value (e.g., 31536000 for 1 year) to enforce HTTPS.\n\n'
+                f'{IssueDocLinks.SECURE_HSTS_SECONDS}',
+                IssueSeverity.WARNING,
+                IssueDocLinks.SECURE_HSTS_SECONDS
+            )
+            
+        if hsts_seconds_value == 0 and hsts_subdomains_value is True and not self.issue_already_exists('secure_hsts_include_subdomains_ignored'):
+            self.add_security_issue(
+                'secure_hsts_include_subdomains_ignored',
+                line,
+                'SECURE_HSTS_INCLUDE_SUBDOMAINS is set to True, but it has no effect because SECURE_HSTS_SECONDS is 0. '
+                'Set SECURE_HSTS_SECONDS to a positive value to enable this.\n\n'
+                f'{IssueDocLinks.SECURE_HSTS_INCLUDE_SUBDOMAINS}',
+                IssueSeverity.WARNING,
+                IssueDocLinks.SECURE_HSTS_INCLUDE_SUBDOMAINS
+            )
+        
+        if hsts_seconds_value != 0 and hsts_subdomains_value is False and not self.issue_already_exists('secure_hsts_include_subdomains_false'):
+            self.add_security_issue(
+                'secure_hsts_include_subdomains_false',
+                line,
+                'SECURE_HSTS_INCLUDE_SUBDOMAINS is set to False. Set it to True to apply HSTS to all subdomains for better security.\n\n'
+                f'{IssueDocLinks.SECURE_HSTS_INCLUDE_SUBDOMAINS}',
+                IssueSeverity.WARNING,
+                IssueDocLinks.SECURE_HSTS_INCLUDE_SUBDOMAINS
             )

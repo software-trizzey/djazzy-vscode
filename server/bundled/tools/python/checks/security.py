@@ -258,7 +258,6 @@ class SecurityCheckService(ast.NodeVisitor):
 
         middleware_value = self.get_setting_value(MIDDLEWARE_LIST)
         if middleware_value and "django.middleware.clickjacking.XFrameOptionsMiddleware" not in middleware_value:
-            print("XFrameOptionsMiddleware is missing from MIDDLEWARE")
             self.add_security_issue(
                 'x_frame_options_middleware_missing',
                 line,

@@ -8,6 +8,7 @@ from constants import (
     ALLOWED_HOSTS,
     CSRF_COOKIE_SECURE,
     DEBUG,
+    MIDDLEWARE_LIST,
     SECRET_KEY,
     SESSION_COOKIE,
     SECURE_SSL_REDIRECT,
@@ -250,6 +251,19 @@ class SecurityCheckService(ast.NodeVisitor):
                 'x_frame_options_not_set',
                 line,
                 'X_FRAME_OPTIONS is not set to a valid value. It should be either "DENY" or "SAMEORIGIN" to prevent clickjacking.\n\n'
+                f'{IssueDocLinks.X_FRAME_OPTIONS}',
+                IssueSeverity.WARNING,
+                IssueDocLinks.X_FRAME_OPTIONS
+            )
+
+        middleware_value = self.get_setting_value(MIDDLEWARE_LIST)
+        if middleware_value and "django.middleware.clickjacking.XFrameOptionsMiddleware" not in middleware_value:
+            print("XFrameOptionsMiddleware is missing from MIDDLEWARE")
+            self.add_security_issue(
+                'x_frame_options_middleware_missing',
+                line,
+                'X_FRAME_OPTIONS is set, but the "django.middleware.clickjacking.XFrameOptionsMiddleware" is missing from the MIDDLEWARE list. '
+                'Add the middleware to properly enforce X_FRAME_OPTIONS.\n\n'
                 f'{IssueDocLinks.X_FRAME_OPTIONS}',
                 IssueSeverity.WARNING,
                 IssueDocLinks.X_FRAME_OPTIONS

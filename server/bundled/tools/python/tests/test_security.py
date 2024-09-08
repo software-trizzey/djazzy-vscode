@@ -234,6 +234,30 @@ class TestSecurityCheckService(unittest.TestCase):
         
         issues = service.get_security_issues()
         self.assertEqual(len(issues), 0)
+    
+    @patch('log.LOGGER')
+    def test_x_frame_options_without_middleware_should_create_issue(self, mock_logger):
+        """
+        The "django.middleware.clickjacking.XFrameOptionsMiddleware" middleware should be present if X_FRAME_OPTIONS is set.
+        """
+        source_code = textwrap.dedent(
+            """
+            X_FRAME_OPTIONS = 'DENY'
+            MIDDLEWARE = [
+                'django.middleware.security.SecurityMiddleware',
+                'django.middleware.common.CommonMiddleware'
+            ]
+            """
+        )
+        service = SecurityCheckService(source_code)
+        
+        service.run_security_checks()
+        
+        issues = service.get_security_issues()
+        self.assertEqual(len(issues), 1)
+        self.assertEqual(issues[0].issue_type, 'x_frame_options_middleware_missing')
+        self.assertIn('X_FRAME_OPTIONS is set, but the "django.middleware.clickjacking.XFrameOptionsMiddleware" is missing', issues[0].message)
+
 
     @patch('log.LOGGER')
     def test_secure_hsts_seconds_with_zero_value_raises_an_issue(self, mock_logger):

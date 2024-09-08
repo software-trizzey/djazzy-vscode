@@ -13,6 +13,7 @@ export const verbDictionary: { [key: string]: string } = {
 	deactivate: "deactivate",
 	double: "double",
 	expect: "expect",
+	evaluate: "evaluate",
 	get: "get",
 	set: "set",
 	update: "update",

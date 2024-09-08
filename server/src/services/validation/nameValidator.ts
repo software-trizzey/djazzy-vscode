@@ -6,7 +6,16 @@ import { isLikelyBoolean, hasNegativePattern } from '../../utils';
 import {BaseValidator} from './base';
 
 const VARIABLES_TO_IGNORE = [
-	"ID", "PK", "DEBUG", "USE_I18N", "USE_L10N", "USE_TZ", "CSRF_COOKIE_SECURE", "SESSION_COOKIE_SECURE"
+	"ID",
+	"PK",
+	"DEBUG",
+	"USE_I18N",
+	"USE_L10N",
+	"USE_TZ",
+	"CSRF_COOKIE_SECURE",
+	"SESSION_COOKIE_SECURE",
+	"SECURE_SSL_REDIRECT",
+	"SECURE_HSTS_INCLUDE_SUBDOMAINS"
 ];
 
 

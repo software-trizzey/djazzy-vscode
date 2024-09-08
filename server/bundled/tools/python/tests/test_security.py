@@ -1,4 +1,5 @@
 import unittest
+import textwrap
 from unittest.mock import patch
 from issue import IssueSeverity
 from checks.security import SecurityCheckService, RawSqlIssueMessages
@@ -164,6 +165,119 @@ class TestSecurityCheckService(unittest.TestCase):
         
         issues = service.get_security_issues()
         self.assertEqual(len(issues), 0)
+
+    @patch('log.LOGGER')
+    def test_secure_ssl_redirect_false_detected(self, mock_logger):
+        source_code = "SECURE_SSL_REDIRECT = False"
+        service = SecurityCheckService(source_code)
+        
+        service.run_security_checks()
+        
+        issues = service.get_security_issues()
+        self.assertEqual(len(issues), 1)
+        self.assertEqual(issues[0].issue_type, 'secure_ssl_redirect_false')
+        self.assertEqual(issues[0].severity, IssueSeverity.WARNING)
+        self.assertIn('SECURE_SSL_REDIRECT is set to False', issues[0].message)
+
+    @patch('log.LOGGER')
+    def test_secure_ssl_redirect_true_not_detected(self, mock_logger):
+        source_code = "SECURE_SSL_REDIRECT = True"
+        service = SecurityCheckService(source_code)
+        
+        service.run_security_checks()
+        
+        issues = service.get_security_issues()
+        self.assertEqual(len(issues), 0)
+
+    @patch('log.LOGGER')
+    def test_x_frame_options_not_set_detected(self, mock_logger):
+        source_code = "X_FRAME_OPTIONS = ''"
+        service = SecurityCheckService(source_code)
+        
+        service.run_security_checks()
+        
+        issues = service.get_security_issues()
+        self.assertEqual(len(issues), 1)
+        self.assertEqual(issues[0].issue_type, 'x_frame_options_not_set')
+        self.assertEqual(issues[0].severity, IssueSeverity.WARNING)
+        self.assertIn('X_FRAME_OPTIONS is not set', issues[0].message)
+
+    @patch('log.LOGGER')
+    def test_x_frame_options_set_to_sameorigin_not_detected(self, mock_logger):
+        source_code = "X_FRAME_OPTIONS = 'SAMEORIGIN'"
+        service = SecurityCheckService(source_code)
+        
+        service.run_security_checks()
+        
+        issues = service.get_security_issues()
+        self.assertEqual(len(issues), 0)
+
+    @patch('log.LOGGER')
+    def test_secure_hsts_seconds_not_set_detected(self, mock_logger):
+        source_code = "SECURE_HSTS_SECONDS = 0"
+        service = SecurityCheckService(source_code)
+        
+        service.run_security_checks()
+        
+        issues = service.get_security_issues()
+        self.assertEqual(len(issues), 1)
+        self.assertEqual(issues[0].issue_type, 'secure_hsts_seconds_not_set')
+        self.assertEqual(issues[0].severity, IssueSeverity.WARNING)
+        self.assertIn('SECURE_HSTS_SECONDS is set to 0', issues[0].message)
+
+    @patch('log.LOGGER')
+    def test_secure_hsts_seconds_set_properly_not_detected(self, mock_logger):
+        source_code = "SECURE_HSTS_SECONDS = 31536000"
+        service = SecurityCheckService(source_code)
+        
+        service.run_security_checks()
+        
+        issues = service.get_security_issues()
+        self.assertEqual(len(issues), 0)
+
+    @patch('log.LOGGER')
+    def test_secure_hsts_include_subdomains_false_detected(self, mock_logger):
+        source_code = "SECURE_HSTS_INCLUDE_SUBDOMAINS = False"
+        service = SecurityCheckService(source_code)
+        
+        service.run_security_checks()
+        
+        issues = service.get_security_issues()
+        self.assertEqual(len(issues), 1)
+        self.assertEqual(issues[0].issue_type, 'secure_hsts_include_subdomains_false')
+        self.assertEqual(issues[0].severity, IssueSeverity.WARNING)
+        self.assertIn('SECURE_HSTS_INCLUDE_SUBDOMAINS is set to False', issues[0].message)
+
+    @patch('log.LOGGER')
+    def test_secure_hsts_include_subdomains_true_not_detected(self, mock_logger):
+        source_code = "SECURE_HSTS_INCLUDE_SUBDOMAINS = True"
+        service = SecurityCheckService(source_code)
+        
+        service.run_security_checks()
+        
+        issues = service.get_security_issues()
+        self.assertEqual(len(issues), 0)
+
+    @patch('log.LOGGER')
+    def test_secure_hsts_include_subdomains_true_with_hsts_seconds_zero_detected(self, mock_logger):
+        source_code = textwrap.dedent(
+            """
+            SECURE_HSTS_SECONDS = 0
+            SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+            """
+        )
+        service = SecurityCheckService(source_code)
+        
+        service.run_security_checks()
+        
+        issues = service.get_security_issues()
+        self.assertEqual(len(issues), 2)  # Both HSTS_SECONDS and HSTS_INCLUDE_SUBDOMAINS should be flagged
+        self.assertEqual(issues[0].issue_type, 'secure_hsts_seconds_not_set')
+        self.assertEqual(issues[0].severity, IssueSeverity.WARNING)
+        self.assertIn('SECURE_HSTS_SECONDS is set to 0', issues[0].message)
+        self.assertEqual(issues[1].issue_type, 'secure_hsts_include_subdomains_ignored')
+        self.assertEqual(issues[1].severity, IssueSeverity.WARNING)
+        self.assertIn('SECURE_HSTS_INCLUDE_SUBDOMAINS has no effect since SECURE_HSTS_SECONDS is 0', issues[1].message)
 
 
 if __name__ == '__main__':

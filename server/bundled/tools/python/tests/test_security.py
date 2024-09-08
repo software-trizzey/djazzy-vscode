@@ -191,7 +191,12 @@ class TestSecurityCheckService(unittest.TestCase):
 
     @patch('log.LOGGER')
     def test_x_frame_options_not_set_detected(self, mock_logger):
-        source_code = "X_FRAME_OPTIONS = ''"
+        source_code = textwrap.dedent(
+            """
+            X_FRAME_OPTIONS = ''
+            MIDDLEWARE = ['django.middleware.clickjacking.XFrameOptionsMiddleware']
+            """
+        )
         service = SecurityCheckService(source_code)
         
         service.run_security_checks()
@@ -204,7 +209,12 @@ class TestSecurityCheckService(unittest.TestCase):
 
     @patch('log.LOGGER')
     def test_x_frame_options_set_to_invalid_value_should_raise_issue(self, mock_logger):
-        source_code = "X_FRAME_OPTIONS = 'hello'"
+        source_code = textwrap.dedent(
+            """
+            X_FRAME_OPTIONS = 'hello'
+            MIDDLEWARE = ['django.middleware.clickjacking.XFrameOptionsMiddleware']
+            """
+        )
         service = SecurityCheckService(source_code)
         
         service.run_security_checks()
@@ -217,7 +227,12 @@ class TestSecurityCheckService(unittest.TestCase):
 
     @patch('log.LOGGER')
     def test_x_frame_options_with_sameorigin_value_should_not_create_issue(self, mock_logger):
-        source_code = "X_FRAME_OPTIONS = 'SAMEORIGIN'"
+        source_code = textwrap.dedent(
+            """
+            X_FRAME_OPTIONS = 'SAMEORIGIN'
+            MIDDLEWARE = ['django.middleware.clickjacking.XFrameOptionsMiddleware']
+            """
+        )
         service = SecurityCheckService(source_code)
         
         service.run_security_checks()
@@ -227,7 +242,12 @@ class TestSecurityCheckService(unittest.TestCase):
 
     @patch('log.LOGGER')
     def test_x_frame_options_with_deny_value_should_not_create_issue(self, mock_logger):
-        source_code = "X_FRAME_OPTIONS = 'DENY'"
+        source_code = textwrap.dedent(
+            """
+            X_FRAME_OPTIONS = 'DENY'
+            MIDDLEWARE = ['django.middleware.clickjacking.XFrameOptionsMiddleware']
+            """
+        )
         service = SecurityCheckService(source_code)
         
         service.run_security_checks()

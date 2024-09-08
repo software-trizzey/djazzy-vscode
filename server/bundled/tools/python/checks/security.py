@@ -16,6 +16,7 @@ from constants import (
     SECURE_HSTS_SECONDS,
     SECURE_HSTS_INCLUDE_SUBDOMAINS,
 )
+from util import evaluate_expr_as_string
 
 from issue import IssueDocLinks, IssueSeverity
 
@@ -71,7 +72,8 @@ class SecurityCheckService(ast.NodeVisitor):
     
     def get_setting_value(self, setting_name: str):
         """
-        Extracts the value of a setting from the source code.
+        Extracts the value and line number of a setting from the source code.
+        Returns a tuple (value, line number) or (None, None) if the setting is not found.
         """
         try:
             tree = ast.parse(self.source_code)
@@ -79,10 +81,12 @@ class SecurityCheckService(ast.NodeVisitor):
                 if isinstance(node, ast.Assign):
                     for target in node.targets:
                         if isinstance(target, ast.Name) and target.id == setting_name:
-                            return ast.literal_eval(node.value)
+                            value = ast.literal_eval(node.value)
+                            line = node.lineno
+                            return value, line
         except Exception as e:
             LOGGER.error(f"Error parsing setting {setting_name}: {e}")
-        return None
+        return None, None
 
     def _convert_security_issues_to_dict(self):
         return [
@@ -165,9 +169,9 @@ class SecurityCheckService(ast.NodeVisitor):
 
         # Fetch both HSTS settings and pass them to the unified check method
         if name == SECURE_HSTS_SECONDS or name == SECURE_HSTS_INCLUDE_SUBDOMAINS:
-            hsts_seconds_value = self.get_setting_value(SECURE_HSTS_SECONDS)
-            hsts_subdomains_value = self.get_setting_value(SECURE_HSTS_INCLUDE_SUBDOMAINS)
-            self.check_hsts_settings(hsts_seconds_value, hsts_subdomains_value, line)
+            hsts_seconds_value, hsts_seconds_line = self.get_setting_value(SECURE_HSTS_SECONDS)
+            hsts_subdomains_value, hsts_subdomains_line = self.get_setting_value(SECURE_HSTS_INCLUDE_SUBDOMAINS)
+            self.check_hsts_settings(hsts_seconds_value, hsts_seconds_line, hsts_subdomains_value, hsts_subdomains_line)
 
     def check_debug_setting(self, value: str, line: int):
         if value.lower() == 'true':
@@ -240,11 +244,7 @@ class SecurityCheckService(ast.NodeVisitor):
             )
 
     def check_x_frame_options(self, value: ast.expr, line: int):
-        try:
-            value_str = ast.literal_eval(value).strip().lower()
-        except (ValueError, SyntaxError):
-            # If literal eval fails, assume it's not a valid string
-            value_str = ''
+        value_str = evaluate_expr_as_string(value)
         
         if not value_str or value_str not in ['deny', 'sameorigin']:
             self.add_security_issue(
@@ -256,7 +256,7 @@ class SecurityCheckService(ast.NodeVisitor):
                 IssueDocLinks.X_FRAME_OPTIONS
             )
 
-        middleware_value = self.get_setting_value(MIDDLEWARE_LIST)
+        middleware_value, _ = self.get_setting_value(MIDDLEWARE_LIST)
         if middleware_value and "django.middleware.clickjacking.XFrameOptionsMiddleware" not in middleware_value:
             self.add_security_issue(
                 'x_frame_options_middleware_missing',
@@ -268,14 +268,21 @@ class SecurityCheckService(ast.NodeVisitor):
                 IssueDocLinks.X_FRAME_OPTIONS
             )
 
-    def check_hsts_settings(self, hsts_seconds_value: Any, hsts_subdomains_value: Any, line: int):
+    def check_hsts_settings(
+        self,
+        hsts_seconds_value: Any,
+        hsts_seconds_line: int,
+        hsts_subdomains_value: Any,
+        hsts_subdomains_line: int
+    ):
         """
-        Ensure that both SECURE_HSTS_SECONDS and SECURE_HSTS_INCLUDE_SUBDOMAINS are checked together.
+        Ensure that both SECURE_HSTS_SECONDS and SECURE_HSTS_INCLUDE_SUBDOMAINS are checked together, 
+        and diagnostics are applied to the correct setting.
         """
         if hsts_seconds_value == 0 and not self.issue_already_exists('secure_hsts_seconds_not_set'):
             self.add_security_issue(
                 'secure_hsts_seconds_not_set',
-                line,
+                hsts_seconds_line,
                 'SECURE_HSTS_SECONDS is set to 0. Set it to a positive value (e.g., 31536000 for 1 year) to enforce HTTPS.\n\n'
                 f'{IssueDocLinks.SECURE_HSTS_SECONDS}',
                 IssueSeverity.WARNING,
@@ -285,7 +292,7 @@ class SecurityCheckService(ast.NodeVisitor):
         if hsts_seconds_value == 0 and hsts_subdomains_value is True and not self.issue_already_exists('secure_hsts_include_subdomains_ignored'):
             self.add_security_issue(
                 'secure_hsts_include_subdomains_ignored',
-                line,
+                hsts_subdomains_line,
                 'SECURE_HSTS_INCLUDE_SUBDOMAINS is set to True, but it has no effect because SECURE_HSTS_SECONDS is 0. '
                 'Set SECURE_HSTS_SECONDS to a positive value to enable this.\n\n'
                 f'{IssueDocLinks.SECURE_HSTS_INCLUDE_SUBDOMAINS}',
@@ -296,7 +303,7 @@ class SecurityCheckService(ast.NodeVisitor):
         if hsts_seconds_value != 0 and hsts_subdomains_value is False and not self.issue_already_exists('secure_hsts_include_subdomains_false'):
             self.add_security_issue(
                 'secure_hsts_include_subdomains_false',
-                line,
+                hsts_subdomains_line,
                 'SECURE_HSTS_INCLUDE_SUBDOMAINS is set to False. Set it to True to apply HSTS to all subdomains for better security.\n\n'
                 f'{IssueDocLinks.SECURE_HSTS_INCLUDE_SUBDOMAINS}',
                 IssueSeverity.WARNING,

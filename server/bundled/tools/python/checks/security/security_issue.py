@@ -6,7 +6,7 @@ class SecurityIssue(Issue):
     Security issue class inheriting from the abstract Issue class.
     """
     def __init__(self, code: str, lineno: int, message: str, severity: str, doc_link: str = None):
-        super().__init__(lineno, col=0)  # Assuming column is always 0 for simplicity
+        super().__init__(lineno, col=0)
         self.code = code
         self.description = message
         self.severity = severity

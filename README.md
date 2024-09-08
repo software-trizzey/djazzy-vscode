@@ -50,6 +50,18 @@ We appreciate your interest in being an early adopter and helping us shape Djang
 
 - **Redundant Comment Detection**: Flags comments that do not contribute additional information or context to the code.
 
+### Security Checks 🔒
+
+Djangoly includes several security checks to help ensure your Django project follows best practices for security:
+
+- **DEBUG Setting**: Checks if `DEBUG` is set to `True`. This setting should be `False` in production environments.
+- **SECRET_KEY Protection**: Verifies that the `SECRET_KEY` is not hardcoded in your settings file.
+- **ALLOWED_HOSTS Configuration**: Checks the `ALLOWED_HOSTS` setting for potential security issues.
+- **COOKIE Settings**: Ensures the `CSRF_COOKIE_SECURE` and `SESSION_COOKIE_SECURE` settings are set to `True` for production environments.
+
+For a full list of security rules and descriptions, see our [Security Rules Documentation](https://github.com/software-trizzey/djangoly-docs/blob/main/docs/SECURITY_RULES.md).
+
+
 ## Quick Start 🏃‍♂️💨
 
 1. **Get an API Key**: If you don't already have an API key, you can signup for one via this [form](https://forms.gle/gEEZdfhWpQyQh2qVA).

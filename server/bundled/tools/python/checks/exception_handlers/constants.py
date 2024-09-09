@@ -14,6 +14,6 @@ class ExceptionHandlingIssue(Issue):
             'name': view_name,
             'severity': severity,
             'command': "djangoly.analyzeExceptionHandling",
-            'command_title': "Djangoly: Analyze Exception Handling"
+            'command_title': "Code boost: Improve Exception Handling"
         }
         super().__init__(lineno, col, parameters)

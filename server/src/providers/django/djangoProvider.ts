@@ -393,7 +393,7 @@ export class DjangoProvider extends LanguageProvider {
             case "class":
                 result = this.nameValidator.validateClassName(name);
                 break;
-    
+            // FIXME: current parsing logic seems to return assignment symbols instead of dictionaries
             case "dictionary":
                 result = this.validateDictionary(symbol);
                 if (result.violates && result.diagnostics) {
@@ -476,7 +476,8 @@ export class DjangoProvider extends LanguageProvider {
                 const functionArgDiagnostic = this.diagnosticsManager.createDiagnostic(
                     argRange,
                     argumentResult.reason,
-                    DiagnosticSeverity.Warning
+                    DiagnosticSeverity.Warning,
+                    argumentResult.ruleCode || NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
                 );
                 diagnostics.push(functionArgDiagnostic);
             }
@@ -546,8 +547,8 @@ export class DjangoProvider extends LanguageProvider {
                     const commentDiagnostic = this.diagnosticsManager.createDiagnostic(
                         range,
                         result.reason,
-                        DiagnosticSeverity.Warning,
-						REDUNDANT_COMMENT_VIOLATION_SOURCE_TYPE
+                        DiagnosticSeverity.Information,
+						result.ruleCode || REDUNDANT_COMMENT_VIOLATION_SOURCE_TYPE
                     );
                     diagnostics.push(commentDiagnostic);
                 }

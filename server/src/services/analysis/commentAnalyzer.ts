@@ -1,3 +1,4 @@
+import { RuleCodes } from '../../constants/rules';
 
 
 export class CommentAnalyzer {
@@ -13,7 +14,7 @@ export class CommentAnalyzer {
 	public isCommentRedundant(
 		comment: string,
 		currentNode: any
-	): { violates: boolean; reason: string } {
+	): { violates: boolean; reason: string, ruleCode: RuleCodes | null } {	
 		const generalIdentifiers = [
 			"Block",
 			"IfStatement",
@@ -48,11 +49,13 @@ export class CommentAnalyzer {
 			return {
 				violates: false,
 				reason: "Comments prefixed with TODO or FIXME are ignored.",
+				ruleCode: null,
 			};
 		} else if (this.isIgnoreComment(comment)) {
 			return {
 				violates: false,
 				reason: "djangoly-ignore detected for this comment.",
+				ruleCode: null,
 			};
 		} else if (languageIdentifiers.includes(currentNode.type)) {
 			// TODO: What do we consider a simple expression?
@@ -60,9 +63,10 @@ export class CommentAnalyzer {
 				violates: true,
 				reason:
 					"This comment may not be necessary as the code below it is self-explanatory.",
+				ruleCode: RuleCodes.COMMENT_VALIDATION,
 			};
 		} else {
-			return { violates: false, reason: "" };
+			return { violates: false, reason: "", ruleCode: null };
 		}
 	}
 }

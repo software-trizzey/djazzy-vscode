@@ -50,16 +50,36 @@ We appreciate your interest in being an early adopter and helping us shape Djang
 
 - **Redundant Comment Detection**: Flags comments that do not contribute additional information or context to the code.
 
-### Security Checks 🔒
+## Djangoly Convention and Security Rules 📏🔒
 
-Djangoly includes several security checks to help ensure your Django project follows best practices for security:
+Djangoly implements a comprehensive set of rules to help you write cleaner, safer, and more efficient Django code. These rules cover various aspects of Django development, including:
 
-- **DEBUG Setting**: Checks if `DEBUG` is set to `True`. This setting should be `False` in production environments.
-- **SECRET_KEY Protection**: Verifies that the `SECRET_KEY` is not hardcoded in your settings file.
-- **ALLOWED_HOSTS Configuration**: Checks the `ALLOWED_HOSTS` setting for potential security issues.
-- **COOKIE Settings**: Ensures the `CSRF_COOKIE_SECURE` and `SESSION_COOKIE_SECURE` settings are set to `True` for production environments.
+*   **Security (SEC)**: Checks for proper security settings and practices.
+    
+    *   Example: Ensuring DEBUG is set to False in production.
+        
+*   **Code Quality (CDQ)**: Enforces coding standards and best practices.
+    
+    *   Example: Detecting overly complex views that should be refactored.
+        
+*   **Performance (PER)**: Identifies potential performance issues.
+    
+    *   Example: Flagging N+1 query patterns for optimization.
+        
+*   **Style (STY)**: Ensures consistent coding style across your project.
+    
+    *   Example: Enforcing naming conventions for variables and functions.
+        
+*   **Configuration (CFG)**: Verifies correct Django configuration settings.
+    
+    *   Example: Checking for proper ALLOWED\_HOSTS configuration.
+        
 
-For a full list of security rules and descriptions, see our [Security Rules Documentation](https://github.com/software-trizzey/djangoly-docs/blob/main/docs/SECURITY_RULES.md).
+Each rule is designed to catch common pitfalls, enforce best practices, and improve the overall quality and security of your Django projects.
+
+For a complete list of all rules, including detailed descriptions and examples, please refer to our [Convention Rules Documentation](https://github.com/software-trizzey/djangoly-docs/blob/main/docs/CONVENTION_RULES.md).
+
+By following these rules, you can ensure that your Django code is not only functional but also secure, efficient, and maintainable.
 
 
 ## Quick Start 🏃‍♂️💨

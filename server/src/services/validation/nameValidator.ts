@@ -2,8 +2,10 @@ import { RULE_MESSAGES } from '../../constants/rules';
 import { LanguageConventions } from '../../languageConventions';
 import { ExtensionSettings } from '../../settings';
 import { isLikelyBoolean, hasNegativePattern } from '../../utils';
+import { RuleCodes } from '../../constants/rules';
 
 import {BaseValidator} from './base';
+import { verbDictionary } from '../../data/actionWords';
 
 const VARIABLES_TO_IGNORE = [
 	"ID",
@@ -18,6 +20,18 @@ const VARIABLES_TO_IGNORE = [
 	"SECURE_HSTS_INCLUDE_SUBDOMAINS"
 ];
 
+export interface ValidationResult {
+	violates: boolean;
+	reason: string;
+	ruleCode: RuleCodes | null;
+}
+
+const defaultReturnValue: ValidationResult = {
+	violates: false,
+	reason: "",
+	ruleCode: null,
+};
+
 
 export class NameValidator extends BaseValidator {
 
@@ -31,16 +45,16 @@ export class NameValidator extends BaseValidator {
 	}: {
 		variableName: string;
 		variableValue: any;
-	}): { violates: boolean; reason: string } {
+	}): ValidationResult {
 		if (!variableName || VARIABLES_TO_IGNORE.includes(variableName.toUpperCase())) {
-			return { violates: false, reason: "" };
+			return defaultReturnValue;
 		}
 		const {
 			expressiveNames: { variables },
 			boolean,
 		} = this.getConventions();
 	
-		if (!variables.isEnabled) return { violates: false, reason: "" };
+		if (!variables.isEnabled) return defaultReturnValue;
 
 		const nameWithoutUnderscorePrefix = variableName.startsWith("_") ? variableName.substring(1) : variableName;
 	
@@ -48,6 +62,7 @@ export class NameValidator extends BaseValidator {
 			return {
 				violates: true,
 				reason: RULE_MESSAGES.NAME_TOO_SHORT.replace("{name}", variableName),
+				ruleCode: RuleCodes.NAME_TOO_SHORT
 			};
 		}
 		
@@ -65,17 +80,65 @@ export class NameValidator extends BaseValidator {
 				return {
 					violates: true,
 					reason: RULE_MESSAGES.BOOLEAN_NO_PREFIX.replace("{name}", variableName),
+					ruleCode: RuleCodes.BOOLEAN_VARIABLE_PREFIX
 				};
 			}
 			if (positiveNaming && hasNegativePattern(nameWithoutUnderscorePrefix)) {
 				return {
 					violates: true,
 					reason: RULE_MESSAGES.BOOLEAN_NEGATIVE_PATTERN.replace("{name}", variableName),
+					ruleCode: RuleCodes.BOOLEAN_VARIABLE_POSITIVE_NAMING
 				};
 			}
 		}
-		return { violates: false, reason: "" };
+		return defaultReturnValue;
 	}
+
+	public async validatePythonFunctionName(
+		functionName: string,
+		functionBody: { content: string; bodyLength: number },
+		languageConventions: LanguageConventions
+	): Promise<ValidationResult> {
+		const {
+			expressiveNames: { functions },
+		} = languageConventions;
+	
+		if (functionName === "__init__" || functionName === "__main__" || functionName === "main") {
+			return defaultReturnValue;
+		}
+	
+		const functionNameWithoutUnderscorePrefix = functionName.startsWith("_") ? functionName.substring(1) : functionName;
+	
+		if (functions.avoidShortNames && functionNameWithoutUnderscorePrefix.length <= 3) {
+			return {
+				violates: true,
+				reason: RULE_MESSAGES.FUNCTION_TOO_SHORT.replace("{name}", functionName),
+				ruleCode: RuleCodes.NAME_TOO_SHORT
+			};
+		}
+	
+		const verb = Object.keys(verbDictionary).find((word) => 
+			functionNameWithoutUnderscorePrefix.startsWith(word)
+		);
+	
+		if (!verb) {
+			return {
+				violates: true,
+				reason: RULE_MESSAGES.FUNCTION_NAME_NO_VERB.replace("{name}", functionName),
+				ruleCode: RuleCodes.FUNCTION_NAME_NO_VERB
+			};
+		}
+	
+		if (functionBody.bodyLength > functions.functionLengthLimit) {
+			return {
+				violates: true,
+				reason: RULE_MESSAGES.FUNCTION_TOO_LONG.replace("{name}", functionName).replace("{limit}", functions.functionLengthLimit.toString()),
+				ruleCode: RuleCodes.FUNCTION_TOO_LONG
+			};
+		}
+	
+		return defaultReturnValue;
+	}	
 
 	public validateObjectPropertyName({
 		objectKey,
@@ -83,10 +146,10 @@ export class NameValidator extends BaseValidator {
 	}: {
 		objectKey: string;
 		objectValue: any;
-	}): { violates: boolean; reason: string } {
+	}): ValidationResult {
 		if (!objectKey) {
 			console.warn("No key name found.");
-			return { violates: false, reason: "" };
+			return defaultReturnValue;
 		}
 
 		const {
@@ -94,7 +157,7 @@ export class NameValidator extends BaseValidator {
 			boolean,
 		} = this.getConventions();
 
-		if (!objectProperties.isEnabled) return { violates: false, reason: "" };
+		if (!objectProperties.isEnabled) return defaultReturnValue;
 	
 		const nameWithoutUnderscorePrefix = objectKey.startsWith("_") ? objectKey.substring(1) : objectKey;
 	
@@ -106,6 +169,7 @@ export class NameValidator extends BaseValidator {
 			return {
 				violates: true,
 				reason: RULE_MESSAGES.OBJECT_KEY_TOO_SHORT.replace("{name}", objectKey),
+				ruleCode: RuleCodes.NAME_TOO_SHORT
 			};
 		}
 
@@ -123,22 +187,24 @@ export class NameValidator extends BaseValidator {
 				return {
 					violates: true,
 					reason: RULE_MESSAGES.OBJECT_KEY_BOOLEAN_NO_PREFIX.replace("{name}", objectKey),
+					ruleCode: RuleCodes.BOOLEAN_PROPERTY_PREFIX
 				};
 			}
 			if (positiveNaming && hasNegativePattern(nameWithoutUnderscorePrefix)) {
 				return {
 					violates: true,
 					reason: RULE_MESSAGES.OBJECT_KEY_BOOLEAN_NEGATIVE_PATTERN.replace("{name}", objectKey),
+					ruleCode: RuleCodes.BOOLEAN_PROPERTY_POSITIVE_NAMING
 				};
 			}
 		}
 	
-		return { violates: false, reason: "" };
+		return defaultReturnValue;
 	}
 
-	public validateListName(value: string): { violates: boolean; reason: string } {
+	public validateListName(value: string): ValidationResult {
 		console.log("Implement list name validation");
-		return { violates: false, reason: "" };
+		return defaultReturnValue;
 	}
 
 	public validateClassName(name: string): {
@@ -146,6 +212,6 @@ export class NameValidator extends BaseValidator {
 		reason: string;
 	} {
 		console.log("Implement class name validation");
-		return { violates: false, reason: "" };
+		return defaultReturnValue;
 	}
 }

@@ -138,54 +138,11 @@ export async function validateJavaScriptAndTypeScriptFunctionName(
     if (!verb) {
         return {
             violates: true,
-            reason: RULE_MESSAGES.FUNCTION_NO_ACTION_WORD.replace("{name}", functionName),
+            reason: RULE_MESSAGES.FUNCTION_NAME_NO_VERB.replace("{name}", functionName),
         };
     }
 
     if (functionBodyLines > functions.functionLengthLimit) {
-        return {
-            violates: true,
-            reason: RULE_MESSAGES.FUNCTION_TOO_LONG.replace("{name}", functionName).replace("{limit}", functions.functionLengthLimit.toString()),
-        };
-    }
-
-    return { violates: false, reason: "" };
-}
-
-export async function validatePythonFunctionName(
-    functionName: string,
-    functionBody: { content: string; bodyLength: number },
-    languageConventions: LanguageConventions
-): Promise<{ violates: boolean; reason: string }> {
-    const {
-        expressiveNames: { functions },
-    } = languageConventions;
-
-    if (functionName === "__init__" || functionName === "__main__" || functionName === "main") {
-        return { violates: false, reason: "" };
-    }
-
-	const functionNameWithoutUnderscorePrefix = functionName.startsWith("_") ? functionName.substring(1) : functionName;
-
-    if (functions.avoidShortNames && functionNameWithoutUnderscorePrefix.length <= 3) {
-        return {
-            violates: true,
-            reason: RULE_MESSAGES.FUNCTION_TOO_SHORT.replace("{name}", functionName),
-        };
-    }
-
-    const verb = Object.keys(verbDictionary).find((word) => 
-        functionNameWithoutUnderscorePrefix.startsWith(word)
-    );
-
-    if (!verb) {
-        return {
-            violates: true,
-            reason: RULE_MESSAGES.FUNCTION_NO_ACTION_WORD.replace("{name}", functionName),
-        };
-    }
-
-    if (functionBody.bodyLength > functions.functionLengthLimit) {
         return {
             violates: true,
             reason: RULE_MESSAGES.FUNCTION_TOO_LONG.replace("{name}", functionName).replace("{limit}", functions.functionLengthLimit.toString()),

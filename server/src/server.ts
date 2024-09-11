@@ -581,21 +581,8 @@ documents.onDidSave(async (saveEvent: TextDocumentChangeEvent<TextDocument>) => 
         try {
             const isDjangoProject = await provider.djangoProjectDetectionPromise;
             if (!isDjangoProject) return;
-            
-            connection.sendNotification(ShowMessageNotification.type, {
-                type: MessageType.Info,
-                message: "👋 Save detected. Running N+1 analysis on current file..."
-            });
-
             const diagnostics = await provider.runNPlusOneQueryAnalysis(document);
             connection.sendDiagnostics({ uri: document.uri, diagnostics });
-
-            const nplusOneDiagnostics = diagnostics.filter((diagnostic) => diagnostic.code === RuleCodes.NPLUSONE);
-            
-            connection.sendNotification(ShowMessageNotification.type, {
-                type: MessageType.Info,
-                message: `✅ Analysis complete. Found ${nplusOneDiagnostics?.length} issues.`
-            });
         } catch (error: any) {
             const errorMessage = typeof error === 'string' ? error : error.message || 'Unknown error';
             console.error('Error running N+1 analysis:', errorMessage);

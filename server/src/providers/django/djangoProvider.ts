@@ -829,7 +829,7 @@ export class DjangoProvider extends LanguageProvider {
             dirName.includes('templates') ||
             fileName === 'urls.py'
         ) {
-            console.log("Skipping N+1 query analysis for unlikely query file.", fileName);
+            console.log(`Skipping N+1 query analysis for unlikely query file: "${fileName}"`);
             return [];
         }
 

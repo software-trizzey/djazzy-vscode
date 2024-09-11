@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Version 0.1.16] - 2024-09-11
+
+### Changed
+
+- [Enhancement] Update rule code list on node server and use them in diagnostics as source. Also updated readme to outline conventions section and point to complete list.
+- [Enhancement] Updated add exception handler command to use the `Code boost` prefix. This will align with marketing material.
+
+### Removed
+
+- [Removal] Remove notifications for N+1 static analysis on file save. This was too annoying. I think we can use the status bar for this in a future update.
+
+
 ## [Version 0.1.15] - 2024-09-06
 
 ### Added

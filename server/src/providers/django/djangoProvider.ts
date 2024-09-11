@@ -817,6 +817,22 @@ export class DjangoProvider extends LanguageProvider {
     }    
 
     public async runNPlusOneQueryAnalysis(document: TextDocument): Promise<Diagnostic[]> {
+        const fileName = path.basename(document.uri);
+        const dirName = path.dirname(document.uri);
+
+        if (
+            !this.isDjangoProject || 
+            fileName === 'settings.py' || 
+            fileName === 'admin.py' ||
+            dirName.includes('tests') ||
+            dirName.includes('static') ||
+            dirName.includes('templates') ||
+            fileName === 'urls.py'
+        ) {
+            console.log("Skipping N+1 query analysis for unlikely query file.", fileName);
+            return [];
+        }
+
         const modelCacheObject = Object.fromEntries(this.modelCache);
         const modelCacheJson = JSON.stringify(modelCacheObject);
         const documentText = document.getText();

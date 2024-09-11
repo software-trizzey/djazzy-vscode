@@ -62,7 +62,7 @@ export class NameValidator extends BaseValidator {
 			return {
 				violates: true,
 				reason: RULE_MESSAGES.NAME_TOO_SHORT.replace("{name}", variableName),
-				ruleCode: RuleCodes.VARIABLE_NAME_TOO_SHORT
+				ruleCode: RuleCodes.NAME_TOO_SHORT
 			};
 		}
 		
@@ -113,7 +113,7 @@ export class NameValidator extends BaseValidator {
 			return {
 				violates: true,
 				reason: RULE_MESSAGES.FUNCTION_TOO_SHORT.replace("{name}", functionName),
-				ruleCode: RuleCodes.FUNCTION_NAME_TOO_SHORT
+				ruleCode: RuleCodes.NAME_TOO_SHORT
 			};
 		}
 	
@@ -169,7 +169,7 @@ export class NameValidator extends BaseValidator {
 			return {
 				violates: true,
 				reason: RULE_MESSAGES.OBJECT_KEY_TOO_SHORT.replace("{name}", objectKey),
-				ruleCode: RuleCodes.OBJECT_PROPERTY_NAME_TOO_SHORT
+				ruleCode: RuleCodes.NAME_TOO_SHORT
 			};
 		}
 

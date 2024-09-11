@@ -138,7 +138,7 @@ export async function validateJavaScriptAndTypeScriptFunctionName(
     if (!verb) {
         return {
             violates: true,
-            reason: RULE_MESSAGES.FUNCTION_NO_ACTION_WORD.replace("{name}", functionName),
+            reason: RULE_MESSAGES.FUNCTION_NAME_NO_VERB.replace("{name}", functionName),
         };
     }
 
@@ -181,7 +181,7 @@ export async function validatePythonFunctionName(
     if (!verb) {
         return {
             violates: true,
-            reason: RULE_MESSAGES.FUNCTION_NO_ACTION_WORD.replace("{name}", functionName),
+            reason: RULE_MESSAGES.FUNCTION_NAME_NO_VERB.replace("{name}", functionName),
         };
     }
 

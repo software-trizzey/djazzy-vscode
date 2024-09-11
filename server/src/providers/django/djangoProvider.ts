@@ -32,10 +32,11 @@ import { Models, Severity, SymbolFunctionTypes } from '../../llm/types';
 
 import { RULE_MESSAGES, RuleCodes } from '../../constants/rules';
 import { LanguageConventions, CeleryTaskDecoratorSettings } from '../../languageConventions';
-import { debounce, getChangedLinesFromClient, validatePythonFunctionName } from '../../utils';
+import { debounce, getChangedLinesFromClient } from '../../utils';
 import { LanguageProvider } from '../languageProvider';
 import { DjangoProjectDetector, ModelCache } from './djangoProjectDetector';
 import { API_SERVER_URL } from '../../constants/api';
+import { ValidationResult } from '../../services/validation/nameValidator';
 
 
 const symbolFunctionTypeList = Object.values(SymbolFunctionTypes);
@@ -186,7 +187,7 @@ export class DjangoProvider extends LanguageProvider {
 				.replace(/has_not_/i, "has_")
 				.toLowerCase();
 		} else if (
-			violationMessage.includes(RULE_MESSAGES.FUNCTION_NO_ACTION_WORD.replace("{name}", flaggedName)) ||
+			violationMessage.includes(RULE_MESSAGES.FUNCTION_NAME_NO_VERB.replace("{name}", flaggedName)) ||
 			violationMessage.includes(RULE_MESSAGES.FUNCTION_TOO_SHORT.replace("{name}", flaggedName))
 		) {
 			const symbol = this.symbols.find(symbol => symbol.name === flaggedName && symbolFunctionTypeList.includes(symbol.type));
@@ -359,7 +360,7 @@ export class DjangoProvider extends LanguageProvider {
             return; // Skip validation if line not in changedLines
         }
     
-        let result: { violates: boolean; reason: string, diagnostics?: any[] } | undefined;
+        let result: any;
 
         switch (type) {
             case "function":
@@ -448,7 +449,13 @@ export class DjangoProvider extends LanguageProvider {
         }
     
         if (result && result.violates) {
-            this.addDiagnostic(diagnostics, symbol, result.reason);
+            this.addDiagnostic(
+                diagnostics,
+                symbol,
+                result.reason,
+                DiagnosticSeverity.Warning,
+                result.ruleCode
+            );
         }
     
         this.handleComments(leading_comments, symbol, diagnostics);
@@ -498,11 +505,8 @@ export class DjangoProvider extends LanguageProvider {
 		functionName: string,
 		functionBody: { content: string; bodyLength: number },
 		languageConventions: LanguageConventions
-	): Promise<{
-		violates: boolean;
-		reason: string;
-	}> {
-		return await validatePythonFunctionName(
+	): Promise<ValidationResult> {
+		return await this.nameValidator.validatePythonFunctionName(
 			functionName,
 			functionBody,
 			languageConventions
@@ -600,7 +604,7 @@ export class DjangoProvider extends LanguageProvider {
 					range,
 					validationResult.reason,
 					DiagnosticSeverity.Warning,
-					NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
+					validationResult.ruleCode || NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
 					SOURCE_NAME
 				);
 				diagnostics.push(diagnostic);

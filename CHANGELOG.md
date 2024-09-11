@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 
 - [Enhancement] Update rule code list on node server and use them in diagnostics as source. Also updated readme to outline conventions section and point to complete list.
 - [Enhancement] Updated add exception handler command to use the `Code boost` prefix. This will align with marketing material.
+- [Enhancement] Skip N+1 analysis for certain files and non-django projects.
 
 ### Removed
 

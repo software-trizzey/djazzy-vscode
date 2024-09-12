@@ -62,16 +62,20 @@ export class DiagnosticsManager {
         range: Range,
         message: string,
         severity: DiagnosticSeverity,
-        sourceType = NAMING_CONVENTION_VIOLATION_SOURCE_TYPE
+        sourceType = NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
+        linkToReferenceDocs: string = ""
     ): Diagnostic {
-        // TODO: create link to more information based on sourcetype and message
-        return Diagnostic.create(
+        const diagnostic: Diagnostic = {
             range,
             message,
             severity,
-            sourceType,
-            SOURCE_NAME
-        );
+            source: SOURCE_NAME,
+            code: sourceType,
+            codeDescription: {
+                href: linkToReferenceDocs
+            }
+        };
+        return diagnostic;
     }
 
 	public isDiagnosticCached(documentUri: string): boolean {

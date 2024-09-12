@@ -57,6 +57,7 @@ export enum RuleCodes {
     DJANGO_FIELD_CONVENTIONS = "CDQ11",
     COMMENT_VALIDATION = "CDQ12",
     CELERY_TASK_VALIDATION = "CDQ13", // TODO: custom rule. Might move to own category
+    REDUNDANT_QUERYSET_METHODS = "CDQ14",
 
     // Style-related rules (STY)
     BOOLEAN_VARIABLE_PREFIX = "STY01",

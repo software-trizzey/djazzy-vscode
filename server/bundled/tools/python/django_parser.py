@@ -13,6 +13,7 @@ from checks.model_fields import ModelFieldCheckService
 from checks.skinny_views.checker import ViewComplexityAnalyzer
 from checks.skinny_views.scorer import ViewComplexityScorer, ScoreThresholds
 from checks.exception_handlers.checker import ExceptionHandlingCheckService
+from checks.redundant_queryset_methods.checker import RedundantQueryMethodCheckService
 
 from issue import IssueSeverity
 from services.view_detector import DjangoViewDetectionService, DjangoViewType
@@ -37,6 +38,7 @@ class DjangoAnalyzer(Analyzer):
         self.complexity_analyzer = ViewComplexityAnalyzer(source_code, self.complexity_scorer)
         self.exception_handler_service = ExceptionHandlingCheckService(source_code)
         self.function_node_service = FunctionNodeService()
+        self.redundant_queryset_check_service = RedundantQueryMethodCheckService(source_code)
 
     def parse_model_cache(self, model_cache_json):
         try:
@@ -165,6 +167,20 @@ class DjangoAnalyzer(Analyzer):
         decorators = [ast.get_source_segment(self.source_code, decorator) for decorator in node.decorator_list]
         calls = []
         arguments = self.extract_arguments(node.args)
+
+        redundant_query_issue = self.redundant_queryset_check_service.run_check(node)
+        if redundant_query_issue:
+            LOGGER.debug(f"Redundant queryset chain detected: {redundant_query_issue}")
+            self.symbols.append({
+                "type": redundant_query_issue.code,
+                "severity": redundant_query_issue.severity,
+                "message": redundant_query_issue.message,
+                "line": redundant_query_issue.lineno,
+                "method_chain": redundant_query_issue.method_chain,
+                "simplified_chain": redundant_query_issue.simplified_chain,
+                "col_offset": redundant_query_issue.col_offset,
+                "end_col_offset": redundant_query_issue.end_col_offset,
+            })
 
         self.visit_FunctionBody(node.body, calls)
 

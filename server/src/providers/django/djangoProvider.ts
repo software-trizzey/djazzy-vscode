@@ -363,6 +363,10 @@ export class DjangoProvider extends LanguageProvider {
         let result: any;
 
         switch (type) {
+            case RuleCodes.REDUNDANT_QUERYSET_METHODS:
+                this.processRedundantQuerysetMethod(symbol, diagnostics);
+                return; // skip general diagnostic creation for queryset methods
+
             case "function":
             case "django_model_method":
             case "django_serializer_method":
@@ -995,4 +999,21 @@ export class DjangoProvider extends LanguageProvider {
 			timestamp: new Date().toISOString()
 		});
 	}
+
+    private processRedundantQuerysetMethod(symbol: any, diagnostics: Diagnostic[]): void {
+        const range = Range.create(
+            Position.create(symbol.line - 1, symbol.col_offset),
+            Position.create(symbol.line - 1, symbol.end_col_offset)
+        );
+
+        const mappedSeverity = this.mapSeverity(symbol.severity);
+        const diagnostic = this.diagnosticsManager.createDiagnostic(
+            range,
+            symbol.message,
+            mappedSeverity,
+            RuleCodes.REDUNDANT_QUERYSET_METHODS
+        );
+    
+        diagnostics.push(diagnostic);
+    }    
 }

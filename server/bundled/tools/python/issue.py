@@ -15,6 +15,7 @@ class IssueDocLinks:
     X_FRAME_OPTIONS = 'https://docs.djangoproject.com/en/5.0/ref/clickjacking/'
     SECURE_HSTS_SECONDS = 'https://docs.djangoproject.com/en/5.0/ref/settings/#secure-hsts-seconds'
     SECURE_HSTS_INCLUDE_SUBDOMAINS = 'https://docs.djangoproject.com/en/5.0/ref/settings/#secure-hsts-include-subdomains'
+    QUERYSET_API = 'https://docs.djangoproject.com/en/5.0/ref/models/querysets/'
 
 
 class Issue(object):

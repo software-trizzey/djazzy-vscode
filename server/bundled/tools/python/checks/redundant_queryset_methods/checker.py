@@ -20,10 +20,8 @@ class RedundantQueryMethodCheckService:
         """Check if the method chain contains redundant queryset patterns."""
         return method_chain in [
             ['count', 'all'],
-            ['exists', 'filter'],
-            ['count', 'filter'],
-            ['first', 'filter'],
-            ['last', 'filter']
+            ['all', 'filter'],
+            ['filter', 'all'],
         ]
 
     def get_end_col_offset(self, node):
@@ -73,10 +71,6 @@ class RedundantQueryMethodCheckService:
         """Get the simplified method chain based on the redundant pattern."""
         if method_chain == ['count', 'all']:
             return 'count()'
-        if method_chain == ['exists', 'filter']:
-            return 'exists()'
-        if method_chain == ['first', 'filter']:
-            return 'first()'
-        if method_chain == ['last', 'filter']:
-            return 'last()'
+        if method_chain == ['all', 'filter'] or method_chain == ['filter', 'all']:
+            return 'filter()'
         return None

@@ -42,4 +42,4 @@ class RedundantQueryMethodIssue(Issue):
 
     @property
     def doc_link(self):
-        return IssueDocLinks.RAW_SQL_USAGE  # TODO: change this to a relevant link
+        return IssueDocLinks.QUERYSET_API

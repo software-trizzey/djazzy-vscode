@@ -6,6 +6,7 @@
 	"version": "0.1.16",
 	"publisher": "alchemized",
 	"preview": true,
+	"homepage": "https://www.djangoly.com",
 	"bugs": {
 		"email": "support@djangoly.com"
 	},

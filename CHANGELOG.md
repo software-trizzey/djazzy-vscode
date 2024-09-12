@@ -2,7 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Version 0.1.16] - 2024-09-11
+## [Version 0.1.16] - 2024-09-12
+
+### Added
+
+- [Feature] Add rule CDQ14 that flags redundant queryset method chains like `all().filter()` or `all().count()`. 
 
 ### Changed
 

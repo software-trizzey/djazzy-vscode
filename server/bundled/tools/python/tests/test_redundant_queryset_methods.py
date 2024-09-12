@@ -1,4 +1,3 @@
-# server/bundled/tools/python/tests/test_redundant_queryset_methods.py
 import ast
 import unittest
 import textwrap

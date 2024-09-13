@@ -3,9 +3,10 @@
 	"displayName": "Djangoly",
 	"description": "Write Cleaner, Faster, Scalable Django Code",
 	"author": "Tristan Deane",
-	"version": "0.1.15",
+	"version": "0.1.16",
 	"publisher": "alchemized",
 	"preview": true,
+	"homepage": "https://www.djangoly.com",
 	"bugs": {
 		"email": "support@djangoly.com"
 	},
@@ -295,7 +296,7 @@
 		"package": "vsce package --allow-missing-repository && node esbuild.config.js --production",
 		"dev:package": "npm run package --pre-release",
 		"publish": "vsce publish --allow-missing-repository",
-		"dev-publish": "npm run dev:package && code --install-extension djangoly-0.1.15.vsix",
+		"dev-publish": "npm run dev:package && code --install-extension djangoly-0.1.16.vsix",
 		"watch": "npm-run-all -p watch:*",
 		"watch:esbuild": "node esbuild.config.js --watch",
 		"watch:tsc": "tsc --noEmit --watch --project tsconfig.json",

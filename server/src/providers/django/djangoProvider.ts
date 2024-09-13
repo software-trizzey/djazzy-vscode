@@ -388,6 +388,7 @@ export class DjangoProvider extends LanguageProvider {
     
             case "assignment":
             case "variable":
+            case "django_class_view_field":
                 result = this.nameValidator.validateVariableName({
                     variableName: name,
                     variableValue: value,
@@ -419,7 +420,6 @@ export class DjangoProvider extends LanguageProvider {
     
             case "django_model_field":
             case "django_serializer_field":
-            case "django_class_view_field":
                 result = this.nameValidator.validateVariableName({
                     variableName: name,
                     variableValue: this.extractDjangoFieldValue(value),
@@ -901,7 +901,7 @@ export class DjangoProvider extends LanguageProvider {
                 symbol,
                 djangoModelAndSerializerFieldMessage,
                 severity,
-                DJANGO_BEST_PRACTICES_VIOLATION_SOURCE_TYPE
+                RuleCodes.DJANGO_FIELD_CONVENTIONS
             );
         }
     }

@@ -425,10 +425,6 @@ export class DjangoProvider extends LanguageProvider {
                     variableValue: this.extractDjangoFieldValue(value),
                 });
 
-                if (result && result.violates) {
-                    this.addDiagnostic(diagnostics, symbol, result.reason);
-                }
-
                 this.checkDjangoFieldConventions(symbol, diagnostics);
                 break;
             case "django_class_view":

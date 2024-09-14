@@ -8,7 +8,6 @@ All notable changes to this project will be documented in this file.
 
 - [Removal] N+1 detection. Way too inconsistent. I think the only way to do this correctly will be with a fine-tuned model. But I'd only do that if there's sufficient demand. There's much easier features/long-hanging fruit to focus on.
 
-
 ### Changed
 
 - [Bugfix] Addressed issue where variables within class methods weren't picked up by the linter.

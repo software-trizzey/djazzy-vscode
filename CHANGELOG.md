@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Version 0.1.17] - 2024-09-13
+
+### Removed
+
+- [Removal] N+1 detection. Way too inconsistent. I think the only way to do this correctly will be with a fine-tuned model. But I'd only do that if there's sufficient demand. There's much easier features/long-hanging fruit to focus on.
+
+### Changed
+
+- [Bugfix] Addressed issue where variables within class methods weren't picked up by the linter.
+
+
 ## [Version 0.1.16] - 2024-09-12
 
 ### Added

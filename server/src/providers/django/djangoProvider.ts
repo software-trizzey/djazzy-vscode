@@ -128,21 +128,6 @@ export class DjangoProvider extends LanguageProvider {
 			changedLines
 		);
 
-        try {
-            const isDjangoProject = await this.djangoProjectDetectionPromise;
-            if (isDjangoProject && isOnSave) {
-                const nplusOneDiagnostics = await this.runNPlusOneQueryAnalysis(document);
-                diagnostics = [...diagnostics, ...nplusOneDiagnostics];
-            }
-        } catch (error: any) {
-            if (error instanceof SyntaxError) {
-                console.warn("Syntax error detected. Skipping invalid sections and continuing...");
-                this.errorHandler.handleError(error);
-            } else {
-                this.errorHandler.handleError(error);
-            }
-        }
-
 		this.diagnosticsManager.setDiagnostic(document.uri, document.version, diagnostics);
 		return diagnostics;
 	}

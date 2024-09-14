@@ -569,31 +569,6 @@ documents.onDidOpen(async (event: TextDocumentChangeEvent<TextDocument>) => {
     }
 });
 
-documents.onDidSave(async (saveEvent: TextDocumentChangeEvent<TextDocument>) => {
-    const document = saveEvent.document;
-    
-    const languageId = document.languageId;
-    const settings = await getDocumentSettings(document.uri);
-    const workspaceFolders = await connection.workspace.getWorkspaceFolders();
-    const provider = getOrCreateProvider(languageId, settings, document, workspaceFolders);
-
-    if (provider instanceof DjangoProvider) {
-        try {
-            const isDjangoProject = await provider.djangoProjectDetectionPromise;
-            if (!isDjangoProject) return;
-            const diagnostics = await provider.runNPlusOneQueryAnalysis(document);
-            connection.sendDiagnostics({ uri: document.uri, diagnostics });
-        } catch (error: any) {
-            const errorMessage = typeof error === 'string' ? error : error.message || 'Unknown error';
-            console.error('Error running N+1 analysis:', errorMessage);
-            connection.sendNotification(ShowMessageNotification.type, {
-                type: MessageType.Error,
-                message: `🥲 Error running N+1 analysis: ${errorMessage}`
-            });
-        }
-    }
-});
-
 
 documents.listen(connection);
 connection.listen();

@@ -33,8 +33,6 @@ We appreciate your interest in being an early adopter and helping us shape Djang
   - **CharField and TextField Nullability**: Ensures `CharField` and `TextField` fields are not incorrectly marked as `null=True`, which can lead to inconsistencies in data integrity.
   
   - **Missing Exception Handling Detection**: Flags Django functional views and methods in class-based views that lack exception handling. This feature helps you ensure that error handling is properly implemented, improving the robustness and stability of your Django application.
-  
-  - **Static N+1 Query Analysis**: Detects potential N+1 query patterns in your Django code. This feature identifies when multiple database queries are being executed within loops and suggests optimizations to minimize query counts and improve performance.
 
 - **Security Checks**: Includes several security checks to help ensure your Django project follows best practices for security:
 
@@ -62,9 +60,6 @@ Djangoly implements a comprehensive set of rules to help you write cleaner, safe
     
     *   Example: Detecting overly complex views that should be refactored.
         
-*   **Performance (PER)**: Identifies potential performance issues.
-    
-    *   Example: Flagging N+1 query patterns for optimization.
         
 *   **Style (STY)**: Ensures consistent coding style across your project.
     

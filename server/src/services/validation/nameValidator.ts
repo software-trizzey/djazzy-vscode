@@ -77,9 +77,12 @@ export class NameValidator extends BaseValidator {
 				usePrefix &&
 				!prefixes.some((prefix) => nameWithoutUnderscorePrefix.startsWith(prefix))
 			) {
+				let reason = RULE_MESSAGES.BOOLEAN_NO_PREFIX.replace("{name}", variableName);
+				reason += `\n\nCurrent prefixes: ${prefixes.join(", ")}`;
+				reason += `\n\nThese can be updated in the extension settings.`;
 				return {
 					violates: true,
-					reason: RULE_MESSAGES.BOOLEAN_NO_PREFIX.replace("{name}", variableName),
+					reason: reason,
 					ruleCode: RuleCodes.BOOLEAN_VARIABLE_PREFIX
 				};
 			}

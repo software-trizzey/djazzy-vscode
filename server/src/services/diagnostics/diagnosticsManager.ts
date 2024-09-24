@@ -4,7 +4,7 @@ import { Severity } from '../../llm/types';
 import { cachedUserToken, settingsVersion } from '../../settings';
 import { NAMING_CONVENTION_VIOLATION_SOURCE_TYPE, SOURCE_NAME } from '../../constants/diagnostics';
 import LOGGER from '../../common/logs';
-import { RuleCodes } from '../../constants/rules';
+import { DJANGOLY_DOCS_URL, RuleCodes } from '../../constants/rules';
 
 
 interface NPlusOneQueryResult {
@@ -63,7 +63,7 @@ export class DiagnosticsManager {
         message: string,
         severity: DiagnosticSeverity,
         sourceType = NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
-        linkToReferenceDocs: string = ""
+        linkToReferenceDocs: string = DJANGOLY_DOCS_URL
     ): Diagnostic {
         const diagnostic: Diagnostic = {
             range,

@@ -1,3 +1,5 @@
+export const DJANGOLY_DOCS_URL = "https://github.com/software-trizzey/djangoly-docs/blob/main/docs/CONVENTION_RULES.md";
+
 export const RULE_MESSAGES = {
     FUNCTION_TOO_SHORT: "Function name \"{name}\" is too short and must be more descriptive.",
     FUNCTION_NAME_NO_VERB: "Function \"{name}\" does not start with a recognized verb.",

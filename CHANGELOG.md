@@ -6,7 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- [Bugfix] Update secret key regexp to account for differnt 3rd party packages 
+- [Bugfix] Update secret key regexp to account for different 3rd party packages 
+- [Enhancement] Show current boolean prefixes in the diagnostics message.
+- [Bugfix] Link to Djangoly docs by default
 
 
 ## [Version 0.1.17] - 2024-09-13

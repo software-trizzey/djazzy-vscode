@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Version 0.1.18] - 2024-09-13
+
+### Changed
+
+- [Bugfix] Update secret key regexp to account for differnt 3rd party packages 
+
+
 ## [Version 0.1.17] - 2024-09-13
 
 ### Removed

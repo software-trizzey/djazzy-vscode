@@ -56,6 +56,62 @@ class TestSecurityCheckService(unittest.TestCase):
         self.assertEqual(len(issues), 0)
 
     @patch('log.LOGGER')
+    def test_secret_key_using_dotenv_not_detected(self, mock_logger):
+        source_code = "SECRET_KEY = dotenv.get_key('.env', 'SECRET_KEY')"
+        service = SecurityCheckService(source_code)
+        
+        service.run_security_checks()
+        
+        issues = service.get_security_issues()
+        self.assertEqual(len(issues), 0)
+
+    @patch('log.LOGGER')
+    def test_secret_key_using_django_environ_not_detected(self, mock_logger):
+        source_code = "SECRET_KEY = env('SECRET_KEY')"
+        service = SecurityCheckService(source_code)
+        
+        service.run_security_checks()
+        
+        issues = service.get_security_issues()
+        self.assertEqual(len(issues), 0)
+
+    @patch('log.LOGGER')
+    def test_secret_key_using_django_environ_str_not_detected(self, mock_logger):
+        source_code = "SECRET_KEY = env.str('SECRET_KEY')"
+        service = SecurityCheckService(source_code)
+        
+        service.run_security_checks()
+        
+        issues = service.get_security_issues()
+        self.assertEqual(len(issues), 0)
+
+    @patch('log.LOGGER')
+    def test_secret_key_hardcoded_detected_with_third_party(self, mock_logger):
+        source_code = textwrap.dedent("""
+        import dotenv
+        SECRET_KEY = 'supersecretkey'
+        """)
+        service = SecurityCheckService(source_code)
+        
+        service.run_security_checks()
+        
+        issues = service.get_security_issues()
+        self.assertEqual(len(issues), 1)
+        self.assertEqual(issues[0].code, SecurityRules.HARDCODED_SECRET_KEY.code)
+        self.assertEqual(issues[0].severity, IssueSeverity.WARNING)
+        self.assertIn(SecurityRules.HARDCODED_SECRET_KEY.description, issues[0].message)
+
+    @patch('log.LOGGER')
+    def test_secret_key_using_os_environ_get_detected(self, mock_logger):
+        source_code = "SECRET_KEY = os.environ['SECRET_KEY']"
+        service = SecurityCheckService(source_code)
+        
+        service.run_security_checks()
+        
+        issues = service.get_security_issues()
+        self.assertEqual(len(issues), 0)
+
+    @patch('log.LOGGER')
     def test_allowed_hosts_wildcard_detected(self, mock_logger):
         source_code = "ALLOWED_HOSTS = ['*']"
         service = SecurityCheckService(source_code)

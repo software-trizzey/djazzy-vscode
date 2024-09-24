@@ -141,7 +141,10 @@ class SecurityCheckService(ast.NodeVisitor):
             self.add_security_issue(SecurityRules.DEBUG_TRUE, line)
 
     def check_secret_key(self, value: str, line: int):
-        env_var_patterns = re.compile(r'os\.environ\.get\(|env\(|config\(|os\.getenv\(')
+        env_var_patterns = re.compile(
+            r'os\.environ(\[|\.)|os\.getenv\(|config\(|env\(|dotenv\.get_key\(|env\.str\(|django_environ\.Env\('
+        )
+
         if not env_var_patterns.search(value):
             self.add_security_issue(SecurityRules.HARDCODED_SECRET_KEY, line)
 

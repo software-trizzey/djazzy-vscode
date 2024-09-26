@@ -569,6 +569,40 @@ documents.onDidOpen(async (event: TextDocumentChangeEvent<TextDocument>) => {
     }
 });
 
+documents.onDidSave(async (saveEvent: TextDocumentChangeEvent<TextDocument>) => {
+    const document = saveEvent.document;
+
+    const languageId = document.languageId;
+    const settings = await getDocumentSettings(document.uri);
+    const workspaceFolders = await connection.workspace.getWorkspaceFolders();
+    const provider = getOrCreateProvider(languageId, settings, document, workspaceFolders);
+
+    if (provider instanceof DjangoProvider) {
+        try {
+			const isDjangoProject = await provider.djangoProjectDetectionPromise;
+			if (!isDjangoProject) return;
+
+			connection.sendNotification(ShowMessageNotification.type, {
+				type: MessageType.Info,
+				message: "👋 Save detected. Running N+1 analysis on current file..."
+			});
+            const diagnostics = await provider.runNPlusOneQueryAnalysis(document);
+            connection.sendDiagnostics({ uri: document.uri, diagnostics });
+            const nplusOneDiagnostics = diagnostics.filter((diagnostic) => diagnostic.code === RuleCodes.NPLUSONE);
+
+            connection.sendNotification(ShowMessageNotification.type, {
+                type: MessageType.Info,
+                message: `✅ Analysis complete. Found ${nplusOneDiagnostics?.length} issues.`
+            });
+        } catch (error: any) {
+            connection.sendNotification(ShowMessageNotification.type, {
+                type: MessageType.Error,
+                message: `🥲 Error running N+1 analysis: ${error.message}`
+            });
+        }
+    }
+});
+
 
 documents.listen(connection);
 connection.listen();

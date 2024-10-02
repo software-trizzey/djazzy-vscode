@@ -215,7 +215,7 @@ export class DjangoProvider extends LanguageProvider {
             const modelCacheJson = JSON.stringify(modelCacheObject);
 	
 			return new Promise((resolve, reject) => {
-				const process = spawn(pythonExecutable, [parserFilePath, modelCacheJson]);
+				const process = spawn(pythonExecutable, [parserFilePath, document.uri, modelCacheJson]);
 				let output = "";
 				let error = "";
 	
@@ -243,20 +243,22 @@ export class DjangoProvider extends LanguageProvider {
 							);
 						const jsonString = jsonLines.join("\n");
 						const results = JSON.parse(jsonString);
-						const symbols = results.symbols || [];
-						const securityIssues = results.security_issues || [];
+                        const parsedDiagnostics = results.diagnostics || [];
+                        console.log("Parsed diagnostics:", parsedDiagnostics);
 						
-						if (symbols.length === 0) return resolve(symbols);
-	
-						await this.validateAndCreateDiagnostics(
-							symbols,
-							diagnostics,
-							changedLines,
-							document,
-							securityIssues,
-                            isDjangProject
-						);
-	
+						if (parsedDiagnostics.length === 0) return resolve(parsedDiagnostics);
+
+                        parsedDiagnostics.forEach((diagnostic: any) => {
+                            console.log("Diagnostic:", diagnostic);
+                            const mappedSeverity = this.mapSeverity(diagnostic.severity);
+                            this.addDiagnostic(
+                                diagnostics,
+                                diagnostic,
+                                diagnostic.message,
+                                mappedSeverity,
+                                diagnostic.issue_code
+                            );
+                        });
 						resolve(diagnostics);
 					} catch (err: any) {
 						console.error("Failed to parse JSON output:", err, output);
@@ -470,7 +472,7 @@ export class DjangoProvider extends LanguageProvider {
         }
     }
 
-	private getParserFilePath(filename: string = 'django_parser.py'): string {
+	private getParserFilePath(filename: string = 'run_check.py'): string {
         const basePath = process.env.PYTHON_TOOLS_PATH || path.resolve(
             __dirname, '..', 'bundled', 'tools', 'python'
         );

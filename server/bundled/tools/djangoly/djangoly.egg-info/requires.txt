@@ -1,0 +1,4 @@
+Django>=3.2
+astroid>=2.0.0
+
+[premium]

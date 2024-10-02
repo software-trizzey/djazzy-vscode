@@ -1,0 +1,2 @@
+[console_scripts]
+djangoly = djangoly.main:main

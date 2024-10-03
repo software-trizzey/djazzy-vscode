@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 
 import Rollbar = require("rollbar");
+import { COMMANDS } from './constants';
 
 export const rollbar = new Rollbar({
 	accessToken: "bb31966b163846dcbe5e5d74f30fd9ad",
@@ -20,8 +21,10 @@ export function trackUserInterestInCustomRules(userId: string) {
 export function trackActivation(context: vscode.ExtensionContext) {
 	console.log("Tracking activation");
 	try {
+		const apiKey = context.globalState.get(COMMANDS.USER_API_KEY);
+
 		rollbar.log('Extension activated', {
-			userId: vscode.env.machineId,
+			userId: apiKey || "unknown",
 			version: context.extension.packageJSON.version,
 			environment: rollbar.options.environment,
 		});
@@ -42,8 +45,10 @@ export function trackActivation(context: vscode.ExtensionContext) {
 export function trackDeactivation(context: vscode.ExtensionContext) {
 	console.log("Tracking deactivation");
 	try {
+		const apiKey = context.globalState.get(COMMANDS.USER_API_KEY);
+
 		rollbar.log('Extension deactivated', {
-			userId: vscode.env.machineId,
+			userId: apiKey || "unknown",
 			version: context.extension.packageJSON.version,
 			environment: rollbar.options.environment,
 		});

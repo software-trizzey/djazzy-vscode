@@ -1,7 +1,6 @@
 import { CodeAction, Connection, Diagnostic, MessageType, ShowMessageRequestParams } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
-
 import { BaseProvider } from './base';
 
 import { CommentAnalyzer } from '../services/analysis';
@@ -23,10 +22,10 @@ export abstract class LanguageProvider extends BaseProvider {
     protected errorHandler: ErrorHandler;
 
     constructor(
-        protected languageId: keyof typeof defaultConventions.languages,
-        connection: Connection,
-        settings: ExtensionSettings,
-		document: TextDocument
+      protected languageId: keyof typeof defaultConventions.languages,
+      connection: Connection,
+      settings: ExtensionSettings,
+      document: TextDocument
     ) {
       super(connection, settings);
       const conventions = this.getConventions();

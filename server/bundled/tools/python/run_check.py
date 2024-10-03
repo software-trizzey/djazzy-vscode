@@ -1,4 +1,3 @@
-import os
 import sys
 import json
 
@@ -18,8 +17,8 @@ def main():
     analyzer = DjangoAnalyzer(
         file_path=current_filepath,
         source_code=input_code,
-        conventions={},
-        settings={},
+        conventions={}, # TODO: Pass conventions from the client
+        settings={}, # TODO: Pass settings from the client
         model_cache_json=model_cache_json
     )
     

@@ -1,2 +1,1 @@
-export * from "./actionWords";
-export * from "./commonWords";
+export * from "./verbs";

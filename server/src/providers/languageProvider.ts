@@ -7,7 +7,6 @@ import { BaseProvider } from './base';
 import { CommentAnalyzer } from '../services/analysis';
 import { DiagnosticsManager } from '../services/diagnostics';
 import { ErrorHandler } from '../services/error';
-import { CodeContextExtractor } from '../services/extraction';
 import { LLMInteractionManager } from '../services/llm';
 import { NameValidator, ThemeValidator } from '../services/validation';
 import { defaultConventions, ExtensionSettings } from '../settings';
@@ -20,7 +19,6 @@ export abstract class LanguageProvider extends BaseProvider {
     protected nameValidator: NameValidator;
     protected themeValidator: ThemeValidator;
     protected commentAnalyzer: CommentAnalyzer;
-    protected codeContextExtractor: CodeContextExtractor;
     protected llmInteractionManager: LLMInteractionManager;
     protected errorHandler: ErrorHandler;
 
@@ -36,7 +34,6 @@ export abstract class LanguageProvider extends BaseProvider {
       this.nameValidator = new NameValidator(conventions, settings);
       this.themeValidator = new ThemeValidator(conventions, settings);
       this.commentAnalyzer = new CommentAnalyzer();
-      this.codeContextExtractor = new CodeContextExtractor(document);
       this.llmInteractionManager = new LLMInteractionManager(connection, conventions);
       this.errorHandler = new ErrorHandler(connection);
 

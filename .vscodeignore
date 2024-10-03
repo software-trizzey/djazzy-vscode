@@ -58,6 +58,7 @@ CHANGELOG.template.md
 
 
 # Python
+!.venv/**
 server/bundled/tools/python/.ruff_cache/**
 server/bundled/tools/python/__pycache__/**
 server/bundled/tools/python/.python-version

@@ -1,4 +1,0 @@
-core
-management
-premium
-tests

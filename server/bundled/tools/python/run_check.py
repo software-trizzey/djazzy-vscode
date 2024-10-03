@@ -2,8 +2,6 @@ import os
 import sys
 import json
 
-sys.path.append(os.path.join(os.path.dirname(__file__), 'djangoly'))
-
 from log import LOGGER
 from util import serialize_file_data
 from djangoly.core.parsers.django_parser import DjangoAnalyzer

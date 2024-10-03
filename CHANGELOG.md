@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Version 0.1.19] - 2024-10-03
+
+### Changed
+
+- [Enhancement] Refactor Django parsing and analysis files to standalone Djangoly package. 
+- [Enhancement] Move python venv and .env files to project root.
+- [Enhancement] Cleanup project files and unused functions.
+
+
 ## [Version 0.1.18] - 2024-09-13
 
 ### Changed

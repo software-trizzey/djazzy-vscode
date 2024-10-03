@@ -104,22 +104,24 @@ class DjangoAnalyzer(Analyzer):
                 )
 
         return message, severity, issue_code
-
-    def visit_ClassDef(self, node):
+    
+    def visit_Call(self, node):
         security_issues = self.security_service.check_raw_sql(node)
         if security_issues:
             for issue in security_issues:
                 self.add_diagnostic(
-                    type='security', # TODO: is this the right type?
-                    name=node.name,
+                    type='security',
+                    name=ast.dump(node.func),
                     line=issue.lineno,
-                    col_offset=issue.col_offset,
-                    end_col_offset=issue.end_col_offset,
+                    col_offset=node.col_offset,
+                    end_col_offset=node.end_col_offset,
                     severity=issue.severity,
                     message=issue.message,
                     issue_code=issue.code
                 )
+        self.generic_visit(node)
 
+    def visit_ClassDef(self, node):
         self.in_class = True
         class_type = self.view_detection_service.get_django_class_type(node, self.class_definitions)
 
@@ -151,6 +153,21 @@ class DjangoAnalyzer(Analyzer):
         self.current_django_class_type = None
 
     def visit_FunctionDef(self, node):
+        security_issues = self.security_service.check_raw_sql(node)
+        if security_issues:
+            for issue in security_issues:
+                self.add_diagnostic(
+                    type='security',
+                    name=ast.dump(node.func),
+                    line=issue.lineno,
+                    col_offset=issue.col_offset,
+                    end_col_offset=issue.end_col_offset,
+                    severity=issue.severity,
+                    message=issue.message,
+                    issue_code=issue.code
+                )
+        self.generic_visit(node)
+
         comments = self.get_related_comments(node)
         is_reserved = DJANGO_IGNORE_FUNCTIONS.get(node.name, False) or self.is_python_reserved(node.name)
         function_start_line, function_start_col = node.lineno, node.col_offset
@@ -245,28 +262,27 @@ class DjangoAnalyzer(Analyzer):
                 comments = self.get_related_comments(node)
 
                 field_issues = self.model_field_check_service.run_model_field_checks(node)
-
-                if self.in_class and self.current_django_class_type:
-                    symbol_type = f'{self.current_django_class_type}_field'
-                else:
-                    symbol_type = 'django_model_field' # Was 'assignment' type. See if this breaks
-                
-                LOGGER.info(f"Field issues: {field_issues}")
-                for issue in field_issues:
-                    self.add_diagnostic(
-                        type=symbol_type,
-                        name=target.id,
-                        comments=comments,
-                        line=node.lineno,
-                        col_offset=node.col_offset,
-                        end_col_offset=node.col_offset + len(target.id),
-                        is_reserved=False,
-                        value=value_source,
-                        severity=issue.severity,
-                        message=issue.message,
-                        issue_code=issue.code,
-                        related_issues=[issue]
-                    )
+                if field_issues:
+                    if self.in_class and self.current_django_class_type:
+                        symbol_type = f'{self.current_django_class_type}_field'
+                    else:
+                        symbol_type = 'django_model_field' # Was 'assignment' type. See if this breaks
+                    
+                    for issue in field_issues:
+                        self.add_diagnostic(
+                            type=symbol_type,
+                            name=target.id,
+                            comments=comments,
+                            line=node.lineno,
+                            col_offset=node.col_offset,
+                            end_col_offset=node.col_offset + len(target.id),
+                            is_reserved=False,
+                            value=value_source,
+                            severity=issue.severity,
+                            message=issue.message,
+                            issue_code=issue.code,
+                            related_issues=[issue]
+                        )
 
         self.generic_visit(node)
 

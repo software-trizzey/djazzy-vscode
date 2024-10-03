@@ -4,9 +4,6 @@ from typing import Optional
 from djangoly.core.utils.rules import RuleCode
 from ..utils.issue import Issue, IssueSeverity
 
-
-
-
 class ModelFieldNames:
     RELATED_NAME = 'related_name'
     ON_DELETE = 'on_delete'
@@ -17,10 +14,11 @@ class ModelFieldNames:
 
 
 class ModelFieldIssue(Issue):
+    code = RuleCode.CDQ11.value
+
     def __init__(self, lineno, col, description, severity=IssueSeverity.WARNING):
         parameters = {"severity": severity}
         super().__init__(lineno, col, parameters)
-        self.code = RuleCode.CDQ11.value
         self.description = description
         self.severity = severity
 

@@ -1,15 +1,15 @@
 class Diagnostic:
     def __init__(
-            self,
-            file_path,
-            line,
-            col_offset,
-            end_col_offset,
-            severity,
-            message,
-            issue_code,
-            related_issues=None
-        ):
+        self,
+        file_path,
+        line,
+        col_offset,
+        end_col_offset,
+        severity,
+        message,
+        issue_code,
+        related_issues=None
+    ):
         """
         Diagnostic represents an issue detected in a specific file.
         :param file_path: Path to the file where the issue occurred.

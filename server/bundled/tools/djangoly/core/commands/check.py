@@ -1,8 +1,9 @@
 import os
 import json
 
+from djangoly.core.parsers.django_parser import DjangoAnalyzer
+
 from ..utils.log import LOGGER
-from ..analyzers.model_checker import run_analysis
 
 
 def analyze_file(file_path: str):
@@ -19,8 +20,15 @@ def analyze_file(file_path: str):
             input_code = f.read()
     except FileNotFoundError:
         return {"error": f"File {file_path} not found."}
+    
+    model_cache = {} # temporary cache for models
+    conventions = {} # temporary conventions
+    settings = {} # temporary settings
+    json_model_cache = json.dumps(model_cache)
+    analyzer = DjangoAnalyzer(file_path, input_code, conventions, settings, json_model_cache)
+    
+    result = analyzer.parse_code()
 
-    result = run_analysis(file_path, input_code)
     diagnostics_output = [diagnostic.to_dict() for diagnostic in result['diagnostics']]
     
     return {"diagnostics": diagnostics_output, "diagnostics_count": result['diagnostics_count']}

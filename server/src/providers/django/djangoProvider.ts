@@ -31,7 +31,6 @@ import { RULE_MESSAGES, RuleCodes } from '../../constants/rules';
 import { LanguageConventions } from '../../languageConventions';
 import { debounce, getChangedLinesFromClient } from '../../utils';
 import { LanguageProvider } from '../languageProvider';
-import { DjangoProjectDetector, ModelCache } from './djangoProjectDetector';
 import { API_SERVER_URL } from '../../constants/api';
 
 const symbolFunctionTypeList = Object.values(SymbolFunctionTypes);
@@ -42,10 +41,6 @@ export class DjangoProvider extends LanguageProvider {
 
 	private symbols: any[] = [];
 	private codeActionsMessageCache: Map<string, CodeAction> = new Map();
-    private isDjangoProject: boolean = false;
-    private modelCache: ModelCache = new Map();
-    public djangoProjectDetectionPromise: Promise<boolean>;
-
 
     constructor(
         languageId: keyof typeof defaultConventions.languages,
@@ -55,7 +50,6 @@ export class DjangoProvider extends LanguageProvider {
     ) {
         super(languageId, connection, settings, document);
 
-        this.djangoProjectDetectionPromise = this.detectDjangoProjectAndModels(document);
 
         const timeoutInMilliseconds = 1000;
 		this.provideDiagnosticsDebounced = debounce(
@@ -80,21 +74,6 @@ export class DjangoProvider extends LanguageProvider {
 		this.settings = settings;
 		this.updateConventions(settings);
 	}
-
-    private async detectDjangoProjectAndModels(document: TextDocument): Promise<boolean> {
-        const documentUri = document.uri;
-
-        this.isDjangoProject = await DjangoProjectDetector.analyzeProject(documentUri, this.connection);
-        
-        if (this.isDjangoProject) {
-            this.modelCache = DjangoProjectDetector.getAllModels();
-            console.log(`Django project detected. Found ${this.modelCache.size} models.`);
-        } else {
-            console.log("Not a Django project");
-        }
-        
-        return this.isDjangoProject;
-    }
 
     public async provideDiagnostics(
 		document: TextDocument,
@@ -203,14 +182,11 @@ export class DjangoProvider extends LanguageProvider {
 		changedLines: Set<number> | undefined
 	): Promise<Diagnostic[]> {
 		try {
-            const isDjangProject = await this.djangoProjectDetectionPromise;
 			const text = document.getText();
 			const parserFilePath = this.getParserFilePath();
-            const modelCacheObject = Object.fromEntries(this.modelCache);
-            const modelCacheJson = JSON.stringify(modelCacheObject);
 	
 			return new Promise((resolve, reject) => {
-				const process = spawn(pythonExecutable, [parserFilePath, document.uri, modelCacheJson]);
+				const process = spawn(pythonExecutable, [parserFilePath, document.uri]);
 				let output = "";
 				let error = "";
 	
@@ -408,70 +384,6 @@ export class DjangoProvider extends LanguageProvider {
     
         return diagnostics;
     }    
-
-    public async runNPlusOneQueryAnalysis(document: TextDocument): Promise<Diagnostic[]> {
-        const fileName = path.basename(document.uri);
-        const dirName = path.dirname(document.uri);
-
-        if (
-            !this.isDjangoProject || 
-            fileName === 'settings.py' || 
-            fileName === 'admin.py' ||
-            dirName.includes('tests') ||
-            dirName.includes('static') ||
-            dirName.includes('templates') ||
-            fileName === 'urls.py'
-        ) {
-            console.log(`Skipping N+1 query analysis for unlikely query file: "${fileName}"`);
-            return [];
-        }
-
-        const modelCacheObject = Object.fromEntries(this.modelCache);
-        const modelCacheJson = JSON.stringify(modelCacheObject);
-        const documentText = document.getText();
-    
-        return new Promise((resolve, reject) => {
-            const nplusoneServicePath = this.getParserFilePath('detect_nplusone.py');
-            const process = spawn(pythonExecutable, [nplusoneServicePath, documentText, modelCacheJson]);
-    
-            let output = '';
-            let error = '';
-    
-            process.stdout.on('data', (data) => {
-                output += data.toString();
-            });
-    
-            process.stderr.on('data', (data) => {
-                error += data.toString();
-                console.log(`[N+1 DETECT] ${error}`);
-            });
-    
-            process.on('close', (code) => {
-                if (code !== 0) {
-                    LOGGER.error(`N+1 query analysis process exited with code ${code}: ${error}`);
-                    console.error(error);
-                    return reject(new Error(`N+1 query analysis process failed: ${error}`));
-                }
-    
-                try {
-                    const parsedData = JSON.parse(output);
-                    LOGGER.info(`[User] ${cachedUserToken} N+1 parsing complete.`);
-                    this.sendNPlusOneRequestToApi(parsedData, document.uri)
-                        .then((apiDiagnostics) => {
-                            resolve(apiDiagnostics);
-                        })
-                        .catch((apiError) => {
-                            LOGGER.error(`N+1 query analysis API error: ${apiError}`);
-                            reject(apiError);
-                        });
-    
-                } catch (error: any) {
-                    LOGGER.error(`Error parsing N+1 query analysis output: ${error}`);
-                    reject(new Error(`Failed to parse N+1 query analysis output: ${error.message}`));
-                }
-            });
-        });
-    }
 
     private addDiagnostic(
         diagnostics: Diagnostic[],

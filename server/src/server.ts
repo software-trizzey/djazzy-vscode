@@ -52,7 +52,6 @@ import { SOURCE_NAME } from './constants/diagnostics';
 import { API_SERVER_URL } from './constants/api';
 import { ERROR_CODES } from './constants/errors';
 import { ForbiddenError, RateLimitError } from './llm/helpers';
-import { RuleCodes } from './constants/rules';
 
 const connection = createConnection(ProposedFeatures.all);
 const providerCache: Record<string, LanguageProvider> = {};

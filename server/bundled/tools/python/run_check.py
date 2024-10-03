@@ -7,11 +7,10 @@ from djangoly.core.parsers.django_parser import DjangoAnalyzer
 
 def main():
     if len(sys.argv) < 2:
-        LOGGER.error("Usage: python script.py <current_filepath> <model_cache_json>")
+        LOGGER.error("Usage: python script.py <current_filepath>")
         sys.exit(1)
 
     current_filepath = sys.argv[1]
-    model_cache_json = sys.argv[2]
     input_code = sys.stdin.read()
     LOGGER.info(f"Django analyzer initialized {current_filepath}")
     analyzer = DjangoAnalyzer(
@@ -19,7 +18,7 @@ def main():
         source_code=input_code,
         conventions={}, # TODO: Pass conventions from the client
         settings={}, # TODO: Pass settings from the client
-        model_cache_json=model_cache_json
+        model_cache_json=str({})
     )
     
     result = analyzer.parse_code()

@@ -13,7 +13,7 @@
 			],
 			"autoAttachChildProcesses": true,
 			"preLaunchTask": "watch",
-			"envFile": "${workspaceRoot}/server/.env"
+			"envFile": "${workspaceRoot}/.env"
 		},
 		{
 			"name": "Language Server E2E Test",
@@ -26,7 +26,7 @@
 				"${workspaceRoot}/client/testFixture"
 			],
 			"outFiles": ["${workspaceRoot}/client/out/test/**/*.js"],
-			"envFile": "${workspaceRoot}/server/.env"
+			"envFile": "${workspaceRoot}/.env"
 		}
 	]
 }

@@ -244,12 +244,10 @@ export class DjangoProvider extends LanguageProvider {
 						const jsonString = jsonLines.join("\n");
 						const results = JSON.parse(jsonString);
                         const parsedDiagnostics = results.diagnostics || [];
-                        console.log("Parsed diagnostics:", parsedDiagnostics);
 						
 						if (parsedDiagnostics.length === 0) return resolve(parsedDiagnostics);
 
                         parsedDiagnostics.forEach((diagnostic: any) => {
-                            console.log("Diagnostic:", diagnostic);
                             const mappedSeverity = this.mapSeverity(diagnostic.severity);
                             this.addDiagnostic(
                                 diagnostics,

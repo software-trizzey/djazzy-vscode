@@ -6,7 +6,6 @@
 > - You may encounter bugs or unexpected behavior.
 > - Certain features are subject to daily usage limits to prevent abuse.
 > - We greatly appreciate your feedback to help improve the extension.
-> - **Join our [Discord server](https://discord.gg/U8Mq8Vx9q9)** for faster support and discussions.
 
 # Djangoly: Write Cleaner, Faster, Scalable Django Code
 
@@ -124,7 +123,3 @@ Djangoly reminds you to create and update test files when you modify your Django
 ## Known Issues & Limitations 🐞
 
 - **False Positives**: As an MVP undergoing rapid development, Djangoly may generate inaccurate diagnostics and recommendations. If you encounter any issues, please report them to [support@djangoly.com](mailto:support@djangoly.com).
-
-
-## Join Our Community on Discord 💬
-Have questions or run into issues? Join our [Discord server](https://discord.gg/U8Mq8Vx9q9) to connect with the development team and other users. You'll get faster responses to your questions, feedback, and issues, and you'll be able to discuss new features with the community.

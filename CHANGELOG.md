@@ -10,6 +10,10 @@ All notable changes to this project will be documented in this file.
 - [Enhancement] Move python venv and .env files to project root.
 - [Enhancement] Cleanup project files and unused functions.
 
+### Removed
+
+- [Removal] Remove Discord server links from readme while it's revamped
+
 
 ## [Version 0.1.18] - 2024-09-13
 

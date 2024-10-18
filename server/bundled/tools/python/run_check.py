@@ -22,8 +22,10 @@ def main():
     )
     
     result = analyzer.parse_code()
-    result['diagnostics'] = [diag.to_dict() for diag in result['diagnostics']]
-    print(json.dumps(result, default=serialize_file_data))
+    diagnostics_output = [diagnostic.to_dict() for diagnostic in result['diagnostics']]
+    diagnostics_to_return = {"diagnostics": diagnostics_output, "diagnostics_count": result['diagnostics_count']}
+
+    print(json.dumps(diagnostics_to_return))
 
 if __name__ == "__main__":
     main()

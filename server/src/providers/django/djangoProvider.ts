@@ -35,6 +35,11 @@ import { API_SERVER_URL } from '../../constants/api';
 
 const symbolFunctionTypeList = Object.values(SymbolFunctionTypes);
 
+interface ParsedDiagnosticsSchema {
+    diagnostics: Diagnostic[];
+    diagnostics_count: number;
+}
+
 export class DjangoProvider extends LanguageProvider {
 
     provideDiagnosticsDebounced: (document: TextDocument) => void;
@@ -213,10 +218,10 @@ export class DjangoProvider extends LanguageProvider {
 									line.trim().startsWith("[") || line.trim().startsWith("{")
 							);
 						const jsonString = jsonLines.join("\n");
-						const results = JSON.parse(jsonString);
+						const results: ParsedDiagnosticsSchema = JSON.parse(jsonString);
                         const parsedDiagnostics = results.diagnostics || [];
 						
-						if (parsedDiagnostics.length === 0) return resolve(parsedDiagnostics);
+						if (results.diagnostics_count === 0) return resolve([]);
 
                         parsedDiagnostics.forEach((diagnostic: any) => {
                             const mappedSeverity = this.mapSeverity(diagnostic.severity);
@@ -262,37 +267,6 @@ export class DjangoProvider extends LanguageProvider {
     
         return parserFilePath;
     }
-
-	private adjustColumnOffsets(symbol: any): { line: number, start: number, end: number } {
-		const line = symbol.line - 1;
-		let start = symbol.col_offset;
-		let end = symbol.end_col_offset || (start + symbol.name.length);
-	
-		if (
-            symbol.type === "function" || symbol.type === "django_func_view" || symbol.type.startsWith("django_") && symbol.type.endsWith("_method")) {
-			start += "def ".length;
-            end = start + symbol.name.length;
-		} else if (symbol.type === "class" || symbol.type === "django_class_view") {
-			start += "class ".length;
-			end = start + symbol.name.length;
-		} else if (/(ForeignKey|TextField|CharField)/.test(symbol.value) && symbol?.full_line_length) {
-            end = symbol.full_line_length;
-        }
-
-        if (
-            symbol.issue_code === RuleCodes.NO_EXCEPTION_HANDLER && (
-                symbol.type === "django_func_view" || symbol.type === "django_class_view_method"
-            )
-         ) {
-            start = symbol.col_offset;  
-            end = symbol.full_line_length || (start + symbol.name.length);
-        }
-	
-		start = Math.max(0, start);
-		end = Math.max(start, end);
-	
-		return { line, start, end };
-	}
 
     public async provideCodeActions(document: TextDocument, userToken: string): Promise<CodeAction[]> {
         const diagnostics = document.uri
@@ -385,22 +359,24 @@ export class DjangoProvider extends LanguageProvider {
         return diagnostics;
     }    
 
-    private addDiagnostic(
-        diagnostics: Diagnostic[],
-        symbol: any,
-        message: string,
-        severity: DiagnosticSeverity = DiagnosticSeverity.Warning,
-        sourceType: string = NAMING_CONVENTION_VIOLATION_SOURCE_TYPE
-    ): void {
-        const { line, start, end } = this.adjustColumnOffsets(symbol);
-        const range = Range.create(
-            Position.create(line, start),
-            Position.create(line, end)
-        );
-    
-        const diagnostic = this.diagnosticsManager.createDiagnostic(range, message, severity, sourceType);
-        diagnostics.push(diagnostic);
-    }
+	private addDiagnostic(
+		diagnostics: Diagnostic[],
+		symbol: any,
+		message: string,
+		severity: DiagnosticSeverity = DiagnosticSeverity.Warning,
+		sourceType: string = NAMING_CONVENTION_VIOLATION_SOURCE_TYPE
+	): void {
+		const line = symbol.line - 1;
+		const start = symbol.col_offset;
+		const end = symbol.full_line_length;
+		const range = Range.create(
+			Position.create(line, start),
+			Position.create(line, end)
+		);
+	
+		const diagnostic = this.diagnosticsManager.createDiagnostic(range, message, severity, sourceType);
+		diagnostics.push(diagnostic);
+	}
 
     private sendRateLimitNotification(): void {
         this.connection.sendNotification(RATE_LIMIT_NOTIFICATION_ID, {

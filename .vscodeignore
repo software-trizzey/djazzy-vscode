@@ -5,7 +5,8 @@
 **/.DS_Store
 **/Thumbs.db
 **/.env
-**.ruff_cache**
+**/.pytest_cache/
+**/.ruff_cache/
 
 # Development-specific files
 **/*.ts
@@ -36,7 +37,6 @@ node_modules/**
 !client/node_modules/vscode-languageserver-protocol/**
 
 # Server runtime dependencies (I need to figure out which of these are actually needed)
-!server/bundled/tools/python/.venv/**
 !server/node_modules/**
 !server/node_modules/rollbar/**
 !server/node_modules/uuid/**

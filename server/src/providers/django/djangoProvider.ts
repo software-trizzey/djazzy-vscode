@@ -373,7 +373,14 @@ export class DjangoProvider extends LanguageProvider {
 			Position.create(line, start),
 			Position.create(line, end)
 		);
-	
+		
+		if (!message) {
+			LOGGER.error("Diagnostic message is empty. Skipping creation.", {
+				symbol,
+				timestamp: new Date().toISOString()
+			});
+			return;
+		}
 		const diagnostic = this.diagnosticsManager.createDiagnostic(range, message, severity, sourceType);
 		diagnostics.push(diagnostic);
 	}

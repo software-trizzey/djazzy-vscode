@@ -2,7 +2,6 @@ import sys
 import json
 
 from log import LOGGER
-from util import serialize_file_data
 from djangoly.core.parsers.django_parser import DjangoAnalyzer
 
 def main():

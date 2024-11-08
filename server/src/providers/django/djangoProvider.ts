@@ -375,7 +375,7 @@ export class DjangoProvider extends LanguageProvider {
 		);
 		
 		if (!message) {
-			LOGGER.error("Diagnostic message is empty. Skipping creation.", {
+			console.error("Diagnostic message is empty. Skipping creation.", {
 				symbol,
 				timestamp: new Date().toISOString()
 			});

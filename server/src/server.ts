@@ -33,7 +33,6 @@ import {
 } from "./providers";
 import {
 	ExtensionSettings,
-	defaultConventions,
 	normalizeClientSettings,
 	incrementSettingsVersion,
 	setWorkspaceRoot,
@@ -166,8 +165,8 @@ connection.onInitialized(async () => {
 	);
 });
 
-let globalSettings: ExtensionSettings = defaultConventions;
-const documentSettings: Map<string, Thenable<ExtensionSettings>> = new Map();
+let globalSettings: ExtensionSettings | null = null;
+const documentSettings: Map<string, Promise<ExtensionSettings>> = new Map();
 
 connection.onDidChangeConfiguration(async (change) => {
 	incrementSettingsVersion();
@@ -186,7 +185,7 @@ connection.onDidChangeConfiguration(async (change) => {
 		);
 	} else {
 		globalSettings = <ExtensionSettings>(
-			(change.settings.djangoly || defaultConventions)
+			(change.settings.djangoly || null)
 		);
 	}
 	console.log("Settings have changed. Refreshing diagnostics...");
@@ -208,9 +207,9 @@ connection.onDidChangeConfiguration(async (change) => {
 	);
 });
 
-function getDocumentSettings(resource: string): Thenable<ExtensionSettings> {
+function getDocumentSettings(resource: string): Promise<ExtensionSettings> {
 	if (!hasConfigurationCapability || resource === "N/A") {
-		return Promise.resolve(globalSettings);
+		return Promise.resolve(globalSettings ?? {} as ExtensionSettings);
 	}
 	let settingsResult = documentSettings.get(resource);
 	if (!settingsResult) {
@@ -272,7 +271,7 @@ function createLanguageProvider(
 
 	switch (languageId) {
 		case "python":
-            provider = new DjangoProvider(languageId, connection, settings, textDocument);
+            provider = new DjangoProvider(connection, settings, textDocument);
             break;
 		default:
 			provider = undefined;

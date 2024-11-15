@@ -165,7 +165,7 @@ connection.onInitialized(async () => {
 	);
 });
 
-let globalSettings: ExtensionSettings | null = null;
+let globalSettings: ExtensionSettings;
 const documentSettings: Map<string, Promise<ExtensionSettings>> = new Map();
 
 connection.onDidChangeConfiguration(async (change) => {
@@ -209,7 +209,10 @@ connection.onDidChangeConfiguration(async (change) => {
 
 function getDocumentSettings(resource: string): Promise<ExtensionSettings> {
 	if (!hasConfigurationCapability || resource === "N/A") {
-		return Promise.resolve(globalSettings ?? {} as ExtensionSettings);
+		if (!globalSettings) {
+			globalSettings = {} as ExtensionSettings;
+		}
+		return Promise.resolve(globalSettings);
 	}
 	let settingsResult = documentSettings.get(resource);
 	if (!settingsResult) {

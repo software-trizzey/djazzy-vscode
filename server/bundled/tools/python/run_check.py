@@ -6,7 +6,7 @@ from djangoly.core.parsers.django_parser import DjangoAnalyzer
 from djangoly.core.lib.settings import ensure_dict
 
 def main():
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 3:
         LOGGER.error("Usage: python script.py <current_filepath>, <extension_settings>")
         sys.exit(1)
 

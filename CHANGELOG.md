@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Version 0.1.19] - 2024-11-15
+
+### Added
+
+- [Feature] Update to djangoly v0.1.6 which includes new STY03 rule for test name enforcement.
+
+
 ## [Version 0.1.19] - 2024-10-03
 
 ### Changed

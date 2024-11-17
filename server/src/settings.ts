@@ -47,17 +47,22 @@ export interface ExtensionSettings {
 	};
 }
 
+const defaultGeneralSettings = {
+	booleanPrefixes: ['is', 'has', 'can', 'should', 'did'],
+	onlyCheckNewCode: false, // FIXME: expose this in the future
+	notificationInterval: 45, // FIXME: expose this in the future
+	nameLengthLimit: 3, // FIXME: expose this in the future
+	functionLengthLimit: 50, // FIXME: expose this in the future
+	ignoredFunctions: [], // TODO: maybe expose this in the future
+};
+
 export const normalizeClientSettings = (
 	settings: ExtensionSettings
 ): ExtensionSettings => {
 	return {
 		general: {
-			onlyCheckNewCode: settings.general.onlyCheckNewCode,
-			notificationInterval: settings.general.notificationInterval,
+			...defaultGeneralSettings,
 			booleanPrefixes: settings.general.booleanPrefixes,
-			nameLengthLimit: settings.general.nameLengthLimit,
-			functionLengthLimit: settings.general.functionLengthLimit,
-			ignoredFunctions: [], // TODO: maybe expose this in the future
 		},
 		comments: settings.comments,
 		lint: settings.lint,

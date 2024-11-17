@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Version 0.1.19] - 2024-11-17
+
+### Added
+
+- [Feature] Update to djangoly v0.1.7 which supports better linter rule protections.
+
+### Changed
+
+- [Enhancement] Use enum list for linter rules in settings. This will ensure only valid rules are used.
+- [Enhancement] Tidied project and refined logs.
+
+### Removed
+
+- [Removal] Removed uncustomizable settings: `onlyCheckNewCode`, `notificationInterval`, `nameLengthLimit`, `functionLengthLimit`
+
+
 ## [Version 0.1.19] - 2024-11-15
 
 ### Added

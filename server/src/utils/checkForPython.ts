@@ -30,7 +30,7 @@ function getVenvPythonExecutable(): PythonCheckResult {
                     error: `Python version ${version} in .venv is below the required 3.9. Please ensure the correct Python version is used in the .venv.`,
                 };
             }
-            console.log(`Using Python from .venv: ${version}`);
+            console.log(`Detected python${version}`);
             return { executable: venvPath, error: null };
         } else {
             return { executable: null, error: `Unable to parse Python version from .venv output: "${versionOutput}".` };

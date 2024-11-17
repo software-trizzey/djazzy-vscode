@@ -28,8 +28,6 @@ import { TextDocumentChangeEvent } from 'vscode-languageserver';
 import {
 	LanguageProvider,
 	DjangoProvider,
-	PythonProvider,
-	FunctionDetails,
 } from "./providers";
 import {
 	ExtensionSettings,
@@ -42,6 +40,7 @@ import {
 } from "./settings";
 import { checkForTestFile, debounce } from "./utils";
 import { getPythonExecutableIfSupported } from './utils/checkForPython';
+import { findFunctionNode, FunctionDetails } from './utils/getPythonFunctionNode';
 
 import { DiagnosticQueue } from "./services/diagnostics";
 
@@ -54,7 +53,6 @@ import { ForbiddenError, RateLimitError } from './llm/helpers';
 
 const connection = createConnection(ProposedFeatures.all);
 const providerCache: Record<string, LanguageProvider> = {};
-const pythonProviderCache: Record<string, PythonProvider> = {};
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 const diagnosticQueue = new DiagnosticQueue();
 
@@ -296,18 +294,6 @@ function getOrCreateProvider(
 	return providerCache[languageId];
 }
 
-function getOrCreatePythonProvider(
-	settings: ExtensionSettings,
-	textDocument: TextDocument,
-): PythonProvider {
-	const pythonId = 'python1';
-
-	if (!pythonProviderCache[pythonId]) {
-		pythonProviderCache[pythonId] = new PythonProvider("python", connection, settings, textDocument);
-	} 
-	return pythonProviderCache[pythonId];
-}
-
 export async function validateTextDocument(textDocument: TextDocument, includeNPlusOne: boolean = false): Promise<Diagnostic[]> {
     connection.sendDiagnostics({
         uri: textDocument.uri,
@@ -418,14 +404,12 @@ connection.onRequest(COMMANDS.PROVIDE_EXCEPTION_HANDLING, async (params) => {
 });
 
 async function findFunctionInDocument(document: TextDocument, functionName: string, lineNumber: number): Promise<FunctionDetails | null> {
-	const settings = await getDocumentSettings(document.uri);
 	const languageId = document.languageId;
 	if (languageId !== 'python') {
 		console.log("File is not a Python document. Skipping function extraction.");
 		return null;
 	}
-	const provider = getOrCreatePythonProvider(settings, document);
-	const functionNode = await provider.findFunctionNode(document, functionName, lineNumber);
+	const functionNode = await findFunctionNode(document, functionName, lineNumber);
     return functionNode;
 }
 

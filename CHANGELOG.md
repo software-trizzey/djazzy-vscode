@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Version 0.1.19] - 2024-11-17
+## [Version 0.2.0] - 2024-11-17
 
 ### Added
 
@@ -18,14 +18,14 @@ All notable changes to this project will be documented in this file.
 - [Removal] Removed uncustomizable settings: `onlyCheckNewCode`, `notificationInterval`, `nameLengthLimit`, `functionLengthLimit`
 
 
-## [Version 0.1.19] - 2024-11-15
+## [Version 0.2.0] - 2024-11-15
 
 ### Added
 
 - [Feature] Update to djangoly v0.1.6 which includes new STY03 rule for test name enforcement.
 
 
-## [Version 0.1.19] - 2024-10-03
+## [Version 0.2.0] - 2024-10-03
 
 ### Changed
 

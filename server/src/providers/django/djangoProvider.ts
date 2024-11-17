@@ -84,7 +84,6 @@ export class DjangoProvider extends LanguageProvider {
 			const text = document.getText();
 			const parserFilePath = this.getParserFilePath();
 			const settings = await this.getStoredSettings();
-			console.log("Stored settings", settings);
 	
 			return new Promise((resolve, reject) => {
 				const process = spawn(pythonExecutable, [parserFilePath, document.uri, JSON.stringify(settings)]);

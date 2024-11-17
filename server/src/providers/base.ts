@@ -10,7 +10,6 @@ export abstract class BaseProvider {
     constructor(connection: Connection, settings: ExtensionSettings) {
         this.connection = connection;
         this.settings = settings;
-        console.log("BaseProvider constructor settings", this.settings);
     }
 
     public abstract getSettings(): ExtensionSettings;

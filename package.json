@@ -203,7 +203,34 @@
 						"STY02"
 					],
                     "items": {
-                        "type": "string"
+                        "type": "string",
+						"enum": [
+							"ALL",
+							"SEC01",
+							"SEC02",
+							"SEC03",
+							"SEC04",
+							"SEC05",
+							"SEC06",
+							"SEC07",
+							"SEC08",
+							"SEC09",
+							"SEC10",
+							"SEC11",
+							"SEC12",
+							"SEC13",
+							"SEC14",
+							"CDQ01",
+							"CDQ02",
+							"CDQ03",
+							"CDQ04",
+							"CDQ05",
+							"CDQ06",
+							"CDQ07",
+							"STY01",
+							"STY02",
+							"STY03"
+						]
                     },
                     "order": 6
                 },
@@ -212,7 +239,34 @@
                     "default": [],
                     "description": "Set rule codes to disable. View rules at https://github.com/software-trizzey/djangoly-docs/blob/main/docs/CONVENTION_RULES.md",
                     "items": {
-                        "type": "string"
+                        "type": "string",
+						"enum": [
+							"ALL",
+							"SEC01",
+							"SEC02",
+							"SEC03",
+							"SEC04",
+							"SEC05",
+							"SEC06",
+							"SEC07",
+							"SEC08",
+							"SEC09",
+							"SEC10",
+							"SEC11",
+							"SEC12",
+							"SEC13",
+							"SEC14",
+							"CDQ01",
+							"CDQ02",
+							"CDQ03",
+							"CDQ04",
+							"CDQ05",
+							"CDQ06",
+							"CDQ07",
+							"STY01",
+							"STY02",
+							"STY03"
+						]
                     },
                     "order": 7
                 }

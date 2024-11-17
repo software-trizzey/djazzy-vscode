@@ -95,6 +95,7 @@ export class DjangoProvider extends LanguageProvider {
 				});
 				process.stderr.on("data", (data) => {
 					error += data.toString();
+					// TODO: Add setting that filters parser logs based on level (debug, info, warn, error)?
 					console.log(`[PARSER] ${data}`); 
 				});
 	

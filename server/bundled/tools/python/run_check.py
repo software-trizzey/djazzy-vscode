@@ -23,6 +23,7 @@ def main():
     )
     
     LOGGER.info(f"Django analyzer initialized {current_filepath}")
+    LOGGER.debug(f"Analyzer running with settings: {analyzer.get_settings()}")
     
     result = analyzer.parse_code()
     diagnostics_output = [diagnostic.to_dict() for diagnostic in result['diagnostics']]

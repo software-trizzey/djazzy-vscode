@@ -6,7 +6,7 @@ from typing import List, Optional, Dict
 from util import serialize_file_data
 from log import LOGGER
 
-from ast_parser import Analyzer
+from djangoly.core.parsers.ast_parser import Analyzer
 
 
 def get_relevant_imports(tree: ast.Module, function_name: str) -> List[str]:
@@ -44,7 +44,7 @@ def get_function_details(source_code: str, function_name: str, line_number: int)
         tree = ast.parse(source_code)
         for node in ast.walk(tree):
             if isinstance(node, ast.FunctionDef) and node.name == function_name and node.lineno - 1 == line_number:
-                body_with_lines, raw_body = Analyzer(source_code).get_function_body(node)
+                body_with_lines, raw_body = Analyzer("", source_code, {}).get_function_body(node)
                 relevant_imports = get_relevant_imports(tree, function_name)
                 function_calls = find_function_calls(tree, function_name)
 

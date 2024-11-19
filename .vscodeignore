@@ -5,8 +5,8 @@
 **/.DS_Store
 **/Thumbs.db
 **/.env
-**__pycache__**
-**.ruff_cache**
+**/.pytest_cache/
+**/.ruff_cache/
 
 # Development-specific files
 **/*.ts
@@ -37,7 +37,6 @@ node_modules/**
 !client/node_modules/vscode-languageserver-protocol/**
 
 # Server runtime dependencies (I need to figure out which of these are actually needed)
-!server/bundled/tools/python/.venv/**
 !server/node_modules/**
 !server/node_modules/rollbar/**
 !server/node_modules/uuid/**
@@ -56,12 +55,5 @@ node_modules/**
 .gitignore
 CHANGELOG.template.md
 
-
 # Python
-server/bundled/tools/python/.ruff_cache/**
-server/bundled/tools/python/__pycache__/**
-server/bundled/tools/python/.python-version
-# This might turn into node_modules where if use 3rd party libraries they won't be included.
-# So be careful excluding .venv
-server/bundled/tools/python/.venv/**
-server/bundled/tools/python/tests/**
+!.venv/**

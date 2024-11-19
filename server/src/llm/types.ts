@@ -86,7 +86,7 @@ export interface VariableContext {
     type: ContextType.variable;
     usage: string;
     surroundingCode: string;
-    examples: string[];
+    examples?: string[];
     languageId: string;
     violationReason?: string;
 }
@@ -96,7 +96,7 @@ export interface FunctionContext {
     type: ContextType.function;
     usage: string;
     surroundingCode: string;
-    examples: string[];
+    examples?: string[];
     languageId: string;
     violationReason?: string;
 }

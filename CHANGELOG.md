@@ -2,6 +2,42 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Version 0.2.0] - 2024-11-17
+
+### Added
+
+- [Feature] Update to djangoly v0.1.7 which supports better linter rule protections.
+
+### Changed
+
+- [Enhancement] Use enum list for linter rules in settings. This will ensure only valid rules are used.
+- [Enhancement] Tidied project and refined logs.
+
+### Removed
+
+- [Removal] Removed uncustomizable settings: `onlyCheckNewCode`, `notificationInterval`, `nameLengthLimit`, `functionLengthLimit`
+
+
+## [Version 0.2.0] - 2024-11-15
+
+### Added
+
+- [Feature] Update to djangoly v0.1.6 which includes new STY03 rule for test name enforcement.
+
+
+## [Version 0.2.0] - 2024-10-03
+
+### Changed
+
+- [Enhancement] Refactor Django parsing and analysis files to standalone Djangoly package. 
+- [Enhancement] Move python venv and .env files to project root.
+- [Enhancement] Cleanup project files and unused functions.
+
+### Removed
+
+- [Removal] Remove Discord server links from readme while it's revamped
+
+
 ## [Version 0.1.18] - 2024-09-13
 
 ### Changed

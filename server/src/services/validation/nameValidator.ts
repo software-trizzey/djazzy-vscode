@@ -5,7 +5,7 @@ import { isLikelyBoolean, hasNegativePattern } from '../../utils';
 import { RuleCodes } from '../../constants/rules';
 
 import {BaseValidator} from './base';
-import { verbDictionary } from '../../data/actionWords';
+import { verbDictionary } from '../../data/verbs';
 
 const VARIABLES_TO_IGNORE = [
 	"ID",

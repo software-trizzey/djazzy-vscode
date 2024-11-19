@@ -1,18 +1,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { Position, Range, RequestType } from "vscode-languageserver";
+import { RequestType } from "vscode-languageserver";
 import { Connection } from "vscode-languageserver/node";
 
 import { GET_CHANGED_LINES } from "./constants/commands";
-import { RULE_MESSAGES } from './constants/rules';
-
-import { verbDictionary, commonWords } from "./data";
-import { LanguageConventions } from "./languageConventions";
-import { TextDocument } from 'vscode-languageserver-textdocument';
 import LOGGER from './common/logs';
 
-const cache = new Map<string, boolean>();
 
 const CheckUncommittedChangesRequest = new RequestType<string, string, any>(
 	GET_CHANGED_LINES
@@ -29,27 +23,6 @@ export function debounce<T extends (...args: any[]) => void>(
 			func(...args);
 		}, timeout);
 	};
-}
-
-export async function checkDictionaryAPI(word: string): Promise<boolean> {
-	if (cache.has(word)) {
-		return !!cache.get(word);
-	}
-	try {
-		const data = await fetchWithRetry(
-			`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`,
-			word
-		);
-		if (data && data.length > 0) {
-			cache.set(word, true);
-			return true;
-		}
-		cache.set(word, false);
-		return false;
-	} catch (error) {
-		cache.set(word, false);
-		return false;
-	}
 }
 
 export function isLikelyBoolean(variableName: string): boolean {
@@ -69,13 +42,6 @@ export function isLikelyBoolean(variableName: string): boolean {
 	return likelyBooleanPatterns.some((pattern) => pattern.test(variableName));
 }
 
-export function hasBooleanPrefix(
-	variableName: string,
-	prefixes: string[]
-): boolean {
-	return prefixes.some((prefix) => variableName.startsWith(prefix));
-}
-
 export function hasNegativePattern(variableName: string): boolean {
 	// TODO: add more patterns
 	const negativePatterns = [
@@ -87,69 +53,6 @@ export function hasNegativePattern(variableName: string): boolean {
 		/no_[a-z]/,
 	];
 	return negativePatterns.some((pattern) => pattern.test(variableName));
-}
-
-/**
- * Check naming style (camelCase for JS/TS, snake_case for Python)
- */
-export function validateVariableNameCase(
-	name: string,
-	languageId: string,
-	isFunction = false
-): boolean {
-	let expectedPattern;
-
-	if (isFunction) {
-		if (languageId === "python") {
-			expectedPattern = /^[a-z]+_[a-z0-9]+.*$/; // snake_case with at least two words
-		} else {
-			expectedPattern = /^[a-z]+[A-Z][a-z0-9]+.*$/; // camelCase with at least two uppercase words
-		}
-	} else {
-		if (languageId === "python") {
-			expectedPattern = /^[a-z]+(_[a-z0-9]+)*$/; // snake_case
-		} else {
-			expectedPattern = /^[a-z]+([A-Z][a-z0-9]+)*$/; // camelCase
-		}
-	}
-	return expectedPattern.test(name);
-}
-
-export async function validateJavaScriptAndTypeScriptFunctionName(
-    functionName: string,
-    functionBodyLines: number,
-    languageConventions: LanguageConventions
-): Promise<{ violates: boolean; reason: string }> {
-    const {
-        expressiveNames: { functions },
-    } = languageConventions;
-
-	const functionNameWithoutUnderscorePrefix = functionName.startsWith("_") ? functionName.substring(1) : functionName;
-
-    if (functions.avoidShortNames && functionNameWithoutUnderscorePrefix.length <= 3) {
-        return {
-            violates: true,
-            reason: RULE_MESSAGES.FUNCTION_TOO_SHORT.replace("{name}", functionName),
-        };
-    }
-
-    const verb = Object.keys(verbDictionary).find((word) => functionNameWithoutUnderscorePrefix.startsWith(word));
-
-    if (!verb) {
-        return {
-            violates: true,
-            reason: RULE_MESSAGES.FUNCTION_NAME_NO_VERB.replace("{name}", functionName),
-        };
-    }
-
-    if (functionBodyLines > functions.functionLengthLimit) {
-        return {
-            violates: true,
-            reason: RULE_MESSAGES.FUNCTION_TOO_LONG.replace("{name}", functionName).replace("{limit}", functions.functionLengthLimit.toString()),
-        };
-    }
-
-    return { violates: false, reason: "" };
 }
 
 export async function getChangedLinesFromClient(
@@ -170,79 +73,6 @@ export async function getChangedLinesFromClient(
 		throw error;
 	}
 }
-
-async function fetchWithRetry(
-	url: string,
-	word: string,
-	retries = 3,
-	backoff = 300
-) {
-	try {
-		const response = await fetch(url);
-		if (!response.ok) {
-			if (response.status === 404) {
-				console.warn(`"${word}" not found in dictionary API`);
-				return [];
-			} else if (response.status === 429 && retries > 0) {
-				console.warn("Rate limit exceeded, retrying...");
-				await new Promise((resolve) => setTimeout(resolve, backoff));
-				return await fetchWithRetry(url, word, retries - 1, backoff * 2);
-			}
-			throw new Error(`HTTP error! status: ${response.status}`);
-		}
-		return await response.json();
-	} catch (error: any) {
-		console.error("Failed to fetch: ", error.message);
-		throw error;
-	}
-}
-
-/**
- * Split a name into words based on camelCase and common separators
- * @returns
- */
-function splitNameIntoWords(name: string): string[] {
-	const tokens = name.split(/(?<=[a-z])(?=[A-Z])|[_-]/);
-	return tokens;
-}
-
-// TODO: return list of objects where the word is marked as valid or not. This will help in highlighting invalid words in the editor. and we can also show suggestions for valid words.
-async function validateWords(tokens: string[]) {
-	const validWords = [];
-	for (const token of tokens) {
-		if (!token) continue;
-
-		if (commonWords[token.toLowerCase()]) {
-			validWords.push(token);
-		} else if (await checkDictionaryAPI(token.toLowerCase())) {
-			validWords.push(token);
-		} else {
-			console.warn("Invalid word: ", token);
-			break;
-		}
-	}
-	return validWords;
-}
-
-async function findMatchingWords(name: string): Promise<string[]> {
-	const tokens = splitNameIntoWords(name);
-	return await validateWords(tokens);
-}
-
-export function getWordRangeAt(document: TextDocument, position: Position) {
-	const text = document.getText();
-	const offset = document.offsetAt(position);
-	let start = offset;
-	let end = offset;
-	while (start > 0 && /\w/.test(text.charAt(start - 1))) {
-		start--;
-	}
-	while (end < text.length && /\w/.test(text.charAt(end))) {
-		end++;
-	}
-	return Range.create(document.positionAt(start), document.positionAt(end));
-}
-
 
 const getPossibleTestPaths = (sourceUri: string): string[] => {
     const parsedPath = path.parse(sourceUri);

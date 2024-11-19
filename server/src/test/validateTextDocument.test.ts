@@ -2,7 +2,6 @@ import { validateTextDocument } from '../server';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { DiagnosticQueue } from '../services/diagnostics';
 import { DjangoProvider } from '../providers';
-import * as djangoProjectDetector from '../providers/django/djangoProjectDetector';
 import * as fs from 'fs';
 
 jest.mock('vscode-languageserver/node', () => {
@@ -70,8 +69,6 @@ jest.mock('fs', () => ({
     readFile: jest.fn().mockResolvedValue('from django.db import models'),
   }
 }));
-
-jest.spyOn(djangoProjectDetector.DjangoProjectDetector, 'analyzeProject').mockResolvedValue(true);
 
 
 describe('validateTextDocument', () => {

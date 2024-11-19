@@ -1,8 +1,5 @@
 import { URI } from 'vscode-uri';
 
-import type { LanguageConventions } from "./languageConventions";
-import type { CommentConventions } from "./commentConventions";
-import { Severity } from './llm/types';
 import { WorkspaceFolder } from 'vscode-languageserver';
 
 export let workspaceRoot = '';
@@ -35,136 +32,40 @@ export function updatePythonExecutablePath(executablePath: string): void {
 export interface ExtensionSettings {
 	general: {
 		onlyCheckNewCode: boolean;
-		isDevMode: boolean;
 		notificationInterval: number;
-		prefixes: string[];
+		booleanPrefixes: string[];
+		nameLengthLimit: number;
+		functionLengthLimit: number;
+		ignoredFunctions: string[];
 	};
-	comments: CommentConventions;
-	languages: {
-		python: LanguageConventions;
+	comments: {
+		flagRedundant: boolean;
+	}
+	lint: {
+		select: string[],
+		ignore: string[],
 	};
 }
 
-export const defaultPrefixes: string[] = ["is", "has", "should", "can", "did"];
-export const defaultFunctionLengthLimit: number = 60;
-
-
-const defaultLanguageConventions: LanguageConventions = {
-	isEnabled: true,
-	expressiveNames: {
-		variables: {
-			isEnabled: true,
-			avoidShortNames: true,
-			avoidGenericNames: true,
-			examples: [],
-		},
-		functions: {
-			isEnabled: true,
-			avoidShortNames: true,
-			avoidGenericNames: true,
-			functionLengthLimit: defaultFunctionLengthLimit,
-			examples: [],
-		},
-		objectProperties: {
-			isEnabled: true,
-			avoidShortNames: true,
-			avoidGenericNames: true,
-			examples: [],
-		}
-	},
-	boolean: {
-		positiveNaming: true,
-		usePrefix: true,
-	},
-	themeSystem: {
-		isEnabled: true,
-		shouldFlagHexCodes: true,
-	},
-};
-
-export const defaultConventions: ExtensionSettings = {
-	general: {
-		onlyCheckNewCode: false,
-		isDevMode: false,
-		notificationInterval: 45, // minutes
-		prefixes: defaultPrefixes,
-	},
-	comments: {
-		flagRedundant: true,
-	},
-	languages: {
-		python: {
-			...defaultLanguageConventions,
-			themeSystem: {
-				isEnabled: false,
-				shouldFlagHexCodes: false,
-			},
-			celeryTaskDecorator: {
-				requiredDecorators: [],
-				requiredCalls: [],
-			}
-		},
-	},
+const defaultGeneralSettings = {
+	booleanPrefixes: ['is', 'has', 'can', 'should', 'did'],
+	onlyCheckNewCode: false, // FIXME: expose this in the future
+	notificationInterval: 45, // FIXME: expose this in the future
+	nameLengthLimit: 3, // FIXME: expose this in the future
+	functionLengthLimit: 50, // FIXME: expose this in the future
+	ignoredFunctions: [], // TODO: maybe expose this in the future
 };
 
 export const normalizeClientSettings = (
 	settings: ExtensionSettings
 ): ExtensionSettings => {
-	// TODO: throw error if any of the settings are missing or misconfigured
 	return {
 		general: {
-			onlyCheckNewCode: settings.general.onlyCheckNewCode,
-			isDevMode: settings.general.isDevMode,
-			notificationInterval: settings.general.notificationInterval,
-			prefixes: settings.general.prefixes,
+			...defaultGeneralSettings,
+			booleanPrefixes: settings.general.booleanPrefixes,
 		},
 		comments: settings.comments,
-		languages: {
-			python: normalizeLanguageSettings(settings.languages.python),
-		},
-	};
-};
-
-export const normalizeLanguageSettings = (
-	languageSettings: LanguageConventions
-): LanguageConventions => {
-	// TODO: throw error if any of the settings are missing or misconfigured
-	return {
-		isEnabled: languageSettings.isEnabled,
-		expressiveNames: {
-			variables: {
-				isEnabled: languageSettings.expressiveNames.variables.isEnabled,
-				avoidShortNames:
-					languageSettings.expressiveNames.variables.avoidShortNames,
-				avoidGenericNames:
-					languageSettings.expressiveNames.variables.avoidGenericNames,
-					examples: languageSettings.expressiveNames.variables.examples,
-			},
-			functions: {
-				isEnabled: languageSettings.expressiveNames.functions.isEnabled,
-				avoidShortNames:
-					languageSettings.expressiveNames.functions.avoidShortNames,
-				avoidGenericNames:
-					languageSettings.expressiveNames.functions.avoidGenericNames,
-				functionLengthLimit:
-					languageSettings.expressiveNames.functions.functionLengthLimit,
-					examples: languageSettings.expressiveNames.functions.examples,
-			},
-			objectProperties: {
-				isEnabled: languageSettings.expressiveNames.objectProperties.isEnabled,
-				avoidShortNames:
-					languageSettings.expressiveNames.objectProperties.avoidShortNames,
-				avoidGenericNames:
-					languageSettings.expressiveNames.objectProperties.avoidGenericNames,
-					examples: languageSettings.expressiveNames.objectProperties.examples,
-			},
-		},
-		boolean: {
-			positiveNaming: languageSettings.boolean.positiveNaming,
-			usePrefix: languageSettings.boolean.usePrefix,
-		},
-		celeryTaskDecorator: languageSettings.celeryTaskDecorator,
-		themeSystem: languageSettings.themeSystem,
+		lint: settings.lint,
 	};
 };
 

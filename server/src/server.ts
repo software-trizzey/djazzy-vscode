@@ -28,12 +28,9 @@ import { TextDocumentChangeEvent } from 'vscode-languageserver';
 import {
 	LanguageProvider,
 	DjangoProvider,
-	PythonProvider,
-	FunctionDetails,
 } from "./providers";
 import {
 	ExtensionSettings,
-	defaultConventions,
 	normalizeClientSettings,
 	incrementSettingsVersion,
 	setWorkspaceRoot,
@@ -43,6 +40,7 @@ import {
 } from "./settings";
 import { checkForTestFile, debounce } from "./utils";
 import { getPythonExecutableIfSupported } from './utils/checkForPython';
+import { findFunctionNode, FunctionDetails } from './utils/getPythonFunctionNode';
 
 import { DiagnosticQueue } from "./services/diagnostics";
 
@@ -52,11 +50,9 @@ import { SOURCE_NAME } from './constants/diagnostics';
 import { API_SERVER_URL } from './constants/api';
 import { ERROR_CODES } from './constants/errors';
 import { ForbiddenError, RateLimitError } from './llm/helpers';
-import { RuleCodes } from './constants/rules';
 
 const connection = createConnection(ProposedFeatures.all);
 const providerCache: Record<string, LanguageProvider> = {};
-const pythonProviderCache: Record<string, PythonProvider> = {};
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 const diagnosticQueue = new DiagnosticQueue();
 
@@ -167,8 +163,8 @@ connection.onInitialized(async () => {
 	);
 });
 
-let globalSettings: ExtensionSettings = defaultConventions;
-const documentSettings: Map<string, Thenable<ExtensionSettings>> = new Map();
+let globalSettings: ExtensionSettings;
+const documentSettings: Map<string, Promise<ExtensionSettings>> = new Map();
 
 connection.onDidChangeConfiguration(async (change) => {
 	incrementSettingsVersion();
@@ -187,7 +183,7 @@ connection.onDidChangeConfiguration(async (change) => {
 		);
 	} else {
 		globalSettings = <ExtensionSettings>(
-			(change.settings.djangoly || defaultConventions)
+			(change.settings.djangoly || null)
 		);
 	}
 	console.log("Settings have changed. Refreshing diagnostics...");
@@ -209,8 +205,11 @@ connection.onDidChangeConfiguration(async (change) => {
 	);
 });
 
-function getDocumentSettings(resource: string): Thenable<ExtensionSettings> {
+function getDocumentSettings(resource: string): Promise<ExtensionSettings> {
 	if (!hasConfigurationCapability || resource === "N/A") {
+		if (!globalSettings) {
+			globalSettings = {} as ExtensionSettings;
+		}
 		return Promise.resolve(globalSettings);
 	}
 	let settingsResult = documentSettings.get(resource);
@@ -273,7 +272,7 @@ function createLanguageProvider(
 
 	switch (languageId) {
 		case "python":
-            provider = new DjangoProvider(languageId, connection, settings, textDocument);
+            provider = new DjangoProvider(connection, settings, textDocument);
             break;
 		default:
 			provider = undefined;
@@ -293,18 +292,6 @@ function getOrCreateProvider(
 		providerCache[languageId] = createLanguageProvider(languageId, settings, textDocument, workspaceFolders);
 	}
 	return providerCache[languageId];
-}
-
-function getOrCreatePythonProvider(
-	settings: ExtensionSettings,
-	textDocument: TextDocument,
-): PythonProvider {
-	const pythonId = 'python1';
-
-	if (!pythonProviderCache[pythonId]) {
-		pythonProviderCache[pythonId] = new PythonProvider("python", connection, settings, textDocument);
-	} 
-	return pythonProviderCache[pythonId];
 }
 
 export async function validateTextDocument(textDocument: TextDocument, includeNPlusOne: boolean = false): Promise<Diagnostic[]> {
@@ -417,14 +404,12 @@ connection.onRequest(COMMANDS.PROVIDE_EXCEPTION_HANDLING, async (params) => {
 });
 
 async function findFunctionInDocument(document: TextDocument, functionName: string, lineNumber: number): Promise<FunctionDetails | null> {
-	const settings = await getDocumentSettings(document.uri);
 	const languageId = document.languageId;
 	if (languageId !== 'python') {
 		console.log("File is not a Python document. Skipping function extraction.");
 		return null;
 	}
-	const provider = getOrCreatePythonProvider(settings, document);
-	const functionNode = await provider.findFunctionNode(document, functionName, lineNumber);
+	const functionNode = await findFunctionNode(document, functionName, lineNumber);
     return functionNode;
 }
 

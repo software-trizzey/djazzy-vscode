@@ -1,7 +1,11 @@
+import projectPackageJson from "../../package.json";
+
 export const EXTENSION_NAME = "djangoly";
 export const EXTENSION_DISPLAY_NAME = "Djangoly";
 export const EXTENSION_ID = "djangoly";
 export const PUBLISHER = "alchemized";
+
+export const DJANGOLY_ID = projectPackageJson.publisher + "." + EXTENSION_ID;
 
 export const SESSION_USER = `${EXTENSION_ID}User`;
 export const SESSION_TOKEN_KEY = `${EXTENSION_ID}UserToken`;

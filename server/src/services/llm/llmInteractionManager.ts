@@ -28,15 +28,9 @@ export interface LLMSuggestionResponse {
 
 export class LLMInteractionManager {
     private connection: Connection;
-    private conventions: LanguageConventions;
 
     constructor(connection: Connection, conventions: LanguageConventions) {
         this.connection = connection;
-        this.conventions = conventions;
-    }
-
-    public getConventions() {
-        return this.conventions;
     }
 
 	public async fetchSuggestedNameFromLLM({
@@ -144,14 +138,12 @@ export class LLMInteractionManager {
         variableName: string
     ): VariableContext {
 		const usage = this.getSurroundingCode(document, diagnostic.range);
-		const { expressiveNames: { variables } } = this.getConventions();
 		
 		return {
 			name: variableName,
 			type: ContextType.variable,
 			usage,
 			surroundingCode: usage,
-			examples: variables.examples,
 			languageId
 		};
 	}
@@ -164,14 +156,12 @@ export class LLMInteractionManager {
         functionBody: string
     ): FunctionContext {
 		const surroundingCode = this.getSurroundingCode(document, diagnostic.range);
-		const { expressiveNames: { functions } } = this.getConventions();
 		
 		return {
 			name: functionName,
 			type: ContextType.function,
 			usage: functionBody,
 			surroundingCode,
-			examples: functions.examples,
 			languageId
 		};
 	}

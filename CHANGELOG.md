@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Version 0.2.1] - 2024-11-24
+
+### Changed
+
+- [Enhancement] Refine how extension installtion and uninstallation events are logged.
+
 ## [Version 0.2.0] - 2024-11-17
 
 ### Added

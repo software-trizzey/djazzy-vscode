@@ -17,13 +17,15 @@ import {
 import { registerCommands } from './common/commands';
 import { registerActions } from './common/actions';
 import { setupFileWatchers } from './common/utils/fileWatchers';
-import { trackActivation, trackDeactivation } from './common/logs';
+import { trackUserInstallEvent, trackUninstallEvent } from './common/logs';
 import { authenticateUser, validateApiKey } from './common/auth/api';
 
 
 let client: LanguageClient;
+let extensionContext: vscode.ExtensionContext;
 
 export async function activate(context: vscode.ExtensionContext) {
+	extensionContext = context;
     const signIn = "Sign In";
     const requestAPIKey = "Request API Key";
     let apiKey: string | undefined = context.globalState.get(COMMANDS.USER_API_KEY);
@@ -94,7 +96,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	await client.start();
 	
 	activateClientNotifications(client);
-	trackActivation(context);
+	trackUserInstallEvent(context);
 
 	
 	registerCommands(context, client, activate, deactivate);
@@ -111,13 +113,12 @@ export async function activate(context: vscode.ExtensionContext) {
 	clientOptions.synchronize.fileEvents = apiFolderWatchers;
 }
 
-export function deactivate(context: vscode.ExtensionContext): Thenable<void> | undefined {
-	if (!client) {
-		return undefined;
-	}
-	return client.stop().then(() => {
-		trackDeactivation(context);
-	});
+export async function deactivate(context: vscode.ExtensionContext): Promise<void> {
+	if (!client) return undefined;
+	
+	await client.stop();
+
+	trackUninstallEvent(context ? context : extensionContext);
 }
 
 

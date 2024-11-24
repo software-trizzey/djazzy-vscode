@@ -2,13 +2,15 @@ import * as vscode from "vscode";
 
 import Rollbar = require("rollbar");
 import projectPackageJson from "../../package.json";
-import { COMMANDS, DJANGOLY_ID } from './constants';
+import { COMMANDS, DJANGOLY_ID, API_SERVER_URL } from './constants';
+
+const isDevelopment = process.env.NODE_ENV === "development";
 
 export const rollbar = new Rollbar({
 	accessToken: "bb31966b163846dcbe5e5d74f30fd9ad",
-	environment: process.env.NODE_ENV === "development" ? "development" : "production",
-	captureUncaught: true,
-	captureUnhandledRejections: true,
+	environment: isDevelopment ? "development" : "production",
+	captureUncaught: false,
+	captureUnhandledRejections: false,
 	version: projectPackageJson.version,
 	checkIgnore: (isUncaught, args, item: any) => {
 		if (item.custom && item.custom.vscode && item.custom.vscode.extension) {
@@ -37,43 +39,105 @@ export function trackUserInterestInCustomRules(userId: string) {
 	rollbar.info(message);
 }
 
-export function trackActivation(context: vscode.ExtensionContext) {
-	console.log("Tracking activation");
-	try {
-		const apiKey = context.globalState.get(COMMANDS.USER_API_KEY);
+/**
+ * VSCode doesn't provide a way to track extension installations,
+ * so we use this function to track the first activation of the extension.
+ */
+export async function trackUserInstallEvent(context: vscode.ExtensionContext) {
+    try {
+        const apiKey = context.globalState.get(COMMANDS.USER_API_KEY);
+        const isFirstActivation = !context.globalState.get("isInitialized") && apiKey;
+		console.log("Detected extension installation");
 
-		rollbar.log('Extension activated', {
-			userId: apiKey || "unknown",
-			version: context.extension.packageJSON.version,
-			environment: rollbar.options.environment,
-		});
+        if (isFirstActivation) {
+			const payload = {
+                user_id: apiKey,
+                created_at: new Date().toISOString(),
+                extension_version: context.extension.packageJSON.version,
+            };
 
-		rollbar.info('Activation metadata', {
-			isFirstActivation: !context.globalState.get("hasActivatedOnce"),
-		});
+			const response = await fetch(`${API_SERVER_URL}/auth/activate/`, {
+				method: 'POST',
+				body: JSON.stringify(payload),
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			});
 
-		// Mark the extension as activated once for the first time
-		if (!context.globalState.get("hasActivatedOnce")) {
-			context.globalState.update("hasActivatedOnce", true);
-		}
-	} catch (error) {
-		rollbar.error("Failed to track activation", error);
-	}
+			if (!response.ok) {
+				const data = await response.json();
+				console.error("Failed to activate user", data);
+				throw new Error("Failed to activate user");
+			}
+
+            rollbar.log('Extension activated for the first time', {
+                userId: apiKey,
+                version: context.extension.packageJSON.version,
+                environment: rollbar.options.environment,
+            });
+
+            await context.globalState.update("isInitialized", true);
+        }
+
+        if (!context.globalState.get("hasActivatedOnce")) {
+            await context.globalState.update("hasActivatedOnce", true);
+        }
+    } catch (error) {
+        rollbar.error("Failed to track activation", error);
+    }
 }
 
-export function trackDeactivation(context: vscode.ExtensionContext) {
-	console.log("Tracking deactivation");
-	try {
-		const apiKey = context.globalState.get(COMMANDS.USER_API_KEY);
 
-		rollbar.log('Extension deactivated', {
-			userId: apiKey || "unknown",
-			version: context.extension.packageJSON.version,
-			environment: rollbar.options.environment,
-		});
-	} catch (error) {
-		rollbar.error("Failed to track deactivation", error);
+/**
+ * VSCode doesn't provide a way to track uninstall events. This function is
+ * our attempt to track uninstall events.
+ */
+export async function trackUninstallEvent(context: vscode.ExtensionContext) {
+	if (!context) {
+		console.error("trackUninstallEvent: context is undefined");
+		return;
 	}
+
+	console.log("Detected uninstall event");
+    try {
+        const apiKey = context.globalState.get(COMMANDS.USER_API_KEY);
+        const isInitialized = context.globalState.get("isInitialized");
+
+        if (apiKey && isInitialized) {
+            const payload = {
+                user_id: apiKey,
+                created_at: new Date().toISOString(),
+                extension_version: context.extension.packageJSON.version,
+            };
+
+            try {
+                await fetch(`${API_SERVER_URL}/auth/deactivate/`, {
+                    method: 'POST',
+                    body: JSON.stringify(payload),
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+            } catch (error) {
+                rollbar.error("Failed to deactivate user", error);
+            }
+
+			if (!isDevelopment) {
+				rollbar.log('Extension deactivated', {
+					userId: payload.user_id,
+					version: payload.extension_version,
+					created_at: payload.created_at,
+					environment: rollbar.options.environment,
+				});
+			}
+        }
+    } catch (error) {
+        if (!isDevelopment) {
+			rollbar.error("Failed to track deactivation", error);
+        } else {
+			console.error("Failed to track deactivation", error);
+        }
+    }
 }
 
 export function trackFeatureUsage(userId: string, featureName: string) {

@@ -3,7 +3,6 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import { BaseProvider } from './base';
 
-import { CommentAnalyzer } from '../services/analysis';
 import { DiagnosticsManager } from '../services/diagnostics';
 import { ErrorHandler } from '../services/error';
 import { ExtensionSettings } from '../settings';
@@ -11,17 +10,14 @@ import { ExtensionSettings } from '../settings';
 
 export abstract class LanguageProvider extends BaseProvider {
     protected diagnosticsManager: DiagnosticsManager;
-    protected commentAnalyzer: CommentAnalyzer;
     protected errorHandler: ErrorHandler;
 
     constructor(
       connection: Connection,
-      settings: ExtensionSettings,
-      document: TextDocument
+      settings: ExtensionSettings
     ) {
       super(connection, settings);
       this.diagnosticsManager = new DiagnosticsManager(connection);
-      this.commentAnalyzer = new CommentAnalyzer();
       this.errorHandler = new ErrorHandler(connection);
     }
 

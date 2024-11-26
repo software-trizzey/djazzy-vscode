@@ -1,11 +1,9 @@
-import * as assert from 'assert';
+import assert from 'assert';
 import * as sinon from 'sinon';
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { activate, deactivate, activateClientNotifications } from '../extension';
+import { activateClientNotifications } from '../extension';
 import { LanguageClient } from 'vscode-languageclient/node';
-import * as logs from '../common/logs';
-import * as commands from '../common/commands';
 import { rollbar } from '../common/logs';
 
 suite('Client Extension Tests', function () {

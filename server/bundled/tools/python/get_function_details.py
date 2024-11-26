@@ -76,7 +76,7 @@ def get_function_details(source_code: str, function_name: str, line_number: int)
 
 def main():
     if len(sys.argv) < 3:
-        LOGGER.error("Usage: python script.py <function_name_str> <line_number_str>")
+        LOGGER.error("Usage: python get_function_details.py <function_name_str> <line_number_str>")
         sys.exit(1)
 
     function_name = sys.argv[1]

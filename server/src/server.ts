@@ -48,8 +48,7 @@ import COMMANDS, { ACCESS_FORBIDDEN_NOTIFICATION_ID, COMMANDS_LIST, DJANGOLY_ID,
 import LOGGER, { rollbar } from "./common/logs";
 import { SOURCE_NAME } from './constants/diagnostics';
 import { API_SERVER_URL } from './constants/api';
-import { ERROR_CODES } from './constants/errors';
-import { ForbiddenError, RateLimitError } from './llm/helpers';
+import { ERROR_CODES, ForbiddenError, RateLimitError  } from './constants/errors';
 
 const connection = createConnection(ProposedFeatures.all);
 const providerCache: Record<string, LanguageProvider> = {};

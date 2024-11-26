@@ -1,16 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { RequestType } from "vscode-languageserver";
-import { Connection } from "vscode-languageserver/node";
-
-import { GET_CHANGED_LINES } from "./constants/commands";
-import LOGGER from './common/logs';
-
-
-const CheckUncommittedChangesRequest = new RequestType<string, string, any>(
-	GET_CHANGED_LINES
-);
 
 export function debounce<T extends (...args: any[]) => void>(
 	func: T,
@@ -23,55 +13,6 @@ export function debounce<T extends (...args: any[]) => void>(
 			func(...args);
 		}, timeout);
 	};
-}
-
-export function isLikelyBoolean(variableName: string): boolean {
-	// TODO: add more patterns
-	const likelyBooleanPatterns = [
-		/^is[A-Z]/,
-		/^has[A-Z]/,
-		/^can[A-Z]/,
-		/^should[A-Z]/,
-		/^does[A-Z]/,
-		/^is_[a-z]/,
-		/^has_[a-z]/,
-		/^can_[a-z]/,
-		/^should_[a-z]/,
-		/^does_[a-z]/,
-	];
-	return likelyBooleanPatterns.some((pattern) => pattern.test(variableName));
-}
-
-export function hasNegativePattern(variableName: string): boolean {
-	// TODO: add more patterns
-	const negativePatterns = [
-		/Not[A-Z]/,
-		/Never[A-Z]/,
-		/No[A-Z]/,
-		/not_[a-z]/,
-		/never_[a-z]/,
-		/no_[a-z]/,
-	];
-	return negativePatterns.some((pattern) => pattern.test(variableName));
-}
-
-export async function getChangedLinesFromClient(
-	connection: Connection,
-	filePath: string
-): Promise<Set<number>> {
-	try {
-		const uri = filePath;
-		const changedLines = await connection.sendRequest(
-			CheckUncommittedChangesRequest,
-			uri
-		);
-		const parsedReseponse = JSON.parse(changedLines);
-		const changedLinesSet = new Set<number>(parsedReseponse);
-		return changedLinesSet;
-	} catch (error) {
-		console.error(error);
-		throw error;
-	}
 }
 
 const getPossibleTestPaths = (sourceUri: string): string[] => {
@@ -159,9 +100,4 @@ export const checkForTestFile = async (uri: string): Promise<boolean> => {
         }
     }
     return false;
-};
-
-
-export const trackCodeActionRenameEvent = (userToken: string, flaggedName: string) => {
-	LOGGER.info(`[USER ${userToken}] Requested suggested name for "${flaggedName}"`);
 };

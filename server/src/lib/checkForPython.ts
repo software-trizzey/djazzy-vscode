@@ -11,7 +11,7 @@ function isWindowsPlatform(): boolean {
     return platform() === 'win32';
 }
 
-function getVenvPythonExecutable(): PythonCheckResult {
+export function getVenvPythonExecutable(): PythonCheckResult {
     const venvPath = isWindowsPlatform()
         ? path.join(__dirname, '..', '..', '.venv', 'Scripts', 'python.exe')  // Windows
         : path.join(__dirname, '..', '..', '.venv', 'bin', 'python');  // Unix-based systems
@@ -38,7 +38,7 @@ function getVenvPythonExecutable(): PythonCheckResult {
     }
 }
 
-function getGlobalPythonExecutable(): PythonCheckResult {
+export function getGlobalPythonExecutable(): PythonCheckResult {
     const pythonCommand = isWindowsPlatform() ? 'python' : 'python3';
 
     try {
@@ -63,7 +63,7 @@ function getGlobalPythonExecutable(): PythonCheckResult {
     }
 }
 
-function isSupportedPythonVersion(version: string): boolean {
+export function isSupportedPythonVersion(version: string): boolean {
     const [major, minor] = version.split('.').map(Number);
     return major > 3 || (major === 3 && minor >= 9);
 }

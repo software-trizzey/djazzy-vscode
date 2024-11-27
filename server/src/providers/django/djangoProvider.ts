@@ -24,7 +24,7 @@ import {
 import { Severity } from '../../constants/severity';
 
 import { RuleCodes } from '../../constants/rules';
-import { debounce } from '../../utils';
+import { debounce } from '../../lib/debounce';
 import { LanguageProvider } from '../languageProvider';
 
 interface ParsedDiagnosticsSchema {

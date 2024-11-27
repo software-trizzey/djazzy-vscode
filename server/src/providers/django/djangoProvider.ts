@@ -21,10 +21,10 @@ import LOGGER from '../../common/logs';
 import {
     NPLUSONE_FEEDBACK 
 } from '../../constants/commands';
-import { Severity } from '../../llm/types';
+import { Severity } from '../../constants/severity';
 
 import { RuleCodes } from '../../constants/rules';
-import { debounce } from '../../utils';
+import { debounce } from '../../lib/debounce';
 import { LanguageProvider } from '../languageProvider';
 
 interface ParsedDiagnosticsSchema {
@@ -41,7 +41,7 @@ export class DjangoProvider extends LanguageProvider {
         settings: ExtensionSettings,
         document: TextDocument
     ) {
-        super(connection, settings, document);
+        super(connection, settings);
 
 
         const timeoutInMilliseconds = 1000;

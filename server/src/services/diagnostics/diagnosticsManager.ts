@@ -1,6 +1,6 @@
 import { Connection, Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Severity } from '../../llm/types';
+import { Severity } from '../../constants/severity';
 import { cachedUserToken, settingsVersion } from '../../settings';
 import { NAMING_CONVENTION_VIOLATION_SOURCE_TYPE, SOURCE_NAME } from '../../constants/diagnostics';
 import LOGGER from '../../common/logs';

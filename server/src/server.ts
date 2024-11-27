@@ -38,9 +38,11 @@ import {
 	cachedUserToken,
 	updatePythonExecutablePath,
 } from "./settings";
-import { checkForTestFile, debounce } from "./utils";
-import { getPythonExecutableIfSupported } from './utils/checkForPython';
-import { findFunctionNode, FunctionDetails } from './utils/getPythonFunctionNode';
+
+import { checkForTestFile } from './lib/checkForTestFile';
+import { debounce } from './lib/debounce';
+import { getPythonExecutableIfSupported } from './lib/checkForPython';
+import { findFunctionNode, FunctionDetails } from './lib/getPythonFunctionNode';
 
 import { DiagnosticQueue } from "./services/diagnostics";
 
@@ -48,8 +50,7 @@ import COMMANDS, { ACCESS_FORBIDDEN_NOTIFICATION_ID, COMMANDS_LIST, DJANGOLY_ID,
 import LOGGER, { rollbar } from "./common/logs";
 import { SOURCE_NAME } from './constants/diagnostics';
 import { API_SERVER_URL } from './constants/api';
-import { ERROR_CODES } from './constants/errors';
-import { ForbiddenError, RateLimitError } from './llm/helpers';
+import { ERROR_CODES, ForbiddenError, RateLimitError  } from './constants/errors';
 
 const connection = createConnection(ProposedFeatures.all);
 const providerCache: Record<string, LanguageProvider> = {};

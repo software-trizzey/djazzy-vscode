@@ -38,9 +38,11 @@ import {
 	cachedUserToken,
 	updatePythonExecutablePath,
 } from "./settings";
-import { checkForTestFile, debounce } from "./utils";
-import { getPythonExecutableIfSupported } from './utils/checkForPython';
-import { findFunctionNode, FunctionDetails } from './utils/getPythonFunctionNode';
+
+import { checkForTestFile } from './lib/checkForTestFile';
+import { debounce } from './lib/debounce';
+import { getPythonExecutableIfSupported } from './lib/checkForPython';
+import { findFunctionNode, FunctionDetails } from './lib/getPythonFunctionNode';
 
 import { DiagnosticQueue } from "./services/diagnostics";
 

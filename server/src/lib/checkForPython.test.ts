@@ -1,7 +1,7 @@
 import { execSync } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
-import { getPythonExecutable, isSupportedPythonVersion } from './checkForPython';
+import { getPythonExecutable, isSupportedPythonVersion, isWindowsPlatform } from './checkForPython';
 
 jest.mock('child_process', () => ({
   execSync: jest.fn(),
@@ -45,7 +45,7 @@ describe('checkForPython', () => {
 
     it('should return the global Python executable path if no .venv is found', () => {
       existsSyncMock.mockReturnValue(false);
-      const expectedCommand = 'python3';
+      const expectedCommand = isWindowsPlatform() ? "python" : 'python3';
       execSyncMock.mockReturnValue('Python 3.9.1\n');
 
       const result = getPythonExecutable(projectRoot);

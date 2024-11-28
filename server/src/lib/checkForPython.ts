@@ -8,7 +8,7 @@ interface PythonCheckResult {
     error: string | null;
 }
 
-function isWindowsPlatform(): boolean {
+export function isWindowsPlatform(): boolean {
     return platform() === 'win32';
 }
 

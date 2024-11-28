@@ -1,5 +1,4 @@
 import { spawn } from 'child_process';
-import path from 'path';
 
 import {
     Diagnostic,
@@ -26,6 +25,7 @@ import { Severity } from '../../constants/severity';
 import { RuleCodes } from '../../constants/rules';
 import { debounce } from '../../lib/debounce';
 import { LanguageProvider } from '../languageProvider';
+import { getParserFilePath } from '../../lib/getDjangolyParserFilePath';
 
 interface ParsedDiagnosticsSchema {
     diagnostics: Diagnostic[];
@@ -82,7 +82,7 @@ export class DjangoProvider extends LanguageProvider {
 	): Promise<Diagnostic[]> {
 		try {
 			const text = document.getText();
-			const parserFilePath = this.getParserFilePath();
+			const parserFilePath = getParserFilePath();
 			const settings = await this.getStoredSettings();
 	
 			return new Promise((resolve, reject) => {
@@ -152,17 +152,6 @@ export class DjangoProvider extends LanguageProvider {
 			}
 		}
 	}	
-
-	private getParserFilePath(filename: string = 'run_check.py'): string {
-        const basePath = process.env.PYTHON_TOOLS_PATH || path.resolve(
-            __dirname, '..', 'bundled', 'tools', 'python'
-        );
-        const parserFilePath = path.join(basePath, filename);
-
-        console.log(`Resolved parser file path: ${parserFilePath}`);
-    
-        return parserFilePath;
-    }
 
     public async provideCodeActions(document: TextDocument, userToken: string): Promise<CodeAction[]> {
         const diagnostics = document.uri

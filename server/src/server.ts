@@ -41,7 +41,7 @@ import {
 
 import { checkForTestFile } from './lib/checkForTestFile';
 import { debounce } from './lib/debounce';
-import { getPythonExecutableIfSupported } from './lib/checkForPython';
+import { getPythonExecutable } from './lib/checkForPython';
 import { findFunctionNode, FunctionDetails } from './lib/getPythonFunctionNode';
 
 import { DiagnosticQueue } from "./services/diagnostics";
@@ -70,7 +70,12 @@ connection.onInitialize((params: InitializeParams) => {
 	console.log(extensionVersionMessage);
 	console.log(`Running Node.js version: ${process.version}`);
 
-	const pythonCheckResult = getPythonExecutableIfSupported();
+	const workspaceFolders = params.workspaceFolders || [];
+	setWorkspaceRoot(workspaceFolders);
+	const projectRoot = workspaceFolders[0]?.uri || '';
+	console.log(`Project root: ${projectRoot}`);
+
+	const pythonCheckResult = getPythonExecutable(projectRoot);
 	if (pythonCheckResult.error) {
 		connection.console.error(pythonCheckResult.error);
 		throw new Error(pythonCheckResult.error);
@@ -126,8 +131,6 @@ connection.onInitialize((params: InitializeParams) => {
 
 connection.onInitialized(async () => {
 	const routeId = "server#index";
-	const workspaceFolders = await connection.workspace.getWorkspaceFolders() || [];
-	setWorkspaceRoot(workspaceFolders);
 
 	const logContext = {
 		routeId,

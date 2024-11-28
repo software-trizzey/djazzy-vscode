@@ -37,6 +37,7 @@ jest.mock('vscode-languageserver/node', () => {
       get: jest.fn(),
       onDidChangeContent: jest.fn(),
       onDidClose: jest.fn(),
+      onDidOpen: jest.fn(),
       all: jest.fn(),
     }))
   };

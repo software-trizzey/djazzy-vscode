@@ -24,7 +24,10 @@ describe('checkForPython', () => {
     const projectRoot = path.resolve(__dirname, '..', '..');
 
     it('should return the Python executable path if found in .venv', () => {
-      const expectedPath = path.join(projectRoot, '.venv', 'bin', 'python');
+      const expectedPath = isWindowsPlatform()
+        ? path.join(projectRoot, '.venv', 'Scripts', 'python.exe')
+        : path.join(projectRoot, '.venv', 'bin', 'python');
+        
       existsSyncMock.mockReturnValueOnce(true);
       execSyncMock.mockReturnValue('Python 3.9.1\n');
 

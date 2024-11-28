@@ -31,7 +31,7 @@ function checkPythonExecutable(pythonPath: string): PythonCheckResult {
                     error: `Python version ${version} is below the required 3.9. Please ensure the correct Python version is used.`,
                 };
             }
-            console.log(`Detected python ${version} at ${pythonPath}`);
+            console.log(`Detected python version ${version}`);
             return { executable: pythonPath, error: null };
         } else {
             return { executable: null, error: `Unable to parse Python version from output: "${versionOutput}".` };

@@ -34,7 +34,6 @@ describe('checkForPython', () => {
     });
 
     it('should return an error if Python version in .venv is below 3.9', () => {
-      const expectedPath = path.join(projectRoot, '.venv', 'bin', 'python');
       existsSyncMock.mockReturnValueOnce(true);
       execSyncMock.mockReturnValue('Python 3.8.10\n');
 

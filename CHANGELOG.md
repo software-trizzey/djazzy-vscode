@@ -2,11 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Version 0.2.1] - 2024-11-24
+## [Version 0.2.1] - 2024-11-27
 
 ### Changed
 
 - [Enhancement] Refine how extension installtion and uninstallation events are logged.
+- [Enhancement] Add check for global python executable if workspace version isn't found or extension version can't be used.
 
 ## [Version 0.2.0] - 2024-11-17
 

@@ -1,6 +1,5 @@
 asgiref==3.8.1
 astroid==3.3.4
 Django==4.2.16
-# djangoly @ git+https://github.com/software-trizzey/djangoly.git
 sqlparse==0.5.1
 typing_extensions==4.12.2

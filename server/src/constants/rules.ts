@@ -1,4 +1,4 @@
-export const DJANGOLY_DOCS_URL = "https://github.com/software-trizzey/djangoly-docs/blob/main/docs/CONVENTION_RULES.md";
+export const DJANGOLY_DOCS_URL = "https://github.com/software-trizzey/djangoly-vscode/blob/main/docs/CONVENTION_RULES.md";
 
 
 export enum RuleCodes {

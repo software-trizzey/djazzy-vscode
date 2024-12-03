@@ -21,10 +21,9 @@ For a complete list of all rules, including detailed descriptions and examples, 
 
 ## Djangoly highlights
 
-### 1. Flag common sources of grief such as `CharField(null=True)` omitting `related_name` for foreign keys etc.
+### 1. Flag annoyances such as `CharField(null=True)` omitting `related_name` for foreign keys etc.
 
 ![Djangoly model field demo](https://raw.githubusercontent.com/software-trizzey/images/refs/heads/main/assets/images/djangoly-model-field-validation-demo.gif)
-Flag common sources of grief caused model properties such as `CharField(null=True)` and omitting `related_name` for foreign keys.
 
 
 ### 2. Catch style style violations like poor names and redundant queryset methods

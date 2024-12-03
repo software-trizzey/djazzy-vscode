@@ -9,7 +9,7 @@ Djangoly is a VS Code extension built for Django developers (surprise, surprise)
 
 Djangoly is open source, and you are free to fork and host your own version of the extension. We encourage contributions and feedback from the community.
 
-However, for the best experience and to access support, we recommend using the official VS Code extension. You can signup for free by requesting an an API key [here](https://forms.gle/gEEZdfhWpQyQh2qVA). In the future, we plan to introduce paid features to support the ongoing development and maintenance of the extension.
+However, for the best experience and to access support, we recommend using the [official VS Code extension](https://marketplace.visualstudio.com/items?itemName=Alchemized.djangoly). You can sign up for free by [requesting an API key](https://forms.gle/gEEZdfhWpQyQh2qVA). In the future, we plan to introduce paid features to support the ongoing development and maintenance of the extension.
 
 
 ## Docs
@@ -21,38 +21,35 @@ For a complete list of all rules, including detailed descriptions and examples, 
 
 ## Djangoly highlights
 
-### 1. Validate model fields
+### 1. Flag common sources of grief such as `CharField(null=True)` omitting `related_name` for foreign keys etc.
 
 ![Djangoly model field demo](https://raw.githubusercontent.com/software-trizzey/images/refs/heads/main/assets/images/djangoly-model-field-validation-demo.gif)
-Djangoly flags common sources of grief with model properties such as `CharField(null=True)` and omitting `related_name` for foreign keys.
+Flag common sources of grief caused model properties such as `CharField(null=True)` and omitting `related_name` for foreign keys.
 
-### 2. Flag poor names and redundant queryset methods
+
+### 2. Catch style style violations like poor names and redundant queryset methods
 
 ![Djangoly name and redundant queryset method demo](https://raw.githubusercontent.com/software-trizzey/images/refs/heads/main/assets/images/djangoly-function-name-and-queryset-demo.gif)
-Catch style issues like redundant queryset methods and function/variable names that don't match your conventions.
 
 
-### 2. Test Suite Conventions
+### 3. Reminds you to create/update test files when you modify your Django views or models.
 
 ![Djangoly untested code demo](https://raw.githubusercontent.com/software-trizzey/images/main/assets/images/flag-untested-api-code.gif)
-Djangoly reminds you to create and update test files when you modify your Django views or models.
 
 
+### 4. Flag test names that don't match your team's preferences
 ![Djangoly test name validation](https://raw.githubusercontent.com/software-trizzey/images/refs/heads/main/assets/images/djangoly-test-name-validation.png)
-Flag test names that don't match your team's preferences
 
 
-### 3. Security Settings Check
+### 5. Identifies potential security risks in your settings and suggests safer alternatives.
 
 ![Djangoly test name validation](https://raw.githubusercontent.com/software-trizzey/images/refs/heads/main/assets/images/djangoly-settings-validation.png)
-Djangoly identifies potential security risks in your Django settings and suggests safer alternatives.
 
 
-### 4. Missing Exception Handling Detection
+### 6. Ensures that your Django views and methods have proper error handling.
 
 ![Djangoly exception handler demo](https://raw.githubusercontent.com/software-trizzey/images/main/assets/images/djangoly-exception-handler-demo.gif)
 
-Djangoly ensures that your Django views and methods have proper error handling. It flags functions that lack try-except blocks and can create exception handlers based on your preferences and the function's context.
 
 
 ## Quick Start 🏃‍♂️💨

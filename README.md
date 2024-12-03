@@ -16,7 +16,7 @@ However, for the best experience and to access support, we recommend using the [
 
 Djangoly implements a comprehensive set of rules to help you write cleaner, safer, and more efficient Django code. Each rule is designed to catch common pitfalls, enforce best practices, and improve the overall quality and security of your Django projects.
 
-For a complete list of all rules, including detailed descriptions and examples, please refer to our [Convention Rules Documentation](https://github.com/software-trizzey/djangoly-docs/blob/main/docs/CONVENTION_RULES.md).
+For a complete list of all rules, including detailed descriptions and examples, please refer to our [Convention Rules Documentation](https://github.com/software-trizzey/djangoly-vscode/blob/main/docs/CONVENTION_RULES.md).
 
 
 ## Djangoly highlights

@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Version 0.2.2] - 2024-12-03
+
+### Added
+
+- [Infra] Open-sourced this repo 🚀🎉
+
+### Changed
+
+- [Enhancement] Improved the project's README.md by updating its examples and streamlining the sections. Also added a new contributor section
+
 ## [Version 0.2.1] - 2024-11-27
 
 ### Changed

@@ -3,14 +3,19 @@
 	"displayName": "Djangoly",
 	"description": "Write Cleaner, Faster, Scalable Django Code",
 	"author": "Tristan Deane",
-	"version": "0.2.1",
+	"version": "0.2.2",
 	"publisher": "alchemized",
 	"preview": true,
 	"homepage": "https://www.djangoly.com",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/software-trizzey/djangoly-vscode"
+	},
 	"bugs": {
+		"url": "https://github.com/software-trizzey/djangoly-vscode/issues",
 		"email": "support@djangoly.com"
 	},
-	"license": "Proprietary",
+	"license": "MIT",
 	"icon": "assets/images/logo-v2.png",
 	"galleryBanner": {
 		"color": "#20232D",
@@ -155,7 +160,7 @@
                 },
                 "djangoly.lint.select": {
                     "type": "array",
-                    "description": "Set rule codes to enable. Use `ALL` to enable all rules. View rules at https://github.com/software-trizzey/djangoly-docs/blob/main/docs/CONVENTION_RULES.md",
+                    "description": "Set rule codes to enable. Use `ALL` to enable all rules. View rules at https://github.com/software-trizzey/djangoly-vscode/blob/main/docs/CONVENTION_RULES.md",
                     "default": [
 						"SEC01",
 						"SEC02",
@@ -213,7 +218,7 @@
                 "djangoly.lint.ignore": {
                     "type": "array",
                     "default": [],
-                    "description": "Set rule codes to disable. View rules at https://github.com/software-trizzey/djangoly-docs/blob/main/docs/CONVENTION_RULES.md",
+                    "description": "Set rule codes to disable. View rules at https://github.com/software-trizzey/djangoly-vscode/blob/main/docs/CONVENTION_RULES.md",
                     "items": {
                         "type": "string",
 						"enum": [
@@ -254,10 +259,10 @@
 		"clean": "rimraf ./client/out ./server/out",
 		"compile": "npm run check-types && node esbuild.config.js",
 		"check-types": "tsc --noEmit",
-		"package": "vsce package --allow-missing-repository && node esbuild.config.js --production",
+		"package": "vsce package && node esbuild.config.js --production",
 		"dev:package": "npm run package --pre-release",
-		"publish": "vsce publish --allow-missing-repository",
-		"dev-publish": "npm run dev:package && code --install-extension djangoly-0.2.1.vsix",
+		"publish": "vsce publish",
+		"dev-publish": "npm run dev:package && code --install-extension djangoly-0.2.2.vsix",
 		"watch": "npm-run-all -p watch:*",
 		"watch:esbuild": "node esbuild.config.js --watch",
 		"watch:tsc": "tsc --noEmit --watch --project tsconfig.json",

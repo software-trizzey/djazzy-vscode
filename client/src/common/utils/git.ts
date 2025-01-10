@@ -7,7 +7,7 @@ import {
 	getNotificationInterval,
 	updateLastNotifiedTime,
 } from "./notifications";
-import { COMMANDS, SESSION_USER } from '../constants';
+import { COMMANDS } from '../constants';
 import logger from '../logs';
 import { UserSession } from '../auth/github';
 
@@ -72,12 +72,12 @@ export async function checkAndNotify(uri: vscode.Uri, client: LanguageClient, co
 	const isNewFile = untrackedFiles.includes(relativePath);
 
 	if (diff.length > 0 || isNewFile) {
-		const storedUser: UserSession = context.globalState.get(SESSION_USER);
-		if (!storedUser) {
+		const storedUserAPIKey = context.globalState.get(COMMANDS.USER_API_KEY);
+		if (!storedUserAPIKey) {
 			logger.error("User not signed in. Cannot send API alert.");
 			return;
 		} else {
-			const message = `[${storedUser.github_login}] API alert sent for ${relativePath}`;
+			const message = `[${storedUserAPIKey}] API alert sent for ${relativePath}`;
 			logger.info(message);
 		}
 

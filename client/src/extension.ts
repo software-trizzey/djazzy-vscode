@@ -8,7 +8,7 @@ import {
 	TransportKind,
 } from "vscode-languageclient/node";
 
-import { EXTENSION_ID, EXTENSION_DISPLAY_NAME, COMMANDS, RATE_LIMIT_NOTIFICATION_ID, ACCESS_FORBIDDEN_NOTIFICATION_ID, API_KEY_SIGNUP_URL } from "./common/constants";
+import { EXTENSION_ID, EXTENSION_DISPLAY_NAME, COMMANDS, RATE_LIMIT_NOTIFICATION_ID, ACCESS_FORBIDDEN_NOTIFICATION_ID, API_KEY_SIGNUP_URL, MIGRATION_COMMANDS } from "./common/constants";
 import { AUTH_MESSAGES } from './common/constants/messages';
 
 import {
@@ -19,6 +19,7 @@ import { registerActions } from './common/actions';
 import { setupFileWatchers } from './common/utils/fileWatchers';
 import { trackUserInstallEvent, trackUninstallEvent } from './common/logs';
 import { authenticateUser, validateApiKey } from './common/auth/api';
+import { handleMakemigrationsDetected } from './common/utils/notifications';
 
 
 let client: LanguageClient;
@@ -111,6 +112,13 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	const apiFolderWatchers = await setupFileWatchers(client, context);
 	clientOptions.synchronize.fileEvents = apiFolderWatchers;
+
+	// Add migration-related commands
+	context.subscriptions.push(
+		vscode.commands.registerCommand(MIGRATION_COMMANDS.CHECK_MIGRATIONS, () => {
+			handleMakemigrationsDetected(context);
+		})
+	);
 }
 
 export async function deactivate(context: vscode.ExtensionContext): Promise<void> {

@@ -35,39 +35,41 @@ export async function handleMakemigrationsDetected(context: ExtensionContext) {
 	const dismissText = 'Dismiss';
 	const unappliedMigrationsText = 'Unapplied migrations detected. Would you like to apply them now?';
 
+	async function runMigrations() {
+		console.log('Running migrations...');
+		const terminal = window.createTerminal('Django Migrations');
+		terminal.show();
+		terminal.sendText(`cd "${workspaceRoot}"`);
+		terminal.sendText('python manage.py migrate');
+	}
+
 	try {
 		const { stdout } = await execAsync('python manage.py migrate --check', {
 			cwd: workspaceRoot
 		});
-		
+		console.log('Migrations check output:', stdout);
 		if (stdout.includes('unapplied migration(s)')) {
 			const choice = await window.showWarningMessage(
-				unappliedMigrationsText,
-				applyMigrationsText,
-				dismissText
-			);
+					unappliedMigrationsText,
+					applyMigrationsText,
+					dismissText
+				);
 			
 			if (choice === applyMigrationsText) {
-				const terminal = window.createTerminal('Django Migrations');
-				terminal.show();
-				terminal.sendText(`cd "${workspaceRoot}"`);
-				terminal.sendText('python manage.py migrate');
+				await runMigrations();
 			}
 		}
 	} catch (error: any) {
-		// If migrate --check returns non-zero exit code, there are unapplied migrations
 		if (error.code === 1) {
+			console.log("Unapplied migrations detected.");
 			const choice = await window.showWarningMessage(
 				unappliedMigrationsText,
-				applyMigrationsText,
-				dismissText
-			);
+					applyMigrationsText,
+					dismissText
+				);
 			
 			if (choice === applyMigrationsText) {
-				const terminal = window.createTerminal('Django Migrations');
-				terminal.show();
-				terminal.sendText(`cd "${workspaceRoot}"`);
-				terminal.sendText('python manage.py migrate');
+				await runMigrations();
 			}
 		} else {
 			console.error('Error checking migrations:', error);

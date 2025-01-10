@@ -8,7 +8,8 @@ export async function setupFileWatchers(
 	client: LanguageClient,
 	context: vscode.ExtensionContext
 ): Promise<vscode.FileSystemWatcher[]> {
-	const folderNames = ["api", "views", "migrations"];
+	const migrationFolder = "migrations";	
+	const folderNames = ["api", "views", migrationFolder];
 	const workspaceFolders = vscode.workspace.workspaceFolders;
 
 	if (!workspaceFolders) {
@@ -28,7 +29,7 @@ export async function setupFileWatchers(
 		parentWatcher.onDidCreate(async (uri) => {
 			console.log(`Parent watcher: New ${folder} folder or file created:`, uri.fsPath);
 			
-			if (folder === 'migrations' && uri.path.endsWith('.py')) {
+			if (folder === migrationFolder && uri.path.endsWith('.py')) {
 				if (uri.path.endsWith('__init__.py') || uri.path.includes('__pycache__')) {
 					return;
 				}
@@ -52,10 +53,18 @@ export async function setupFileWatchers(
 
 		parentWatcher.onDidChange((uri) => {
 			console.log(`Parent watcher: ${folder} folder or file changed:`, uri.fsPath);
+			if (folder === migrationFolder && uri.path.endsWith('.py')) {
+				return;
+			}
+
 			checkAndNotify(uri, client, context);
 		});
 
 		parentWatcher.onDidDelete((uri) => {
+			if (folder === migrationFolder && uri.path.endsWith('.py')) {
+				return;
+			}
+
 			console.log(`Parent watcher: ${folder} folder or file deleted:`, uri.fsPath);
 		});
 

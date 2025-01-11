@@ -1,7 +1,8 @@
 import { Uri, workspace, window, ExtensionContext } from "vscode";
-import { exec } from 'child_process';
 import { EXTENSION_ID } from "../constants";
+import { exec } from 'child_process';
 import { promisify } from 'util';
+import { findVirtualEnvPath } from './python';
 
 export const notificationTimes = new Map();
 export const TWENTY_MINUTES = 20;
@@ -22,7 +23,24 @@ export function getNotificationInterval(): number {
 	return intervalInMilliseconds;
 }
 
-export async function handleMakemigrationsDetected(context: ExtensionContext) {
+export async function createMigrations(workspaceRoot: string | undefined) {
+	if (!workspaceRoot) {
+		console.error('No workspace folder found');
+		return;
+	}
+
+	const venvActivate = await findVirtualEnvPath(workspaceRoot);
+	if (!venvActivate) {
+		window.showErrorMessage('No Python virtual environment found');
+		return;
+	}
+	const terminal = window.createTerminal('Django Migrations');
+	terminal.show();
+	terminal.sendText(`cd "${workspaceRoot}"`);
+	terminal.sendText(`${venvActivate} && python manage.py makemigrations`);
+}
+
+export async function handleMakemigrationsDetected(context: ExtensionContext, showCreateOption: boolean = false) {
 	const execAsync = promisify(exec);
 	const workspaceRoot = workspace.workspaceFolders?.[0]?.uri.fsPath;
 	
@@ -75,5 +93,50 @@ export async function handleMakemigrationsDetected(context: ExtensionContext) {
 			console.error('Error checking migrations:', error);
 			window.showErrorMessage(`Failed to check migrations: ${error.message}`);
 		}
+	}
+}
+
+export async function checkForPendingMigrations(context: ExtensionContext) {
+	const execAsync = promisify(exec);
+	const workspaceRoot = workspace.workspaceFolders?.[0]?.uri.fsPath;
+	
+	if (!workspaceRoot) {
+		console.error('No workspace folder found');
+		return;
+	}
+
+	const venvActivate = await findVirtualEnvPath(workspaceRoot);
+	if (!venvActivate) {
+		window.showErrorMessage('No Python virtual environment found');
+		return;
+	}
+
+	try {
+		console.log('Checking for pending migrations...');
+		const { stdout } = await execAsync(`${venvActivate} && python manage.py makemigrations --dry-run`, {
+			cwd: workspaceRoot,
+			shell: '/bin/bash'
+		});
+		
+		if (stdout.includes('No changes detected')) {
+			return;
+		}
+
+		const createMigrationsText = 'Create Migration';
+		const dismissText = 'Dismiss';
+		const newMigrationsText = 'Changes detected in models. Would you like to create a new migration?';
+
+		const choice = await window.showInformationMessage(
+			newMigrationsText,
+			createMigrationsText,
+			dismissText
+		);
+		
+		if (choice === createMigrationsText) {
+			await createMigrations(workspaceRoot);
+		}
+	} catch (error: any) {
+		console.error('Error checking for pending migrations:', error);
+		window.showErrorMessage(`Failed to check for migrations: ${error.message}`);
 	}
 }

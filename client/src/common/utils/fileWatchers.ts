@@ -1,14 +1,30 @@
 import * as vscode from "vscode";
 import { LanguageClient } from "vscode-languageclient/node";
 import { checkAndNotify } from "./git";
-import { handleMakemigrationsDetected } from "./notifications";
+import { handleMakemigrationsDetected, checkForPendingMigrations } from "./notifications";
 
+async function isModelFile(uri: vscode.Uri): Promise<boolean> {
+	try {
+		const content = await vscode.workspace.fs.readFile(uri);
+		const text = Buffer.from(content).toString('utf8');
+		
+		return text.includes('from django.db import models') &&
+			(text.includes('class') && text.includes('models.Model')) ||
+			text.includes('CharField') ||
+			text.includes('TextField') ||
+			text.includes('ForeignKey') ||
+			text.includes('ManyToManyField');
+	} catch (err) {
+		console.error('Error reading file:', err);
+		return false;
+	}
+}
 
 export async function setupFileWatchers(
 	client: LanguageClient,
 	context: vscode.ExtensionContext
 ): Promise<vscode.FileSystemWatcher[]> {
-	const migrationFolder = "migrations";	
+	const migrationFolder = "migrations";    
 	const folderNames = ["api", "views", migrationFolder];
 	const workspaceFolders = vscode.workspace.workspaceFolders;
 
@@ -18,6 +34,23 @@ export async function setupFileWatchers(
 	}
 
 	const watchers: vscode.FileSystemWatcher[] = [];
+	const modelWatcher = vscode.workspace.createFileSystemWatcher(
+		new vscode.RelativePattern(workspaceFolders[0], '**/*.py')
+	);
+
+	modelWatcher.onDidChange(async (uri) => {
+		if (uri.path.includes(`/${migrationFolder}/`)) {
+			return;
+		}
+
+		if (await isModelFile(uri)) {
+			console.log('Model file changed:', uri.fsPath);
+			await checkForPendingMigrations(context);
+		}
+	});
+
+	context.subscriptions.push(modelWatcher);
+	watchers.push(modelWatcher);
 
 	folderNames.forEach((folder) => {
 		const pattern = new vscode.RelativePattern(
@@ -73,40 +106,4 @@ export async function setupFileWatchers(
 	});
 
 	return watchers;
-}
-
-
-export function setupMigrationWatcher(context: vscode.ExtensionContext) {
-    const watcher = vscode.workspace.createFileSystemWatcher(
-        '**/migrations/*.py',
-        false, // Don't ignore creates
-        true,  // Ignore changes
-        true   // Ignore deletes
-    );
-
-    context.subscriptions.push(
-        watcher.onDidCreate(async (uri) => {
-            if (uri.path.endsWith('__init__.py') || uri.path.includes('__pycache__')) {
-                return;
-            }
-            
-            if (uri.path.includes('/migrations/') && uri.path.endsWith('.py')) {
-                try {
-                    const content = await vscode.workspace.fs.readFile(uri);
-                    const text = Buffer.from(content).toString('utf8');
-                    
-                    // Check if file contains typical Django migration content
-                    if (text.includes('class Migration(migrations.Migration)') || 
-                        text.includes('dependencies = [') ||
-                        text.includes('operations = [')) {
-                        await handleMakemigrationsDetected(context);
-                    }
-                } catch (err) {
-                    console.error('Error reading migration file:', err);
-                }
-            }
-        })
-    );
-
-    context.subscriptions.push(watcher);
 }

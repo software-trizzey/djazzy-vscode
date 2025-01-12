@@ -4,6 +4,9 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { findVirtualEnvPath } from './python';
 
+const migrationConflictMessage = 'Migration conflict detected. This must be resolved before pending migrations can be applied.';
+const pythonVirtualEnvNotFoundMessage = 'No Python virtual environment found';
+
 export const notificationTimes = new Map();
 export const TWENTY_MINUTES = 20;
 
@@ -31,7 +34,7 @@ export async function createMigrations(workspaceRoot: string | undefined) {
 
 	const venvActivate = await findVirtualEnvPath(workspaceRoot);
 	if (!venvActivate) {
-		window.showErrorMessage('No Python virtual environment found');
+		window.showErrorMessage(pythonVirtualEnvNotFoundMessage);
 		return;
 	}
 	const terminal = window.createTerminal('Django Migrations');
@@ -40,7 +43,15 @@ export async function createMigrations(workspaceRoot: string | undefined) {
 	terminal.sendText(`${venvActivate} && python manage.py makemigrations`);
 }
 
-export async function handleMakemigrationsDetected(context: ExtensionContext, showCreateOption: boolean = false) {
+async function runMigrations(workspaceRoot: string) {
+    console.log('Running migrations...');
+    const terminal = window.createTerminal('Django Migrations');
+    terminal.show();
+    terminal.sendText(`cd "${workspaceRoot}"`);
+    terminal.sendText('python manage.py migrate');
+}
+
+export async function handleMakemigrationsDetected() {
 	const execAsync = promisify(exec);
 	const workspaceRoot = workspace.workspaceFolders?.[0]?.uri.fsPath;
 	
@@ -49,23 +60,21 @@ export async function handleMakemigrationsDetected(context: ExtensionContext, sh
 		return;
 	}
 
+    const venvActivate = await findVirtualEnvPath(workspaceRoot);
+	if (!venvActivate) {
+		window.showErrorMessage(pythonVirtualEnvNotFoundMessage);
+		return;
+	}
+
 	const applyMigrationsText = 'Apply Migrations';
 	const dismissText = 'Dismiss';
 	const unappliedMigrationsText = 'Unapplied migrations detected. Would you like to apply them now?';
 
-	async function runMigrations() {
-		console.log('Running migrations...');
-		const terminal = window.createTerminal('Django Migrations');
-		terminal.show();
-		terminal.sendText(`cd "${workspaceRoot}"`);
-		terminal.sendText('python manage.py migrate');
-	}
-
 	try {
-		const { stdout } = await execAsync('python manage.py migrate --check', {
+		const { stdout } = await execAsync(`${venvActivate} && python manage.py migrate --check`, {
 			cwd: workspaceRoot
 		});
-		console.log('Migrations check output:', stdout);
+
 		if (stdout.includes('unapplied migration(s)')) {
 			const choice = await window.showWarningMessage(
 					unappliedMigrationsText,
@@ -74,12 +83,16 @@ export async function handleMakemigrationsDetected(context: ExtensionContext, sh
 				);
 			
 			if (choice === applyMigrationsText) {
-				await runMigrations();
+				await runMigrations(workspaceRoot);
 			}
 		}
 	} catch (error: any) {
 		if (error.code === 1) {
-			console.log("Unapplied migrations detected.");
+            if (error.message.includes('invalid syntax')) {
+                window.showWarningMessage(migrationConflictMessage);
+                return;
+            }
+
 			const choice = await window.showWarningMessage(
 				unappliedMigrationsText,
 					applyMigrationsText,
@@ -87,7 +100,7 @@ export async function handleMakemigrationsDetected(context: ExtensionContext, sh
 				);
 			
 			if (choice === applyMigrationsText) {
-				await runMigrations();
+				await runMigrations(workspaceRoot);
 			}
 		} else {
 			console.error('Error checking migrations:', error);
@@ -96,7 +109,7 @@ export async function handleMakemigrationsDetected(context: ExtensionContext, sh
 	}
 }
 
-export async function checkForPendingMigrations(context: ExtensionContext) {
+export async function checkForPendingMigrations() {
 	const execAsync = promisify(exec);
 	const workspaceRoot = workspace.workspaceFolders?.[0]?.uri.fsPath;
 	
@@ -107,7 +120,7 @@ export async function checkForPendingMigrations(context: ExtensionContext) {
 
 	const venvActivate = await findVirtualEnvPath(workspaceRoot);
 	if (!venvActivate) {
-		window.showErrorMessage('No Python virtual environment found');
+		window.showErrorMessage(pythonVirtualEnvNotFoundMessage);
 		return;
 	}
 
@@ -118,9 +131,7 @@ export async function checkForPendingMigrations(context: ExtensionContext) {
 			shell: '/bin/bash'
 		});
 		
-		if (stdout.includes('No changes detected')) {
-			return;
-		}
+		if (stdout.includes('No changes detected')) return;
 
 		const createMigrationsText = 'Create Migration';
 		const dismissText = 'Dismiss';
@@ -133,6 +144,7 @@ export async function checkForPendingMigrations(context: ExtensionContext) {
 		);
 		
 		if (choice === createMigrationsText) {
+            console.log("Creating migrations...");
 			await createMigrations(workspaceRoot);
 		}
 	} catch (error: any) {
@@ -140,3 +152,69 @@ export async function checkForPendingMigrations(context: ExtensionContext) {
 		window.showErrorMessage(`Failed to check for migrations: ${error.message}`);
 	}
 }
+
+export async function hasUnresolvedMergeConflicts(filePath: string): Promise<boolean> {
+    try {
+        if (!filePath.endsWith('.py')) return false;
+
+        console.log("Checking for merge conflicts in", filePath);
+        const document = await workspace.openTextDocument(filePath);
+        const content = document.getText();
+        return content.includes('<<<<<<<') && content.includes('>>>>>>>');
+    } catch (error) {
+        console.error('Error checking for merge conflicts:', error);
+        return false;
+    }
+}
+
+export async function handleMigrationConflict(filePath: string): Promise<boolean> {
+    const execAsync = promisify(exec);
+    const workspaceRoot = workspace.workspaceFolders?.[0]?.uri.fsPath;
+    
+    if (!workspaceRoot) {
+        console.error('No workspace folder found');
+        return false;
+    }
+
+    const venvActivate = await findVirtualEnvPath(workspaceRoot);
+    if (!venvActivate) {
+        window.showErrorMessage(pythonVirtualEnvNotFoundMessage);
+        return false;
+    }
+
+    try {
+        if (!filePath.endsWith('.py')) return false;
+
+        if (await hasUnresolvedMergeConflicts(filePath)) {
+            window.showWarningMessage(migrationConflictMessage);
+            return false;
+        }
+
+        try {
+            const { stdout } = await execAsync(`${venvActivate} && python manage.py makemigrations --merge --noinput`, {
+                cwd: workspaceRoot,
+                shell: '/bin/bash'
+            });
+            
+            if (stdout.includes('Created new merge migration')) {
+                window.showInformationMessage('Successfully resolved migration conflicts!');
+            }
+            
+            return true;
+            
+        } catch (mergeError: any) {
+            console.log(mergeError);
+            if (!mergeError.stdout?.includes('Conflicting migrations detected')) {
+                window.showErrorMessage('Error attempting to merge migrations: ' + mergeError.message);
+                return false;
+            }
+            
+            window.showErrorMessage('Unable to automatically resolve migration conflicts. Manual intervention required.');
+            return false;
+        }
+    } catch (error: any) {
+        console.error('Error handling migration conflict:', error);
+        window.showErrorMessage('Error attempting to resolve migration conflicts: ' + error.message);
+        return false;
+    }
+} 

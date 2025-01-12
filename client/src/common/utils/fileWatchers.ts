@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { LanguageClient } from "vscode-languageclient/node";
 import { checkAndNotify } from "./git";
-import { handleMakemigrationsDetected, checkForPendingMigrations } from "./notifications";
+import { handleMakemigrationsDetected, checkForPendingMigrations, handleMigrationConflict, hasUnresolvedMergeConflicts } from "./notifications";
 
 async function isModelFile(uri: vscode.Uri): Promise<boolean> {
 	try {
@@ -39,13 +39,25 @@ export async function setupFileWatchers(
 	);
 
 	modelWatcher.onDidChange(async (uri) => {
-		if (uri.path.includes(`/${migrationFolder}/`)) {
-			return;
-		}
+		try {
+			if (!uri.path.endsWith('.py')) return;
 
-		if (await isModelFile(uri)) {
-			console.log('Model file changed:', uri.fsPath);
-			await checkForPendingMigrations(context);
+			// This guards against crash during isModelFile check
+			if (await hasUnresolvedMergeConflicts(uri.fsPath)) {
+				console.log("Waiting for merge conflicts to be resolved...");
+				return;
+			}
+
+			if (!uri.path.includes(`/${migrationFolder}/`) && await isModelFile(uri)) {
+				const resolved = await handleMigrationConflict(uri.fsPath);
+				if (!resolved) return;
+
+				// If we resolved conflicts, wait a bit for the file system to update
+				await new Promise(resolve => setTimeout(resolve, 1500));
+				await checkForPendingMigrations();
+			}
+		} catch (error) {
+			console.error('Error in file watcher:', error);
 		}
 	});
 
@@ -60,21 +72,29 @@ export async function setupFileWatchers(
 		const parentWatcher = vscode.workspace.createFileSystemWatcher(pattern);
 
 		parentWatcher.onDidCreate(async (uri) => {
+			if (uri.path.includes('.pyc')) return;
+
 			console.log(`Parent watcher: New ${folder} folder or file created:`, uri.fsPath);
-			
+
 			if (folder === migrationFolder && uri.path.endsWith('.py')) {
 				if (uri.path.endsWith('__init__.py') || uri.path.includes('__pycache__')) {
 					return;
 				}
+
+				if (await hasUnresolvedMergeConflicts(uri.fsPath)) {
+					console.log("Waiting for merge conflicts to be resolved...");
+					return;
+				}
 				
 				try {
+					console.log("Checking for makemigrations in ", uri.fsPath);
 					const content = await vscode.workspace.fs.readFile(uri);
 					const text = Buffer.from(content).toString('utf8');
 					
 					if (text.includes('class Migration(migrations.Migration)') || 
 						text.includes('dependencies = [') ||
 						text.includes('operations = [')) {
-						await handleMakemigrationsDetected(context);
+						await handleMakemigrationsDetected();
 					}
 				} catch (err) {
 					console.error('Error reading migration file:', err);

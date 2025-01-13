@@ -6,6 +6,7 @@ import { findVirtualEnvPath } from './python';
 
 const migrationConflictMessage = 'Migration conflict detected. This must be resolved before pending migrations can be applied.';
 const pythonVirtualEnvNotFoundMessage = 'No Python virtual environment found';
+const dismissText = 'Dismiss';
 
 export const notificationTimes = new Map();
 export const TWENTY_MINUTES = 20;
@@ -67,7 +68,6 @@ export async function handleMakemigrationsDetected() {
 	}
 
 	const applyMigrationsText = 'Apply Migrations';
-	const dismissText = 'Dismiss';
 	const unappliedMigrationsText = 'Unapplied migrations detected. Would you like to apply them now?';
 
 	try {
@@ -89,7 +89,10 @@ export async function handleMakemigrationsDetected() {
 	} catch (error: any) {
 		if (error.code === 1) {
             if (error.message.includes('invalid syntax')) {
-                window.showWarningMessage(migrationConflictMessage);
+                window.showWarningMessage(
+                    migrationConflictMessage,
+                    'Dismiss'
+                );
                 return;
             }
 
@@ -186,7 +189,10 @@ export async function handleMigrationConflict(filePath: string): Promise<boolean
         if (!filePath.endsWith('.py')) return false;
 
         if (await hasUnresolvedMergeConflicts(filePath)) {
-            window.showWarningMessage(migrationConflictMessage);
+            window.showWarningMessage(
+                migrationConflictMessage,
+                dismissText
+            );
             return false;
         }
 

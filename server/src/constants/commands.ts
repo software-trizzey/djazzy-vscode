@@ -16,6 +16,12 @@ export const RATE_LIMIT_NOTIFICATION_ID = `${EXTENSION_ID}/rateLimitReached`;
 export const ACCESS_FORBIDDEN_NOTIFICATION_ID = `${EXTENSION_ID}/forbidden`;
 export const NPLUSONE_FEEDBACK = `${EXTENSION_ID}.provideFeedbackNPlusOne`;
 
+export const MIGRATION_COMMANDS = {
+	CHECK_MIGRATIONS: 'djangoly.checkMigrations',
+	APPLY_MIGRATIONS: 'djangoly.applyMigrations',
+	DETECT_MAKEMIGRATIONS: 'djangoly.detectMakemigrations'
+} as const;
+
 const COMMANDS = { 
 	FIX_NAME,
 	GET_CHANGED_LINES,
@@ -26,6 +32,11 @@ const COMMANDS = {
 	PROVIDE_EXCEPTION_HANDLING
 };
 
-export const COMMANDS_LIST = Object.values(COMMANDS);
+export const COMMANDS_LIST = [
+	...Object.values(COMMANDS),
+	MIGRATION_COMMANDS.CHECK_MIGRATIONS,
+	MIGRATION_COMMANDS.APPLY_MIGRATIONS,
+	MIGRATION_COMMANDS.DETECT_MAKEMIGRATIONS
+];
 
 export default COMMANDS;

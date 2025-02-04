@@ -19,14 +19,22 @@ import { registerActions } from './common/actions';
 import { setupFileWatchers } from './common/utils/fileWatchers';
 import { trackUserInstallEvent, trackUninstallEvent } from './common/logs';
 import { authenticateUser, validateApiKey } from './common/auth/api';
-
+import { initializeTelemetry } from '@shared/telemetry';
+import { TELEMETRY_EVENTS } from '@shared/constants';
 
 let client: LanguageClient;
 let extensionContext: vscode.ExtensionContext;
 
 export async function activate(context: vscode.ExtensionContext) {
 	extensionContext = context;
+
+	const reporter = initializeTelemetry();
+	context.subscriptions.push(reporter);
+	console.log('telemetry reporter', reporter);
+
+	reporter.sendTelemetryEvent(TELEMETRY_EVENTS.EXTENSION_ACTIVATED);
     const signIn = "Sign In";
+
     const requestAPIKey = "Request API Key";
     let apiKey: string | undefined = context.globalState.get(COMMANDS.USER_API_KEY);
 

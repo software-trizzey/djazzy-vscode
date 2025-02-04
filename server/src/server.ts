@@ -51,6 +51,9 @@ import LOGGER, { rollbar } from "./common/logs";
 import { SOURCE_NAME } from './constants/diagnostics';
 import { API_SERVER_URL } from './constants/api';
 import { ERROR_CODES, ForbiddenError, RateLimitError  } from './constants/errors';
+import { TELEMETRY_EVENTS } from '../../shared/constants';
+import { reporter } from '../../shared/telemetry';
+
 
 const connection = createConnection(ProposedFeatures.all);
 const providerCache: Record<string, LanguageProvider> = {};
@@ -131,6 +134,8 @@ connection.onInitialize((params: InitializeParams) => {
 
 connection.onInitialized(async () => {
 	const routeId = "server#index";
+
+	reporter.sendTelemetryEvent(TELEMETRY_EVENTS.SERVER_STARTED);
 
 	const logContext = {
 		routeId,

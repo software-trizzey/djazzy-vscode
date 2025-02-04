@@ -4,12 +4,16 @@
 		"target": "es2020",
 		"lib": ["es2020"],
 		"outDir": "out",
-		"rootDir": "src",
+		"rootDir": "../",
 		"sourceMap": true,
 		"resolveJsonModule": true,
 		"esModuleInterop": true,
-		"types": ["mocha", "node"]
+		"types": ["mocha", "node"],
+		"paths": {
+			"@shared/*": ["../shared/*"]
+		}
 	},
-	"include": ["src/**/*.ts"],
+	"include": ["src/**/*.ts", "../shared/**/*.ts"],
 	"exclude": ["node_modules", ".vscode-test", "webpack.config.js"]
+
 }

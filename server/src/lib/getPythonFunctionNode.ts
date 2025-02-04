@@ -5,7 +5,6 @@ import { spawn } from 'child_process';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import { pythonExecutable } from '../settings';
-import LOGGER from '../common/logs';
 
 
 interface FunctionBodyNode {
@@ -94,7 +93,6 @@ export function findFunctionNode(
 			!message.includes("Unexpected token")
 		) {
 			console.log(error);
-			LOGGER.error(error);
 		}
 		return null;
 	}

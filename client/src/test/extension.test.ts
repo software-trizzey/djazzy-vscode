@@ -4,7 +4,6 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { activateClientNotifications } from '../extension';
 import { LanguageClient } from 'vscode-languageclient/node';
-import { rollbar } from '../common/logs';
 
 suite('Client Extension Tests', function () {
     let context: vscode.ExtensionContext;
@@ -26,10 +25,6 @@ suite('Client Extension Tests', function () {
         } as unknown as vscode.ExtensionContext;
 
         clientStub = sinon.createStubInstance(LanguageClient);
-
-        sinon.stub(rollbar, 'log');
-        sinon.stub(rollbar, 'info');
-        sinon.stub(rollbar, 'error');
 
         sinon.stub(vscode.env, 'machineId').value('test-machine-id');
     });

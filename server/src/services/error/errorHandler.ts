@@ -1,5 +1,4 @@
 import { Connection, MessageType } from 'vscode-languageserver/node';
-import LOGGER from '../../common/logs';
 
 
 export class ErrorHandler {
@@ -42,7 +41,6 @@ export class ErrorHandler {
 			return;
 		} else {
 			console.log(error);
-			LOGGER.error(error);
 		}
 	}
 }

@@ -13,7 +13,9 @@ export const API_SERVER_URL = process.env.NODE_ENV === "development" ?  "http://
 export const TELEMETRY_EVENTS = {
     EXTENSION_ACTIVATED: `${EXTENSION_ID}.extensionActivated`,
     SERVER_STARTED: `${EXTENSION_ID}.serverStarted`,
-    // Add more telemetry events as needed
+    EXCEPTION_HANDLING_TRIGGERED: `${EXTENSION_ID}.exceptionHandlingTriggered`,
+    QUICK_FIX_TRIGGERED: `${EXTENSION_ID}.quickFixTriggered`,
+    FALSE_POSITIVE_REPORT: `${EXTENSION_ID}.falsePositiveReport`,
 } as const;
 
 // TODO: Add other shared constants as needed?

@@ -47,7 +47,6 @@ import { findFunctionNode, FunctionDetails } from './lib/getPythonFunctionNode';
 import { DiagnosticQueue } from "./services/diagnostics";
 
 import COMMANDS, { ACCESS_FORBIDDEN_NOTIFICATION_ID, COMMANDS_LIST, DJANGOLY_ID, RATE_LIMIT_NOTIFICATION_ID } from "./constants/commands";
-import LOGGER, { rollbar } from "./common/logs";
 import { SOURCE_NAME } from './constants/diagnostics';
 import { API_SERVER_URL } from './constants/api';
 import { ERROR_CODES, ForbiddenError, RateLimitError  } from './constants/errors';
@@ -142,18 +141,6 @@ connection.onInitialized(async () => {
 		extensionVersion: projectPackageJson.version,
 		vscode: { extension: DJANGOLY_ID },
 	};
-
-	if (process.env.NODE_ENV !== "development" || !!process.env.NODE_ENV) {
-		rollbar.configure({
-			logLevel: "warning",
-			payload: { environment: "production", context: logContext },
-		});
-	} else {
-		rollbar.configure({
-			logLevel: "debug",
-			payload: { environment: "development", context: logContext },
-		});
-	}
 
 	if (hasConfigurationCapability) {
 		connection.client.register(
@@ -350,8 +337,12 @@ connection.onRequest(COMMANDS.PROVIDE_EXCEPTION_HANDLING, async (params) => {
 			{ code: ERROR_CODES.UNAUTHENTICATED }
 		);
     }
-
-	LOGGER.info(`User ${cachedUserToken} triggered exception handling feature.`);
+	reporter.sendTelemetryEvent(
+		TELEMETRY_EVENTS.EXCEPTION_HANDLING_TRIGGERED,
+		{
+			user: cachedUserToken,
+		}
+	);
 
     const { functionName, lineNumber, uri } = params;
     const document = documents.get(uri);
@@ -513,7 +504,12 @@ connection.onExecuteCommand(async (params) => {
     }
 
 	if (params.command === COMMANDS.FIX_NAME && params.arguments !== undefined) {
-		LOGGER.info(`User ${cachedUserToken} triggered quick fix rename command.`);
+		reporter.sendTelemetryEvent(
+			TELEMETRY_EVENTS.QUICK_FIX_TRIGGERED,
+			{
+				user: cachedUserToken,
+			}
+		);
 		const textDocument = documents.get(params.arguments[0]);
 		const newName = params.arguments[1];
 		const range = params.arguments[2];

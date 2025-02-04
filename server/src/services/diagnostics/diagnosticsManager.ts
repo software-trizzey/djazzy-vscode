@@ -3,8 +3,9 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Severity } from '../../constants/severity';
 import { cachedUserToken, settingsVersion } from '../../settings';
 import { NAMING_CONVENTION_VIOLATION_SOURCE_TYPE, SOURCE_NAME } from '../../constants/diagnostics';
-import LOGGER from '../../common/logs';
 import { DJANGOLY_DOCS_URL, RuleCodes } from '../../constants/rules';
+import { TELEMETRY_EVENTS } from '@shared/constants';
+import { reporter } from '@shared/telemetry';
 
 
 interface NPlusOneQueryResult {
@@ -129,12 +130,22 @@ export class DiagnosticsManager {
     }
 
     public reportFalsePositive(document: TextDocument, diagnostic: Diagnostic): void {
-        const diagnosticId = (diagnostic.data as { id: string }).id;
-        LOGGER.info(`False positive reported`, {
-            userId: cachedUserToken,
-            diagnosticId: diagnosticId,
-            timestamp: new Date().toISOString()
-        });
+        reporter.sendTelemetryEvent(
+			TELEMETRY_EVENTS.FALSE_POSITIVE_REPORT,
+			{
+				user: cachedUserToken,
+                diagnostic: {
+                    id: diagnostic.data as { id: string },
+                    message: diagnostic.message,
+                    severity: diagnostic.severity,
+                    source: diagnostic.source,
+                    code: diagnostic.code,
+                    range: diagnostic.range,
+                    
+                },
+                timestamp: new Date().toISOString()
+			}
+		);
         // TODO: Additional logic for handling false positive reports
     }
 

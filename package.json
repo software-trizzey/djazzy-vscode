@@ -270,9 +270,7 @@
 		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
 		"compile-tests": "tsc -b",
 		"pretest": "npm run compile-tests",
-		"test": "sh ./scripts/e2e.sh",
-		"copy-shared": "mkdir -p server/src/shared && cp -r shared/* server/src/shared/",
-		"prebuild": "npm run copy-shared"
+		"test": "sh ./scripts/e2e.sh"
 	},
 	"devDependencies": {
 		"@types/mocha": "^10.0.6",

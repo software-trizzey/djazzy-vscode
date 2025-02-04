@@ -17,7 +17,6 @@ import {
 import { registerCommands } from './common/commands';
 import { registerActions } from './common/actions';
 import { setupFileWatchers } from './common/utils/fileWatchers';
-import { trackUserInstallEvent, trackUninstallEvent } from './common/logs';
 import { authenticateUser, validateApiKey } from './common/auth/api';
 import { initializeTelemetry } from '@shared/telemetry';
 import { TELEMETRY_EVENTS } from '@shared/constants';
@@ -104,9 +103,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	await client.start();
 	
 	activateClientNotifications(client);
-	trackUserInstallEvent(context);
 
-	
 	registerCommands(context, client, activate, deactivate);
 	registerActions(context, client);
 
@@ -125,8 +122,6 @@ export async function deactivate(context: vscode.ExtensionContext): Promise<void
 	if (!client) return undefined;
 	
 	await client.stop();
-
-	trackUninstallEvent(context ? context : extensionContext);
 }
 
 

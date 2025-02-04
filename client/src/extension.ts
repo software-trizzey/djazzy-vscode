@@ -18,8 +18,8 @@ import { registerCommands } from './common/commands';
 import { registerActions } from './common/actions';
 import { setupFileWatchers } from './common/utils/fileWatchers';
 import { authenticateUser, validateApiKey } from './common/auth/api';
-import { initializeTelemetry } from '@shared/telemetry';
-import { TELEMETRY_EVENTS } from '@shared/constants';
+import { initializeTelemetry } from '../../shared/telemetry';
+import { TELEMETRY_EVENTS, TELEMETRY_NOTIFICATION } from '@shared/constants';
 
 let client: LanguageClient;
 let extensionContext: vscode.ExtensionContext;
@@ -29,7 +29,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	const reporter = initializeTelemetry();
 	context.subscriptions.push(reporter);
-	console.log('telemetry reporter', reporter);
 
 	reporter.sendTelemetryEvent(TELEMETRY_EVENTS.EXTENSION_ACTIVATED);
     const signIn = "Sign In";
@@ -61,12 +60,19 @@ export async function activate(context: vscode.ExtensionContext) {
             isAuthenticated = await authenticateUser(context, activate);
             if (!isAuthenticated) {
                 vscode.window.showWarningMessage(AUTH_MESSAGES.AUTHENTICATION_REQUIRED);
+            } else {
+                reporter.sendTelemetryEvent(TELEMETRY_EVENTS.SIGN_IN, {
+					user: apiKey,
+					message: 'Sign in successful'
+				});
+
             }
         } else {
             vscode.window.showInformationMessage(AUTH_MESSAGES.SIGN_OUT);
             deactivate(context);
             return;
         }
+
     }
 
 	const serverModule = context.asAbsolutePath(
@@ -116,6 +122,21 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	const apiFolderWatchers = await setupFileWatchers(client, context);
 	clientOptions.synchronize.fileEvents = apiFolderWatchers;
+
+	client.onNotification(TELEMETRY_NOTIFICATION.EVENT, (params: { 
+		eventName: string, 
+		properties?: { [key: string]: string },
+		timestamp: string 
+
+	}) => {
+		reporter.sendTelemetryEvent(
+			`server.${params.eventName}`, 
+			{
+				...params.properties,
+				timestamp: params.timestamp
+			}
+		);
+	});
 }
 
 export async function deactivate(context: vscode.ExtensionContext): Promise<void> {

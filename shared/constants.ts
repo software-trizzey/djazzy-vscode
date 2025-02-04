@@ -16,6 +16,14 @@ export const TELEMETRY_EVENTS = {
     EXCEPTION_HANDLING_TRIGGERED: `${EXTENSION_ID}.exceptionHandlingTriggered`,
     QUICK_FIX_TRIGGERED: `${EXTENSION_ID}.quickFixTriggered`,
     FALSE_POSITIVE_REPORT: `${EXTENSION_ID}.falsePositiveReport`,
+    SERVER_EVENT: `${EXTENSION_ID}.serverEvent`,
+    API_ALERT_SENT: `${EXTENSION_ID}.apiAlertSent`,
+    EXCEPTION_HANDLING_RESULT_FEEDBACK: `${EXTENSION_ID}.exceptionHandlingResultFeedback`,
+    SIGN_IN: `${EXTENSION_ID}.signIn`,
+} as const;
+
+export const TELEMETRY_NOTIFICATION = {
+    EVENT: 'telemetry/event',
 } as const;
 
 // TODO: Add other shared constants as needed?

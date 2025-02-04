@@ -5,7 +5,7 @@ import { cachedUserToken, settingsVersion } from '../../settings';
 import { NAMING_CONVENTION_VIOLATION_SOURCE_TYPE, SOURCE_NAME } from '../../constants/diagnostics';
 import { DJANGOLY_DOCS_URL, RuleCodes } from '../../constants/rules';
 import { TELEMETRY_EVENTS } from '@shared/constants';
-import { reporter } from '@shared/telemetry';
+import { reporter } from '../../telemetry';
 
 
 interface NPlusOneQueryResult {
@@ -129,24 +129,24 @@ export class DiagnosticsManager {
         }
     }
 
-    public reportFalsePositive(document: TextDocument, diagnostic: Diagnostic): void {
+    public reportFalsePositive(diagnostic: Diagnostic): void {
+        if (!cachedUserToken) return;
+
         reporter.sendTelemetryEvent(
-			TELEMETRY_EVENTS.FALSE_POSITIVE_REPORT,
-			{
-				user: cachedUserToken,
-                diagnostic: {
+            TELEMETRY_EVENTS.FALSE_POSITIVE_REPORT,
+            {
+                user: cachedUserToken,
+                diagnostic: JSON.stringify({
                     id: diagnostic.data as { id: string },
                     message: diagnostic.message,
                     severity: diagnostic.severity,
                     source: diagnostic.source,
                     code: diagnostic.code,
                     range: diagnostic.range,
-                    
-                },
+                }),
                 timestamp: new Date().toISOString()
-			}
-		);
-        // TODO: Additional logic for handling false positive reports
+            }
+        );
     }
 
     public formatNPlusOneDiagnosticMessage(result: NPlusOneQueryResult): string {

@@ -3,7 +3,8 @@ import { LanguageClient } from 'vscode-languageclient/node';
 import { COMMANDS } from '../constants';
 import { ERROR_CODES, ERROR_MESSAGES } from '../constants/errors';
 
-import { trackExceptionHandlingResultFeedback }  from '../logs';
+import { reporter } from '../../../../shared/telemetry';
+import { TELEMETRY_EVENTS } from '@shared/constants';
 
 
 interface FunctionBodyNode {
@@ -213,7 +214,10 @@ export class ExceptionHandlingCommandProvider {
                             console.log('User is not signed in. Skipping feedback tracking.');
                             return;
                         }
-                        trackExceptionHandlingResultFeedback(token as string, feedback);
+                        reporter.sendTelemetryEvent(TELEMETRY_EVENTS.EXCEPTION_HANDLING_RESULT_FEEDBACK, {
+                            user: token as string,
+                            feedback: feedback
+                        });
                     }
                 });
             } else {

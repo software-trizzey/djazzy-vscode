@@ -3,7 +3,7 @@
 	"displayName": "Djangoly",
 	"description": "Write Cleaner, Faster, Scalable Django Code",
 	"author": "Tristan Deane",
-	"version": "0.2.2",
+	"version": "0.2.3",
 	"publisher": "alchemized",
 	"preview": true,
 	"homepage": "https://www.djangoly.com",
@@ -35,7 +35,7 @@
 		"static analysis"
 	],
 	"engines": {
-		"vscode": "^1.75.0",
+		"vscode": "^1.96.0",
 		"node": ">=18"
 	},
 	"main": "./client/out/extension",
@@ -262,7 +262,7 @@
 		"package": "vsce package && node esbuild.config.js --production",
 		"dev:package": "npm run package --pre-release",
 		"publish": "vsce publish",
-		"dev-publish": "npm run dev:package && code --install-extension djangoly-0.2.2.vsix",
+		"dev-publish": "npm run dev:package && code --install-extension djangoly-0.2.3.vsix",
 		"watch": "npm-run-all -p watch:*",
 		"watch:esbuild": "node esbuild.config.js --watch",
 		"watch:tsc": "tsc --noEmit --watch --project tsconfig.json",

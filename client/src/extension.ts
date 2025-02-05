@@ -61,8 +61,9 @@ export async function activate(context: vscode.ExtensionContext) {
             if (!isAuthenticated) {
                 vscode.window.showWarningMessage(AUTH_MESSAGES.AUTHENTICATION_REQUIRED);
             } else {
+				const apiKey: string | undefined = context.globalState.get(COMMANDS.USER_API_KEY);
                 reporter.sendTelemetryEvent(TELEMETRY_EVENTS.SIGN_IN, {
-					user: apiKey,
+					user: apiKey || 'No API Key',
 					message: 'Sign in successful'
 				});
 

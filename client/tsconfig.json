@@ -8,12 +8,15 @@
 		"sourceMap": true,
 		"resolveJsonModule": true,
 		"esModuleInterop": true,
+		"noImplicitAny": false,
 		"types": ["mocha", "node"],
+		"strict": true,
+		"baseUrl": ".",
 		"paths": {
-			"@shared/*": ["../shared/*"]
+			"@shared/*": ["../shared/*"],
+			"@client/*": ["./src/*"]
 		}
 	},
-	"include": ["src/**/*.ts", "../shared/**/*.ts"],
+	"include": ["src/**/*", "../shared/**/*"],
 	"exclude": ["node_modules", ".vscode-test", "webpack.config.js"]
-
 }

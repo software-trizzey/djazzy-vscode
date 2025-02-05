@@ -19,7 +19,7 @@ import { registerActions } from './common/actions';
 import { setupFileWatchers } from './common/utils/fileWatchers';
 import { authenticateUser, validateApiKey } from './common/auth/api';
 import { initializeTelemetry } from '../../shared/telemetry';
-import { TELEMETRY_EVENTS, TELEMETRY_NOTIFICATION } from '@shared/constants';
+import { TELEMETRY_EVENTS, TELEMETRY_NOTIFICATION } from '../../shared/constants';
 
 let client: LanguageClient;
 let extensionContext: vscode.ExtensionContext;
@@ -121,7 +121,10 @@ export async function activate(context: vscode.ExtensionContext) {
 	}
 
 	const apiFolderWatchers = await setupFileWatchers(client, context);
-	clientOptions.synchronize.fileEvents = apiFolderWatchers;
+	clientOptions.synchronize = {
+		...clientOptions.synchronize,
+		fileEvents: apiFolderWatchers
+	};
 
 	client.onNotification(TELEMETRY_NOTIFICATION.EVENT, (params: { 
 		eventName: string, 

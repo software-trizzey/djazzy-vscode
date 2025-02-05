@@ -9,7 +9,7 @@ import {
 } from "./notifications";
 import { COMMANDS, SESSION_USER } from '../constants';
 import { UserSession } from '../auth/github';
-import { TELEMETRY_EVENTS } from '@shared/constants';
+import { TELEMETRY_EVENTS } from '../../../../shared/constants';
 import { reporter } from '../../../../shared/telemetry';
 
 async function initializeGitRepository() {
@@ -73,7 +73,7 @@ export async function checkAndNotify(uri: vscode.Uri, client: LanguageClient, co
 	const isNewFile = untrackedFiles.includes(relativePath);
 
 	if (diff.length > 0 || isNewFile) {
-		const storedUser: UserSession = context.globalState.get(SESSION_USER);
+		const storedUser: UserSession | undefined = context.globalState.get(SESSION_USER);
 		if (!storedUser) {
 			reporter.sendTelemetryEvent(TELEMETRY_EVENTS.API_ALERT_SENT);
 			return;

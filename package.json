@@ -273,6 +273,7 @@
 		"test": "sh ./scripts/e2e.sh"
 	},
 	"devDependencies": {
+		"@types/glob": "^8.1.0",
 		"@types/mocha": "^10.0.6",
 		"@types/node": "^18.14.6",
 		"@types/sinon": "^10.0.0",

@@ -4,7 +4,7 @@ import { Severity } from '../../constants/severity';
 import { cachedUserToken, settingsVersion } from '../../settings';
 import { NAMING_CONVENTION_VIOLATION_SOURCE_TYPE, SOURCE_NAME } from '../../constants/diagnostics';
 import { DJANGOLY_DOCS_URL, RuleCodes } from '../../constants/rules';
-import { TELEMETRY_EVENTS } from '@shared/constants';
+import { TELEMETRY_EVENTS } from '../../../../shared/constants';
 import { reporter } from '../../telemetry';
 
 

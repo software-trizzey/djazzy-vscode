@@ -4,7 +4,7 @@ import { COMMANDS } from '../constants';
 import { ERROR_CODES, ERROR_MESSAGES } from '../constants/errors';
 
 import { reporter } from '../../../../shared/telemetry';
-import { TELEMETRY_EVENTS } from '@shared/constants';
+import { TELEMETRY_EVENTS } from '../../../../shared/constants';
 
 
 interface FunctionBodyNode {
@@ -56,7 +56,7 @@ export class ExceptionHandlingCommandProvider {
         this.lastTokenSource = new vscode.CancellationTokenSource();
     
         try {
-            let response = null;
+            let response: { completionItems: Array<vscode.CompletionItem>, functionNode: FunctionDetails } | null = null;
             await vscode.window.withProgress({
                 location: vscode.ProgressLocation.Notification,
                 title: "Djangoly",
@@ -64,17 +64,17 @@ export class ExceptionHandlingCommandProvider {
             }, async (progress, token) => {
                 token.onCancellationRequested(() => {
                     console.log('User cancelled the exception handling request');
-                    this.lastTokenSource.cancel();
+                    this.lastTokenSource?.cancel();
                 });
     
                 progress.report({ message: "Analyzing function..." });
     
                 response = await this.client.sendRequest<
-                    { completionItems: vscode.CompletionItem[], functionNode: FunctionDetails }
+                    { completionItems: Array<vscode.CompletionItem>, functionNode: FunctionDetails }
                 >(
                     COMMANDS.PROVIDE_EXCEPTION_HANDLING,
                     { functionName, lineNumber, uri: document.uri.toString() },
-                    this.lastTokenSource.token
+                    this.lastTokenSource?.token
                 ).catch((error) => {
                     const errorCode = error?.data?.code;
                     if (errorCode === ERROR_CODES.UNAUTHENTICATED) {
@@ -91,11 +91,13 @@ export class ExceptionHandlingCommandProvider {
                 
             });
 
-            const { completionItems, functionNode } = response;
-            if (completionItems && completionItems.length > 0 && functionNode) {
-                await this.notifyUserWithSuggestions(document, functionNode, completionItems);
+            if (response) {
+                const { completionItems, functionNode } = response as { completionItems: Array<vscode.CompletionItem>, functionNode: FunctionDetails };
+                if (completionItems && completionItems.length > 0 && functionNode) {
+                    await this.notifyUserWithSuggestions(document, functionNode, completionItems);
+                }
             }
-        } catch (err) {
+        } catch (err: any) {
             if (err && err.code === 'REQUEST_CANCELLED') {
                 console.log('Request was cancelled.');
             } else {

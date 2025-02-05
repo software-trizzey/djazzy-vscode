@@ -50,7 +50,7 @@ import COMMANDS, { ACCESS_FORBIDDEN_NOTIFICATION_ID, COMMANDS_LIST, DJANGOLY_ID,
 import { SOURCE_NAME } from './constants/diagnostics';
 import { API_SERVER_URL } from './constants/api';
 import { ERROR_CODES, ForbiddenError, RateLimitError  } from './constants/errors';
-import { TELEMETRY_EVENTS } from '@shared/constants';
+import { TELEMETRY_EVENTS } from '../../shared/constants';
 import { reporter, initializeTelemetry } from './telemetry';
 
 

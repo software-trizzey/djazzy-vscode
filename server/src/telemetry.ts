@@ -1,4 +1,4 @@
-import { TELEMETRY_NOTIFICATION } from '@shared/constants';
+import { TELEMETRY_NOTIFICATION } from '../../shared/constants';
 import { Connection } from 'vscode-languageserver/node';
 
 class ServerTelemetry {

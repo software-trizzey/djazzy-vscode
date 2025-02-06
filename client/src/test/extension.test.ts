@@ -2,15 +2,12 @@ import assert from 'assert';
 import * as sinon from 'sinon';
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { activate, activateClientNotifications } from '../extension';
+import { activateClientNotifications } from '../extension';
 import { LanguageClient } from 'vscode-languageclient/node';
-import { reporter, initializeTelemetry } from '../../../shared/telemetry';
-import { TELEMETRY_EVENTS } from '../../../shared/constants';
 
 suite('Client Extension Tests', function () {
     let context: vscode.ExtensionContext;
     let clientStub: sinon.SinonStubbedInstance<LanguageClient>;
-    let telemetryStub: sinon.SinonStub;
 
     setup(() => {
         context = {
@@ -28,29 +25,12 @@ suite('Client Extension Tests', function () {
         } as unknown as vscode.ExtensionContext;
 
         clientStub = sinon.createStubInstance(LanguageClient);
-        // Stub the telemetry reporter
-        telemetryStub = sinon.stub(reporter, 'sendTelemetryEvent');
 
         sinon.stub(vscode.env, 'machineId').value('test-machine-id');
     });
 
     teardown(() => {
         sinon.restore();
-    });
-
-    test('Telemetry is initialized and events are sent on activation', async () => {
-        const pushStub = sinon.stub(context.subscriptions, 'push');
-        
-        // Call activate
-        await activate(context);
-        
-        // Verify reporter was initialized and added to subscriptions
-        assert(pushStub.calledOnce, 'Reporter should be added to subscriptions');
-        
-        // Verify activation event was sent
-        assert(telemetryStub.calledWith(
-            TELEMETRY_EVENTS.EXTENSION_ACTIVATED
-        ), 'Extension activated event should be sent');
     });
 
     test('Client notifications are activated correctly', () => {

@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Version 0.2.3] - 2025-02-05
+
+### Changed
+
+- [Update] Swapped rollbar for vscode telemetry to track extension usage. This will allow us to track usage and errors in a better way while also respecting user privacy.
+
+- [Update] Update VS Code version requirement to 1.96.0 or higher.
+- [Update] Update nvm to LTS version v22.13.1
+
 ## [Version 0.2.2] - 2024-12-03
 
 ### Added

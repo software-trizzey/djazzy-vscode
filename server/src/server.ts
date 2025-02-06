@@ -47,12 +47,15 @@ import { findFunctionNode, FunctionDetails } from './lib/getPythonFunctionNode';
 import { DiagnosticQueue } from "./services/diagnostics";
 
 import COMMANDS, { ACCESS_FORBIDDEN_NOTIFICATION_ID, COMMANDS_LIST, DJANGOLY_ID, RATE_LIMIT_NOTIFICATION_ID } from "./constants/commands";
-import LOGGER, { rollbar } from "./common/logs";
 import { SOURCE_NAME } from './constants/diagnostics';
 import { API_SERVER_URL } from './constants/api';
 import { ERROR_CODES, ForbiddenError, RateLimitError  } from './constants/errors';
+import { TELEMETRY_EVENTS } from '../../shared/constants';
+import { reporter, initializeTelemetry } from './telemetry';
+
 
 const connection = createConnection(ProposedFeatures.all);
+const serverReporter = initializeTelemetry(connection);
 const providerCache: Record<string, LanguageProvider> = {};
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 const diagnosticQueue = new DiagnosticQueue();
@@ -129,26 +132,8 @@ connection.onInitialize((params: InitializeParams) => {
 	return result;
 });
 
-connection.onInitialized(async () => {
-	const routeId = "server#index";
-
-	const logContext = {
-		routeId,
-		extensionVersion: projectPackageJson.version,
-		vscode: { extension: DJANGOLY_ID },
-	};
-
-	if (process.env.NODE_ENV !== "development" || !!process.env.NODE_ENV) {
-		rollbar.configure({
-			logLevel: "warning",
-			payload: { environment: "production", context: logContext },
-		});
-	} else {
-		rollbar.configure({
-			logLevel: "debug",
-			payload: { environment: "development", context: logContext },
-		});
-	}
+connection.onInitialized(() => {
+	serverReporter.sendTelemetryEvent(TELEMETRY_EVENTS.SERVER_STARTED);
 
 	if (hasConfigurationCapability) {
 		connection.client.register(
@@ -345,8 +330,12 @@ connection.onRequest(COMMANDS.PROVIDE_EXCEPTION_HANDLING, async (params) => {
 			{ code: ERROR_CODES.UNAUTHENTICATED }
 		);
     }
-
-	LOGGER.info(`User ${cachedUserToken} triggered exception handling feature.`);
+	reporter.sendTelemetryEvent(
+		TELEMETRY_EVENTS.EXCEPTION_HANDLING_TRIGGERED,
+		{
+			user: cachedUserToken,
+		}
+	);
 
     const { functionName, lineNumber, uri } = params;
     const document = documents.get(uri);
@@ -497,7 +486,7 @@ connection.onExecuteCommand(async (params) => {
                 const settings = await getDocumentSettings(uri);
                 const workspaceFolders = await connection.workspace.getWorkspaceFolders();
                 const provider = getOrCreateProvider(document.languageId, settings, document, workspaceFolders);
-				provider.useDiagnosticManager().reportFalsePositive(document, diagnostic);
+				provider.useDiagnosticManager().reportFalsePositive(diagnostic);
 				connection.sendNotification(ShowMessageNotification.type, {
                     type: MessageType.Info,
                     message: 'Thank you for reporting this false positive. Our team will review it.'
@@ -508,7 +497,14 @@ connection.onExecuteCommand(async (params) => {
     }
 
 	if (params.command === COMMANDS.FIX_NAME && params.arguments !== undefined) {
-		LOGGER.info(`User ${cachedUserToken} triggered quick fix rename command.`);
+		if (cachedUserToken) {
+			reporter.sendTelemetryEvent(
+				TELEMETRY_EVENTS.QUICK_FIX_TRIGGERED,
+				{
+					user: cachedUserToken,
+				}
+			);
+		}
 		const textDocument = documents.get(params.arguments[0]);
 		const newName = params.arguments[1];
 		const range = params.arguments[2];

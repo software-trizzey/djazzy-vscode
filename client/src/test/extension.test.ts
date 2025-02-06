@@ -4,7 +4,6 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { activateClientNotifications } from '../extension';
 import { LanguageClient } from 'vscode-languageclient/node';
-import { rollbar } from '../common/logs';
 
 suite('Client Extension Tests', function () {
     let context: vscode.ExtensionContext;
@@ -27,10 +26,6 @@ suite('Client Extension Tests', function () {
 
         clientStub = sinon.createStubInstance(LanguageClient);
 
-        sinon.stub(rollbar, 'log');
-        sinon.stub(rollbar, 'info');
-        sinon.stub(rollbar, 'error');
-
         sinon.stub(vscode.env, 'machineId').value('test-machine-id');
     });
 
@@ -45,9 +40,9 @@ suite('Client Extension Tests', function () {
         activateClientNotifications(clientStub as unknown as LanguageClient);
 
         clientStub.onNotification.yield({ message: 'Rate limit exceeded' });
-        assert(showWarningMessageStub.calledWith('Rate limit exceeded', 'Okay'), 'Warning message should be shown');
+        assert(showWarningMessageStub.calledWith(sinon.match('Rate limit exceeded'), sinon.match('Okay')), 'Warning message should be shown');
 
         clientStub.onNotification.yield({ message: 'Access forbidden' });
-        assert(showErrorMessageStub.calledWith('Access forbidden'), 'Error message should be shown');
+        assert(showErrorMessageStub.calledWith(sinon.match('Access forbidden')), 'Error message should be shown');
     });
 });

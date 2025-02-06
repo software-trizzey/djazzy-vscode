@@ -8,8 +8,9 @@ import {
 	updateLastNotifiedTime,
 } from "./notifications";
 import { COMMANDS, SESSION_USER } from '../constants';
-import logger from '../logs';
 import { UserSession } from '../auth/github';
+import { TELEMETRY_EVENTS } from '../../../../shared/constants';
+import { reporter } from '../../../../shared/telemetry';
 
 async function initializeGitRepository() {
 	const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -72,13 +73,15 @@ export async function checkAndNotify(uri: vscode.Uri, client: LanguageClient, co
 	const isNewFile = untrackedFiles.includes(relativePath);
 
 	if (diff.length > 0 || isNewFile) {
-		const storedUser: UserSession = context.globalState.get(SESSION_USER);
+		const storedUser: UserSession | undefined = context.globalState.get(SESSION_USER);
 		if (!storedUser) {
-			logger.error("User not signed in. Cannot send API alert.");
+			reporter.sendTelemetryEvent(TELEMETRY_EVENTS.API_ALERT_SENT);
 			return;
 		} else {
-			const message = `[${storedUser.github_login}] API alert sent for ${relativePath}`;
-			logger.info(message);
+			reporter.sendTelemetryEvent(TELEMETRY_EVENTS.API_ALERT_SENT, {
+				user: storedUser.email,
+				filePath: relativePath
+			});
 		}
 
         const response = await client.sendRequest(COMMANDS.CHECK_TESTS_EXISTS, relativePath) as { testExists: boolean };

@@ -16,7 +16,6 @@ import {
 	NAMING_CONVENTION_VIOLATION_SOURCE_TYPE,
 } from "../../constants/diagnostics";
 import { ExtensionSettings, pythonExecutable } from "../../settings";
-import LOGGER from '../../common/logs';
 import {
     NPLUSONE_FEEDBACK 
 } from '../../constants/commands';
@@ -225,12 +224,4 @@ export class DjangoProvider extends LanguageProvider {
                 return DiagnosticSeverity.Hint;
         }
     }
-
-	public logFalsePositiveFeedback(diagnosticId: string): void {
-		LOGGER.info(`False positive reported`, {
-			userId: "anonymous",
-			diagnosticId: diagnosticId,
-			timestamp: new Date().toISOString()
-		});
-	}  
 }

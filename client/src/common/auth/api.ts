@@ -2,7 +2,6 @@ import * as vscode from "vscode";
 
 import { v4 as uuidv4 } from "uuid";
 
-import logger from "../logs";
 import { API_KEY_SIGNUP_URL, API_SERVER_URL, COMMANDS, SESSION_TOKEN_KEY, SESSION_USER } from "../constants";
 import { AUTH_MESSAGES } from '../constants/messages';
 
@@ -62,7 +61,6 @@ export async function signInWithGitHub(
 			`Authentication failed: ${responseData.detail || responseData.error || responseData.message}`
 		);
 		console.error(responseData);
-		logger.error(responseData);
 	}
 }
 
@@ -88,12 +86,10 @@ export async function signOutUser(context: vscode.ExtensionContext, client: Lang
 			}
 		} catch (error: any) {
 			vscode.window.showErrorMessage("Error signing out from the server.");
-			logger.error(error);
 		}
 	} else {
 		const errorMessage = "No token found, signing out locally.";
 		vscode.window.showInformationMessage(errorMessage);
-		logger.error(errorMessage);
 	}
 
 	await context.globalState.update(SESSION_USER, undefined);
@@ -122,7 +118,6 @@ export async function validateApiKey(apiKey: string): Promise<boolean> {
 		const data: any = await response.json();
 		return data.is_valid;
     } catch (error) {
-        logger.error('Error validating API key:', error);
         return false;
     }
 }

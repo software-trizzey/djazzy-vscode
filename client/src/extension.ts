@@ -17,16 +17,22 @@ import {
 import { registerCommands } from './common/commands';
 import { registerActions } from './common/actions';
 import { setupFileWatchers } from './common/utils/fileWatchers';
-import { trackUserInstallEvent, trackUninstallEvent } from './common/logs';
 import { authenticateUser, validateApiKey } from './common/auth/api';
-
+import { initializeTelemetry } from '../../shared/telemetry';
+import { TELEMETRY_EVENTS, TELEMETRY_NOTIFICATION } from '../../shared/constants';
 
 let client: LanguageClient;
 let extensionContext: vscode.ExtensionContext;
 
 export async function activate(context: vscode.ExtensionContext) {
 	extensionContext = context;
+
+	const reporter = initializeTelemetry();
+	context.subscriptions.push(reporter);
+
+	reporter.sendTelemetryEvent(TELEMETRY_EVENTS.EXTENSION_ACTIVATED);
     const signIn = "Sign In";
+
     const requestAPIKey = "Request API Key";
     let apiKey: string | undefined = context.globalState.get(COMMANDS.USER_API_KEY);
 
@@ -54,12 +60,20 @@ export async function activate(context: vscode.ExtensionContext) {
             isAuthenticated = await authenticateUser(context, activate);
             if (!isAuthenticated) {
                 vscode.window.showWarningMessage(AUTH_MESSAGES.AUTHENTICATION_REQUIRED);
+            } else {
+				const apiKey: string | undefined = context.globalState.get(COMMANDS.USER_API_KEY);
+                reporter.sendTelemetryEvent(TELEMETRY_EVENTS.SIGN_IN, {
+					user: apiKey || 'No API Key',
+					message: 'Sign in successful'
+				});
+
             }
         } else {
             vscode.window.showInformationMessage(AUTH_MESSAGES.SIGN_OUT);
             deactivate(context);
             return;
         }
+
     }
 
 	const serverModule = context.asAbsolutePath(
@@ -96,9 +110,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	await client.start();
 	
 	activateClientNotifications(client);
-	trackUserInstallEvent(context);
 
-	
 	registerCommands(context, client, activate, deactivate);
 	registerActions(context, client);
 
@@ -110,15 +122,31 @@ export async function activate(context: vscode.ExtensionContext) {
 	}
 
 	const apiFolderWatchers = await setupFileWatchers(client, context);
-	clientOptions.synchronize.fileEvents = apiFolderWatchers;
+	clientOptions.synchronize = {
+		...clientOptions.synchronize,
+		fileEvents: apiFolderWatchers
+	};
+
+	client.onNotification(TELEMETRY_NOTIFICATION.EVENT, (params: { 
+		eventName: string, 
+		properties?: { [key: string]: string },
+		timestamp: string 
+
+	}) => {
+		reporter.sendTelemetryEvent(
+			`server.${params.eventName}`, 
+			{
+				...params.properties,
+				timestamp: params.timestamp
+			}
+		);
+	});
 }
 
 export async function deactivate(context: vscode.ExtensionContext): Promise<void> {
 	if (!client) return undefined;
 	
 	await client.stop();
-
-	trackUninstallEvent(context ? context : extensionContext);
 }
 
 

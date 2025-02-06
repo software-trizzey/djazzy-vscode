@@ -18,9 +18,9 @@ async function main() {
 			'vscode',
 			"@octokit/rest",
 			"vscode-languageclient",
-			'rollbar',
 			"simple-git", 
-			'uuid'
+			'uuid',
+			'@vscode/extension-telemetry'
 		],
 		logLevel: !production ? 'debug' : 'silent',
 		outdir: 'client/out',
@@ -41,7 +41,8 @@ async function main() {
 		  'uuid', 
 		  'vscode-languageserver', 
 		  'vscode-languageserver-textdocument', 
-		  'vscode-uri'
+		  'vscode-uri',
+		  '@vscode/extension-telemetry'
 		],
 		logLevel: !production ? 'debug' : 'silent',
 		outdir: 'server/out',

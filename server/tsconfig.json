@@ -7,11 +7,15 @@
 		"sourceMap": true,
 		"strict": true,
 		"outDir": "out",
-		"rootDir": "src",
+		"rootDir": "../",
 		"resolveJsonModule": true,
 		"esModuleInterop": true,
-		"types": ["jest", "node"]
+		"types": ["jest", "node"],
+		"baseUrl": ".",
+		"paths": {
+			"@shared/*": ["../shared/*"]
+		}
 	},
-	"include": ["src/**/*.ts", "test/**/*.ts"],
+	"include": ["src/**/*", "../shared/**/*"],
 	"exclude": ["node_modules", ".vscode-test", "webpack.config.js"]
 }

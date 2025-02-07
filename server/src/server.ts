@@ -23,9 +23,6 @@ import {
 	CancellationTokenSource
 } from "vscode-languageserver/node";
 
-import * as http from 'http';
-import { URL } from 'url';
-
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { TextDocumentChangeEvent } from 'vscode-languageserver';
 import {
@@ -55,7 +52,6 @@ import { API_SERVER_URL } from './constants/api';
 import { ERROR_CODES, ForbiddenError, RateLimitError  } from './constants/errors';
 import { TELEMETRY_EVENTS } from '../../shared/constants';
 import { reporter, initializeTelemetry } from './telemetry';
-import { COMMANDS as GlobalCommands } from '../../shared/constants';
 
 
 const connection = createConnection(ProposedFeatures.all);
@@ -537,47 +533,6 @@ connection.onExecuteCommand(async (params) => {
 	}
 });
 
-let oauthServer: http.Server | null = null;
-let expectedState: string | null = null;
-
-connection.onNotification(GlobalCommands.GITHUB_OAUTH_CALLBACK, (params: { state: string }) => {
-    expectedState = params.state;
-	console.log("Received callback for state", expectedState);
-    
-    if (!oauthServer) {
-		console.log("Creating OAuth server");
-        oauthServer = http.createServer((req, res) => {
-            if (!req.url?.startsWith('/callback')) {
-                res.writeHead(404);
-                res.end();
-                return;
-            }
-
-            const url = new URL(req.url, `http://${req.headers.host}`);
-			console.log("Received URL", url);
-            const code = url.searchParams.get('code');
-            const state = url.searchParams.get('state');
-			console.log("Received code and state", code, state);
-            
-            if (code && state === expectedState) {
-                // Send success response to browser
-                res.writeHead(200, { 'Content-Type': 'text/html' });
-                res.end('Authentication successful! You can close this window.');
-                
-                // Notify extension of successful callback
-				console.log("Notifying extension of successful callback");
-                connection.sendNotification(GlobalCommands.GITHUB_OAUTH_CALLBACK, { code, state });
-            } else {
-                res.writeHead(400, { 'Content-Type': 'text/html' });
-                res.end('Authentication failed! Please try again.');
-            }
-        });
-
-        oauthServer.listen(54321);
-    }
-});
-
-
 const openedDocuments = new Set<string>();
 
 documents.onDidOpen(async (event: TextDocumentChangeEvent<TextDocument>) => {
@@ -596,13 +551,6 @@ documents.onDidOpen(async (event: TextDocumentChangeEvent<TextDocument>) => {
                 message: `Error running diagnostics on document open: ${errorMessage}`
             });
         }
-    }
-});
-
-connection.onExit(() => {
-    if (oauthServer) {
-        oauthServer.close();
-        oauthServer = null;
     }
 });
 

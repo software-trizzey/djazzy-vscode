@@ -2,7 +2,9 @@ import * as vscode from "vscode";
 import { LanguageClient } from "vscode-languageclient/node";
 
 import { COMMANDS, EXTENSION_ID, EXTENSION_NAME, PUBLISHER } from "./constants";
+import { COMMANDS as GlobalCommands } from '../../../shared/constants';
 
+import { GitHubAuthProvider } from './auth/github';
 import { ExceptionHandlingCommandProvider } from './providers/exceptionProvider';
 import { authenticateUser, removeApiKey } from './auth/api';
 
@@ -22,6 +24,25 @@ export async function registerCommands(
         COMMANDS.SIGN_IN,
         () => authenticateUser(context, activate)
     ));
+
+    const authProvider = new GitHubAuthProvider(context);
+    
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            GlobalCommands.GITHUB_SIGN_IN,
+            async () => {
+                console.log("GitHub sign in command triggered");
+                try {
+                    const userSession = await authProvider.signIn();
+                    console.log('Cached user session', userSession);
+                    vscode.window.showInformationMessage('Successfully signed into Djangoly!');
+                } catch (error) {
+                    console.error("Sign in error:", error);
+                    vscode.window.showErrorMessage('Failed to sign in to Djangoly');
+                }
+            }
+        )
+    );
 
     context.subscriptions.push(vscode.commands.registerCommand(
         COMMANDS.SIGN_OUT,

@@ -1,83 +1,55 @@
 import * as vscode from "vscode";
-import * as Octokit from "@octokit/rest";
 
-const GITHUB_AUTH_PROVIDER_ID = "github";
-// The GitHub Authentication Provider accepts the scopes described here:
-// https://developer.github.com/apps/building-oauth-apps/understanding-scopes-for-oauth-apps/
-const SCOPES = ["user:email"];
-
-export class Credentials {
-	private octokit: Octokit.Octokit | undefined;
-
-	async initialize(context: vscode.ExtensionContext): Promise<void> {
-		this.registerListeners(context);
-		await this.setOctokit();
-	}
-
-	private async setOctokit() {
-		/**
-		 * By passing the `createIfNone` flag, a numbered badge will show up on the accounts activity bar icon.
-		 * An entry for the sample extension will be added under the menu to sign in. This allows quietly
-		 * prompting the user to sign in.
-		 * */
-		const session = await vscode.authentication.getSession(
-			GITHUB_AUTH_PROVIDER_ID,
-			SCOPES,
-			{ createIfNone: true }
-		);
-
-		if (session) {
-			this.octokit = new Octokit.Octokit({
-				auth: session.accessToken,
-			});
-
-			return;
-		}
-
-		this.octokit = undefined;
-	}
-
-	registerListeners(context: vscode.ExtensionContext): void {
-		/**
-		 * Sessions are changed when a user logs in or logs out.
-		 */
-		context.subscriptions.push(
-			vscode.authentication.onDidChangeSessions(async (e) => {
-				if (e.provider.id === GITHUB_AUTH_PROVIDER_ID) {
-					await this.setOctokit();
-				}
-			})
-		);
-	}
-
-	async getOctokit(): Promise<Octokit.Octokit> {
-		if (this.octokit) {
-			return this.octokit;
-		}
-
-		/**
-		 * When the `createIfNone` flag is passed, a modal dialog will be shown asking the user to sign in.
-		 * Note that this can throw if the user clicks cancel.
-		 */
-		const session = await vscode.authentication.getSession(
-			GITHUB_AUTH_PROVIDER_ID,
-			SCOPES,
-			{ createIfNone: true }
-		);
-		this.octokit = new Octokit.Octokit({
-			auth: session.accessToken,
-		});
-
-		return this.octokit;
-	}
-}
+import { API_SERVER_URL, SESSION_TOKEN_KEY, SESSION_USER} from "@shared/constants";
 
 export interface UserSession {
-	id: string;
-	email: string;
-	github_login: string;
-	profile: {
-		name: string;
-		location: string;
+	token: string;
+	user: {
+		id: string;
+		email: string;
+		github_login: string;
 	};
+}
+
+export class GitHubAuthProvider {
+    constructor(private context: vscode.ExtensionContext) {}
+
+    async signIn(): Promise<UserSession> {
+        console.log("Starting GitHub sign-in flow");
+
+        const session = await vscode.authentication.getSession("github", ["read:user", "user:email"], { createIfNone: true });
+
+        if (!session || !session.accessToken) {
+            throw new Error("Failed to authenticate with GitHub");
+        }
+
+        const userSession = await this.exchangeTokenWithDjango(session.accessToken);
+        await this.context.globalState.update(SESSION_TOKEN_KEY, userSession.token);
+		await this.context.globalState.update(SESSION_USER, userSession);
+        return userSession;
+    }
+
+    private async exchangeTokenWithDjango(githubToken: string): Promise<UserSession> {
+        const response = await fetch(`${API_SERVER_URL}/_allauth/browser/v1/auth/provider/token`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+				provider: "github",
+				process: "login", // note this will sign the user up if they don't exist
+				token: {
+					client_id: "Ov23li4Egp5QaJKU3ftO",
+					access_token: githubToken,
+				}
+			})
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to exchange GitHub token for Django session token");
+        }
+
+        const data = await response.json() as UserSession;
+        return data;
+    }
 }

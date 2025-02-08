@@ -1,12 +1,14 @@
 import * as vscode from "vscode";
 import { LanguageClient } from "vscode-languageclient/node";
 
-import { COMMANDS, EXTENSION_ID, EXTENSION_NAME, PUBLISHER } from "./constants";
-import { COMMANDS as GlobalCommands } from '../../../shared/constants';
+import { COMMANDS, EXTENSION_ID, EXTENSION_NAME, PUBLISHER, SESSION_USER } from "./constants";
+import { COMMANDS as GlobalCommands, TELEMETRY_EVENTS } from '../../../shared/constants';
 
-import { GitHubAuthProvider } from './auth/github';
+import { UserSession } from './auth/github';
 import { ExceptionHandlingCommandProvider } from './providers/exceptionProvider';
-import { authenticateUser, removeApiKey } from './auth/api';
+import { authenticateUserWithGitHub, signOutUser } from './auth/api';
+import { AUTH_MESSAGES } from './constants/messages';
+import { reporter } from '../../../shared/telemetry';
 
 const WORKBENCH_ACTIONS = {
 	OPEN_WALKTHROUGH: 'workbench.action.openWalkthrough',
@@ -17,28 +19,50 @@ export async function registerCommands(
     context: vscode.ExtensionContext,
     client: LanguageClient,
     activate: (context: vscode.ExtensionContext) => Promise<void>,
-    deactivate: (context: vscode.ExtensionContext) => Thenable<void> | undefined
+    deactivate: (context: vscode.ExtensionContext) => Thenable<void> | undefined,
 ): Promise<void> {
 
     context.subscriptions.push(vscode.commands.registerCommand(
         COMMANDS.SIGN_IN,
-        () => authenticateUser(context, activate)
+        async () => {
+            try {
+                // TODO: Check for valid api key if legacy user
+                reporter.sendTelemetryEvent(TELEMETRY_EVENTS.SIGN_IN_STARTED);
+                const authenticated = await authenticateUserWithGitHub(context);
+                if (!authenticated) {
+                    throw new Error('User did not authenticate');
+                }
+                const session = context.globalState.get<UserSession>(SESSION_USER);
+                reporter.sendTelemetryEvent(TELEMETRY_EVENTS.SIGN_IN, {
+                    user: session?.user.id || 'unknown',
+                });
+                await activate(context);
+            } catch (error) {
+                console.error("Sign in error:", error);
+                vscode.window.showErrorMessage(AUTH_MESSAGES.SIGN_IN_FAILURE);
+            }
+        }
     ));
 
-    const authProvider = new GitHubAuthProvider(context);
     
     context.subscriptions.push(
         vscode.commands.registerCommand(
             GlobalCommands.GITHUB_SIGN_IN,
             async () => {
-                console.log("GitHub sign in command triggered");
                 try {
-                    const userSession = await authProvider.signIn();
-                    console.log('Cached user session', userSession);
-                    vscode.window.showInformationMessage('Successfully signed into Djangoly!');
+                    reporter.sendTelemetryEvent(TELEMETRY_EVENTS.SIGN_IN_STARTED);
+                    const authenticated = await authenticateUserWithGitHub(context);
+                    if (!authenticated) {
+                        throw new Error('User did not authenticate');
+                    }
+                    const session = context.globalState.get<UserSession>(SESSION_USER);
+                    reporter.sendTelemetryEvent(TELEMETRY_EVENTS.SIGN_IN, {
+                        user: session?.user.id || 'unknown',
+                    });
+                    await activate(context);
                 } catch (error) {
                     console.error("Sign in error:", error);
-                    vscode.window.showErrorMessage('Failed to sign in to Djangoly');
+                    vscode.window.showErrorMessage(AUTH_MESSAGES.SIGN_IN_FAILURE);
                 }
             }
         )
@@ -46,7 +70,14 @@ export async function registerCommands(
 
     context.subscriptions.push(vscode.commands.registerCommand(
         COMMANDS.SIGN_OUT,
-        () => removeApiKey(context, client, () => deactivate(context))
+        async () => {
+            const session = context.globalState.get<UserSession>(SESSION_USER);
+            await signOutUser(context);
+            reporter.sendTelemetryEvent(TELEMETRY_EVENTS.SIGN_OUT, {
+                user: session?.user.id || 'unknown',
+            });
+            await deactivate(context);
+        }
     ));
 
     const openWalkthroughCommand = vscode.commands.registerCommand(

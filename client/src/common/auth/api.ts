@@ -80,6 +80,7 @@ export const authenticateUserWithGitHub = async (context): Promise<boolean> => {
                     }
                     await authProvider.acceptTerms();
                 }
+				vscode.window.showInformationMessage(AUTH_MESSAGES.WELCOME_MESSAGE);
                 session = authProvider.getCurrentSession();
             }
         } catch (error) {

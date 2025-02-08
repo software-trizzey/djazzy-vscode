@@ -10,11 +10,17 @@ export const SESSION_USER = `${EXTENSION_ID_WITH_PUBLISHER}.User`;
 export const SESSION_TOKEN_KEY = `${EXTENSION_ID_WITH_PUBLISHER}.UserToken`;
 
 export const API_SERVER_URL = process.env.NODE_ENV === "development" ?  "http://localhost:8000" : "https://djangoly-api.onrender.com";
+export const GITHUB_CLIENT_ID = process.env.NODE_ENV === "development" ? "Ov23li4Egp5QaJKU3ftO" : "Ov23liV8A8SgrWwMhFwI";
 
 export const COMMANDS = {
     USER_API_KEY: `${EXTENSION_NAME}.userApiKey`,
     GITHUB_OAUTH_CALLBACK: `${EXTENSION_NAME}.githubOauthCallback`,
+    SIGN_IN: `${EXTENSION_NAME}.signIn`,
     GITHUB_SIGN_IN: `${EXTENSION_NAME}.githubSignIn`,
+    SIGN_OUT: `${EXTENSION_NAME}.signOut`,
+    OPEN_WALKTHROUGH: `${EXTENSION_NAME}.openWalkthrough`,
+    OPEN_SETTINGS: `${EXTENSION_NAME}.openSettings`,
+    ANALYZE_EXCEPTION_HANDLING: `${EXTENSION_NAME}.analyzeExceptionHandling`,
 } as const;
 
 export const TELEMETRY_EVENTS = {

@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 
-import { API_SERVER_URL, SESSION_TOKEN_KEY, SESSION_USER} from "@shared/constants";
+import { API_SERVER_URL, GITHUB_CLIENT_ID, SESSION_TOKEN_KEY, SESSION_USER} from "@shared/constants";
 
 export interface UserSession {
 	token: string;
@@ -17,7 +17,6 @@ export interface UserSession {
     }
 }
 
-const GITHUB_CLIENT_ID = "Ov23li4Egp5QaJKU3ftO";
 const GITHUB_AUTH_PROVIDER_ID = "github";
 const SCOPES = ["read:user", "user:email"];
 

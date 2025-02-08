@@ -1,14 +1,19 @@
 import * as vscode from "vscode";
 import { LanguageClient } from "vscode-languageclient/node";
 
-import { COMMANDS, EXTENSION_ID, EXTENSION_NAME, PUBLISHER, SESSION_USER } from "./constants";
-import { COMMANDS as GlobalCommands, TELEMETRY_EVENTS } from '../../../shared/constants';
+import {
+    COMMANDS,
+    TELEMETRY_EVENTS,
+    SESSION_USER,
+    EXTENSION_ID_WITH_PUBLISHER,
+    EXTENSION_NAME
+} from '../../../shared/constants';
+import { reporter } from '../../../shared/telemetry';
 
 import { UserSession } from './auth/github';
 import { ExceptionHandlingCommandProvider } from './providers/exceptionProvider';
 import { authenticateUserWithGitHub, signOutUser } from './auth/api';
 import { AUTH_MESSAGES } from './constants/messages';
-import { reporter } from '../../../shared/telemetry';
 
 const WORKBENCH_ACTIONS = {
 	OPEN_WALKTHROUGH: 'workbench.action.openWalkthrough',
@@ -26,16 +31,24 @@ export async function registerCommands(
         COMMANDS.SIGN_IN,
         async () => {
             try {
+                // check if user is already authenticated
+                let session = context.globalState.get<UserSession>(SESSION_USER);
+                if (session) {
+                    vscode.window.showInformationMessage('You are already signed in.');
+                    return;
+                }
+                
                 // TODO: Check for valid api key if legacy user
                 reporter.sendTelemetryEvent(TELEMETRY_EVENTS.SIGN_IN_STARTED);
                 const authenticated = await authenticateUserWithGitHub(context);
                 if (!authenticated) {
                     throw new Error('User did not authenticate');
                 }
-                const session = context.globalState.get<UserSession>(SESSION_USER);
+                session = context.globalState.get<UserSession>(SESSION_USER);
                 reporter.sendTelemetryEvent(TELEMETRY_EVENTS.SIGN_IN, {
                     user: session?.user.id || 'unknown',
                 });
+
                 await activate(context);
             } catch (error) {
                 console.error("Sign in error:", error);
@@ -47,18 +60,26 @@ export async function registerCommands(
     
     context.subscriptions.push(
         vscode.commands.registerCommand(
-            GlobalCommands.GITHUB_SIGN_IN,
+            COMMANDS.GITHUB_SIGN_IN,
             async () => {
                 try {
+                    // check if user is already authenticated
+                    let session = context.globalState.get<UserSession>(SESSION_USER);
+                    if (session) {
+                        vscode.window.showInformationMessage('You are already signed in.');
+                        return;
+                    }
+                    
                     reporter.sendTelemetryEvent(TELEMETRY_EVENTS.SIGN_IN_STARTED);
                     const authenticated = await authenticateUserWithGitHub(context);
                     if (!authenticated) {
                         throw new Error('User did not authenticate');
                     }
-                    const session = context.globalState.get<UserSession>(SESSION_USER);
+                    session = context.globalState.get<UserSession>(SESSION_USER);
                     reporter.sendTelemetryEvent(TELEMETRY_EVENTS.SIGN_IN, {
                         user: session?.user.id || 'unknown',
                     });
+                    
                     await activate(context);
                 } catch (error) {
                     console.error("Sign in error:", error);
@@ -72,6 +93,11 @@ export async function registerCommands(
         COMMANDS.SIGN_OUT,
         async () => {
             const session = context.globalState.get<UserSession>(SESSION_USER);
+            if (!session) {
+                vscode.window.showInformationMessage('You are not signed in.');
+                return;
+            }
+
             await signOutUser(context);
             reporter.sendTelemetryEvent(TELEMETRY_EVENTS.SIGN_OUT, {
                 user: session?.user.id || 'unknown',
@@ -82,13 +108,13 @@ export async function registerCommands(
 
     const openWalkthroughCommand = vscode.commands.registerCommand(
         COMMANDS.OPEN_WALKTHROUGH,
-        () => vscode.commands.executeCommand(WORKBENCH_ACTIONS.OPEN_WALKTHROUGH, `${EXTENSION_ID}.gettingStarted`, true)
+        () => vscode.commands.executeCommand(WORKBENCH_ACTIONS.OPEN_WALKTHROUGH, `$${EXTENSION_NAME}.gettingStarted`, true)
     );
     context.subscriptions.push(openWalkthroughCommand);
 
 	const openSettingsCommand = vscode.commands.registerCommand(
         COMMANDS.OPEN_SETTINGS,
-        () => vscode.commands.executeCommand(WORKBENCH_ACTIONS.OPEN_SETTINGS, `@ext:${PUBLISHER}.${EXTENSION_NAME}`)
+        () => vscode.commands.executeCommand(WORKBENCH_ACTIONS.OPEN_SETTINGS, `@ext:${EXTENSION_ID_WITH_PUBLISHER}`)
     );
     context.subscriptions.push(openSettingsCommand);
 

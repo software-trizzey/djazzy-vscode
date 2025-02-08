@@ -9,6 +9,7 @@ export const EXTENSION_ID_WITH_PUBLISHER = projectPackageJson.publisher + "." + 
 export const SESSION_USER = `${EXTENSION_ID_WITH_PUBLISHER}.User`;
 export const SESSION_TOKEN_KEY = `${EXTENSION_ID_WITH_PUBLISHER}.UserToken`;
 
+export const API_KEY_SIGNUP_URL = "https://forms.gle/gEEZdfhWpQyQh2qVA";
 export const API_SERVER_URL = process.env.NODE_ENV === "development" ?  "http://localhost:8000" : "https://djangoly-api.onrender.com";
 export const GITHUB_CLIENT_ID = process.env.NODE_ENV === "development" ? "Ov23li4Egp5QaJKU3ftO" : "Ov23liV8A8SgrWwMhFwI";
 
@@ -21,6 +22,7 @@ export const COMMANDS = {
     OPEN_WALKTHROUGH: `${EXTENSION_NAME}.openWalkthrough`,
     OPEN_SETTINGS: `${EXTENSION_NAME}.openSettings`,
     ANALYZE_EXCEPTION_HANDLING: `${EXTENSION_NAME}.analyzeExceptionHandling`,
+    UPDATE_CACHED_USER_TOKEN: `${EXTENSION_NAME}.updateCachedUserToken`,
 } as const;
 
 export const TELEMETRY_EVENTS = {
@@ -47,5 +49,9 @@ export const TELEMETRY_NOTIFICATION = {
 // TODO: Add other shared constants as needed?
 export const EXTENSION_CONFIG = {
     MAX_PROBLEMS: 100,
-    LANGUAGE_ID: 'yourLanguage',
+    LANGUAGE_ID: 'python',
 } as const; 
+
+
+export const RATE_LIMIT_NOTIFICATION_ID = `${EXTENSION_NAME}/rateLimitReached`;
+export const ACCESS_FORBIDDEN_NOTIFICATION_ID = `${EXTENSION_NAME}/forbidden`;

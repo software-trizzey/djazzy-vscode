@@ -56,10 +56,6 @@
 				"title": "Djangoly: Sign Out"
 			},
 			{
-				"command": "djangoly.githubSignIn",
-				"title": "Djangoly: Sign In with GitHub"
-			},
-			{
 				"command": "djangoly.openSettings",
 				"title": "Djangoly: Open Settings"
 			},

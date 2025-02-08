@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { LanguageClient } from 'vscode-languageclient/node';
 
-import { API_KEY_SIGNUP_URL, API_SERVER_URL, COMMANDS } from "../constants";
+import { API_KEY_SIGNUP_URL, API_SERVER_URL, COMMANDS } from "../../../../shared/constants";
 import { AUTH_MESSAGES } from '../constants/messages';
 
 import { GitHubAuthProvider } from './github';

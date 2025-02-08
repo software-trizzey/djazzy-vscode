@@ -31,7 +31,6 @@ export async function registerCommands(
         COMMANDS.SIGN_IN,
         async () => {
             try {
-                // check if user is already authenticated
                 let session = context.globalState.get<UserSession>(SESSION_USER);
                 if (session) {
                     vscode.window.showInformationMessage('You are already signed in.');
@@ -56,38 +55,6 @@ export async function registerCommands(
             }
         }
     ));
-
-    
-    context.subscriptions.push(
-        vscode.commands.registerCommand(
-            COMMANDS.GITHUB_SIGN_IN,
-            async () => {
-                try {
-                    // check if user is already authenticated
-                    let session = context.globalState.get<UserSession>(SESSION_USER);
-                    if (session) {
-                        vscode.window.showInformationMessage('You are already signed in.');
-                        return;
-                    }
-                    
-                    reporter.sendTelemetryEvent(TELEMETRY_EVENTS.SIGN_IN_STARTED);
-                    const authenticated = await authenticateUserWithGitHub(context);
-                    if (!authenticated) {
-                        throw new Error('User did not authenticate');
-                    }
-                    session = context.globalState.get<UserSession>(SESSION_USER);
-                    reporter.sendTelemetryEvent(TELEMETRY_EVENTS.SIGN_IN, {
-                        user: session?.user.id || 'unknown',
-                    });
-                    
-                    await activate(context);
-                } catch (error) {
-                    console.error("Sign in error:", error);
-                    vscode.window.showErrorMessage(AUTH_MESSAGES.SIGN_IN_FAILURE);
-                }
-            }
-        )
-    );
 
     context.subscriptions.push(vscode.commands.registerCommand(
         COMMANDS.SIGN_OUT,

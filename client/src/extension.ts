@@ -38,7 +38,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	const legacyApiKey: string | undefined = context.globalState.get(COMMANDS.USER_API_KEY);
 	
 	if (legacyApiKey && !session) {
-		// User has API key but no GitHub session
 		const migrateAction = "Sign in with GitHub";
 		const response = await vscode.window.showInformationMessage(
 			AUTH_MESSAGES.LEGACY_API_KEY_MIGRATION,
@@ -50,7 +49,8 @@ export async function activate(context: vscode.ExtensionContext) {
 			if (!isAuthenticated) {
 				reporter.sendTelemetryErrorEvent(TELEMETRY_EVENTS.AUTHENTICATION_FAILED, {
 					reason: 'Legacy user migration failed',
-					had_api_key: 'true'
+					had_api_key: 'true',
+					user_api_key: legacyApiKey,
 				});
 				vscode.window.showErrorMessage(AUTH_MESSAGES.AUTHENTICATION_REQUIRED);
 				return;
@@ -84,7 +84,6 @@ export async function activate(context: vscode.ExtensionContext) {
 			});
 			console.log('User has not agreed to terms. Exiting extension.');
 			return;
-
 		}
 	}
 
@@ -129,7 +128,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	client.onRequest(COMMANDS.GET_GIT_DIFF, getChangedLines);
 
 	const token = context.globalState.get(SESSION_TOKEN_KEY);
-	console.log('Activating extension with token', token);
 	if (token) {
 		await client.sendRequest(COMMANDS.UPDATE_CACHED_USER_TOKEN, token);
 	}

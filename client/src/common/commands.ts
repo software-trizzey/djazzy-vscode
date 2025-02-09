@@ -37,7 +37,6 @@ export async function registerCommands(
                     return;
                 }
                 
-                // TODO: Check for valid api key if legacy user
                 reporter.sendTelemetryEvent(TELEMETRY_EVENTS.SIGN_IN_STARTED);
                 const authenticated = await authenticateUserWithGitHub(context);
                 if (!authenticated) {

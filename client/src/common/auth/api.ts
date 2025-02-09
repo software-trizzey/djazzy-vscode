@@ -72,7 +72,7 @@ export const authenticateUserWithGitHub = async (context): Promise<boolean> => {
                 if (!userSession.user.has_agreed_to_terms) {
                     const termsAction = "Accept & Continue";
                     const termsResult = await vscode.window.showInformationMessage(
-                        AUTH_MESSAGES.WELCOME_BETA_MESSAGE, 
+                        AUTH_MESSAGES.WELCOME_SIGNUP_MESSAGE,
                         termsAction
                     );
                     if (termsResult !== termsAction) {
@@ -149,7 +149,10 @@ export const authenticateUserWithAPIKey = async (context, activate): Promise<boo
     }
 
 	const termsAction = "Accept & Continue";
-	const termsResult = await vscode.window.showInformationMessage(AUTH_MESSAGES.WELCOME_BETA_MESSAGE, termsAction);
+	const termsResult = await vscode.window.showInformationMessage(
+		AUTH_MESSAGES.WELCOME_SIGNUP_MESSAGE,
+		termsAction
+	);
 	if (termsResult !== termsAction) {
 		vscode.window.showErrorMessage(AUTH_MESSAGES.MUST_AGREE_TO_TERMS);
 		return false;

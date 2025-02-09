@@ -9,6 +9,8 @@ export const EXTENSION_ID_WITH_PUBLISHER = projectPackageJson.publisher + "." + 
 export const SESSION_USER = `${EXTENSION_ID_WITH_PUBLISHER}.User`;
 export const SESSION_TOKEN_KEY = `${EXTENSION_ID_WITH_PUBLISHER}.UserToken`;
 
+export const PRIVACY_POLICY_URL = "https://djangoly.com/privacy.html";
+export const TERMS_OF_SERVICE_URL = "https://djangoly.com/terms.html";
 export const API_KEY_SIGNUP_URL = "https://forms.gle/gEEZdfhWpQyQh2qVA";
 export const API_SERVER_URL = process.env.NODE_ENV === "development" ?  "http://localhost:8000" : "https://djangoly-api.onrender.com";
 export const GITHUB_CLIENT_ID = process.env.NODE_ENV === "development" ? "Ov23li4Egp5QaJKU3ftO" : "Ov23liV8A8SgrWwMhFwI";

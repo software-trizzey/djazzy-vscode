@@ -73,13 +73,13 @@ export async function checkAndNotify(uri: vscode.Uri, client: LanguageClient, co
 	const isNewFile = untrackedFiles.includes(relativePath);
 
 	if (diff.length > 0 || isNewFile) {
-		const storedUser: UserSession | undefined = context.globalState.get(SESSION_USER);
-		if (!storedUser) {
+		const userSession: UserSession | undefined = context.globalState.get(SESSION_USER);
+		if (!userSession) {
 			reporter.sendTelemetryEvent(TELEMETRY_EVENTS.API_ALERT_SENT);
 			return;
 		} else {
 			reporter.sendTelemetryEvent(TELEMETRY_EVENTS.API_ALERT_SENT, {
-				user: storedUser.email,
+				user: userSession.user.id,
 				filePath: relativePath
 			});
 		}

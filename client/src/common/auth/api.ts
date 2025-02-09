@@ -1,103 +1,18 @@
 import * as vscode from "vscode";
-
-import { v4 as uuidv4 } from "uuid";
-
-import { API_KEY_SIGNUP_URL, API_SERVER_URL, COMMANDS, SESSION_TOKEN_KEY, SESSION_USER } from "../constants";
-import { AUTH_MESSAGES } from '../constants/messages';
-
-import { Credentials } from "./github";
 import { LanguageClient } from 'vscode-languageclient/node';
 
-export async function signInWithGitHub(
-	credentials: Credentials,
-	context: vscode.ExtensionContext,
-	deactivate: () => void
-) {
-	const action = "Sign in with GitHub";
-	const response = await vscode.window.showInformationMessage(
-		AUTH_MESSAGES.GITHUB_SIGN_IN,
-		action,
-		"Cancel"
-	);
-	if (!response || response !== action) {
-		console.log("User cancelled sign in.");
-		deactivate();
-		vscode.window.showInformationMessage(
-			AUTH_MESSAGES.SIGN_OUT
-		);
-		return;
-	}
-	const octokit = await credentials.getOctokit();
-	const userInfo = await octokit.users.getAuthenticated();
+import { API_KEY_SIGNUP_URL, API_SERVER_URL, COMMANDS, TELEMETRY_EVENTS } from "../../../../shared/constants";
+import { reporter } from '../../../../shared/telemetry';
+import { AUTH_MESSAGES } from '../constants/messages';
 
-	const userPayload = {
-		email: userInfo.data.email || null, // djangoly-ignore: some users might not have public emails
-		password: uuidv4(),
-		github_login: userInfo.data.login,
-		has_agreed_to_terms: true,
-		profile: {
-			name: userInfo.data.name,
-			location: userInfo.data.location,
-		},
-	};
+import { GitHubAuthProvider } from './github';
 
-	const serverResponse: any = await fetch(`${API_SERVER_URL}/auth/users/login/`, {
-		headers: {
-			"Content-Type": "application/json",
-		},
-		method: "POST",
-		body: JSON.stringify(userPayload),
-	});
-	const responseData = await serverResponse.json();
 
-	if (serverResponse.ok) {
-		await context.globalState.update(SESSION_TOKEN_KEY, responseData.token);
-		await context.globalState.update(SESSION_USER, responseData.user);
-		vscode.window.showInformationMessage(
-			`Welcome to Djangoly, ${responseData.user.github_login || responseData.user.email}! 🏛️🫡`
-		);
-	} else {
-		vscode.window.showErrorMessage(
-			`Authentication failed: ${responseData.detail || responseData.error || responseData.message}`
-		);
-		console.error(responseData);
-	}
-}
-
-export async function signOutUser(context: vscode.ExtensionContext, client: LanguageClient) {
-	const token = context.globalState.get(SESSION_TOKEN_KEY);
-
-	if (token) {
-		try {
-			const response = await fetch(`${API_SERVER_URL}/auth/logout/`, {
-				method: "POST",
-				headers: {
-					Authorization: `Token ${token}`,
-				},
-			});
-
-			if (response.ok) {
-				vscode.window.showInformationMessage(
-					"Signed out of Djangoly. Bye! 👋"
-				);
-			} else {
-				const responseData = (await response.json()) as any;
-				console.error(responseData.error);
-			}
-		} catch (error: any) {
-			vscode.window.showErrorMessage("Error signing out from the server.");
-		}
-	} else {
-		const errorMessage = "No token found, signing out locally.";
-		vscode.window.showInformationMessage(errorMessage);
-	}
-
-	await context.globalState.update(SESSION_USER, undefined);
-	await context.globalState.update(SESSION_TOKEN_KEY, undefined);
-
-	await client.sendRequest(COMMANDS.UPDATE_CACHED_USER_TOKEN, null);
-
-	vscode.commands.executeCommand('workbench.action.reloadWindow');
+export async function signOutUser(context: vscode.ExtensionContext) {
+	const authProvider = new GitHubAuthProvider(context);
+	console.log("Signing out from Djangoly");
+	await authProvider.signOut();
+	vscode.window.showInformationMessage(AUTH_MESSAGES.SIGN_OUT);
 }
 
 
@@ -145,7 +60,45 @@ export async function removeApiKey(
     deactivate();
 }
 
-export const authenticateUser = async (context, activate): Promise<boolean> => {
+export const authenticateUserWithGitHub = async (context): Promise<boolean> => {
+	console.log('Authenticating user with GitHub');
+    const authProvider = new GitHubAuthProvider(context);
+    let session = authProvider.getCurrentSession();
+
+    while (!session?.user.has_agreed_to_terms) {
+        try {
+            const userSession = await authProvider.signIn();
+            if (userSession) {
+                if (!userSession.user.has_agreed_to_terms) {
+                    const termsAction = "Accept & Continue";
+                    const termsResult = await vscode.window.showInformationMessage(
+                        AUTH_MESSAGES.WELCOME_BETA_MESSAGE, 
+                        termsAction
+                    );
+                    if (termsResult !== termsAction) {
+                        vscode.window.showErrorMessage(AUTH_MESSAGES.MUST_AGREE_TO_TERMS);
+                        return false;
+                    }
+                    await authProvider.acceptTerms();
+					// Note: only show this the first time the user signs up and accepts terms
+					vscode.window.showInformationMessage(AUTH_MESSAGES.WELCOME_MESSAGE);
+					reporter.sendTelemetryEvent(TELEMETRY_EVENTS.TERMS_ACCEPTED, {
+						user_id: userSession.user.id,
+						message: 'User signed up and accepted terms for the first time'
+					});
+                }
+                session = authProvider.getCurrentSession();
+            }
+        } catch (error) {
+            console.error('Authentication error:', error);
+            return false;
+        }
+    }
+
+    return true;
+};
+
+export const authenticateUserWithAPIKey = async (context, activate): Promise<boolean> => {
     let apiKey = context.globalState.get(COMMANDS.USER_API_KEY);
 
     const retryAction = "Retry";

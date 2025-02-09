@@ -554,6 +554,5 @@ documents.onDidOpen(async (event: TextDocumentChangeEvent<TextDocument>) => {
     }
 });
 
-
 documents.listen(connection);
 connection.listen();

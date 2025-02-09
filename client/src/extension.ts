@@ -8,8 +8,7 @@ import {
 	TransportKind,
 } from "vscode-languageclient/node";
 
-import { EXTENSION_ID, EXTENSION_DISPLAY_NAME, COMMANDS, RATE_LIMIT_NOTIFICATION_ID, ACCESS_FORBIDDEN_NOTIFICATION_ID, API_KEY_SIGNUP_URL } from "./common/constants";
-import { AUTH_MESSAGES } from './common/constants/messages';
+import { EXTENSION_ID, EXTENSION_DISPLAY_NAME, COMMANDS, RATE_LIMIT_NOTIFICATION_ID, ACCESS_FORBIDDEN_NOTIFICATION_ID } from "./common/constants";
 
 import {
 	getChangedLines,
@@ -17,9 +16,12 @@ import {
 import { registerCommands } from './common/commands';
 import { registerActions } from './common/actions';
 import { setupFileWatchers } from './common/utils/fileWatchers';
-import { authenticateUser, validateApiKey } from './common/auth/api';
+import { authenticateUserWithGitHub } from './common/auth/api';
 import { initializeTelemetry } from '../../shared/telemetry';
-import { TELEMETRY_EVENTS, TELEMETRY_NOTIFICATION } from '../../shared/constants';
+import { SESSION_TOKEN_KEY, SESSION_USER, TELEMETRY_EVENTS, TELEMETRY_NOTIFICATION } from '../../shared/constants';
+import { UserSession } from './common/auth/github';
+import { AUTH_MESSAGES } from './common/constants/messages';
+
 
 let client: LanguageClient;
 let extensionContext: vscode.ExtensionContext;
@@ -31,50 +33,59 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(reporter);
 
 	reporter.sendTelemetryEvent(TELEMETRY_EVENTS.EXTENSION_ACTIVATED);
-    const signIn = "Sign In";
 
-    const requestAPIKey = "Request API Key";
-    let apiKey: string | undefined = context.globalState.get(COMMANDS.USER_API_KEY);
+	const session: UserSession | undefined = context.globalState.get(SESSION_USER);
+	const legacyApiKey: string | undefined = context.globalState.get(COMMANDS.USER_API_KEY);
+	
+	if (legacyApiKey && !session) {
+		const migrateAction = "Sign in with GitHub";
+		const response = await vscode.window.showInformationMessage(
+			AUTH_MESSAGES.LEGACY_API_KEY_MIGRATION,
+			migrateAction
+		);
 
-    if (apiKey) {
-        const isValidApiKey = await validateApiKey(apiKey);
-        if (!isValidApiKey) {
-            vscode.window.showWarningMessage(AUTH_MESSAGES.INVALID_API_KEY);
-            apiKey = undefined;
-        }
-    }
-
-    let isAuthenticated: boolean = !!apiKey;
-    while (!isAuthenticated) {
-        const action = await vscode.window.showInformationMessage(
-            AUTH_MESSAGES.FREE_API_KEY_PROMPT,
-            signIn,
-            requestAPIKey
-        );
-
-        if (action === requestAPIKey) {
-            vscode.env.openExternal(vscode.Uri.parse(API_KEY_SIGNUP_URL));
-            await activate(context);
-            return;
-        } else if (action === signIn) {
-            isAuthenticated = await authenticateUser(context, activate);
-            if (!isAuthenticated) {
-                vscode.window.showWarningMessage(AUTH_MESSAGES.AUTHENTICATION_REQUIRED);
-            } else {
-				const apiKey: string | undefined = context.globalState.get(COMMANDS.USER_API_KEY);
-                reporter.sendTelemetryEvent(TELEMETRY_EVENTS.SIGN_IN, {
-					user: apiKey || 'No API Key',
-					message: 'Sign in successful'
+		if (response === migrateAction) {
+			const isAuthenticated = await authenticateUserWithGitHub(context);
+			if (!isAuthenticated) {
+				reporter.sendTelemetryErrorEvent(TELEMETRY_EVENTS.AUTHENTICATION_FAILED, {
+					reason: 'Legacy user migration failed',
+					had_api_key: 'true',
+					user_api_key: legacyApiKey,
 				});
+				vscode.window.showErrorMessage(AUTH_MESSAGES.AUTHENTICATION_REQUIRED);
+				return;
+			}
+			// Clear legacy API key after successful migration
+			await context.globalState.update(COMMANDS.USER_API_KEY, undefined);
+			reporter.sendTelemetryEvent(TELEMETRY_EVENTS.LEGACY_USER_MIGRATED);
+		} else {
+			vscode.window.showWarningMessage(AUTH_MESSAGES.LEGACY_API_KEY_REQUIRED_MIGRATION);
+			return;
+		}
+	} else if (!session || !session.user.has_agreed_to_terms) {
+		const isAuthenticated = await authenticateUserWithGitHub(context);
+		if (!isAuthenticated) {
+			vscode.window.showWarningMessage(AUTH_MESSAGES.AUTHENTICATION_REQUIRED);
+			reporter.sendTelemetryErrorEvent(TELEMETRY_EVENTS.AUTHENTICATION_FAILED, {
+				reason: 'User did not authenticate',
+				user_id: session?.user.id || 'unknown',
+			});
+			console.log('Failed to authenticate user. Exiting extension.');
+			return;
 
-            }
-        } else {
-            vscode.window.showInformationMessage(AUTH_MESSAGES.SIGN_OUT);
-            deactivate(context);
-            return;
-        }
-
-    }
+		}
+		
+		const updatedSession = context.globalState.get<UserSession>(SESSION_USER);
+		if (!updatedSession?.user.has_agreed_to_terms) {
+			vscode.window.showErrorMessage(AUTH_MESSAGES.MUST_AGREE_TO_TERMS);
+			reporter.sendTelemetryErrorEvent(TELEMETRY_EVENTS.TERMS_NOT_ACCEPTED, {
+				reason: 'User did not agree to terms',
+				user_id: updatedSession?.user.id || 'unknown',
+			});
+			console.log('User has not agreed to terms. Exiting extension.');
+			return;
+		}
+	}
 
 	const serverModule = context.asAbsolutePath(
 		path.join("server", "out", "server.js")
@@ -116,7 +127,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	client.onRequest(COMMANDS.GET_GIT_DIFF, getChangedLines);
 
-	const token = context.globalState.get(COMMANDS.USER_API_KEY);
+	const token = context.globalState.get(SESSION_TOKEN_KEY);
 	if (token) {
 		await client.sendRequest(COMMANDS.UPDATE_CACHED_USER_TOKEN, token);
 	}

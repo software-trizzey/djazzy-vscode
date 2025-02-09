@@ -1,6 +1,11 @@
 import * as vscode from "vscode";
 
-import { API_SERVER_URL, GITHUB_CLIENT_ID, SESSION_TOKEN_KEY, SESSION_USER} from "@shared/constants";
+import {
+	API_SERVER_URL,
+	GITHUB_CLIENT_ID,
+	SESSION_TOKEN_KEY,
+	SESSION_USER
+} from "../../../../shared/constants";
 
 export interface UserSession {
 	token: string;

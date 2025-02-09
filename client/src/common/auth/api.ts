@@ -1,7 +1,8 @@
 import * as vscode from "vscode";
 import { LanguageClient } from 'vscode-languageclient/node';
 
-import { API_KEY_SIGNUP_URL, API_SERVER_URL, COMMANDS } from "../../../../shared/constants";
+import { API_KEY_SIGNUP_URL, API_SERVER_URL, COMMANDS, TELEMETRY_EVENTS } from "../../../../shared/constants";
+import { reporter } from '../../../../shared/telemetry';
 import { AUTH_MESSAGES } from '../constants/messages';
 
 import { GitHubAuthProvider } from './github';
@@ -79,8 +80,13 @@ export const authenticateUserWithGitHub = async (context): Promise<boolean> => {
                         return false;
                     }
                     await authProvider.acceptTerms();
+					// Note: only show this the first time the user signs up and accepts terms
+					vscode.window.showInformationMessage(AUTH_MESSAGES.WELCOME_MESSAGE);
+					reporter.sendTelemetryEvent(TELEMETRY_EVENTS.TERMS_ACCEPTED, {
+						user_id: userSession.user.id,
+						message: 'User signed up and accepted terms for the first time'
+					});
                 }
-				vscode.window.showInformationMessage(AUTH_MESSAGES.WELCOME_MESSAGE);
                 session = authProvider.getCurrentSession();
             }
         } catch (error) {

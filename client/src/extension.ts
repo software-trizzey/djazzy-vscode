@@ -16,7 +16,7 @@ import {
 import { registerCommands } from './common/commands';
 import { registerActions } from './common/actions';
 import { setupFileWatchers } from './common/utils/fileWatchers';
-import { authenticateUserWithGitHub } from './common/auth/api';
+import { authenticateUserWithGitHub, validateApiKey } from './common/auth/api';
 import { initializeTelemetry } from '../../shared/telemetry';
 import { SESSION_TOKEN_KEY, SESSION_USER, TELEMETRY_EVENTS, TELEMETRY_NOTIFICATION } from '../../shared/constants';
 import { UserSession } from './common/auth/github';
@@ -36,31 +36,51 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	const session: UserSession | undefined = context.globalState.get(SESSION_USER);
 	const legacyApiKey: string | undefined = context.globalState.get(COMMANDS.USER_API_KEY);
+	const today = new Date();
 	
 	if (legacyApiKey && !session) {
+		const apiKeySession = await validateApiKey(legacyApiKey);
+		if (!apiKeySession) {
+			vscode.window.showErrorMessage(AUTH_MESSAGES.INVALID_API_KEY);
+			return;
+		}
+
+		const expiresAt = new Date(apiKeySession.session.data?.expires_at || '');
+		if (!apiKeySession.session.data?.expires_at || isNaN(expiresAt.getTime())) {
+			console.error('Invalid expiration date from server');
+			vscode.window.showErrorMessage(AUTH_MESSAGES.INVALID_API_KEY);
+			return;
+		}
+
+		if (apiKeySession.migration_notice) {
+			console.log('Migration notice:', apiKeySession.migration_notice);
+		}
+
+		await context.globalState.update(SESSION_TOKEN_KEY, apiKeySession.token);
+		await context.globalState.update(SESSION_USER, apiKeySession);
+		
+		// Show migration message with days remaining
+		const daysLeft = Math.ceil((expiresAt.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 		const migrateAction = "Sign in with GitHub";
+		const remindLater = "Remind me later";
+		
 		const response = await vscode.window.showInformationMessage(
-			AUTH_MESSAGES.LEGACY_API_KEY_MIGRATION,
-			migrateAction
+			AUTH_MESSAGES.LEGACY_API_KEY_MIGRATION + ` You have ${daysLeft} days to migrate.`,
+			migrateAction,
+			remindLater
 		);
 
 		if (response === migrateAction) {
 			const isAuthenticated = await authenticateUserWithGitHub(context);
-			if (!isAuthenticated) {
-				reporter.sendTelemetryErrorEvent(TELEMETRY_EVENTS.AUTHENTICATION_FAILED, {
-					reason: 'Legacy user migration failed',
-					had_api_key: 'true',
-					user_api_key: legacyApiKey,
-				});
-				vscode.window.showErrorMessage(AUTH_MESSAGES.AUTHENTICATION_REQUIRED);
-				return;
+			if (isAuthenticated) {
+				await context.globalState.update(COMMANDS.USER_API_KEY, undefined);
+				reporter.sendTelemetryEvent(TELEMETRY_EVENTS.LEGACY_USER_MIGRATED);
 			}
-			// Clear legacy API key after successful migration
-			await context.globalState.update(COMMANDS.USER_API_KEY, undefined);
-			reporter.sendTelemetryEvent(TELEMETRY_EVENTS.LEGACY_USER_MIGRATED);
 		} else {
-			vscode.window.showWarningMessage(AUTH_MESSAGES.LEGACY_API_KEY_REQUIRED_MIGRATION);
-			return;
+			reporter.sendTelemetryEvent(TELEMETRY_EVENTS.LEGACY_USER_POSTPONED, {
+				days_left: daysLeft.toString(),
+				user_api_key: legacyApiKey,
+			});
 		}
 	} else if (!session || !session.user.has_agreed_to_terms) {
 		const isAuthenticated = await authenticateUserWithGitHub(context);

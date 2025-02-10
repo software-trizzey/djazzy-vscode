@@ -4,8 +4,7 @@ import { LanguageClient } from 'vscode-languageclient/node';
 import { API_KEY_SIGNUP_URL, API_SERVER_URL, COMMANDS, TELEMETRY_EVENTS } from "../../../../shared/constants";
 import { reporter } from '../../../../shared/telemetry';
 import { AUTH_MESSAGES } from '../constants/messages';
-
-import { GitHubAuthProvider } from './github';
+import { GitHubAuthProvider, UserSession } from './github';
 
 
 export async function signOutUser(context: vscode.ExtensionContext) {
@@ -16,7 +15,7 @@ export async function signOutUser(context: vscode.ExtensionContext) {
 }
 
 
-export async function validateApiKey(apiKey: string): Promise<boolean> {
+export async function validateApiKey(apiKey: string): Promise<UserSession | false> {
     try {
         const response = await fetch(`${API_SERVER_URL}/auth/validate-api-key/`, {
             method: 'POST',
@@ -27,12 +26,31 @@ export async function validateApiKey(apiKey: string): Promise<boolean> {
         });
 
         if (!response.ok) {
-			throw new Error(`Failed to validate API key: ${response.statusText}`);
-		}
+            throw new Error(`Failed to validate API key: ${response.statusText}`);
+        }
 
-		const data: any = await response.json();
-		return data.is_valid;
+        type ApiResponse = {
+            is_valid: boolean;
+            session: UserSession;
+        }
+
+        const data: ApiResponse = await response.json() as ApiResponse;
+        if (!data.is_valid) {
+            return false;
+        }
+
+        if (!data.session?.session?.key || !data.session?.session?.data?.expires_at) {
+            console.error('Invalid session data from server:', data);
+            return false;
+        }
+
+        return data.session as UserSession;
     } catch (error) {
+        console.error('API key validation error:', error);
+        reporter.sendTelemetryErrorEvent(TELEMETRY_EVENTS.API_KEY_VALIDATION_ERROR, {
+            error: JSON.stringify(error),
+            api_key: apiKey,
+        });
         return false;
     }
 }

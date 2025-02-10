@@ -13,13 +13,18 @@ export interface UserSession {
 		id: string;
 		email: string;
 		github_login: string;
-        has_agreed_to_terms: boolean;
+		has_agreed_to_terms: boolean;
 	};
-    session: {
-        id: number;
-        key: string;
-        created_at: string;
-    }
+	session: {
+		id: number;
+		key: string;
+		created_at: string;
+		data?: {
+			expires_at?: string;
+			auth_method?: 'api_key' | 'github';
+		};
+	};
+	migration_notice?: string;
 }
 
 const GITHUB_AUTH_PROVIDER_ID = "github";

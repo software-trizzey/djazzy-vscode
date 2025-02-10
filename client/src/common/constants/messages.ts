@@ -13,4 +13,5 @@ export enum AUTH_MESSAGES  {
     SIGN_IN_FAILURE = "Failed to sign in to Djangoly. Please try again or contact support at support@djangoly.com",
     LEGACY_API_KEY_MIGRATION = "Thanks for using Djangoly! We've updated our authentication system. Please sign in with GitHub to continue using Djangoly. If you have any questions, please contact support at support@djangoly.com",
     LEGACY_API_KEY_REQUIRED_MIGRATION = "Thanks for using Djangoly! We've updated our authentication system. GitHub authentication is now required. Please sign in with GitHub next time to continue using Djangoly. If you have any questions, please contact support at support@djangoly.com",
+    LEGACY_API_KEY_EXPIRED = "Your API key authentication has expired. Please sign in with GitHub to continue using Djangoly. If you need help migrating, contact support@djangoly.com",
 }

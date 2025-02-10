@@ -35,3 +35,9 @@ export const ACCESS_FORBIDDEN_NOTIFICATION_ID = `${EXTENSION_ID}/forbidden`;
 export const API_SERVER_URL = process.env.NODE_ENV === "development" ?  "http://localhost:8000" : "https://djangoly-api.onrender.com";
 
 export const API_KEY_SIGNUP_URL = "https://forms.gle/gEEZdfhWpQyQh2qVA";
+
+
+export const MIGRATION_REMINDER = {
+    LAST_PROMPTED_KEY: 'migrationLastPrompted',
+    COOLDOWN_HOURS: 48
+}; 

@@ -117,7 +117,7 @@ export class GitHubAuthProvider {
 	}
 
     private async clearSession() {
-        const session = await this.getCurrentSession();
+        const session = this.getCurrentSession();
         if (!session) return;
     
         try {

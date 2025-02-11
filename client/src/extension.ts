@@ -16,11 +16,10 @@ import {
 import { registerCommands } from './common/commands';
 import { registerActions } from './common/actions';
 import { setupFileWatchers } from './common/utils/fileWatchers';
-import { authenticateUserWithGitHub } from './common/auth/api';
 import { initializeTelemetry } from '../../shared/telemetry';
-import { SESSION_TOKEN_KEY, SESSION_USER, TELEMETRY_EVENTS, TELEMETRY_NOTIFICATION } from '../../shared/constants';
-import { UserSession } from './common/auth/github';
-import { AUTH_MESSAGES } from './common/constants/messages';
+import { SESSION_TOKEN_KEY, TELEMETRY_EVENTS, TELEMETRY_NOTIFICATION } from '../../shared/constants';
+import { AuthService } from './common/auth/authService';
+
 
 
 let client: LanguageClient;
@@ -34,57 +33,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	reporter.sendTelemetryEvent(TELEMETRY_EVENTS.EXTENSION_ACTIVATED);
 
-	const session: UserSession | undefined = context.globalState.get(SESSION_USER);
-	const legacyApiKey: string | undefined = context.globalState.get(COMMANDS.USER_API_KEY);
-	
-	if (legacyApiKey && !session) {
-		const migrateAction = "Sign in with GitHub";
-		const response = await vscode.window.showInformationMessage(
-			AUTH_MESSAGES.LEGACY_API_KEY_MIGRATION,
-			migrateAction
-		);
-
-		if (response === migrateAction) {
-			const isAuthenticated = await authenticateUserWithGitHub(context);
-			if (!isAuthenticated) {
-				reporter.sendTelemetryErrorEvent(TELEMETRY_EVENTS.AUTHENTICATION_FAILED, {
-					reason: 'Legacy user migration failed',
-					had_api_key: 'true',
-					user_api_key: legacyApiKey,
-				});
-				vscode.window.showErrorMessage(AUTH_MESSAGES.AUTHENTICATION_REQUIRED);
-				return;
-			}
-			// Clear legacy API key after successful migration
-			await context.globalState.update(COMMANDS.USER_API_KEY, undefined);
-			reporter.sendTelemetryEvent(TELEMETRY_EVENTS.LEGACY_USER_MIGRATED);
-		} else {
-			vscode.window.showWarningMessage(AUTH_MESSAGES.LEGACY_API_KEY_REQUIRED_MIGRATION);
-			return;
-		}
-	} else if (!session || !session.user.has_agreed_to_terms) {
-		const isAuthenticated = await authenticateUserWithGitHub(context);
-		if (!isAuthenticated) {
-			vscode.window.showWarningMessage(AUTH_MESSAGES.AUTHENTICATION_REQUIRED);
-			reporter.sendTelemetryErrorEvent(TELEMETRY_EVENTS.AUTHENTICATION_FAILED, {
-				reason: 'User did not authenticate',
-				user_id: session?.user.id || 'unknown',
-			});
-			console.log('Failed to authenticate user. Exiting extension.');
-			return;
-
-		}
-		
-		const updatedSession = context.globalState.get<UserSession>(SESSION_USER);
-		if (!updatedSession?.user.has_agreed_to_terms) {
-			vscode.window.showErrorMessage(AUTH_MESSAGES.MUST_AGREE_TO_TERMS);
-			reporter.sendTelemetryErrorEvent(TELEMETRY_EVENTS.TERMS_NOT_ACCEPTED, {
-				reason: 'User did not agree to terms',
-				user_id: updatedSession?.user.id || 'unknown',
-			});
-			console.log('User has not agreed to terms. Exiting extension.');
-			return;
-		}
+	const authService = new AuthService(context);
+	if (!await authService.validateAuth()) {
+		return;
 	}
 
 	const serverModule = context.asAbsolutePath(
@@ -122,14 +73,15 @@ export async function activate(context: vscode.ExtensionContext) {
 	
 	activateClientNotifications(client);
 
-	registerCommands(context, client, activate, deactivate);
+	registerCommands(context, client, activate, deactivate, authService);
 	registerActions(context, client);
 
 	client.onRequest(COMMANDS.GET_GIT_DIFF, getChangedLines);
 
-	const token = context.globalState.get(SESSION_TOKEN_KEY);
-	if (token) {
-		await client.sendRequest(COMMANDS.UPDATE_CACHED_USER_TOKEN, token);
+	const session = authService.getSession();
+	if (session) {
+		console.log(`Caching user token on language server: ${session.token}`);
+		await client.sendRequest(COMMANDS.UPDATE_CACHED_USER_TOKEN, session.token);
 	}
 
 	const apiFolderWatchers = await setupFileWatchers(client, context);

@@ -6,20 +6,25 @@ import {
 	SESSION_TOKEN_KEY,
 	SESSION_USER
 } from "../../../../shared/constants";
+import { MIGRATION_REMINDER } from '../constants';
 
 export interface UserSession {
 	token: string;
+	is_valid?: boolean;
 	user: {
 		id: string;
 		email: string;
 		github_login: string;
-        has_agreed_to_terms: boolean;
+		has_agreed_to_terms: boolean;
 	};
-    session: {
-        id: number;
-        key: string;
-        created_at: string;
-    }
+	session: {
+		id: number;
+		key: string;
+		created_at: string;
+		expires_at?: string;
+		auth_method?: 'api_key' | 'github';
+	};
+	migration_notice?: string;
 }
 
 const GITHUB_AUTH_PROVIDER_ID = "github";
@@ -68,7 +73,6 @@ export class GitHubAuthProvider {
 	}
 
 	async signOut(): Promise<void> {
-        console.log("Signing out from GitHub");
 		await this.clearSession();
 	}
 
@@ -112,7 +116,7 @@ export class GitHubAuthProvider {
 	}
 
     private async clearSession() {
-        const session = await this.getCurrentSession();
+        const session = this.getCurrentSession();
         if (!session) return;
     
         try {
@@ -129,6 +133,7 @@ export class GitHubAuthProvider {
     
             await this.context.globalState.update(SESSION_TOKEN_KEY, undefined);
             await this.context.globalState.update(SESSION_USER, undefined);
+			await this.context.globalState.update(MIGRATION_REMINDER.LAST_PROMPTED_KEY, undefined);
             this.sessionChangeEmitter.fire(undefined);
         } catch (error) {
             console.error("Error during sign out:", error);

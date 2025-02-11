@@ -4,19 +4,17 @@ import { LanguageClient } from 'vscode-languageclient/node';
 import { API_KEY_SIGNUP_URL, API_SERVER_URL, COMMANDS, TELEMETRY_EVENTS } from "../../../../shared/constants";
 import { reporter } from '../../../../shared/telemetry';
 import { AUTH_MESSAGES } from '../constants/messages';
-
-import { GitHubAuthProvider } from './github';
+import { GitHubAuthProvider, UserSession } from './github';
 
 
 export async function signOutUser(context: vscode.ExtensionContext) {
 	const authProvider = new GitHubAuthProvider(context);
 	console.log("Signing out from Djangoly");
 	await authProvider.signOut();
-	vscode.window.showInformationMessage(AUTH_MESSAGES.SIGN_OUT);
 }
 
 
-export async function validateApiKey(apiKey: string): Promise<boolean> {
+export async function validateApiKey(apiKey: string): Promise<UserSession | false> {
     try {
         const response = await fetch(`${API_SERVER_URL}/auth/validate-api-key/`, {
             method: 'POST',
@@ -27,12 +25,26 @@ export async function validateApiKey(apiKey: string): Promise<boolean> {
         });
 
         if (!response.ok) {
-			throw new Error(`Failed to validate API key: ${response.statusText}`);
-		}
+            throw new Error(`Failed to validate API key: ${response.statusText}`);
+        }
 
-		const data: any = await response.json();
-		return data.is_valid;
+        const userSession: UserSession = await response.json() as UserSession;
+        if (!userSession.is_valid) {
+            return false;
+        }
+
+        if (!userSession.session?.key || !userSession.session?.expires_at) {
+            console.error('Invalid session data from server:', userSession);
+            return false;
+        }
+
+        return userSession;
     } catch (error) {
+        console.error('API key validation error:', error);
+        reporter.sendTelemetryErrorEvent(TELEMETRY_EVENTS.API_KEY_VALIDATION_ERROR, {
+            error: JSON.stringify(error),
+            api_key: apiKey,
+        });
         return false;
     }
 }

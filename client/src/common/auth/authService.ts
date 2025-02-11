@@ -3,7 +3,7 @@ import { reporter } from '../../../../shared/telemetry';
 import { COMMANDS, SESSION_TOKEN_KEY, SESSION_USER, TELEMETRY_EVENTS } from '../../../../shared/constants';
 import { AUTH_MESSAGES, AUTH_MODAL_TITLES } from '../constants/messages';
 import { UserSession } from './github';
-import { authenticateUserWithGitHub, validateApiKey } from './api';
+import { authenticateUserWithGitHub, signOutUser, validateApiKey } from './api';
 import { MIGRATION_REMINDER } from '../constants';
 
 export class AuthService {
@@ -69,6 +69,15 @@ export class AuthService {
         } finally {
             this.authInProgress = false;
         }
+    }
+
+    getSession(): UserSession | undefined {
+        return this.context.globalState.get<UserSession>(SESSION_USER);
+    }
+
+    async signOut(): Promise<void> {
+        await signOutUser(this.context);
+        vscode.window.showInformationMessage(AUTH_MESSAGES.SIGN_OUT);
     }
 
     private async handleLegacyAuth(legacyApiKey: string): Promise<boolean> {

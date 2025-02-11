@@ -11,7 +11,6 @@ export async function signOutUser(context: vscode.ExtensionContext) {
 	const authProvider = new GitHubAuthProvider(context);
 	console.log("Signing out from Djangoly");
 	await authProvider.signOut();
-	vscode.window.showInformationMessage(AUTH_MESSAGES.SIGN_OUT);
 }
 
 

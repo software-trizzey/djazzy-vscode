@@ -4,16 +4,14 @@ import { LanguageClient } from "vscode-languageclient/node";
 import {
     COMMANDS,
     TELEMETRY_EVENTS,
-    SESSION_USER,
     EXTENSION_ID_WITH_PUBLISHER,
     EXTENSION_NAME
 } from '../../../shared/constants';
 import { reporter } from '../../../shared/telemetry';
 
-import { UserSession } from './auth/github';
 import { ExceptionHandlingCommandProvider } from './providers/exceptionProvider';
-import { authenticateUserWithGitHub, signOutUser } from './auth/api';
 import { AUTH_MESSAGES } from './constants/messages';
+import { AuthService } from './auth/authService';
 
 const WORKBENCH_ACTIONS = {
 	OPEN_WALKTHROUGH: 'workbench.action.openWalkthrough',
@@ -25,24 +23,26 @@ export async function registerCommands(
     client: LanguageClient,
     activate: (context: vscode.ExtensionContext) => Promise<void>,
     deactivate: (context: vscode.ExtensionContext) => Thenable<void> | undefined,
+    authService: AuthService
 ): Promise<void> {
 
     context.subscriptions.push(vscode.commands.registerCommand(
         COMMANDS.SIGN_IN,
         async () => {
             try {
-                let session = context.globalState.get<UserSession>(SESSION_USER);
+                let session = authService.getSession();
                 if (session) {
                     vscode.window.showInformationMessage('You are already signed in.');
                     return;
                 }
                 
                 reporter.sendTelemetryEvent(TELEMETRY_EVENTS.SIGN_IN_STARTED);
-                const authenticated = await authenticateUserWithGitHub(context);
+                const authenticated = await authService.validateAuth();
                 if (!authenticated) {
                     throw new Error('User did not authenticate');
                 }
-                session = context.globalState.get<UserSession>(SESSION_USER);
+
+                session = authService.getSession();
                 reporter.sendTelemetryEvent(TELEMETRY_EVENTS.SIGN_IN, {
                     user: session?.user.id || 'unknown',
                 });
@@ -58,13 +58,13 @@ export async function registerCommands(
     context.subscriptions.push(vscode.commands.registerCommand(
         COMMANDS.SIGN_OUT,
         async () => {
-            const session = context.globalState.get<UserSession>(SESSION_USER);
+            const session = authService.getSession();
             if (!session) {
                 vscode.window.showInformationMessage('You are not signed in.');
                 return;
             }
 
-            await signOutUser(context);
+            await authService.signOut();
             reporter.sendTelemetryEvent(TELEMETRY_EVENTS.SIGN_OUT, {
                 user: session?.user.id || 'unknown',
             });

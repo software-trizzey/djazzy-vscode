@@ -73,7 +73,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	
 	activateClientNotifications(client);
 
-	registerCommands(context, client, activate, deactivate);
+	registerCommands(context, client, activate, deactivate, authService);
 	registerActions(context, client);
 
 	client.onRequest(COMMANDS.GET_GIT_DIFF, getChangedLines);

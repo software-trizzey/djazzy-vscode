@@ -6,6 +6,7 @@ import {
 	SESSION_TOKEN_KEY,
 	SESSION_USER
 } from "../../../../shared/constants";
+import { MIGRATION_REMINDER } from '../constants';
 
 export interface UserSession {
 	token: string;
@@ -72,7 +73,7 @@ export class GitHubAuthProvider {
 	}
 
 	async signOut(): Promise<void> {
-        console.log("Signing out from GitHub");
+        console.log("Signing out from Djangoly");
 		await this.clearSession();
 	}
 
@@ -133,6 +134,7 @@ export class GitHubAuthProvider {
     
             await this.context.globalState.update(SESSION_TOKEN_KEY, undefined);
             await this.context.globalState.update(SESSION_USER, undefined);
+			await this.context.globalState.update(MIGRATION_REMINDER.LAST_PROMPTED_KEY, undefined);
             this.sessionChangeEmitter.fire(undefined);
         } catch (error) {
             console.error("Error during sign out:", error);

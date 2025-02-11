@@ -73,7 +73,6 @@ export class GitHubAuthProvider {
 	}
 
 	async signOut(): Promise<void> {
-        console.log("Signing out from Djangoly");
 		await this.clearSession();
 	}
 

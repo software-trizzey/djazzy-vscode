@@ -12,112 +12,146 @@ export class AuthService {
         private handleValidateApiKey: typeof validateApiKey = validateApiKey
     ) {}
 
-    async validateAuth(): Promise<boolean> {
-        const session = this.context.globalState.get<UserSession>(SESSION_USER);
-        const legacyApiKey = this.context.globalState.get<string>(COMMANDS.USER_API_KEY);
+    private authInProgress = false;
 
-        if (legacyApiKey && !session) {
-            return await this.handleLegacyAuth(legacyApiKey);
-        } else if (!session || !session.user.has_agreed_to_terms) {
-            return await this.handleGitHubAuth();
+    async validateAuth(): Promise<boolean> {
+        if (this.authInProgress) {
+            return true;
         }
 
-        return true;
+		let session: UserSession | undefined;
+		let legacyApiKey: string | undefined;
+
+        try {
+            this.authInProgress = true;
+            session = this.context.globalState.get<UserSession>(SESSION_USER);
+            legacyApiKey = this.context.globalState.get<string>(COMMANDS.USER_API_KEY);
+
+            if (legacyApiKey && !session) {
+                const result = await this.handleLegacyAuth(legacyApiKey);
+                if (!result) {
+                    const tryGitHub = await vscode.window.showWarningMessage(
+                        AUTH_MESSAGES.LEGACY_AUTH_FAILED,
+                        "Try GitHub Sign-in"
+                    );
+                    if (tryGitHub) {
+                        return await this.handleGitHubAuth();
+                    }
+                }
+                return result;
+            } else if (!session || !session.user.has_agreed_to_terms) {
+                return await this.handleGitHubAuth();
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Auth validation error:', error);
+			reporter.sendTelemetryErrorEvent(TELEMETRY_EVENTS.AUTHENTICATION_FAILED, {
+				reason: 'Auth validation error',
+				user_id: session?.user.id || 'unknown',
+				legacy_api_key: legacyApiKey || 'N/A',
+			});
+            vscode.window.showErrorMessage(AUTH_MESSAGES.GENERAL_AUTH_ERROR);
+            return false;
+        } finally {
+            this.authInProgress = false;
+        }
     }
 
     private async handleLegacyAuth(legacyApiKey: string): Promise<boolean> {
-        const apiKeySession = await this.handleValidateApiKey(legacyApiKey);
-        if (!apiKeySession) {
-            vscode.window.showErrorMessage(AUTH_MESSAGES.INVALID_API_KEY);
+        try {
+            const apiKeySession = await this.handleValidateApiKey(legacyApiKey);
+            if (!apiKeySession) {
+                vscode.window.showErrorMessage(AUTH_MESSAGES.INVALID_API_KEY);
+                return false;
+            }
+
+            const migrationResult = await this.promptMigration(legacyApiKey, 
+                this.calculateDaysLeft(apiKeySession));
+
+            if (migrationResult) {
+                await this.context.globalState.update(SESSION_TOKEN_KEY, apiKeySession.token);
+                await this.context.globalState.update(SESSION_USER, apiKeySession);
+            }
+
+            return migrationResult;
+        } catch (error) {
+            console.error('Legacy auth error:', error);
+            vscode.window.showErrorMessage(AUTH_MESSAGES.GENERAL_AUTH_ERROR);
             return false;
         }
-
-        const expiresAt = new Date(apiKeySession.session.data?.expires_at || '');
-        if (!apiKeySession.session.data?.expires_at || isNaN(expiresAt.getTime())) {
-            console.error('Invalid expiration date from server');
-            vscode.window.showErrorMessage(AUTH_MESSAGES.INVALID_API_KEY);
-            return false;
-        }
-
-        if (apiKeySession.migration_notice) {
-            console.log('Migration notice:', apiKeySession.migration_notice);
-        }
-
-        await this.context.globalState.update(SESSION_TOKEN_KEY, apiKeySession.token);
-        await this.context.globalState.update(SESSION_USER, apiKeySession);
-
-        const today = new Date();
-        const daysLeft = Math.ceil((expiresAt.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-        
-        return await this.promptMigration(legacyApiKey, daysLeft);
     }
 
-	private async promptMigration(legacyApiKey: string, daysLeft: number): Promise<boolean> {
-		try {
-			console.log('Executing promptMigration...');
-			console.log('Days left:', daysLeft);
-	
-			const lastPrompted = this.context.globalState.get<string>(MIGRATION_REMINDER.LAST_PROMPTED_KEY);
-			console.log('Last prompted at:', lastPrompted);
-	
-			const now = new Date();
-			
-			if (lastPrompted) {
-				const lastPromptedDate = new Date(lastPrompted);
-				const hoursSinceLastPrompt = (now.getTime() - lastPromptedDate.getTime()) / (1000 * 60 * 60);
-				console.log('Hours since last prompt:', hoursSinceLastPrompt);
-	
-				if (hoursSinceLastPrompt < MIGRATION_REMINDER.COOLDOWN_HOURS) {
-					console.log('Skipping migration prompt due to cooldown.');
-					return true;
-				}
-			}
-	
-			const migrateAction = "Sign in with GitHub";
-			const remindLater = "Remind me later";
-			let response;
+    private calculateDaysLeft(apiKeySession: UserSession): number {
+        const expiresAt = new Date(apiKeySession.session.data?.expires_at || '');
+        const today = new Date();
+        const daysLeft = Math.ceil((expiresAt.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        return daysLeft;
+    }
 
+    private async promptMigration(legacyApiKey: string, daysLeft: number): Promise<boolean> {
+        try {
+            const lastPrompted = this.context.globalState.get<string>(MIGRATION_REMINDER.LAST_PROMPTED_KEY);
+            const now = new Date();
+            
+            if (lastPrompted) {
+                const lastPromptedDate = new Date(lastPrompted);
+                const hoursSinceLastPrompt = (now.getTime() - lastPromptedDate.getTime()) / (1000 * 60 * 60);
+                console.log('Hours since last prompt:', hoursSinceLastPrompt);
+    
+                if (hoursSinceLastPrompt < MIGRATION_REMINDER.COOLDOWN_HOURS) {
+                    console.log('Skipping migration prompt due to cooldown.');
+                    return true;
+                }
+            }
+    
+            const migrateAction = "Sign in with GitHub";
+            const remindLater = "Remind me later";
+            let response;
+
+            if (daysLeft <= 0) {
+                response = await vscode.window.showWarningMessage(
+                    AUTH_MESSAGES.LEGACY_API_KEY_EXPIRED,
+                    migrateAction
+                );
+            } else {
+                response = await vscode.window.showInformationMessage(
+                    AUTH_MESSAGES.LEGACY_API_KEY_MIGRATION + ` You have ${daysLeft} days to migrate.`,
+                    migrateAction,
+                    remindLater
+                );
+            }
+    
+            await this.context.globalState.update(MIGRATION_REMINDER.LAST_PROMPTED_KEY, now.toISOString());
+    
+            if (response === migrateAction) {
+                const isAuthenticated = await authenticateUserWithGitHub(this.context);
+                if (isAuthenticated) {
+                    await this.context.globalState.update(COMMANDS.USER_API_KEY, undefined);
+                    await this.context.globalState.update(MIGRATION_REMINDER.LAST_PROMPTED_KEY, undefined);
+                    reporter.sendTelemetryEvent(TELEMETRY_EVENTS.LEGACY_USER_MIGRATED);
+                }
+                return isAuthenticated;
+            }
+
+			// if user refused migration and days left is 0 we should block them and
+			// state that they can't continue without migrating
 			if (daysLeft <= 0) {
-				console.log("Triggering warning for expired API key...");
-				const response = await vscode.window.showWarningMessage(
-					AUTH_MESSAGES.LEGACY_API_KEY_EXPIRED,
-					migrateAction
-				);
-				console.log("User response for expired API key:", response);
-			} else {
-				console.log('Showing migration prompt...');
-				response = await vscode.window.showInformationMessage(
-					AUTH_MESSAGES.LEGACY_API_KEY_MIGRATION + ` You have ${daysLeft} days to migrate.`,
-					migrateAction,
-					remindLater
-				);
-				console.log('User response:', response);
+				vscode.window.showErrorMessage(AUTH_MESSAGES.LEGACY_API_KEY_EXPIRED);
+				return false;
 			}
-	
-			await this.context.globalState.update(MIGRATION_REMINDER.LAST_PROMPTED_KEY, now.toISOString());
-	
-			if (response === migrateAction) {
-				console.log('User chose to migrate.');
-				const isAuthenticated = await authenticateUserWithGitHub(this.context);
-				if (isAuthenticated) {
-					await this.context.globalState.update(COMMANDS.USER_API_KEY, undefined);
-					await this.context.globalState.update(MIGRATION_REMINDER.LAST_PROMPTED_KEY, undefined);
-					reporter.sendTelemetryEvent(TELEMETRY_EVENTS.LEGACY_USER_MIGRATED);
-				}
-				return isAuthenticated;
-			} 
-	
-			console.log('User postponed migration.');
-			reporter.sendTelemetryEvent(TELEMETRY_EVENTS.LEGACY_USER_POSTPONED, {
-				days_left: daysLeft.toString(),
-				user_api_key: legacyApiKey,
-			});
-			return true;
-		} catch (error) {
-			console.error('Error in promptMigration:', error);
-			throw error;
-		}
-	}	
+    
+            console.log('User postponed migration.');
+            reporter.sendTelemetryEvent(TELEMETRY_EVENTS.LEGACY_USER_POSTPONED, {
+                days_left: daysLeft.toString(),
+                user_api_key: legacyApiKey,
+            });
+            return true;
+        } catch (error) {
+            console.error('Error in promptMigration:', error);
+            throw error;
+        }
+    }
 
     private async handleGitHubAuth(): Promise<boolean> {
         const isAuthenticated = await authenticateUserWithGitHub(this.context);

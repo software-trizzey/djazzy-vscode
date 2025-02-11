@@ -3,8 +3,7 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { AuthService } from '../common/auth/authService';
 import { COMMANDS } from '../../../shared/constants';
-import { MIGRATION_REMINDER } from '../common/constants';
-
+import { MIGRATION_REMINDER, SESSION_USER } from '../common/constants';
 import * as telemetry from '../../../shared/telemetry';
 import { validateApiKey } from '../common/auth/api';
 
@@ -19,7 +18,6 @@ suite('AuthService Migration Tests', () => {
     let showWarningStub: sinon.SinonStub;
     let showInfoStub: sinon.SinonStub;
     let showErrorMessageStub: sinon.SinonStub;
-
     const mockValidUserSession = {
         token: 'test-token',
         user: {
@@ -45,14 +43,10 @@ suite('AuthService Migration Tests', () => {
             sendTelemetryErrorEvent: sandbox.stub(),
             dispose: sandbox.stub(),
         };
-
         sandbox.stub(telemetry, 'reporter').value(mockReporter);
-
-        // Stubbing vscode.window methods inside setup() so they're fresh for each test
         showWarningStub = sandbox.stub(vscode.window, 'showWarningMessage').resolves('Sign in with GitHub' as any);
         showInfoStub = sandbox.stub(vscode.window, 'showInformationMessage').resolves('Remind me later' as any);
         showErrorMessageStub = sandbox.stub(vscode.window, 'showErrorMessage').resolves(undefined);
-
         mockState = new Map();
         context = {
             globalState: {
@@ -60,14 +54,12 @@ suite('AuthService Migration Tests', () => {
                 update: async (key: string, value: any) => mockState.set(key, value)
             }
         } as any;
-
         global.authenticateUserWithGitHub = async () => mockValidUserSession;
-
         authService = new AuthService(context, validateApiKeyStub);
     });
 
     teardown(() => {
-        sandbox.restore(); // This will restore all stubs and reset mocks
+        sandbox.restore();
         (global as any).reporter = undefined;
         delete global.authenticateUserWithGitHub;
         mockState.clear();
@@ -79,16 +71,12 @@ suite('AuthService Migration Tests', () => {
             session: {
                 ...mockValidUserSession.session,
                 data: {
-                    expires_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() // Expired yesterday
-                }
+                    expires_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()                }
             }
         };
-
         await context.globalState.update(COMMANDS.USER_API_KEY, 'test-key');
         validateApiKeyStub.resolves(expiredSession);
-
         await authService.validateAuth();
-
         assert.strictEqual(showWarningStub.called, true, 'Warning prompt should be shown for expired key');
         assert.strictEqual(showWarningStub.firstCall.args[0].includes('expired'), true, 'Warning should mention expiration');
     });
@@ -99,18 +87,14 @@ suite('AuthService Migration Tests', () => {
             session: {
                 ...mockValidUserSession.session,
                 data: {
-                    expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // Expires in 7 days
-                }
+                    expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()                }
             }
         };
-
         const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
         await context.globalState.update(MIGRATION_REMINDER.LAST_PROMPTED_KEY, twoHoursAgo);
         validateApiKeyStub.resolves(validSession);
-
         await context.globalState.update(COMMANDS.USER_API_KEY, 'test-key');
         await authService.validateAuth();
-
         assert.strictEqual(showInfoStub.called, false, 'Info prompt should not be shown during cooldown');
         assert.strictEqual(
             await context.globalState.get(MIGRATION_REMINDER.LAST_PROMPTED_KEY),
@@ -129,17 +113,42 @@ suite('AuthService Migration Tests', () => {
                 }
             }
         };
-
         const cooldownHoursAndOne = MIGRATION_REMINDER.COOLDOWN_HOURS + 1;
         const oldPromptTime = new Date(Date.now() - (cooldownHoursAndOne * 60 * 60 * 1000)).toISOString();
         await context.globalState.update(MIGRATION_REMINDER.LAST_PROMPTED_KEY, oldPromptTime);
         await context.globalState.update(COMMANDS.USER_API_KEY, 'test-key');
-
         validateApiKeyStub.resolves(validSession);
-
         await authService.validateAuth();
-
         sinon.assert.called(showInfoStub);
         assert.strictEqual(showInfoStub.firstCall.args[0].includes('7 days'), true);
+    });
+    
+    test('Should prevent concurrent auth validation requests', async () => {
+
+        const validSession = {
+            ...mockValidUserSession,
+            session: {
+                ...mockValidUserSession.session,
+                data: {
+                    expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+                }
+            }
+        };
+        
+        validateApiKeyStub.reset();
+        let resolveValidation!: (value: any) => void;
+        new Promise(resolve => {
+            resolveValidation = resolve;
+        });
+
+        validateApiKeyStub.resolves(validSession);
+        await context.globalState.update(COMMANDS.USER_API_KEY, 'test-key');
+        await context.globalState.update(SESSION_USER, validSession);
+
+        const firstValidation = authService.validateAuth();
+        const secondValidation = authService.validateAuth();
+
+        await Promise.all([firstValidation, secondValidation]);
+        sinon.assert.calledOnce(validateApiKeyStub);
     });
 });

@@ -35,7 +35,7 @@ export class AuthService {
             console.log('Legacy API key:', legacyApiKey);
             console.log("isDev", process.env.NODE_ENV === 'development');
 
-            if (legacyApiKey && !session) {
+            if (legacyApiKey) {
                 console.log('Handling legacy auth...');
                 const result = await this.handleLegacyAuth(legacyApiKey);
                 if (!result) {

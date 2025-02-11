@@ -78,9 +78,10 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	client.onRequest(COMMANDS.GET_GIT_DIFF, getChangedLines);
 
-	const token = context.globalState.get(SESSION_TOKEN_KEY);
-	if (token) {
-		await client.sendRequest(COMMANDS.UPDATE_CACHED_USER_TOKEN, token);
+	const session = authService.getSession();
+	if (session) {
+		console.log(`Caching user token on language server: ${session.token}`);
+		await client.sendRequest(COMMANDS.UPDATE_CACHED_USER_TOKEN, session.token);
 	}
 
 	const apiFolderWatchers = await setupFileWatchers(client, context);

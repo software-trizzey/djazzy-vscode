@@ -4,7 +4,8 @@ import { COMMANDS } from '../constants';
 import { ERROR_CODES, ERROR_MESSAGES } from '../constants/errors';
 
 import { reporter } from '../../../../shared/telemetry';
-import { TELEMETRY_EVENTS } from '../../../../shared/constants';
+import { SESSION_USER, TELEMETRY_EVENTS } from '../../../../shared/constants';
+import { UserSession } from '../auth/github';
 
 
 interface FunctionBodyNode {
@@ -211,13 +212,13 @@ export class ExceptionHandlingCommandProvider {
                     feedbackActions.positive, feedbackActions.neutral, feedbackActions.negative
                 ).then(feedback => {
                     if (feedback) {
-                        const token = this.context.globalState.get(COMMANDS.USER_API_KEY);
-                        if (!token) {
+                        const session = this.context.globalState.get<UserSession>(SESSION_USER);
+                        if (!session) {
                             console.log('User is not signed in. Skipping feedback tracking.');
                             return;
                         }
                         reporter.sendTelemetryEvent(TELEMETRY_EVENTS.EXCEPTION_HANDLING_RESULT_FEEDBACK, {
-                            user: token as string,
+                            user: session.user.id,
                             feedback: feedback
                         });
                     }

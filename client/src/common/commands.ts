@@ -87,14 +87,17 @@ export async function registerCommands(
     
     context.subscriptions.push(vscode.commands.registerCommand(
         COMMANDS.ANALYZE_EXCEPTION_HANDLING, async (uri: vscode.Uri, range: vscode.Range | undefined) => {
-            const token = context.globalState.get(COMMANDS.USER_API_KEY);
-            if (!token) {
+            const session = authService.getSession();
+            if (!session || !session.token) {
                 vscode.window.showErrorMessage('Please sign in to use this feature.');
                 return;
             }
 
-            const editor = vscode.window.activeTextEditor;
+            reporter.sendTelemetryEvent(TELEMETRY_EVENTS.EXCEPTION_HANDLING_TRIGGERED, {
+                user: session.user.id,
+            });
 
+            const editor = vscode.window.activeTextEditor;
             if (!editor || editor.document.uri.toString() !== uri.toString()) {
                 vscode.window.showErrorMessage('Could not find the active editor for the selected file.');
                 return;

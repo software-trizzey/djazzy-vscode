@@ -314,6 +314,7 @@ connection.onRequest(COMMANDS.CHECK_TESTS_EXISTS, async (relativePath: string) =
 });
 
 connection.onRequest(COMMANDS.UPDATE_CACHED_USER_TOKEN, (token: string) => {
+	console.log(`Updating cached user token: ${token}`);
 	updateCachedUserToken(token);
 });
 
@@ -373,7 +374,6 @@ connection.onRequest(COMMANDS.PROVIDE_EXCEPTION_HANDLING, async (params) => {
         imports: functionNode.context.imports,
         callSites: functionNode.context.call_sites,
         returns: functionNode.returns,
-        apiKey: cachedUserToken,
     };
 
 	if (lastTokenSource) {
@@ -382,7 +382,7 @@ connection.onRequest(COMMANDS.PROVIDE_EXCEPTION_HANDLING, async (params) => {
 	}
 
 	lastTokenSource = new CancellationTokenSource();
-    const suggestions = await generateExceptionHandlingSuggestions(payload);
+    const suggestions = await generateExceptionHandlingSuggestions(payload, cachedUserToken);
 
     const completionItems = suggestions.map((suggestion: any, index) => {
         const item = CompletionItem.create(suggestion.title || `Suggestion ${index + 1}`);
@@ -406,13 +406,14 @@ async function findFunctionInDocument(document: TextDocument, functionName: stri
     return functionNode;
 }
 
-async function generateExceptionHandlingSuggestions(payload: any): Promise<string[]> {
+async function generateExceptionHandlingSuggestions(payload: any, sessionToken: string): Promise<string[]> {
     const url = `${API_SERVER_URL}/chat/refactor/`;
 
     try {
         const response = await fetch(url, {
             method: 'POST',
             headers: {
+				'X-Session-Token': sessionToken,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(payload),

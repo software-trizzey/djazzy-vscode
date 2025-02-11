@@ -6,18 +6,22 @@ import { COMMANDS } from '../../../shared/constants';
 import { MIGRATION_REMINDER, SESSION_USER } from '../common/constants';
 import * as telemetry from '../../../shared/telemetry';
 import { validateApiKey } from '../common/auth/api';
+import { LanguageClient } from 'vscode-languageclient/node';
 
 const sandbox = sinon.createSandbox();
 const validateApiKeyStub = sinon.stub();
 
 suite('AuthService Migration Tests', () => {
     let context: vscode.ExtensionContext;
+    let clientStub: sinon.SinonStubbedInstance<LanguageClient>;
     let authService: AuthService;
     let mockState: Map<string, any>;
     let mockReporter: any;
     let showWarningStub: sinon.SinonStub;
     let showInfoStub: sinon.SinonStub;
     let showErrorMessageStub: sinon.SinonStub;
+
+
     const mockValidUserSession = {
         token: 'test-token',
         user: {
@@ -44,10 +48,13 @@ suite('AuthService Migration Tests', () => {
             dispose: sandbox.stub(),
         };
         sandbox.stub(telemetry, 'reporter').value(mockReporter);
+
+        clientStub = sinon.createStubInstance(LanguageClient);
         showWarningStub = sandbox.stub(vscode.window, 'showWarningMessage').resolves('Sign in with GitHub' as any);
         showInfoStub = sandbox.stub(vscode.window, 'showInformationMessage').resolves('Remind me later' as any);
         showErrorMessageStub = sandbox.stub(vscode.window, 'showErrorMessage').resolves(undefined);
         mockState = new Map();
+        
         context = {
             globalState: {
                 get: (key: string) => mockState.get(key),

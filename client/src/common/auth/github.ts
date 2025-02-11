@@ -9,6 +9,7 @@ import {
 
 export interface UserSession {
 	token: string;
+	is_valid?: boolean;
 	user: {
 		id: string;
 		email: string;
@@ -19,10 +20,8 @@ export interface UserSession {
 		id: number;
 		key: string;
 		created_at: string;
-		data?: {
-			expires_at?: string;
-			auth_method?: 'api_key' | 'github';
-		};
+		expires_at?: string;
+		auth_method?: 'api_key' | 'github';
 	};
 	migration_notice?: string;
 }

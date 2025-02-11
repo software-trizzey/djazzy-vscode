@@ -29,22 +29,17 @@ export async function validateApiKey(apiKey: string): Promise<UserSession | fals
             throw new Error(`Failed to validate API key: ${response.statusText}`);
         }
 
-        type ApiResponse = {
-            is_valid: boolean;
-            session: UserSession;
-        }
-
-        const data: ApiResponse = await response.json() as ApiResponse;
-        if (!data.is_valid) {
+        const userSession: UserSession = await response.json() as UserSession;
+        if (!userSession.is_valid) {
             return false;
         }
 
-        if (!data.session?.session?.key || !data.session?.session?.data?.expires_at) {
-            console.error('Invalid session data from server:', data);
+        if (!userSession.session?.key || !userSession.session?.expires_at) {
+            console.error('Invalid session data from server:', userSession);
             return false;
         }
 
-        return data.session as UserSession;
+        return userSession;
     } catch (error) {
         console.error('API key validation error:', error);
         reporter.sendTelemetryErrorEvent(TELEMETRY_EVENTS.API_KEY_VALIDATION_ERROR, {

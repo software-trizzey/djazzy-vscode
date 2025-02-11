@@ -15,11 +15,9 @@ export const mockValidUserSession: UserSession = {
         id: 1,
         key: 'test-session-key',
         created_at: new Date().toISOString(),
-        data: {
-            expires_at: new Date(
-				Date.now() + MIGRATION_REMINDER.COOLDOWN_HOURS * 60 * 60 * 1000
-			).toISOString()
-        }
+        expires_at: new Date(
+			Date.now() + MIGRATION_REMINDER.COOLDOWN_HOURS * 60 * 60 * 1000
+		).toISOString()
     },
     migration_notice: 'test-migration-notice'
 };
@@ -28,10 +26,8 @@ export const mockExpiredUserSession: UserSession = {
     ...mockValidUserSession,
     session: {
         ...mockValidUserSession.session,
-        data: {
-            expires_at: new Date(
-				Date.now() - TWENTY_FOUR_HOURS_IN_MS
-			).toISOString()
-        }
+        expires_at: new Date(
+			Date.now() - TWENTY_FOUR_HOURS_IN_MS
+		).toISOString()
     }
 };

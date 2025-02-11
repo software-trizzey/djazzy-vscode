@@ -7,6 +7,9 @@ import { MIGRATION_REMINDER, SESSION_USER } from '../common/constants';
 import * as telemetry from '../../../shared/telemetry';
 import { validateApiKey } from '../common/auth/api';
 import { LanguageClient } from 'vscode-languageclient/node';
+import { UserSession } from '../common/auth/github';
+import { mockValidUserSession } from '../testFixture/mockUserSession';
+import { AUTH_MESSAGES, AUTH_MODAL_TITLES } from '../common/constants/messages';
 
 const sandbox = sinon.createSandbox();
 const validateApiKeyStub = sinon.stub();
@@ -20,26 +23,6 @@ suite('AuthService Migration Tests', () => {
     let showWarningStub: sinon.SinonStub;
     let showInfoStub: sinon.SinonStub;
     let showErrorMessageStub: sinon.SinonStub;
-
-
-    const mockValidUserSession = {
-        token: 'test-token',
-        user: {
-            has_agreed_to_terms: true,
-            id: 'test-user-id',
-            email: 'test@example.com',
-            github_login: 'test-github-login'
-        },
-        session: {
-            id: 1,
-            key: 'test-session-key',
-            created_at: new Date().toISOString(),
-            data: {
-                expires_at: new Date(Date.now() + MIGRATION_REMINDER.COOLDOWN_HOURS * 60 * 60 * 1000).toISOString() 
-            }
-        },
-        migration_notice: 'test-migration-notice'
-    };
 
     setup(() => {
         mockReporter = {
@@ -73,28 +56,39 @@ suite('AuthService Migration Tests', () => {
     });
 
     test('Should force migration prompt when API key is expired', async () => {
-        const expiredSession = {
+        const expiredSession: UserSession = {
             ...mockValidUserSession,
             session: {
                 ...mockValidUserSession.session,
-                data: {
-                    expires_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()                }
+                    expires_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
             }
         };
         await context.globalState.update(COMMANDS.USER_API_KEY, 'test-key');
         validateApiKeyStub.resolves(expiredSession);
         await authService.validateAuth();
         assert.strictEqual(showWarningStub.called, true, 'Warning prompt should be shown for expired key');
-        assert.strictEqual(showWarningStub.firstCall.args[0].includes('expired'), true, 'Warning should mention expiration');
+
+        const notifcationTitle = showWarningStub.firstCall.args[0];
+        assert.strictEqual(
+            notifcationTitle === AUTH_MODAL_TITLES.MIGRATION_REQUIRED,
+            true,
+            'Warning should mention migration required'
+        );
+        const modal = showWarningStub.firstCall.args[1];
+        const expectedMessage = AUTH_MESSAGES.LEGACY_API_KEY_EXPIRED;
+        assert.strictEqual(
+            modal.detail === expectedMessage,
+            true,
+            'Warning should mention expired key'
+        );
     });
 
     test('Should respect cooldown period for non-expired API key', async () => {
-        const validSession = {
+        const validSession: UserSession = {
             ...mockValidUserSession,
             session: {
                 ...mockValidUserSession.session,
-                data: {
-                    expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()                }
+                    expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
             }
         };
         const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
@@ -111,34 +105,46 @@ suite('AuthService Migration Tests', () => {
     });
 
     test('Should show migration prompt after cooldown period', async () => {
-        const validSession = {
+        const SEVEN_DAYS = 7;
+        const validSession: UserSession = {
             ...mockValidUserSession,
             session: {
                 ...mockValidUserSession.session,
-                data: {
-                    expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-                }
+                expires_at: new Date(Date.now() + SEVEN_DAYS * 24 * 60 * 60 * 1000).toISOString()
             }
         };
         const cooldownHoursAndOne = MIGRATION_REMINDER.COOLDOWN_HOURS + 1;
         const oldPromptTime = new Date(Date.now() - (cooldownHoursAndOne * 60 * 60 * 1000)).toISOString();
         await context.globalState.update(MIGRATION_REMINDER.LAST_PROMPTED_KEY, oldPromptTime);
         await context.globalState.update(COMMANDS.USER_API_KEY, 'test-key');
+
         validateApiKeyStub.resolves(validSession);
         await authService.validateAuth();
         sinon.assert.called(showInfoStub);
-        assert.strictEqual(showInfoStub.firstCall.args[0].includes('7 days'), true);
+
+        const notificationTitle = showInfoStub.firstCall.args[0];
+        assert.strictEqual(
+            notificationTitle === AUTH_MODAL_TITLES.MIGRATION_NOTICE,
+            true,
+            'Info should mention migration notice'
+        );
+
+        const modal = showInfoStub.firstCall.args[1];
+        const expectedMessage = AUTH_MESSAGES.LEGACY_API_KEY_MIGRATION + `\n\nNote: You have ${SEVEN_DAYS} days to migrate.`;
+        assert.strictEqual(
+            modal.detail === expectedMessage,
+            true,
+            'Info should mention migration notice'
+        );
     });
     
     test('Should prevent concurrent auth validation requests', async () => {
 
-        const validSession = {
+        const validSession: UserSession = {
             ...mockValidUserSession,
             session: {
                 ...mockValidUserSession.session,
-                data: {
-                    expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-                }
+                expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
             }
         };
         

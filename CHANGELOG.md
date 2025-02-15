@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Version 0.2.3] - 2025-02-11
+
+### Changed
+
+- [Update] Use session token for exception handling requests instead of API key.
+- [Update] QOL changes around logging, telemetry, and client tests.
+- [Bugfix] Fix issue where cached user sessions weren't cleared when signing out.
+
+## [Version 0.2.3] - 2025-02-10
+
+### Added
+
+- [Feature] Allow legacy API key users to continue using the extension without being forced to sign in with Github. There will be a 30-day deprecation period for these users to migrate to the new sign-in process. We will prompt them to migrate when they open the extension. If they choose not to migrate, we will silence the reminder for 48 hours. It will then be shown again.
+
+## [Version 0.2.3] - 2025-02-09
+
+### Changed
+
+- [Update] Update welcome message to include links to terms and privacy policy.
+- [Update] Remove API key requirement in favor of user signup via Github OAuth. This will allow us to track usage and errors in a better way while also respecting user privacy.
+
 ## [Version 0.2.3] - 2025-02-05
 
 ### Changed

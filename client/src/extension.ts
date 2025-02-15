@@ -4,6 +4,7 @@ import * as vscode from "vscode";
 import {
 	LanguageClient,
 	LanguageClientOptions,
+	RevealOutputChannelOn,
 	ServerOptions,
 	TransportKind,
 } from "vscode-languageclient/node";
@@ -17,8 +18,10 @@ import { registerCommands } from './common/commands';
 import { registerActions } from './common/actions';
 import { setupFileWatchers } from './common/utils/fileWatchers';
 import { initializeTelemetry } from '../../shared/telemetry';
-import { SESSION_TOKEN_KEY, TELEMETRY_EVENTS, TELEMETRY_NOTIFICATION } from '../../shared/constants';
+import { TELEMETRY_EVENTS, TELEMETRY_NOTIFICATION } from '../../shared/constants';
 import { AuthService } from './common/auth/authService';
+import { logger } from './common/log';
+import { isDevMode } from '../../shared/helpers';
 
 
 
@@ -53,7 +56,12 @@ export async function activate(context: vscode.ExtensionContext) {
 		},
 	};
 
+	const isDev = isDevMode();
+	logger.debug(`Djangoly in dev mode: ${isDev}`);
+	const clientLogLevel = isDev ? RevealOutputChannelOn.Debug : RevealOutputChannelOn.Error;
 	const clientOptions: LanguageClientOptions = {
+		outputChannel: logger.getOutputChannel(),
+		revealOutputChannelOn: clientLogLevel,
 		documentSelector: [
 			{ scheme: "file", language: "python" },
 		],
@@ -70,6 +78,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	);
 
 	await client.start();
+	logger.info("Client started");
 	
 	activateClientNotifications(client);
 
@@ -80,7 +89,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	const session = authService.getSession();
 	if (session) {
-		console.log(`Caching user token on language server: ${session.token}`);
+		logger.info(`Caching user token on language server: ${session.token}`);
 		await client.sendRequest(COMMANDS.UPDATE_CACHED_USER_TOKEN, session.token);
 	}
 

@@ -5,6 +5,9 @@ import { AUTH_MESSAGES, AUTH_MODAL_TITLES } from '../constants/messages';
 import { UserSession } from './github';
 import { authenticateUserWithGitHub, signOutUser, validateApiKey } from './api';
 import { MIGRATION_REMINDER } from '../constants';
+import { isDevMode } from '../../../../shared/helpers';
+import { logger } from '../log';
+
 
 export class AuthService {
     constructor(
@@ -15,9 +18,9 @@ export class AuthService {
     private authInProgress = false;
 
     async validateAuth(): Promise<boolean> {
-        console.log('Authenticating user...');
+        logger.info('Authenticating user...');
         if (this.authInProgress) {
-            console.log('Auth already in progress...');
+            logger.debug('Auth already in progress...');
             return true;
         }
 
@@ -27,16 +30,15 @@ export class AuthService {
         try {
             this.authInProgress = true;
             session = this.context.globalState.get<UserSession>(SESSION_USER);
-            if (process.env.NODE_ENV === 'development' && process.env.DEV_API_KEY) {
+            if (isDevMode() && process.env.DEV_API_KEY) {
                 this.context.globalState.update(COMMANDS.USER_API_KEY, process.env.DEV_API_KEY);
             }
             legacyApiKey = this.context.globalState.get<string>(COMMANDS.USER_API_KEY);
-            console.log('Session:', session);
-            console.log('Legacy API key:', legacyApiKey);
-            console.log("isDev", process.env.NODE_ENV === 'development');
+            logger.info(`Session: ${JSON.stringify(session)}`);
+            logger.info(`Legacy API key: ${legacyApiKey}`);
 
             if (legacyApiKey) {
-                console.log('Handling legacy auth...');
+                logger.info('Handling legacy auth...');
                 const result = await this.handleLegacyAuth(legacyApiKey);
                 if (!result) {
                     const tryGitHub = await vscode.window.showWarningMessage(
@@ -53,13 +55,13 @@ export class AuthService {
                 }
                 return result;
             } else if (!session || !session.user.has_agreed_to_terms) {
-                console.log('Handling GitHub auth...');
+                logger.info('Handling GitHub auth...');
                 return await this.handleGitHubAuth();
             }
 
             return true;
         } catch (error) {
-            console.error('Auth validation error:', error);
+            logger.error(`Auth validation error: ${error}`);
 			reporter.sendTelemetryErrorEvent(TELEMETRY_EVENTS.AUTHENTICATION_FAILED, {
 				reason: 'Auth validation error',
 				user_id: session?.user.id || legacyApiKey || 'unknown',
@@ -102,7 +104,7 @@ export class AuthService {
 
             return migrationResult;
         } catch (error) {
-            console.error('Legacy auth error:', error);
+            logger.error(`Legacy auth error: ${error}`);
             vscode.window.showErrorMessage(AUTH_MESSAGES.GENERAL_AUTH_ERROR);
             return false;
         }
@@ -122,10 +124,10 @@ export class AuthService {
             if (lastPrompted) {
                 const lastPromptedDate = new Date(lastPrompted);
                 const hoursSinceLastPrompt = (now.getTime() - lastPromptedDate.getTime()) / (1000 * 60 * 60);
-                console.log('Hours since last prompt:', hoursSinceLastPrompt);
+                logger.info(`Hours since last prompt: ${hoursSinceLastPrompt}`);
     
                 if (hoursSinceLastPrompt < MIGRATION_REMINDER.COOLDOWN_HOURS) {
-                    console.log('Skipping migration prompt due to cooldown.');
+                    logger.info('Skipping migration prompt due to cooldown.');
                     return true;
                 }
             }
@@ -160,7 +162,7 @@ export class AuthService {
             if (response === migrateAction) {
                 const isAuthenticated = await authenticateUserWithGitHub(this.context);
                 if (isAuthenticated) {
-                    console.log('User migrated to GitHub auth.');
+                    logger.info('User migrated to GitHub auth.');
                     vscode.window.showInformationMessage(AUTH_MESSAGES.LEGACY_USER_MIGRATED, "Okay");
                     await this.context.globalState.update(COMMANDS.USER_API_KEY, undefined);
                     await this.context.globalState.update(MIGRATION_REMINDER.LAST_PROMPTED_KEY, undefined);
@@ -176,14 +178,14 @@ export class AuthService {
 				return false;
 			}
     
-            console.log('User postponed migration.');
+            logger.info('User postponed migration.');
             reporter.sendTelemetryEvent(TELEMETRY_EVENTS.LEGACY_USER_POSTPONED, {
                 days_left: daysLeft.toString(),
                 user_api_key: legacyApiKey,
             });
             return true;
         } catch (error) {
-            console.error('Error during auth migration sequence:', error);
+            logger.error(`Error during auth migration sequence: ${error}`);
             throw error;
         }
     }
@@ -196,18 +198,19 @@ export class AuthService {
                 reason: 'User did not authenticate',
                 user_id: this.context.globalState.get<UserSession>(SESSION_USER)?.user.id || 'unknown',
             });
-            console.log('Failed to authenticate user.');
+            logger.info('Failed to authenticate user.');
             return false;
         }
 
         const updatedSession = this.context.globalState.get<UserSession>(SESSION_USER);
+        logger.info(`Updated session: ${JSON.stringify(updatedSession)}`);
         if (!updatedSession?.user.has_agreed_to_terms) {
             vscode.window.showErrorMessage(AUTH_MESSAGES.MUST_AGREE_TO_TERMS);
             reporter.sendTelemetryErrorEvent(TELEMETRY_EVENTS.TERMS_NOT_ACCEPTED, {
                 reason: 'User did not agree to terms',
                 user_id: updatedSession?.user.id || 'unknown',
             });
-            console.log('User has not agreed to terms.');
+            logger.info('User has not agreed to terms.');
             return false;
         }
 

@@ -98,8 +98,6 @@ export class AuthService {
             if (migrationResult) {
                 await this.context.globalState.update(SESSION_TOKEN_KEY, apiKeySession.token);
                 await this.context.globalState.update(SESSION_USER, apiKeySession);
-                // clear legacy api key to prevent it from being used again
-                await this.context.globalState.update(COMMANDS.USER_API_KEY, undefined);
             }
 
             return migrationResult;

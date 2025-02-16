@@ -16,7 +16,7 @@ export const API_SERVER_URL = process.env.NODE_ENV === "development" ?  "http://
 export const GITHUB_CLIENT_ID = process.env.NODE_ENV === "development" ? "Ov23li4Egp5QaJKU3ftO" : "Ov23liV8A8SgrWwMhFwI";
 
 export const COMMANDS = {
-    USER_API_KEY: `${EXTENSION_NAME}.userApiKey`,
+    USER_API_KEY: `${EXTENSION_NAME}.apiKey`,
     GITHUB_OAUTH_CALLBACK: `${EXTENSION_NAME}.githubOauthCallback`,
     SIGN_IN: `${EXTENSION_NAME}.signIn`,
     GITHUB_SIGN_IN: `${EXTENSION_NAME}.githubSignIn`,

@@ -5,11 +5,11 @@ import { API_KEY_SIGNUP_URL, API_SERVER_URL, COMMANDS, TELEMETRY_EVENTS } from "
 import { reporter } from '../../../../shared/telemetry';
 import { AUTH_MESSAGES } from '../constants/messages';
 import { GitHubAuthProvider, UserSession } from './github';
-
+import { logger } from '../log';
 
 export async function signOutUser(context: vscode.ExtensionContext) {
 	const authProvider = new GitHubAuthProvider(context);
-	console.log("Signing out from Djangoly");
+	logger.info("Signing out from Djangoly");
 	await authProvider.signOut();
 }
 
@@ -34,13 +34,13 @@ export async function validateApiKey(apiKey: string): Promise<UserSession | fals
         }
 
         if (!userSession.session?.key || !userSession.session?.expires_at) {
-            console.error('Invalid session data from server:', userSession);
+            logger.error(`Invalid session data from server: ${JSON.stringify(userSession)}`);
             return false;
         }
 
         return userSession;
     } catch (error) {
-        console.error('API key validation error:', error);
+        logger.error(`API key validation error: ${error}`);
         reporter.sendTelemetryErrorEvent(TELEMETRY_EVENTS.API_KEY_VALIDATION_ERROR, {
             error: JSON.stringify(error),
             api_key: apiKey,
@@ -73,13 +73,15 @@ export async function removeApiKey(
 }
 
 export const authenticateUserWithGitHub = async (context): Promise<boolean> => {
-	console.log('Authenticating user with GitHub');
+	logger.info('Authenticating user with GitHub');
     const authProvider = new GitHubAuthProvider(context);
     let session = authProvider.getCurrentSession();
-
+    logger.debug(`Checking current session: ${JSON.stringify(session)}`);
     while (!session?.user.has_agreed_to_terms) {
+        logger.debug('User has not agreed to terms, signing in with GitHub');
         try {
             const userSession = await authProvider.signIn();
+            logger.debug(`New user session after Github sign in: ${JSON.stringify(userSession)}`);
             if (userSession) {
                 if (!userSession.user.has_agreed_to_terms) {
                     const termsAction = "Accept & Continue";
@@ -102,7 +104,7 @@ export const authenticateUserWithGitHub = async (context): Promise<boolean> => {
                 session = authProvider.getCurrentSession();
             }
         } catch (error) {
-            console.error('Authentication error:', error);
+            logger.error(`Authentication error: ${error}`);
             return false;
         }
     }

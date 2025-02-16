@@ -158,6 +158,8 @@ export class AuthService {
             await this.context.globalState.update(MIGRATION_REMINDER.LAST_PROMPTED_KEY, now.toISOString());
     
             if (response === migrateAction) {
+                await signOutUser(this.context); // this clears session to make way for new auth
+
                 const isAuthenticated = await authenticateUserWithGitHub(this.context);
                 if (isAuthenticated) {
                     logger.info('User migrated to GitHub auth.');

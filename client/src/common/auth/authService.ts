@@ -79,7 +79,14 @@ export class AuthService {
 
     async signOut(): Promise<void> {
         await signOutUser(this.context);
+        this.clearSession();
         vscode.window.showInformationMessage(AUTH_MESSAGES.SIGN_OUT);
+    }
+
+    private clearSession(): void {
+        this.context.globalState.update(SESSION_USER, undefined);
+        this.context.globalState.update(SESSION_TOKEN_KEY, undefined);
+        this.context.globalState.update(MIGRATION_REMINDER.LAST_PROMPTED_KEY, undefined);
     }
 
     private async handleLegacyAuth(legacyApiKey: string): Promise<boolean> {

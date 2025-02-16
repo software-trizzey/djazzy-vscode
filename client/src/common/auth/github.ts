@@ -7,6 +7,7 @@ import {
 	SESSION_USER
 } from "../../../../shared/constants";
 import { MIGRATION_REMINDER } from '../constants';
+import { logger } from '../log';
 
 export interface UserSession {
 	token: string;
@@ -49,7 +50,7 @@ export class GitHubAuthProvider {
 				await this.clearSession();
 			}
 		} catch (error) {
-			console.error('Error handling session change:', error);
+			logger.error(`Error handling session change: ${error}`);
 			await this.clearSession();
 		}
 	}
@@ -59,7 +60,7 @@ export class GitHubAuthProvider {
 	}
 
 	async signIn(): Promise<UserSession> {
-		console.log("Starting GitHub sign-in flow");
+		logger.info("Starting GitHub sign-in flow");
 
 		const session = await vscode.authentication.getSession(GITHUB_AUTH_PROVIDER_ID, SCOPES, { createIfNone: true });
 
@@ -120,15 +121,20 @@ export class GitHubAuthProvider {
         if (!session) return;
     
         try {
+			logger.info(`Clearing session: server url: ${API_SERVER_URL}/auth/signout/`);
             const response = await fetch(`${API_SERVER_URL}/auth/signout/`, {
                 method: "POST",
                 headers: {
-                    "X-Session-Token": session.session.key
-                }
+                    "X-Session-Token": session.session.key,
+					"Content-Type": "application/json"
+                },
+				body: JSON.stringify({
+					session_key: session.session.key
+				})
             });
     
             if (!response.ok) {
-                throw new Error("Failed to sign out");
+                throw new Error(`Failed to sign out: ${response.statusText}`);
             }
     
             await this.context.globalState.update(SESSION_TOKEN_KEY, undefined);
@@ -136,7 +142,7 @@ export class GitHubAuthProvider {
 			await this.context.globalState.update(MIGRATION_REMINDER.LAST_PROMPTED_KEY, undefined);
             this.sessionChangeEmitter.fire(undefined);
         } catch (error) {
-            console.error("Error during sign out:", error);
+            logger.error(`${error}`);
             throw error;
         }
     }

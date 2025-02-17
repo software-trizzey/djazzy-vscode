@@ -163,11 +163,50 @@ export class GitHubAuthProvider {
 			})
 		});
 
-		if (!response.ok) {
-			throw new Error("Failed to exchange GitHub token for Django session token");
+		const data = await response.json();
+
+		interface ErrorResponse {
+			detail?: string;
 		}
 
-		const data = await response.json() as UserSession;
-		return data;
+		interface AuthResponse {
+			token: string;
+			user: UserSession['user'];
+			session: UserSession['session'];
+		}
+
+		if (!response.ok) {
+			const errorData = data as ErrorResponse;
+			switch (response.status) {
+				case 400:
+					if (errorData.detail?.includes("no email address")) {
+						throw new Error(
+							"No email address found. Please add and verify an email address to your GitHub account before continuing."
+						);
+					}
+					throw new Error(`Bad request: ${errorData.detail || 'Unknown error'}`);
+					
+				case 403:
+					if (errorData.detail?.includes("Invalid GitHub token")) {
+						throw new Error("GitHub authentication failed. Please try again.");
+					}
+					throw new Error(`Authentication failed: ${errorData.detail || 'Access denied'}`);
+					
+				case 429:
+					throw new Error("Too many authentication attempts. Please try again later.");
+					
+				default:
+					throw new Error(
+						`Failed to exchange GitHub token for Django session token: ${errorData.detail || response.statusText}`
+					);
+			}
+		}
+
+		const authData = data as AuthResponse;
+		if (!authData.token || !authData.user || !authData.session) {
+			throw new Error("Invalid response format from authentication server");
+		}
+
+		return authData as UserSession;
 	}
 }

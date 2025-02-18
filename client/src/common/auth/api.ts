@@ -105,6 +105,9 @@ export const authenticateUserWithGitHub = async (context): Promise<boolean> => {
             }
         } catch (error) {
             logger.error(`Authentication error: ${error}`);
+            if (error instanceof Error && error.message.includes("no email address")) {
+                vscode.window.showErrorMessage(AUTH_MESSAGES.NO_EMAIL_ADDRESS, "Okay");
+            }
             return false;
         }
     }

@@ -1,6 +1,6 @@
 # Djangoly: Write Cleaner, Faster, Scalable Django Code
 
-Djangoly is a VS Code extension built for Django developers (surprise, surprise). It uses static analysis to ensure your project aligns with Django best practices and conventions. You can install the extension via the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Alchemized.djangoly) or by searching for `djangoly` in VS code's extension tab.
+Djangoly is an extension built for Django developers that works with both [VS Code](https://code.visualstudio.com/) and [Cursor IDE](https://www.cursor.com/). It uses static analysis to ensure your project aligns with Django best practices and conventions. You can install the extension via the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Alchemized.djangoly) or by searching for `djangoly` in your IDE's extension tab.
 
 > Note: Djangoly requires _Python 3.9_ or higher to function properly. Please ensure your environment meets this requirement before using the extension.
 
@@ -9,7 +9,7 @@ Djangoly is a VS Code extension built for Django developers (surprise, surprise)
 
 Djangoly is open source, and you are free to fork and host your own version of the extension. We encourage contributions and feedback from the community.
 
-However, for the best experience and to access support, we recommend using the [official VS Code extension](https://marketplace.visualstudio.com/items?itemName=Alchemized.djangoly). You can sign up for free by [requesting an API key](https://forms.gle/gEEZdfhWpQyQh2qVA). In the future, we plan to introduce paid features to support the ongoing development and maintenance of the extension.
+However, for the best experience and to access support, we recommend using the [official VS Code extension](https://marketplace.visualstudio.com/items?itemName=Alchemized.djangoly). In the future, we plan to introduce paid features to support the ongoing development and maintenance of the extension.
 
 
 ## Docs
@@ -53,14 +53,15 @@ For a complete list of all rules, including detailed descriptions and examples, 
 
 ## Quick Start 🏃‍♂️💨
 
-1. **Get an API Key**: If you don't already have an API key, you can signup for one via this [form](https://forms.gle/gEEZdfhWpQyQh2qVA).
-2. **Install the Extension**: [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Alchemized.djangoly)
-3. **Set Up Your Django Project**: If you haven't already, set up a Django project in your workspace.
-4. **Configure Django Settings**: Open the extension settings in VS Code and configure your Django-specific settings.
-5. **Start Coding**: Begin developing your Django project. The extension will automatically start analyzing your code.
-6. **Review Suggestions**: Check the Problems panel in VS Code for Django best practice suggestions and quick fixes.
+1. **Install the Extension**: Get Djangoly from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Alchemized.djangoly) or install directly in Cursor IDE
+2. **Sign in with GitHub**: When you first use the extension, you'll be prompted to authenticate with your GitHub account
+3. **Set Up Your Django Project**: If you haven't already, set up a Django project in your workspace
+4. **Start Coding**: Begin developing your Django project. The extension will automatically start analyzing your code
+5. **Review Suggestions**: Check the Problems panel in your IDE for Django best practice suggestions and quick fixes
 
-**Note**: To modify the extension rules, access these settings by going to `Preferences → Settings → Extensions → Djangoly`.
+> Note for existing users: If you're currently using an API key, you'll have 30 days to migrate to GitHub authentication. The extension will guide you through this process.
+
+**Note**: To modify the extension rules, access these settings by going to `Preferences → Settings → Extensions → Djangoly` in either VS Code or Cursor.
 
 
 ## Contributing

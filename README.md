@@ -59,9 +59,9 @@ For a complete list of all rules, including detailed descriptions and examples, 
 4. **Start Coding**: Begin developing your Django project. The extension will automatically start analyzing your code
 5. **Review Suggestions**: Check the Problems panel in your IDE for Django best practice suggestions and quick fixes
 
-> Note for existing users: If you're currently using an API key, you'll have 30 days to migrate to GitHub authentication. The extension will guide you through this process.
+> Note for existing users: If you use an API key, you'll have 30 days to migrate to GitHub authentication. The extension will guide you through this process.
 
-**Note**: To modify the extension rules, access these settings by going to `Preferences → Settings → Extensions → Djangoly` in either VS Code or Cursor.
+To modify the extension rules, access these settings by going to `Preferences → Settings → Extensions → Djangoly` in either VS Code or Cursor.
 
 
 ## Contributing
@@ -72,9 +72,9 @@ For a complete list of all rules, including detailed descriptions and examples, 
 
 ## Known Issues & Limitations 🐞
 
-- **False Positives**: As an MVP undergoing rapid development, Djangoly may generate inaccurate diagnostics and recommendations. If you encounter any issues, please report them to [support@djangoly.com](mailto:support@djangoly.com).
+- **False Positives**: Djangoly may generate inaccurate diagnostics and recommendations as an MVP undergoing rapid development. If you encounter any issues, please report them to [support@djangoly.com](mailto:support@djangoly.com).
 
 
 ## License
 
-This project is available under the [MIT License](LICENSE.md) except for the `premium` directory which is covered by a separate [license](server/bundled/tools/python/djangoly/premium/LICENSE.md).
+This project is available under the [MIT License](LICENSE.md) except for the `premium` directory, which is covered by a separate [license](server/bundled/tools/python/djangoly/premium/LICENSE.md).

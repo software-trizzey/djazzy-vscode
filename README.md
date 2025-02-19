@@ -2,7 +2,7 @@
 
 > **Note:** The project formerly known as "Djangoly" is now "Djazzy". This change was made to ensure compliance with the Django foundation's trademark policies, especially as we consider monetization options. The new name, "Djazzy", pays homage to Django's namesake, the jazz musician, while incorporating the silent 'D' to maintain a connection to Django-specific code.
 
-Djazzy is an extension built for Django developers that works with both [VS Code](https://code.visualstudio.com/) and [Cursor IDE](https://www.cursor.com/). It uses static analysis to ensure your project aligns with Django best practices and conventions. You can install the extension via the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Alchemized.djazzy) or by searching for `djazzy` in your IDE's extension tab.
+Djazzy is an extension built for Django developers that works with both [VS Code](https://code.visualstudio.com/) and [Cursor IDE](https://www.cursor.com/). It uses static analysis to ensure your project aligns with Django best practices and conventions. You can install the extension via the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Alchemized.djangoly) or by searching for `djazzy` in your IDE's extension tab.
 
 > Note: Djazzy requires _Python 3.9_ or higher to function properly. Please ensure your environment meets this requirement before using the extension.
 

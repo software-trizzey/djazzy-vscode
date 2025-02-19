@@ -1,8 +1,8 @@
 import re
 from typing import Any, Dict, Optional
 
-from djangoly.core.checks.base import BaseCheckService
-from djangoly.core.lib.rules import RuleCode
+from djazzy.core.checks.base import BaseCheckService
+from djazzy.core.lib.rules import RuleCode
 from .valid_verbs import VALID_VERBS
 from .issue import NameIssue
 from .constants import RULE_MESSAGES, VARIABLES_TO_IGNORE

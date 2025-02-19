@@ -1,4 +1,4 @@
-from djangoly.core.lib.issue import Issue
+from djazzy.core.lib.issue import Issue
 
 
 class SecurityIssue(Issue):

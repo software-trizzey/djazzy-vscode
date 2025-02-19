@@ -1,5 +1,5 @@
 
-from djangoly.core.lib.log import LOGGER
+from djazzy.core.lib.log import LOGGER
 from .view_detector import DjangoViewDetectionService, DjangoViewType
 
 class FunctionNodeService:

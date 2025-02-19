@@ -6,7 +6,7 @@ from typing import List, Optional, Dict
 from util import serialize_file_data
 from log import LOGGER
 
-from djangoly.core.parsers.ast_parser import Analyzer
+from djazzy.core.parsers.ast_parser import Analyzer
 
 
 def get_relevant_imports(tree: ast.Module, function_name: str) -> List[str]:

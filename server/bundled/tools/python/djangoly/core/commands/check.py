@@ -1,7 +1,7 @@
 import os
 import json
 
-from djangoly.core.parsers.django_parser import DjangoAnalyzer
+from djazzy.core.parsers.django_parser import DjangoAnalyzer
 
 from ..lib.log import LOGGER
 

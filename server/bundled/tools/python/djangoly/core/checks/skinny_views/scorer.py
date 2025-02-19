@@ -1,6 +1,6 @@
 import ast
 
-from djangoly.core.lib.issue import IssueSeverity
+from djazzy.core.lib.issue import IssueSeverity
 
 from .constants import ComplexityIssue, ScoreInterpretationEnum, ScoreWeightEnum
 

@@ -1,4 +1,4 @@
-from djangoly.core.lib.issue import Issue, IssueSeverity
+from djazzy.core.lib.issue import Issue, IssueSeverity
 
 class NameIssue(Issue):
     def __init__(self, lineno, col, description, rule_code, severity=IssueSeverity.WARNING, parameters=None):

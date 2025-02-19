@@ -6,11 +6,11 @@ import tokenize
 from io import StringIO
 from typing import Dict, Any
 
-from djangoly.core.diagnostics import Diagnostic
-from djangoly.core.lib.issue import IssueSeverity
-from djangoly.core.checks.name_validator.checker import NameValidator
-from djangoly.core.checks.enforce_test_name_convention.checker import TestNamingCheckService
-from djangoly.core.lib.settings import DjangolySettings, set_settings
+from djazzy.core.diagnostics import Diagnostic
+from djazzy.core.lib.issue import IssueSeverity
+from djazzy.core.checks.name_validator.checker import NameValidator
+from djazzy.core.checks.enforce_test_name_convention.checker import TestNamingCheckService
+from djazzy.core.lib.settings import DjangolySettings, set_settings
 
 from ..lib.constants import DJANGO_IGNORE_FUNCTIONS
 from ..lib.log import LOGGER

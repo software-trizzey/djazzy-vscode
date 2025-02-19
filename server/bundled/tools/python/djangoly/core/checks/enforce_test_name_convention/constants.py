@@ -1,6 +1,6 @@
-from djangoly.core.lib.issue import Issue
-from djangoly.core.lib.issue import IssueSeverity
-from djangoly.core.lib.rules import RuleCode
+from djazzy.core.lib.issue import Issue
+from djazzy.core.lib.issue import IssueSeverity
+from djazzy.core.lib.rules import RuleCode
 
 
 class TestNameConventionIssue(Issue):

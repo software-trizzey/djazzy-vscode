@@ -1,5 +1,5 @@
-from djangoly.core.lib.issue import Issue, IssueSeverity, IssueDocLinks
-from djangoly.core.lib.rules import RuleCode
+from djazzy.core.lib.issue import Issue, IssueSeverity, IssueDocLinks
+from djazzy.core.lib.rules import RuleCode
 
 class RedundantQueryMethodIssue(Issue):
     code = RuleCode.CDQ06.value

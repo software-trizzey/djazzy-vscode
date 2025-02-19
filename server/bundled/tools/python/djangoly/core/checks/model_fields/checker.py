@@ -2,8 +2,8 @@ import ast
 from typing import Optional
 from enum import Enum
 
-from djangoly.core.lib.rules import RuleCode
-from djangoly.core.checks.base import BaseCheckService
+from djazzy.core.lib.rules import RuleCode
+from djazzy.core.checks.base import BaseCheckService
 from ...lib.issue import Issue, IssueSeverity
 
 class ModelFieldNames:

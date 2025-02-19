@@ -1,6 +1,6 @@
 import projectPackageJson from "../../package.json";
 
-const EXTENSION_ID = "djangoly";
+const EXTENSION_ID = "djazzy";
 
 export const DJANGOLY_ID = projectPackageJson.publisher + "." + EXTENSION_ID;
 

@@ -1,11 +1,11 @@
 import ast
 
-from djangoly.core.lib.settings import get_settings
-from djangoly.core.lib.settings import set_settings
-from djangoly.core.lib.settings import DEFAULT_NAME_LENGTH_LIMIT
-from djangoly.core.lib.settings import DEFAULT_BOOLEAN_PREFIXES
-from djangoly.core.lib.settings import DEFAULT_IGNORED_FUNCTIONS
-from djangoly.core.lib.settings import DEFAULT_FUNCTION_LENGTH_LIMIT
+from djazzy.core.lib.settings import get_settings
+from djazzy.core.lib.settings import set_settings
+from djazzy.core.lib.settings import DEFAULT_NAME_LENGTH_LIMIT
+from djazzy.core.lib.settings import DEFAULT_BOOLEAN_PREFIXES
+from djazzy.core.lib.settings import DEFAULT_IGNORED_FUNCTIONS
+from djazzy.core.lib.settings import DEFAULT_FUNCTION_LENGTH_LIMIT
 
 class BaseCheckService(ast.NodeVisitor):
     def __init__(self, updated_settings=None):

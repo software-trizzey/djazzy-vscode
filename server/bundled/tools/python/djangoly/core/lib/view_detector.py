@@ -1,7 +1,7 @@
 import ast
 from typing import Set, Dict, Optional
 
-from djangoly.core.lib.log import LOGGER
+from djazzy.core.lib.log import LOGGER
 
 MAX_DEPTH = 5
 

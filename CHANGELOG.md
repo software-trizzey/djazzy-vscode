@@ -53,7 +53,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- [Feature] Update to djangoly v0.1.7 which supports better linter rule protections.
+- [Feature] Update to djazzy v0.1.7 which supports better linter rule protections.
 
 ### Changed
 
@@ -69,7 +69,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- [Feature] Update to djangoly v0.1.6 which includes new STY03 rule for test name enforcement.
+- [Feature] Update to djazzy v0.1.6 which includes new STY03 rule for test name enforcement.
 
 
 ## [Version 0.2.0] - 2024-10-03

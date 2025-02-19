@@ -1,6 +1,6 @@
 {
-	"name": "djangoly-language-server",
-	"description": "Node.js Language Server for djangoly",
+	"name": "djazzy-language-server",
+	"description": "Node.js Language Server for djazzy",
 	"version": "0.0.1",
 	"publisher": "alchemized",
 	"license": "UNLICENSED",

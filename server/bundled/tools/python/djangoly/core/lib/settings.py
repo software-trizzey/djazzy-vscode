@@ -1,7 +1,7 @@
 from typing import Dict, Any, List
 
-from djangoly.core.lib.rules import RuleCode
-from djangoly.core.lib.log import LOGGER
+from djazzy.core.lib.rules import RuleCode
+from djazzy.core.lib.log import LOGGER
 
 
 DEFAULT_NAME_LENGTH_LIMIT = 3

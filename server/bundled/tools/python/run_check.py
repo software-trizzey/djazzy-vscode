@@ -2,8 +2,8 @@ import sys
 import json
 
 from log import LOGGER
-from djangoly.core.parsers.django_parser import DjangoAnalyzer
-from djangoly.core.lib.settings import ensure_dict
+from djazzy.core.parsers.django_parser import DjangoAnalyzer
+from djazzy.core.lib.settings import ensure_dict
 
 def main():
     if len(sys.argv) < 3:

@@ -3,8 +3,8 @@ import re
 
 from typing import Any, Dict, List, Set
 
-from djangoly.core.lib.log import LOGGER
-from djangoly.core.lib.constants import (
+from djazzy.core.lib.log import LOGGER
+from djazzy.core.lib.constants import (
     ALLOWED_HOSTS,
     CSRF_COOKIE_SECURE,
     DEBUG,
@@ -17,11 +17,11 @@ from djangoly.core.lib.constants import (
     SECURE_HSTS_SECONDS,
     SECURE_HSTS_INCLUDE_SUBDOMAINS,
 )
-from djangoly.core.lib.evaluate_str import evaluate_expr_as_string
+from djazzy.core.lib.evaluate_str import evaluate_expr_as_string
 
-from djangoly.core.checks.base import BaseCheckService
-from djangoly.core.lib.issue import IssueSeverity
-from djangoly.core.lib.rules import RuleCode
+from djazzy.core.checks.base import BaseCheckService
+from djazzy.core.lib.issue import IssueSeverity
+from djazzy.core.lib.rules import RuleCode
 
 from .security_issue import SecurityIssue
 from .security_rules import SecurityRules

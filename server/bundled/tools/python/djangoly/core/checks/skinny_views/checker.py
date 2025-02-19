@@ -1,8 +1,8 @@
 import ast
 
-from djangoly.core.checks.base import BaseCheckService
-from djangoly.core.lib.log import LOGGER
-from djangoly.core.lib.rules import RuleCode
+from djazzy.core.checks.base import BaseCheckService
+from djazzy.core.lib.log import LOGGER
+from djazzy.core.lib.rules import RuleCode
 
 from .scorer import ViewComplexityScorer
 from .constants import ComplexityIssue

@@ -1,4 +1,4 @@
-from djangoly.core.lib.issue import Issue, IssueSeverity
+from djazzy.core.lib.issue import Issue, IssueSeverity
 
 class Messages:
     FAT_MODELS = 'Fat Models: Encapsulate logic in model methods. https://django-best-practices.readthedocs.io/en/latest/applications.html#make-em-fat'

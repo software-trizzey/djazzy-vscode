@@ -1,12 +1,12 @@
 import re
 from typing import Set
 
-from djangoly.core.checks.base import BaseCheckService
-from djangoly.core.lib.issue import IssueSeverity
-from djangoly.core.lib.log import LOGGER
-from djangoly.core.lib.rules import RuleCode
-from djangoly.core.checks.enforce_test_name_convention.constants import TestNameConventionIssue
-from djangoly.core.lib.settings import DEFAULT_TEST_NAME_PATTERN
+from djazzy.core.checks.base import BaseCheckService
+from djazzy.core.lib.issue import IssueSeverity
+from djazzy.core.lib.log import LOGGER
+from djazzy.core.lib.rules import RuleCode
+from djazzy.core.checks.enforce_test_name_convention.constants import TestNameConventionIssue
+from djazzy.core.lib.settings import DEFAULT_TEST_NAME_PATTERN
 
 
 class TestNamingCheckService(BaseCheckService):

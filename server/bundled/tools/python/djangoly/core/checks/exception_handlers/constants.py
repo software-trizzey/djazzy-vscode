@@ -1,5 +1,5 @@
-from djangoly.core.lib.issue import Issue, IssueSeverity
-from djangoly.core.lib.rules import RuleCode
+from djazzy.core.lib.issue import Issue, IssueSeverity
+from djazzy.core.lib.rules import RuleCode
 
 
 
@@ -14,7 +14,7 @@ class ExceptionHandlingIssue(Issue):
     def __init__(self, view_name, lineno, col, severity=IssueSeverity.INFORMATION):
         parameters = {
             'name': view_name,
-            'command': "djangoly.analyzeExceptionHandling",
+            'command': "djazzy.analyzeExceptionHandling",
             'command_title': "Code boost: Improve Exception Handling"
         }
         super().__init__(lineno, col, severity, parameters)

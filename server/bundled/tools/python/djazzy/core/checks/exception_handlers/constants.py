@@ -8,7 +8,7 @@ class ExceptionHandlingIssue(Issue):
     description = (
         '"{name}" does not contain any exception handling.\n\n'
         'Consider adding try-except blocks to handle potential errors and improve the robustness of your code.\n\n'
-        '👋 Djangoly can handle this for you!\n\nRight-click the function name and select: "{command_title}"\n'
+        '👋 Djazzy can handle this for you!\n\nRight-click the function name and select: "{command_title}"\n'
     )
 
     def __init__(self, view_name, lineno, col, severity=IssueSeverity.INFORMATION):

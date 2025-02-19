@@ -4,7 +4,7 @@ Portions of this software are licensed as follows:
 
 1. All content that resides under the "premium/" directory of this repository, if that directory exists, is licensed under the Premium License Agreement defined below.
 
-2. All third-party components incorporated into the Djangoly Software are licensed under the original license provided by the owner of the applicable component.
+2. All third-party components incorporated into the Djazzy Software are licensed under the original license provided by the owner of the applicable component.
 
 3. Content outside of the above-mentioned directories or restrictions is available under the MIT Expat license as defined below.
 
@@ -17,7 +17,7 @@ By using the premium software provided by Alchemized Software Ltd (the "Premium 
 ### 1. Grant of License
 Alchemized Software Ltd grants you a non-exclusive, non-transferable, limited license to use the Premium Features in accordance with the terms set forth in this Agreement, provided that:
 - You have purchased a valid license for the Premium Features or have been granted access through a paid subscription.
-- You may use the Premium Features only as part of the Djangoly core open-source software.
+- You may use the Premium Features only as part of the Djazzy core open-source software.
 - You may not distribute, sublicense, or resell the Premium Features or any portion thereof without prior written consent from Alchemized Software Ltd.
 
 ### 2. Restrictions

@@ -83,7 +83,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- [Enhancement] Refactor Django parsing and analysis files to standalone Djangoly package. 
+- [Enhancement] Refactor Django parsing and analysis files to standalone Djazzy package. 
 - [Enhancement] Move python venv and .env files to project root.
 - [Enhancement] Cleanup project files and unused functions.
 
@@ -98,7 +98,7 @@ All notable changes to this project will be documented in this file.
 
 - [Bugfix] Update secret key regexp to account for different 3rd party packages 
 - [Enhancement] Show current boolean prefixes in the diagnostics message.
-- [Bugfix] Link to Djangoly docs by default
+- [Bugfix] Link to Djazzy docs by default
 
 
 ## [Version 0.1.17] - 2024-09-13
@@ -168,7 +168,7 @@ All notable changes to this project will be documented in this file.
 - [Enhancement] Refactored security checks to service class and added unit tests.
 - [Enhancement] Refactored model field checks to service class and added unit tests.
 - [Enhancement] Simplified PR template format.
-- [Enhancement] Improve logger context and try to filter out errors from other sources (not Djangoly).
+- [Enhancement] Improve logger context and try to filter out errors from other sources (not Djazzy).
 
 ## [Version 0.1.11] - 2024-08-23
 
@@ -289,4 +289,4 @@ All notable changes to this project will be documented in this file.
 
 ### Removed
 
-- [Removal] Import project from When In Rome and removed features and files unreleated to the Djangoly MVP (JS/TS support, rename suggestions and custom command for symbols)
+- [Removal] Import project from When In Rome and removed features and files unreleated to the Djazzy MVP (JS/TS support, rename suggestions and custom command for symbols)

@@ -40,7 +40,7 @@ export abstract class LanguageProvider extends BaseProvider {
     private sendNotSupportedMessage(languageId: string): void {
       const messageParams: ShowMessageRequestParams = {
         type: MessageType.Warning,
-        message: `The language ${languageId} is not currently supported by Djangoly extension.`,
+        message: `The language ${languageId} is not currently supported by Djazzy extension.`,
         actions: [{ title: "Dismiss" }],
       };
       this.connection

@@ -60,7 +60,7 @@ export class ExceptionHandlingCommandProvider {
             let response: { completionItems: Array<vscode.CompletionItem>, functionNode: FunctionDetails } | null = null;
             await vscode.window.withProgress({
                 location: vscode.ProgressLocation.Notification,
-                title: "Djangoly",
+                title: "Djazzy",
                 cancellable: true
             }, async (progress, token) => {
                 token.onCancellationRequested(() => {

@@ -1,19 +1,19 @@
 {
 	"name": "djazzy",
-	"displayName": "Djangoly",
+	"displayName": "Djazzy",
 	"description": "Write Cleaner, Faster, Scalable Django Code",
 	"author": "Tristan Deane",
 	"version": "0.2.3",
 	"publisher": "alchemized",
 	"preview": true,
-	"homepage": "https://www.djazzy.com",
+	"homepage": "https://www.djazzy.dev",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/software-trizzey/djazzy-vscode"
 	},
 	"bugs": {
 		"url": "https://github.com/software-trizzey/djazzy-vscode/issues",
-		"email": "support@djazzy.com"
+		"email": "support@alchemizedsoftware.com"
 	},
 	"license": "MIT",
 	"icon": "assets/images/logo-v2.png",
@@ -43,21 +43,24 @@
 	"contributes": {
 		"activationEvents": [
 			"onLanguage:python",
+			"onCommand:djazzy.signIn",
+			"onCommand:djazzy.signOut",
+			"onCommand:djazzy.openSettings",
 			"onCommand:djazzy.addCustomRule",
 			"onCommand:djazzy.openWalkthrough"
 		],
 		"commands": [
 			{
 				"command": "djazzy.signIn",
-				"title": "Djangoly: Sign In"
+				"title": "Djazzy: Sign In"
 			},
 			{
 				"command": "djazzy.signOut",
-				"title": "Djangoly: Sign Out"
+				"title": "Djazzy: Sign Out"
 			},
 			{
 				"command": "djazzy.openSettings",
-				"title": "Djangoly: Open Settings"
+				"title": "Djazzy: Open Settings"
 			},
 			{
 				"command": "djazzy.analyzeExceptionHandling",
@@ -76,22 +79,22 @@
 		"walkthroughs": [
 			{
 				"id": "djazzy.gettingStarted",
-				"title": "Getting Started with Djangoly",
-				"description": "Learn how to use the key features of Djangoly.",
+				"title": "Getting Started with Djazzy",
+				"description": "Learn how to use the key features of Djazzy.",
 				"steps": [
 					{
 						"id": "djazzy.installExtension",
 						"title": "Install the Extension",
-						"description": "Open VS Code, go to the Extensions view, and search for 'Djangoly'. Click 'Install' and wait for the installation to complete.",
+						"description": "Open VS Code, go to the Extensions view, and search for 'Djazzy'. Click 'Install' and wait for the installation to complete.",
 						"media": {
 							"image": "assets/images/walkthrough/install.png",
-							"altText": "Install Djangoly"
+							"altText": "Install Djazzy"
 						}
 					},
 					{
 						"id": "djazzy.signIn",
 						"title": "Sign In with GitHub",
-						"description": "Open command palette and type in → ```Djangoly: Sign In```. Or press the button below: \n[Sign In](command:djazzy.signIn)\nAccept the notification and you should be signed in via your GitHub account.",
+						"description": "Open command palette and type in → ```Djazzy: Sign In```. Or press the button below: \n[Sign In](command:djazzy.signIn)\nAccept the notification and you should be signed in via your GitHub account.",
 						"media": {
 							"image": "assets/images/walkthrough/signIn.png",
 							"altText": "Sign In"
@@ -103,7 +106,7 @@
 					{
 						"id": "djazzy.untestedCode",
 						"title": "Untested API Code Detection",
-						"description": "Introduce a new piece of business logic without a test. Notice that Djangoly reminds you to test the changes.",
+						"description": "Introduce a new piece of business logic without a test. Notice that Djazzy reminds you to test the changes.",
 						"media": {
 							"image": "assets/gifs/flag-untested-api-code.gif",
 							"altText": "Untested Code Demo"
@@ -135,7 +138,7 @@
 			}
 		],
 		"configuration": {
-			"title": "Djangoly",
+			"title": "Djazzy",
 			"properties": {
 				"djazzy.general.booleanPrefixes": {
 					"type": "array",

@@ -1,6 +1,6 @@
-# Djangoly Conventions
+# Djazzy Conventions
 
-This document tracks all the validation and convention rules enforced by Djangoly. Each rule has a unique code, a description, and any additional relevant information.
+This document tracks all the validation and convention rules enforced by Djazzy. Each rule has a unique code, a description, and any additional relevant information.
 
 ## Code Quality-related Rules (CDQ)
 

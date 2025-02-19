@@ -1,7 +1,7 @@
 import projectPackageJson from "../../package.json";
 
 export const EXTENSION_NAME = "djazzy";
-export const EXTENSION_DISPLAY_NAME = "Djangoly";
+export const EXTENSION_DISPLAY_NAME = "Djazzy";
 export const EXTENSION_ID = "djazzy";
 export const PUBLISHER = "alchemized";
 

@@ -9,10 +9,10 @@
 Djazzy helps you:
 
 - Catch style violations like poor names and redundant queryset methods
+- Flag model fields such as `related_name` for `ForeignKey` or `null=True` on `CharField`
 - Remind you to create/update test files when you modify your Django views or models
 - Identify potential security risks in your settings and suggest safer alternatives
-- Ensure that your URLs follow the Django project's naming convention
-- Automatically resolve migration conflicts (planned)
+- Ensure that your URLs follow the project's naming convention
 - Suggest valid field lookups (__gte, __in, etc.) when filtering QuerySets (planned)
 - Autocomplete named URLs in reverse() and redirect() calls (planned)
 

@@ -1,7 +1,7 @@
 {
 	"name": "djazzy",
 	"displayName": "Djazzy",
-	"description": "Write Cleaner, Faster, Scalable Django Code",
+	"description": "Write better Django code",
 	"author": "Tristan Deane",
 	"version": "0.2.3",
 	"publisher": "alchemized",
@@ -16,7 +16,7 @@
 		"email": "support@alchemizedsoftware.com"
 	},
 	"license": "MIT",
-	"icon": "assets/images/logo-v2.png",
+	"icon": "assets/images/djazzy-logo.png",
 	"galleryBanner": {
 		"color": "#20232D",
 		"theme": "dark"

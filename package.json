@@ -1,7 +1,7 @@
 {
 	"name": "djazzy",
 	"displayName": "Djazzy",
-	"description": "Write Cleaner, Faster, Scalable Django Code",
+	"description": "Write better Django code",
 	"author": "Tristan Deane",
 	"version": "0.2.3",
 	"publisher": "alchemized",

@@ -11,7 +11,7 @@ Djazzy is an extension built for Django developers that works with both [VS Code
 
 Djazzy is open source, and you are free to fork and host your own version of the extension. We encourage contributions and feedback from the community.
 
-However, for the best experience and to access support, we recommend using the [official VS Code extension](https://marketplace.visualstudio.com/items?itemName=Alchemized.djazzy). In the future, we plan to introduce paid features to support the ongoing development and maintenance of the extension.
+However, for the best experience and to access support, we recommend using the [official VS Code extension](https://marketplace.visualstudio.com/items?itemName=Alchemized.djangoly). In the future, we plan to introduce paid features to support the ongoing development and maintenance of the extension.
 
 
 ## Docs
@@ -25,7 +25,7 @@ For a complete list of all rules, including detailed descriptions and examples, 
 
 ### 1. Flag annoyances such as `CharField(null=True)` omitting `related_name` for foreign keys etc.
 
-![Djazzy model field demo](https://raw.githubusercontent.com/software-trizzey/images/refs/heads/main/assets/images/djazzy-model-field-validation-demo.gif)
+![Djazzy model field demo](https://raw.githubusercontent.com/software-trizzey/images/refs/heads/main/assets/images/djangoly-model-field-validation-demo.gif)
 
 
 ### 2. Catch style style violations like poor names and redundant queryset methods

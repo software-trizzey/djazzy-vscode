@@ -4,7 +4,7 @@
 
 ## What is Djazzy?
 
-[Djazzy](https://djazzy.dev) is the open-source tool that helps Django developers write better code. It leverages static analysis and various IDE features to ensure your project aligns with Django best practices and conventions.
+[Djazzy](https://djazzy.dev) is the open-source tool that helps Django developers write better code. It leverages static analysis and various IDE features to ensure your project aligns with your team's best practices and conventions.
 
 Djazzy helps you:
 

@@ -3,7 +3,7 @@ Copyright (c) 2020-2024 Alchemized Software Ltd.
 Portions of this software are licensed as follows:
 
 - All content that resides under the `"ee/"` directory of this repository, if that directory exists, is licensed under the license defined in `"ee/LICENSE"`.
-- All third-party components incorporated into the Djangoly Software are licensed under the original licenses provided by the owners of the applicable components.
+- All third-party components incorporated into the Djazzy Software are licensed under the original licenses provided by the owners of the applicable components.
 - All content outside of the above-mentioned directories or restrictions is available under the "MIT Expat" license as defined below.
 
 ## MIT Expat License

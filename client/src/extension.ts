@@ -57,7 +57,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	};
 
 	const isDev = isDevMode();
-	logger.debug(`Djangoly in dev mode: ${isDev}`);
+	logger.debug(`${EXTENSION_DISPLAY_NAME} in dev mode: ${isDev}`);
 	const clientLogLevel = isDev ? RevealOutputChannelOn.Debug : RevealOutputChannelOn.Error;
 	const clientOptions: LanguageClientOptions = {
 		outputChannel: logger.getOutputChannel(),

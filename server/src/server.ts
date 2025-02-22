@@ -172,7 +172,7 @@ connection.onDidChangeConfiguration(async (change) => {
 		);
 	} else {
 		globalSettings = <ExtensionSettings>(
-			(change.settings.djangoly || null)
+			(change.settings.djazzy || null)
 		);
 	}
 	console.log("Settings have changed. Refreshing diagnostics...");

@@ -1,4 +1,4 @@
-export const SOURCE_NAME = "djangoly";
+export const SOURCE_NAME = "djazzy";
 export const NAMING_CONVENTION_VIOLATION_SOURCE_TYPE = "naming-convention-violation";
 export const REDUNDANT_COMMENT_VIOLATION_SOURCE_TYPE = "redundant-comment-violation";
 export const THEME_SYSTEM_VIOLATION_SOURCE_TYPE = "theme-system-violation";

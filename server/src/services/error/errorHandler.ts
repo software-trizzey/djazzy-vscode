@@ -37,7 +37,7 @@ export class ErrorHandler {
 			message.includes("IndentationError") ||
 			message.includes("Unexpected token")
 		) {
-			// djangoly-ignore we're not worried about syntax errors triggered by the user's code
+			// djazzy-ignore we're not worried about syntax errors triggered by the user's code
 			return;
 		} else {
 			console.log(error);

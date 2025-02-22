@@ -9,7 +9,7 @@ import { logger } from '../log';
 
 export async function signOutUser(context: vscode.ExtensionContext) {
 	const authProvider = new GitHubAuthProvider(context);
-	logger.info("Signing out from Djangoly");
+	logger.info("Signing out from Djazzy");
 	await authProvider.signOut();
 }
 
@@ -123,7 +123,7 @@ export const authenticateUserWithAPIKey = async (context, activate): Promise<boo
 
     while (!apiKey) {
         const inputApiKey = await vscode.window.showInputBox({
-            prompt: "Please enter your Djangoly API key",
+            prompt: "Please enter your Djazzy API key",
             placeHolder: "API Key",
             ignoreFocusOut: true,
         });

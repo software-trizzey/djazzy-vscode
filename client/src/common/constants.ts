@@ -1,8 +1,8 @@
 import projectPackageJson from "../../package.json";
 
-export const EXTENSION_NAME = "djangoly";
-export const EXTENSION_DISPLAY_NAME = "Djangoly";
-export const EXTENSION_ID = "djangoly";
+export const EXTENSION_NAME = "djazzy";
+export const EXTENSION_DISPLAY_NAME = "Djazzy";
+export const EXTENSION_ID = "djazzy";
 export const PUBLISHER = "alchemized";
 
 export const DJANGOLY_ID = projectPackageJson.publisher + "." + EXTENSION_ID;
@@ -32,7 +32,7 @@ export const COMMANDS = {
 export const RATE_LIMIT_NOTIFICATION_ID = `${EXTENSION_ID}/rateLimitReached`;
 export const ACCESS_FORBIDDEN_NOTIFICATION_ID = `${EXTENSION_ID}/forbidden`;
 
-export const API_SERVER_URL = process.env.NODE_ENV === "development" ?  "http://localhost:8000" : "https://djangoly-api.onrender.com";
+export const API_SERVER_URL = process.env.NODE_ENV === "development" ?  "http://localhost:8000" : "https://djazzy-api.onrender.com";
 
 export const API_KEY_SIGNUP_URL = "https://forms.gle/gEEZdfhWpQyQh2qVA";
 

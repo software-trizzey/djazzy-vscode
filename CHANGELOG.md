@@ -2,11 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Version 0.2.4] - 2025-02-19
+## [Version 0.2.4] - 2025-02-21
 
 ### Changed
 
 - [Update] Rename extension to Djazzy. This rename ensure the extension respects the trademarked name "Django". We don't want to upset the folks at the Django foundation if choose to monetize the extension in the future.
+- [Update] Update README.md to reflect the new name and align with the project's branding.
+- [Update] Update extension description to reflect the new name.
+- [Update] Update extension icon to align with the project's branding.
 
 
 ## [Version 0.2.3] - 2025-02-11

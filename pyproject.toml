@@ -1,0 +1,18 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "djazzy"
+version = "0.0.1"
+description = "A Visual Studio Code extension for writing better Django code."
+authors = [{ name = "Tristan Deane", email = "tristan@alchemizedsoftware.com" }]
+maintainers = [{ name = "Tristan Deane", email = "tristan@alchemizedsoftware.com" }]
+requires-python = ">=3.9"
+dependencies = ["packaging>=23.1", "Django>=4.2.16", "astroid>=3.3.4", "sqlparse>=0.5.1", "typing_extensions>=4.12.2"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py39"
+extend-exclude = ["bundled/libs", "src/testFixture"]
+

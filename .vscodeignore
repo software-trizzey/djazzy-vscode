@@ -7,6 +7,17 @@
 **/.env
 **/.pytest_cache/
 **/.ruff_cache/
+**/.github/
+**/.idea/
+**/.nox/
+**/.pytest_cache/
+**/.venv/
+**/.vscode/
+**/__pycache__/
+**/build/
+**/node_modules/
+*.pyc
+*.ts
 
 # Development-specific files
 **/*.ts
@@ -22,10 +33,11 @@ examples/**
 client/src/**
 server/src/**
 .github/**
+**example_project/**
 
 # Exclude all node_modules and selectively include needed packages
 
-node_modules/**
+**node_modules/**
 
 # Client runtime dependencies (I need to figure out which of these are actually needed)
 !client/node_modules/**
@@ -57,3 +69,6 @@ CHANGELOG.template.md
 
 # Python
 !.venv/**
+
+# Rust
+target/**

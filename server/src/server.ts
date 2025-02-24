@@ -46,12 +46,13 @@ import { findFunctionNode, FunctionDetails } from './lib/getPythonFunctionNode';
 
 import { DiagnosticQueue } from "./services/diagnostics";
 
-import COMMANDS, { ACCESS_FORBIDDEN_NOTIFICATION_ID, COMMANDS_LIST, DJANGOLY_ID, RATE_LIMIT_NOTIFICATION_ID } from "./constants/commands";
+import COMMANDS, { ACCESS_FORBIDDEN_NOTIFICATION_ID, COMMANDS_LIST, RATE_LIMIT_NOTIFICATION_ID } from "./constants/commands";
 import { SOURCE_NAME } from './constants/diagnostics';
 import { API_SERVER_URL } from './constants/api';
 import { ERROR_CODES, ForbiddenError, RateLimitError  } from './constants/errors';
 import { TELEMETRY_EVENTS } from '../../shared/constants';
 import { reporter, initializeTelemetry } from './telemetry';
+import { initializeCache } from './lib/initializedCache';
 
 
 const connection = createConnection(ProposedFeatures.all);
@@ -146,6 +147,12 @@ connection.onInitialized(() => {
 			connection.console.log("Workspace folder change event received.");
 		});
 	}
+
+	initializeCache().then(() => {
+		console.log("Djazzy cache initialized successfully");
+	}).catch((error) => {
+		console.error("Failed to initialize Djazzy cache:", error);
+	});
 
 	console.log(
 		`Finished Initializing server at: ${new Date().toLocaleTimeString()}`
@@ -554,6 +561,7 @@ documents.onDidOpen(async (event: TextDocumentChangeEvent<TextDocument>) => {
         }
     }
 });
+
 
 documents.listen(connection);
 connection.listen();

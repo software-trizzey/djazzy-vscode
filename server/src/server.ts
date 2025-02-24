@@ -53,7 +53,7 @@ import COMMANDS, { ACCESS_FORBIDDEN_NOTIFICATION_ID, COMMANDS_LIST, RATE_LIMIT_N
 import { SOURCE_NAME } from './constants/diagnostics';
 import { API_SERVER_URL } from './constants/api';
 import { ERROR_CODES, ForbiddenError, RateLimitError  } from './constants/errors';
-import { TELEMETRY_EVENTS } from '../../shared/constants';
+import { EXTENSION_DISPLAY_NAME, TELEMETRY_EVENTS } from '../../shared/constants';
 import { reporter, initializeTelemetry } from './telemetry';
 import { getCachedUrls, initializeCache } from './lib/cacheUtils';
 
@@ -595,7 +595,7 @@ connection.onCompletion(async (params) => {
 		const item = CompletionItem.create(url_name);
 		item.kind = CompletionItemKind.Text;
 		item.insertText = `"${url_name}"`;
-		item.detail = "Valid URL name from your project";
+		item.detail = `${EXTENSION_DISPLAY_NAME}: Valid URL name from your project`;
 		const fileUri = URI.file(path.join(workspaceRoot, file_path)).toString();
 
 		item.documentation = {

@@ -1,5 +1,6 @@
 import projectPackageJson from "../../package.json";
 
+import * as path from "path";
 import { ResponseError } from 'vscode-languageserver';
 import {
 	createConnection,
@@ -22,6 +23,7 @@ import {
     CompletionItemKind,
 	CancellationTokenSource
 } from "vscode-languageserver/node";
+import { URI } from "vscode-uri";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { TextDocumentChangeEvent } from 'vscode-languageserver';
@@ -573,7 +575,6 @@ connection.onCompletion(async (params) => {
     }
 
     const cachedUrls = getCachedUrls(workspaceRoot);
-    console.log("cachedUrls", cachedUrls);
 
     if (cachedUrls.length === 0) {
         return [];
@@ -590,15 +591,20 @@ connection.onCompletion(async (params) => {
 
 	console.log("Trigger matched! Providing suggestions");
 
-    const completionItems = cachedUrls.map((url) => {
-        const item = CompletionItem.create(url);
-        item.kind = CompletionItemKind.Text;
-        item.insertText = `"${url}"`;
-        item.detail = "Valid URL name";
-        item.documentation = `Django URL pattern: "${url}"`;
-        return item;
-    });
-    console.log("completionItems", completionItems);
+	const completionItems = cachedUrls.map(({ url_name, file_path }) => {
+		const item = CompletionItem.create(url_name);
+		item.kind = CompletionItemKind.Text;
+		item.insertText = `"${url_name}"`;
+		item.detail = "Valid URL name from your project";
+		const fileUri = URI.file(path.join(workspaceRoot, file_path)).toString();
+
+		item.documentation = {
+			kind: "markdown",
+			value: `**Django URL Pattern:** \`${url_name}\`\n\n👨‍🏫 **Defined in:** [\`${file_path}\`](${fileUri})`
+		};
+	
+		return item;
+	});
     return completionItems;
 });
 

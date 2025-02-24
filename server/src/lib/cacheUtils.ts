@@ -7,6 +7,14 @@ import { getRustBinaryPath } from './getRustBinaryPath';
 
 const CACHE_FILE_NAME = ".djazzy_cache.json";
 
+interface UrlCacheData {
+    urls: {
+        [filePath: string]: {
+            patterns?: string[];
+        };
+    };
+}
+
 export function initializeCache(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
         const rustBinary = getRustBinaryPath();
@@ -48,23 +56,34 @@ export function initializeCache(): Promise<void> {
 * @param projectRoot The root directory of the Django project
 * @returns A list of all available URL names
 */
-export function getCachedUrls(projectRoot: string): string[] {
-    console.log("Getting cached urls for", projectRoot);
-   const cacheFile = path.join(projectRoot, CACHE_FILE_NAME);
+export function getCachedUrls(workspaceRoot: string): { url_name: string; file_path: string }[] {
+    try {
+        const cachePath = path.join(workspaceRoot, ".djazzy_cache.json");
+        if (!fs.existsSync(cachePath)) {
+            console.warn("No Djazzy cache found.");
+            return [];
+        }
 
-   if (!fs.existsSync(cacheFile)) {
-       console.warn("⚠️ Djazzy URL cache not found. Autocomplete will be empty.");
-       return [];
-   }
+        const cacheData = JSON.parse(fs.readFileSync(cachePath, "utf-8")) as UrlCacheData;
+        if (!cacheData.urls) {
+            console.warn("Cache is missing URL data.");
+            return [];
+        }
 
-   try {
-       const cacheData = JSON.parse(fs.readFileSync(cacheFile, "utf-8"));
-       const urlEntries = cacheData.urls || {}; // Ensure we read the 'urls' section
+        const urlsWithPaths: { url_name: string; file_path: string }[] = [];
 
-       // Flatten all URL names into a single list
-       return Object.values(urlEntries).flatMap((entry: any) => entry.patterns || []);
-   } catch (error) {
-       console.error("❌ Error reading Djazzy cache:", error);
-       return [];
-   }
+        for (const [filePath, data] of Object.entries(cacheData.urls)) {
+            if (data.patterns) {
+                const relativeFilePath = path.relative(workspaceRoot, filePath); // Convert to relative path
+                for (const url of data.patterns) {
+                    urlsWithPaths.push({ url_name: url, file_path: relativeFilePath });
+                }
+            }
+        }
+
+        return urlsWithPaths;
+    } catch (error) {
+        console.error("Error reading Djazzy cache:", error);
+        return [];
+    }
 }

@@ -37,6 +37,7 @@ import {
 	updateCachedUserToken,
 	cachedUserToken,
 	updatePythonExecutablePath,
+	workspaceRoot,
 } from "./settings";
 
 import { checkForTestFile } from './lib/checkForTestFile';
@@ -52,7 +53,7 @@ import { API_SERVER_URL } from './constants/api';
 import { ERROR_CODES, ForbiddenError, RateLimitError  } from './constants/errors';
 import { TELEMETRY_EVENTS } from '../../shared/constants';
 import { reporter, initializeTelemetry } from './telemetry';
-import { initializeCache } from './lib/initializedCache';
+import { getCachedUrls, initializeCache } from './lib/cacheUtils';
 
 
 const connection = createConnection(ProposedFeatures.all);
@@ -120,6 +121,9 @@ connection.onInitialize((params: InitializeParams) => {
 			},
 			executeCommandProvider: {
 				commands: COMMANDS_LIST,
+			},
+			completionProvider: {
+				triggerCharacters: ["r", "e", "v", "d", "i", "(", '"'],
 			},
 		},
 	};
@@ -560,6 +564,42 @@ documents.onDidOpen(async (event: TextDocumentChangeEvent<TextDocument>) => {
             });
         }
     }
+});
+
+connection.onCompletion(async (params) => {
+    const document = documents.get(params.textDocument.uri);
+    if (!document) {
+        return [];
+    }
+
+    const cachedUrls = getCachedUrls(workspaceRoot);
+    console.log("cachedUrls", cachedUrls);
+
+    if (cachedUrls.length === 0) {
+        return [];
+    }
+
+    const position = params.position;
+    const lineText = document.getText().split("\n")[position.line].trim();
+	
+    const triggerRegex = /(?:^|\s)(?:return\s+)?(reverse|redirect)\s*\(\s*["']?/;
+	if (!triggerRegex.test(lineText)) {
+		console.log("No URL trigger words found");
+		return [];
+	}
+
+	console.log("Trigger matched! Providing suggestions");
+
+    const completionItems = cachedUrls.map((url) => {
+        const item = CompletionItem.create(url);
+        item.kind = CompletionItemKind.Text;
+        item.insertText = `"${url}"`;
+        item.detail = "Valid URL name";
+        item.documentation = `Django URL pattern: "${url}"`;
+        return item;
+    });
+    console.log("completionItems", completionItems);
+    return completionItems;
 });
 
 

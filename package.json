@@ -264,12 +264,12 @@
 		}
 	},
 	"scripts": {
-		"vscode:prepublish": "NODE_ENV=production npm run compile",
+		"vscode:prepublish": "npm run build:rust && NODE_ENV=production npm run compile",
 		"clean": "rimraf ./client/out ./server/out",
 		"compile": "npm run check-types && node esbuild.config.js",
 		"check-types": "tsc --noEmit",
-		"package": "vsce package && node esbuild.config.js --production",
-		"dev:package": "npm run package --pre-release",
+		"package": "npm run build:rust && vsce package && node esbuild.config.js --production",
+		"dev:package": "npm run build:rust && npm run package --pre-release",
 		"publish": "vsce publish",
 		"dev-publish": "npm run dev:package && code --install-extension djazzy-0.2.4.vsix",
 		"watch": "npm-run-all -p watch:*",
@@ -279,7 +279,8 @@
 		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
 		"compile-tests": "tsc -b",
 		"pretest": "npm run compile-tests",
-		"test": "sh ./scripts/e2e.sh"
+		"test": "sh ./scripts/e2e.sh",
+		"build:rust": "cd server/bundled/tools/djazzy_rust && cargo build --release"
 	},
 	"devDependencies": {
 		"@types/mocha": "^10.0.6",

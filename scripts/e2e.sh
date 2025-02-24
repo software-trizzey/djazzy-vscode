@@ -19,3 +19,14 @@ if [ $? -ne 0 ]; then
   echo "Server tests failed."
   exit 1
 fi
+
+# Run the rust tests
+echo "Running Rust Tests..."
+cd server/bundled/tools/djazzy_rust
+cargo test --release
+
+if [ $? -ne 0 ]; then
+  echo "Rust tests failed."
+  exit 1
+fi
+
